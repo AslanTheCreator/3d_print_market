@@ -3,7 +3,8 @@ import "./globals.css";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import CssBaseLine from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
-import theme from "../src/theme";
+import theme from "../src/app/styles/theme";
+import Header from "@/widgets/Header";
 
 export const metadata: Metadata = {
   title: "3D PrintMarket",
@@ -21,6 +22,7 @@ export default function RootLayout({
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <CssBaseLine />
+            <Header />
             {children}
           </ThemeProvider>
         </AppRouterCacheProvider>
