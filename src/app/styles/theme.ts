@@ -11,6 +11,29 @@ const roboto = Roboto({
 const theme = createTheme({
   typography: {
     fontFamily: roboto.style.fontFamily,
+    h2: {
+      fontSize: 27,
+      fontWeight: 700,
+    },
+    subtitle1: {
+      fontSize: 18,
+      lineHeight: 20,
+      fontWeight: 700,
+    },
+  },
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 900,
+      lg: 1384,
+      xl: 1536,
+    },
+  },
+  palette: {
+    primary: {
+      main: "#febd69",
+    },
   },
 });
 

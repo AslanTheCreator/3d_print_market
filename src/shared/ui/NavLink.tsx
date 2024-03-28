@@ -1,22 +1,29 @@
 import Link from "next/link";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 
-export default function Favorites() {
+interface INavLinkProps {
+  text: string;
+  url: string;
+  childComponent: React.ReactNode;
+}
+
+const NavLink: React.FC<INavLinkProps> = ({ text, url, childComponent }) => {
   return (
-    <Link href={"/"}>
+    <Link href={`/${url}`}>
       <Box display={"flex"} flexDirection={"column"} alignItems={"center"}>
-        <FavoriteBorderIcon fontSize={"medium"} color="warning" />
+        {childComponent}
         <Typography
           fontSize={"14px"}
           lineHeight={"18px"}
           mt={"1px"}
           color={"white"}
         >
-          Избранное
+          {text}
         </Typography>
       </Box>
     </Link>
   );
-}
+};
+
+export default NavLink;

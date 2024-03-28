@@ -8,6 +8,7 @@ export function SearchString() {
     <Box
       component={"form"}
       bgcolor={"white"}
+      height={"40px"}
       sx={{
         display: "flex",
         alignItems: "center",
@@ -17,10 +18,19 @@ export function SearchString() {
       <InputBase
         sx={{ ml: 1, flex: 1 }}
         placeholder="Поиск"
-        inputProps={{ "aria-label": "search google maps" }}
+        inputProps={{ "aria-label": "product search" }}
       />
       <IconButton
-        sx={{ backgroundColor: "#febd69", p: "10px" }}
+        sx={{
+          backgroundColor: "#febd69",
+          borderRadius: 0,
+          borderTopRightRadius: "4px",
+          borderBottomRightRadius: "4px",
+          ":hover": {
+            backgroundColor: "#f3a847",
+          },
+        }}
+        color={"inherit"}
         type="button"
         aria-label="search"
       >
