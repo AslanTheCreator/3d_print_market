@@ -1,8 +1,8 @@
-import { CardProduct } from "@/widgets/CardProduct";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import PopularCategories from "@/widgets/PopularCategories";
+import CurrentAuctionsSection from "@/widgets/CurrentAuctionsSection";
 
 export default function Home() {
   return (
@@ -15,14 +15,8 @@ export default function Home() {
         }}
         component={"main"}
       >
-        <PopularCategories />
-        <Typography variant={"h2"}>Текущие аукционы</Typography>
-        <Stack direction={"row"} gap={"20px"}>
-          <CardProduct />
-          <CardProduct />
-          <CardProduct />
-          <CardProduct />
-        </Stack>
+        {/* <PopularCategories /> */}
+        <CurrentAuctionsSection />
       </Container>
     </div>
   );

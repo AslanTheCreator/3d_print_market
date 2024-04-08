@@ -10,7 +10,14 @@ interface ICategoryCard {
 
 const CategoryCard: React.FC<ICategoryCard> = ({ title }) => {
   return (
-    <Box height={"250px"} position={"relative"}>
+    <Box
+      height={"250px"}
+      position={"relative"}
+      sx={{
+        ":hover .card_title": { background: "rgba(251, 57, 57, 0.9)" },
+        transition: "all 0.3s ease",
+      }}
+    >
       <Link
         href={"/"}
         style={{
@@ -31,10 +38,7 @@ const CategoryCard: React.FC<ICategoryCard> = ({ title }) => {
           left={0}
           right={0}
           bottom={0}
-          sx={{
-            ":hover": { background: "rgba(251, 57, 57, 0.9)" },
-            transition: "all 0.3s ease",
-          }}
+          className="card_title"
         >
           <Box height={"70px"} display={"flex"} alignItems={"center"}>
             <Typography variant={"subtitle1"} component={"div"} color={"white"}>
