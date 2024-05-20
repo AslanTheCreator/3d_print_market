@@ -3,7 +3,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
 interface INavLinkProps {
-  text: string;
+  text?: string;
   url: string;
   childComponent: React.ReactNode;
 }

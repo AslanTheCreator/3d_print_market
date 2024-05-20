@@ -1,7 +1,4 @@
 import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import PopularCategories from "@/widgets/PopularCategories";
 import CurrentAuctionsSection from "@/widgets/CurrentAuctionsSection";
 
 export default function Home() {
