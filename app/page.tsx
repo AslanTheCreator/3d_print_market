@@ -5,7 +5,7 @@ export default function Home() {
   return (
     <div style={{ backgroundColor: "#f2f6f9" }}>
       <Container
-        maxWidth={"lg"}
+        maxWidth={"sm"}
         style={{
           backgroundColor: "#fff",
           borderRadius: "32px",
