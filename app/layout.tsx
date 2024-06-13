@@ -5,6 +5,7 @@ import CssBaseLine from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "../src/app/styles/theme";
 import Header from "@/widgets/Header";
+import Footer from "@/widgets/Footer";
 
 export const metadata: Metadata = {
   title: "3D PrintMarket",
@@ -24,6 +25,7 @@ export default function RootLayout({
             <CssBaseLine />
             <Header />
             {children}
+            <Footer />
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>

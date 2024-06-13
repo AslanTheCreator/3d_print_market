@@ -1,16 +1,17 @@
 import Logo from "@/entities/Logo";
-import { SearchString } from "@/features/CatalogSearch";
+import SearchString from "@/features/CatalogSearch";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Container from "@mui/material/Container";
 import Link from "next/link";
 import Typography from "@mui/material/Typography";
 import IconButtonLink from "@/widgets/IconButtonLink";
+import CategoriesMenu from "@/features/CategoriesMenu";
 
 function Header() {
   return (
     <Box>
-      <Box bgcolor={"#131921"}>
+      <Box bgcolor={"#232F3E"}>
         <Container maxWidth={"sm"}>
           <Stack>
             <Stack
@@ -29,12 +30,17 @@ function Header() {
                 <IconButtonLink />
               </Stack>
             </Stack>
-            <Stack height={"50px"}>
+            <Stack
+              height={"50px"}
+              direction={"row"}
+              alignItems={"center"}
+              gap={"10px"}
+            >
+              <CategoriesMenu />
               <SearchString />
             </Stack>
           </Stack>
         </Container>
-        */
       </Box>
     </Box>
   );

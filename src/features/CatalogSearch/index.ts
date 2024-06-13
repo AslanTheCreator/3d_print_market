@@ -1,1 +1,1 @@
-export * from "./ui/SearchString";
+export { default } from "./ui/SearchString";

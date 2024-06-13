@@ -3,7 +3,7 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
 
-export function SearchString() {
+const SearchString = () => {
   return (
     <Box
       component={"form"}
@@ -38,4 +38,6 @@ export function SearchString() {
       </IconButton>
     </Box>
   );
-}
+};
+
+export default SearchString;

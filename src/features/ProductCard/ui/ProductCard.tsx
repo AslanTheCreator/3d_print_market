@@ -24,13 +24,11 @@ const ProductCard = () => {
             <Button variant={"contained"}>Предзаказ</Button>
             <Typography component={"div"}>6000</Typography>
           </Stack>
-          <Stack
-            flexDirection={"row"}
-            alignItems={"center"}
-            justifyContent={"center"}
-            width={"50%"}
-          >
-            <Link href={""}>Malifaux</Link>
+          <Stack alignItems={"center"} justifyContent={"center"} width={"50%"}>
+            <Link href={""}>Aslan</Link>
+            <Stack>
+              <Link href={""}>Название товара</Link>
+            </Stack>
           </Stack>
         </Stack>
       </Stack>
