@@ -13,7 +13,7 @@ function Header() {
     <Box>
       <Box bgcolor={"#232F3E"}>
         <Container maxWidth={"sm"}>
-          <Stack>
+          <Stack pb={"20px"}>
             <Stack
               direction={"row"}
               height={"48px"}
@@ -24,7 +24,7 @@ function Header() {
                 <Logo />
               </Stack>
               <Stack direction={"row"} alignItems={"center"}>
-                <Link href={"#"}>
+                <Link href={"/login"}>
                   <Typography color={"white"}>Sign in &#x3E;</Typography>
                 </Link>
                 <IconButtonLink />

@@ -1,4 +1,4 @@
-import InputBase from "@mui/material/InputBase";
+import Input from "@mui/material/InputBase";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
@@ -15,7 +15,7 @@ const SearchString = () => {
         borderRadius: "4px",
       }}
     >
-      <InputBase
+      <Input
         sx={{ ml: 1, flex: 1 }}
         placeholder="Поиск"
         inputProps={{ "aria-label": "product search" }}

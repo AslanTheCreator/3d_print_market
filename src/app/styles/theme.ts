@@ -11,6 +11,10 @@ const roboto = Roboto({
 const theme = createTheme({
   typography: {
     fontFamily: roboto.style.fontFamily,
+    h1: {
+      fontSize: 27,
+      fontWeight: 400,
+    },
     h2: {
       fontSize: 27,
       fontWeight: 700,
