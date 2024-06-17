@@ -3,7 +3,7 @@ import Typography from "@mui/material/Typography";
 
 const Footer = () => {
   return (
-    <Box bgcolor={"#131921"}>
+    <Box component={"footer"} bgcolor={"#131921"}>
       <Typography color={"white"}>Footer</Typography>
     </Box>
   );

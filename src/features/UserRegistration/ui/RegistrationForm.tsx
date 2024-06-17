@@ -3,7 +3,11 @@ import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 
-const RegistrationForm = () => {
+interface IRegistrationForm {
+  buttonTitle: string;
+}
+
+const RegistrationForm: React.FC<IRegistrationForm> = ({ buttonTitle }) => {
   return (
     <Box
       component={"form"}
@@ -17,7 +21,7 @@ const RegistrationForm = () => {
         <TextField placeholder="Пароль" />
       </Stack>
       <Button variant="contained" sx={{ minHeight: "56px" }}>
-        Войти
+        {buttonTitle}
       </Button>
     </Box>
   );

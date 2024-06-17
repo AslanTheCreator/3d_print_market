@@ -6,6 +6,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import theme from "../src/app/styles/theme";
 import Header from "@/widgets/Header";
 import Footer from "@/widgets/Footer";
+import Container from "@mui/material/Container";
 
 export const metadata: Metadata = {
   title: "3D PrintMarket",
@@ -24,7 +25,17 @@ export default function RootLayout({
           <ThemeProvider theme={theme}>
             <CssBaseLine />
             <Header />
-            {children}
+            <div style={{ backgroundColor: "#f2f6f9" }}>
+              <Container
+                maxWidth={"sm"}
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: "32px",
+                }}
+              >
+                {children}
+              </Container>
+            </div>
             <Footer />
           </ThemeProvider>
         </AppRouterCacheProvider>

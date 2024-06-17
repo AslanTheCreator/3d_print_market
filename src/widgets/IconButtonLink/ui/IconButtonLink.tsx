@@ -11,7 +11,7 @@ const iconLinks = [
     icon: <PersonOutlineIcon color={"secondary"} fontSize={"large"} />,
   },
   {
-    url: "",
+    url: "cart",
     icon: <ShoppingCartOutlinedIcon fontSize={"large"} color={"secondary"} />,
   },
 ];

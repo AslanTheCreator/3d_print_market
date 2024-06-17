@@ -10,38 +10,36 @@ import CategoriesMenu from "@/features/CategoriesMenu";
 
 function Header() {
   return (
-    <Box>
-      <Box bgcolor={"#232F3E"}>
-        <Container maxWidth={"sm"}>
-          <Stack pb={"20px"}>
-            <Stack
-              direction={"row"}
-              height={"48px"}
-              alignItems={"center"}
-              justifyContent={"space-between"}
-            >
-              <Stack>
-                <Logo />
-              </Stack>
-              <Stack direction={"row"} alignItems={"center"}>
-                <Link href={"/login"}>
-                  <Typography color={"white"}>Sign in &#x3E;</Typography>
-                </Link>
-                <IconButtonLink />
-              </Stack>
+    <Box component={"header"} bgcolor={"#232F3E"}>
+      <Container maxWidth={"sm"}>
+        <Stack pb={"20px"}>
+          <Stack
+            direction={"row"}
+            height={"48px"}
+            alignItems={"center"}
+            justifyContent={"space-between"}
+          >
+            <Stack>
+              <Logo />
             </Stack>
-            <Stack
-              height={"50px"}
-              direction={"row"}
-              alignItems={"center"}
-              gap={"10px"}
-            >
-              <CategoriesMenu />
-              <SearchString />
+            <Stack direction={"row"} alignItems={"center"}>
+              <Link href={"/login"}>
+                <Typography color={"white"}>Sign in &#x3E;</Typography>
+              </Link>
+              <IconButtonLink />
             </Stack>
           </Stack>
-        </Container>
-      </Box>
+          <Stack
+            height={"50px"}
+            direction={"row"}
+            alignItems={"center"}
+            gap={"10px"}
+          >
+            <CategoriesMenu />
+            <SearchString />
+          </Stack>
+        </Stack>
+      </Container>
     </Box>
   );
 }
