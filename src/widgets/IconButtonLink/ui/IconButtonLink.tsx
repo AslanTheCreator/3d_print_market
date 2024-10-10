@@ -8,17 +8,17 @@ import Stack from "@mui/material/Stack";
 const iconLinks = [
   {
     url: "login",
-    icon: <PersonOutlineIcon color={"secondary"} fontSize={"large"} />,
+    icon: <PersonOutlineIcon fontSize={"large"} color="primary" />,
   },
   {
     url: "cart",
-    icon: <ShoppingCartOutlinedIcon fontSize={"large"} color={"secondary"} />,
+    icon: <ShoppingCartOutlinedIcon fontSize={"large"} color="primary" />,
   },
 ];
 
 const IconButtonLink = () => {
   return (
-    <Stack direction={"row"}>
+    <Stack direction={"row"} gap={2} alignItems={"center"}>
       {iconLinks.map((iconlink, id) => (
         <NavLink key={id} url={iconlink.url} childComponent={iconlink.icon} />
       ))}

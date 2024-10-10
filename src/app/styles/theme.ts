@@ -1,28 +1,28 @@
 "use client";
-import { Roboto } from "next/font/google";
+import { Nunito } from "next/font/google";
 import { createTheme } from "@mui/material/styles";
 
-const roboto = Roboto({
-  weight: ["300", "400", "500", "700"],
-  subsets: ["latin"],
-  display: "swap",
+const nunito = Nunito({
+  subsets: ["cyrillic"],
+  variable: "--font-nunito",
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 const theme = createTheme({
   typography: {
-    fontFamily: roboto.style.fontFamily,
-    h1: {
-      fontSize: 27,
-      fontWeight: 400,
-    },
-    h2: {
-      fontSize: 27,
-      fontWeight: 700,
-    },
-    subtitle1: {
-      fontSize: 18,
-      fontWeight: 700,
-    },
+    fontFamily: nunito.style.fontFamily,
+    // h1: {
+    //   fontSize: 27,
+    //   fontWeight: 400,
+    // },
+    // h2: {
+    //   fontSize: 27,
+    //   fontWeight: 700,
+    // },
+    // subtitle1: {
+    //   fontSize: 18,
+    //   fontWeight: 700,
+    // },
   },
   breakpoints: {
     values: {
