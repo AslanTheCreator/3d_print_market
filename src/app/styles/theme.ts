@@ -11,18 +11,14 @@ const nunito = Nunito({
 const theme = createTheme({
   typography: {
     fontFamily: nunito.style.fontFamily,
-    // h1: {
-    //   fontSize: 27,
-    //   fontWeight: 400,
-    // },
-    // h2: {
-    //   fontSize: 27,
-    //   fontWeight: 700,
-    // },
-    // subtitle1: {
-    //   fontSize: 18,
-    //   fontWeight: 700,
-    // },
+    h2: {
+      fontSize: 25,
+      fontWeight: 500,
+    },
+    h3: {
+      fontSize: 20,
+      fontWeight: 700,
+    },
   },
   breakpoints: {
     values: {

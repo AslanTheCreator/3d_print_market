@@ -23,7 +23,7 @@ const ProductCardList = () => {
           author={card.author}
           series="Магическая битва"
           price={card.price}
-          id={1}
+          id={2}
           name={card.name}
           imageUrl={
             "https://minifreemarket.com/upload/thumbs/catalog/auction_thumb/photo-2023-07-31-19-57-26-2_6.21158319.webp"

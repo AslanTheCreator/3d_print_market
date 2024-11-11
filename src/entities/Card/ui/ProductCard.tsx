@@ -24,7 +24,7 @@ const ProductCard: React.FC<IProductCard> = ({
   series,
 }) => {
   return (
-    <Link href={`/product/${id}`}>
+    <Link href={`/catalog/card/${id}`}>
       <Box border={"solid 1px #d2d2d2"} borderRadius={"6px"}>
         <Image alt={name} src={imageUrl} width={286} height={208} />
         <Typography mb={"4px"} mt={"12px"} fontWeight={700}>
