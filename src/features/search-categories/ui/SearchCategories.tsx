@@ -2,12 +2,9 @@
 
 import React from "react";
 import MenuIcon from "@mui/icons-material/Menu";
-import Button from "@mui/material/Button";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import Stack from "@mui/material/Stack";
+import { Stack, MenuItem, Menu, Button } from "@mui/material";
 
-const CategoriesMenu = () => {
+export const SearchCategories = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -20,13 +17,25 @@ const CategoriesMenu = () => {
   return (
     <div>
       <Button
+        id="basic-button"
+        aria-controls={open ? "basic-menu" : undefined}
+        aria-haspopup="true"
+        aria-expanded={open ? "true" : "false"}
         variant={"contained"}
         sx={{ minWidth: "36px", minHeight: "40px" }}
         onClick={handleClick}
       >
         <MenuIcon color={"secondary"} />
       </Button>
-      <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
+      <Menu
+        id="basic-menu"
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        MenuListProps={{
+          "aria-labelledby": "basic-button",
+        }}
+      >
         <MenuItem onClick={handleClose} sx={{ width: "290px" }}>
           <Stack
             width={"100%"}
@@ -42,5 +51,3 @@ const CategoriesMenu = () => {
     </div>
   );
 };
-
-export default CategoriesMenu;

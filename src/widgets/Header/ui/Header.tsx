@@ -1,11 +1,8 @@
-import SearchString from "@/features/CatalogSearch";
-import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
-import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
-import IconButtonLink from "@/widgets/IconButtonLink";
-import CategoriesMenu from "@/features/CategoriesMenu";
 import Image from "next/image";
+import { Box, Stack, Typography, Container } from "@mui/material";
+import { SearchCategories } from "@/features/search-categories";
+import { SearchString } from "@/features/search-catalog";
+import { HeaderIconLinks } from "./HeaderIconLinks";
 
 export const Header = () => {
   return (
@@ -28,17 +25,11 @@ export const Header = () => {
                 3dm
               </Typography>
             </Stack>
-
-            <Stack direction={"row"} alignItems={"center"}>
-              {/* <Link href={"/login"}>
-                <Typography color={"white"}>Sign in &#x3E;</Typography>
-              </Link> */}
-              <IconButtonLink />
-            </Stack>
+            <HeaderIconLinks />
           </Stack>
           {/* Нижняя часть */}
           <Stack direction={"row"} alignItems={"center"} gap={"10px"}>
-            <CategoriesMenu />
+            <SearchCategories />
             <SearchString />
           </Stack>
         </Stack>

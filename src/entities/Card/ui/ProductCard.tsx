@@ -3,8 +3,7 @@ import Typography from "@mui/material/Typography";
 import Image from "next/image";
 import Link from "next/link";
 import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
-import { ButtonStyled } from "@/shared/ui/Buttons";
+import { ButtonStyled } from "@/shared/ui/Button";
 
 interface IProductCard {
   id: number;
@@ -40,22 +39,6 @@ const ProductCard: React.FC<IProductCard> = ({
 
           <ButtonStyled variant="outlined">Предзаказ</ButtonStyled>
         </Stack>
-        {/* <Stack direction={"row"}>
-          <Stack
-            alignItems={"center"}
-            borderRight={"solid 1px #d2d2d2"}
-            width={"50%"}
-          >
-            <ButtonStyled variant="outlined">Предзаказ</ButtonStyled>
-            <Typography component={"div"}>{price}</Typography>
-          </Stack>
-          <Stack alignItems={"center"} justifyContent={"center"} width={"50%"}>
-            <Link href={""}>{author}</Link>
-            <Stack>
-              <Link href={""}>{name}</Link>
-            </Stack>
-          </Stack>
-        </Stack> */}
       </Box>
     </Link>
   );
