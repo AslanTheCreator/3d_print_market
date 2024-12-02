@@ -5,11 +5,11 @@ import Link from "next/link";
 
 const headerIcons = [
   {
-    url: "login",
+    url: "/login",
     icon: <PersonOutlineIcon fontSize={"large"} color="primary" />,
   },
   {
-    url: "cart",
+    url: "/cart",
     icon: <ShoppingCartOutlinedIcon fontSize={"large"} color="primary" />,
   },
 ];

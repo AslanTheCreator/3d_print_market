@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <Container sx={{ marginTop: "10px" }}>
       <Typography component={"h2"} variant="h2">
-        Текущие аукционы
+        Популярные объявления
       </Typography>
       <Box pt={"20px"}>
         <ProductCardList />

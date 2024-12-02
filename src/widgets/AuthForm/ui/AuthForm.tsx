@@ -19,12 +19,26 @@ const AuthForm: React.FC<IAuthForm> = ({
   buttonTitle,
 }) => {
   return (
-    <Box pt={"30px"} pb={"30px"}>
-      <Typography variant="h1" textAlign={"center"}>
+    <Box
+      pt={"30px"}
+      pb={"30px"}
+      display={"flex"}
+      flexDirection={"column"}
+      alignItems={"center"}
+    >
+      <Typography
+        component={"h2"}
+        fontWeight={400}
+        fontSize={27}
+        lineHeight={"30px"}
+        textAlign={"center"}
+      >
         {title}
       </Typography>
-      <Box mt={"5px"} textAlign={"center"}>
-        <Typography>{subtitle}</Typography>
+      <Box mt={"5px"} textAlign={"center"} fontSize={17}>
+        <Typography component={"span"} fontSize={17}>
+          {subtitle}
+        </Typography>
         <Link
           style={{ color: "#ce7c7c", textDecoration: "underline" }}
           href={url}

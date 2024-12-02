@@ -12,7 +12,7 @@ const theme = createTheme({
   typography: {
     fontFamily: nunito.style.fontFamily,
     h2: {
-      fontSize: 25,
+      fontSize: 23,
       fontWeight: 500,
     },
     h3: {

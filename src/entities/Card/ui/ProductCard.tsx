@@ -26,19 +26,21 @@ const ProductCard: React.FC<IProductCard> = ({
     <Link href={`/catalog/card/${id}`}>
       <Box border={"solid 1px #d2d2d2"} borderRadius={"6px"}>
         <Image alt={name} src={imageUrl} width={286} height={208} />
-        <Typography mb={"4px"} mt={"12px"} fontWeight={700}>
-          {name}
-        </Typography>
-        <Typography>{series}</Typography>
-        <Stack
-          direction={"row"}
-          justifyContent={"space-between"}
-          alignItems={"center"}
-        >
-          <Typography>{price} P</Typography>
-
-          <ButtonStyled variant="outlined">Предзаказ</ButtonStyled>
-        </Stack>
+        <Box p={"8px"}>
+          <Typography fontSize={15}>{name}</Typography>
+          <Typography fontSize={13} color={"#818181"}>
+            {series}
+          </Typography>
+          <Stack
+            direction={"row"}
+            justifyContent={"space-between"}
+            alignItems={"center"}
+            mt={"10px"}
+          >
+            <Typography fontWeight={700}>{price}&#8381;</Typography>
+            <ButtonStyled variant="contained">Предзаказ</ButtonStyled>
+          </Stack>
+        </Box>
       </Box>
     </Link>
   );

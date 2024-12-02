@@ -13,10 +13,11 @@ const RegistrationForm: React.FC<IRegistrationForm> = ({ buttonTitle }) => {
       component={"form"}
       display={"flex"}
       flexDirection={"column"}
-      gap={"20px"}
+      gap={"5px"}
       mt={"40px"}
+      width={"280px"}
     >
-      <Stack gap={"20px"}>
+      <Stack gap={"5px"}>
         <TextField placeholder="Email" />
         <TextField placeholder="Пароль" />
       </Stack>
