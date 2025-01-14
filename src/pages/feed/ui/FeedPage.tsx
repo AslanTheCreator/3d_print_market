@@ -1,4 +1,4 @@
-import ProductCard from "./ProductCard";
+import Card from "./Card";
 import Stack from "@mui/material/Stack";
 
 const cardList = [
@@ -14,11 +14,11 @@ const cardList = [
   },
 ];
 
-const ProductCardList = () => {
+const FeedPage = () => {
   return (
     <Stack gap={"25px"}>
       {cardList.map((card) => (
-        <ProductCard
+        <Card
           key={card.author}
           author={card.author}
           series="Магическая битва"
@@ -34,4 +34,4 @@ const ProductCardList = () => {
   );
 };
 
-export default ProductCardList;
+export default FeedPage;

@@ -1,13 +1,21 @@
 import Image from "next/image";
 import { Box, Stack, Typography, Container } from "@mui/material";
-import { SearchCategories } from "@/features/search-categories";
-import { SearchString } from "@/features/search-catalog";
+import { SearchCategories } from "./SearchCategories";
+import { SearchString } from "./SearchString";
 import { HeaderIconLinks } from "./HeaderIconLinks";
 import Link from "next/link";
 
-export const Header = () => {
+const Header = () => {
   return (
-    <Box component={"header"} borderBottom={1} borderColor={"lightgray"}>
+    <Box
+      component={"header"}
+      borderBottom={1}
+      borderColor={"lightgray"}
+      position={"sticky"}
+      top={0}
+      bgcolor={"#54C5E5"}
+      zIndex={999}
+    >
       <Container>
         <Stack p={"16px 0"} gap={"5px"}>
           {/* Верхняя часть */}
@@ -23,6 +31,7 @@ export const Header = () => {
                   component={"h1"}
                   fontWeight={900}
                   textTransform={"uppercase"}
+                  color={"white"}
                 >
                   3DM
                 </Typography>
@@ -30,6 +39,7 @@ export const Header = () => {
             </Link>
             <HeaderIconLinks />
           </Stack>
+
           {/* Нижняя часть */}
           <Stack direction={"row"} alignItems={"center"} gap={"10px"}>
             <SearchCategories />
@@ -40,3 +50,5 @@ export const Header = () => {
     </Box>
   );
 };
+
+export default Header;

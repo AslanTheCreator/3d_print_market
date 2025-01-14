@@ -1,6 +1,6 @@
-import AuthForm from "@/widgets/AuthForm";
+import AuthForm from "@/widgets/auth-form";
 
-const page = () => {
+export default function RegisterPage() {
   return (
     <AuthForm
       title="Регистрация"
@@ -10,6 +10,4 @@ const page = () => {
       buttonTitle="Зарегистрироваться"
     />
   );
-};
-
-export default page;
+}

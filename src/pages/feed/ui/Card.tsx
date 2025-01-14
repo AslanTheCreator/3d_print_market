@@ -5,7 +5,7 @@ import Link from "next/link";
 import Stack from "@mui/material/Stack";
 import { ButtonStyled } from "@/shared/ui/Button";
 
-interface IProductCard {
+interface ICard {
   id: number;
   name: string;
   series: string;
@@ -14,7 +14,7 @@ interface IProductCard {
   imageUrl: string;
 }
 
-const ProductCard: React.FC<IProductCard> = ({
+const Card: React.FC<ICard> = ({
   id,
   name,
   author,
@@ -25,7 +25,7 @@ const ProductCard: React.FC<IProductCard> = ({
   return (
     <Link href={`/catalog/card/${id}`}>
       <Box border={"solid 1px #d2d2d2"} borderRadius={"6px"}>
-        <Image alt={name} src={imageUrl} width={286} height={208} />
+        <Image alt={name} src={imageUrl} width={330} height={300} />
         <Box p={"8px"}>
           <Typography fontSize={15}>{name}</Typography>
           <Typography fontSize={13} color={"#818181"}>
@@ -46,4 +46,4 @@ const ProductCard: React.FC<IProductCard> = ({
   );
 };
 
-export default ProductCard;
+export default Card;

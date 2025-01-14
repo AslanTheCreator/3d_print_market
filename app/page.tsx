@@ -1,7 +1,7 @@
-import ProductCardList from "@/entities/Card/ui/ProductCardList";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import FeedPage from "@/pages/feed";
 
 export default function Home() {
   return (
@@ -10,7 +10,7 @@ export default function Home() {
         Популярные объявления
       </Typography>
       <Box pt={"20px"}>
-        <ProductCardList />
+        <FeedPage />
       </Box>
     </Container>
   );

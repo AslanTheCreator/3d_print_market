@@ -1,6 +1,6 @@
-import AuthForm from "@/widgets/AuthForm";
+import AuthForm from "@/widgets/auth-form";
 
-export default function page() {
+export default function LoginPage() {
   return (
     <AuthForm
       title="Вход в аккаунт"

@@ -1,6 +1,5 @@
-import Box from "@mui/material/Box";
+import { Box, Stack, Button, TextField } from "@mui/material";
 import Typography from "@mui/material/Typography";
-import RegistrationForm from "@/features/UserRegistration/ui/RegistrationForm";
 import Link from "next/link";
 
 interface IAuthForm {
@@ -46,7 +45,22 @@ const AuthForm: React.FC<IAuthForm> = ({
           {linkText}
         </Link>
       </Box>
-      <RegistrationForm buttonTitle={buttonTitle} />
+      <Box
+        component={"form"}
+        display={"flex"}
+        flexDirection={"column"}
+        gap={"5px"}
+        mt={"40px"}
+        width={"280px"}
+      >
+        <Stack gap={"5px"}>
+          <TextField placeholder="Email" />
+          <TextField placeholder="Пароль" />
+        </Stack>
+        <Button variant="contained" sx={{ minHeight: "56px" }}>
+          {buttonTitle}
+        </Button>
+      </Box>
     </Box>
   );
 };
