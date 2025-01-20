@@ -5,7 +5,9 @@ import { ButtonStyled } from "@/shared/ui";
 export default function ProfilePage() {
   return (
     <Container>
-      <Typography component={"h2"}>Профиль</Typography>
+      <Typography component={"h2"} variant="h2" p={"5px 0 17px 0"}>
+        Профиль
+      </Typography>
       <Box
         component={"form"}
         display={"flex"}
@@ -15,7 +17,11 @@ export default function ProfilePage() {
         gap={"5px"}
       >
         <Stack gap={"5px"} width={"100%"}>
-          <TextField placeholder="Ник" />
+          <TextField
+            label="Ник"
+            variant="filled"
+            sx={{ backgroundColor: "white" }}
+          />
           <TextField placeholder="Адрес страницы" />
           <TextField placeholder="Номер телефона" />
           <TextField placeholder="Email" />

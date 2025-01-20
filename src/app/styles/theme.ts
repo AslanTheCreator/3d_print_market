@@ -1,8 +1,8 @@
 "use client";
-import { Nunito } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import { createTheme } from "@mui/material/styles";
 
-const nunito = Nunito({
+const montserrat = Montserrat({
   subsets: ["cyrillic"],
   variable: "--font-nunito",
   weight: ["400", "500", "600", "700", "800", "900"],
@@ -10,7 +10,7 @@ const nunito = Nunito({
 
 const theme = createTheme({
   typography: {
-    fontFamily: nunito.style.fontFamily,
+    fontFamily: montserrat.style.fontFamily,
     h2: {
       fontSize: 23,
       fontWeight: 500,

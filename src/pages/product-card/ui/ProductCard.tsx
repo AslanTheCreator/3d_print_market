@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -13,6 +13,7 @@ import {
 import img from "../../../shared/assets/photo-8-2024-11-03-17-59-52_2.14640913.webp";
 import { ButtonStyled } from "@/shared/ui";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { fetchCards } from "../api/card";
 
 const ProductCard = () => {
   const arrayImg = [
@@ -25,6 +26,17 @@ const ProductCard = () => {
       img: img,
     },
   ];
+  // const [cardProduct,setCardProduct] = useState();
+
+  // useEffect(()=> {
+  //   const loadCard = async () => {
+  //     try {
+  //       const data = await fetchCards();
+  //     } catch (err) {
+
+  //     }
+  //   }
+  // })
   return (
     <Box>
       <Breadcrumbs>

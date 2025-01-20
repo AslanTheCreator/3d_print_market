@@ -1,36 +1,46 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Card from "./Card";
-import Stack from "@mui/material/Stack";
+import { Box, Grid } from "@mui/material";
+import { CardResponse } from "../api/types";
+import { fetchCards } from "../api/card";
 
-const cardList = [
-  {
-    author: "Aslan",
-    price: 8000,
-    name: "Black Templars Gladiator Lancer( Альт)",
-  },
-  {
-    author: "Timur",
-    price: 6000,
-    name: "Black Templars Gladiator Lancer( Альт)",
-  },
-];
+const FeedPage: React.FC = () => {
+  const [cardList, setCardList] = useState<CardResponse[]>([]); // Список карточек
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Индикатор загрузки
+  const [error, setError] = useState<string | null>(null); // Ошибка
 
-const FeedPage = () => {
+  useEffect(() => {
+    const loadCards = async () => {
+      try {
+        const data = await fetchCards(); // Запрашиваем данные с POST-запросом
+        setCardList(data);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadCards();
+  }, []);
   return (
-    <Stack gap={"25px"}>
-      {cardList.map((card) => (
-        <Card
-          key={card.author}
-          author={card.author}
-          series="Магическая битва"
-          price={card.price}
-          id={2}
-          name={card.name}
-          imageUrl={
-            "https://minifreemarket.com/upload/thumbs/catalog/auction_thumb/photo-2023-07-31-19-57-26-2_6.21158319.webp"
-          }
-        />
-      ))}
-    </Stack>
+    <Box>
+      {isLoading && <p>Загрузка...</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
+        {cardList.map((card) => (
+          <Grid item xs={6} sm={3} key={card.id}>
+            <Card
+              price={card.price}
+              id={card.id}
+              name={card.name}
+              image={card.image}
+            />
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
   );
 };
 

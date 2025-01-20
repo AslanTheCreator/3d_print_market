@@ -8,8 +8,9 @@ export const SearchString = () => {
       height={"40px"}
       bgcolor={"white"}
       borderRadius={"4px"}
+      width={"100%"}
     >
-      <TextField size={"small"} placeholder="Поиск..." />
+      <TextField fullWidth size={"small"} placeholder="Поиск..." />
     </Box>
   );
 };
