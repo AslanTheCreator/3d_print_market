@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Card from "./Card";
 import { Box, Grid } from "@mui/material";
-import { CardResponse } from "../api/types";
-import { fetchCards } from "../api/card";
+import { CardResponse } from "../../../shared/api/types";
+import { fetchCards } from "../../../shared/api/card";
 
 const FeedPage: React.FC = () => {
   const [cardList, setCardList] = useState<CardResponse[]>([]); // Список карточек

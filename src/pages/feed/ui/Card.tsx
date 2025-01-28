@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Typography, Stack, Box, IconButton, Button } from "@mui/material";
 import { ButtonStyled } from "@/shared/ui/Button";
-import { CardResponse } from "../api/types";
+import { CardResponse } from "../../../shared/api/types";
 import HeartIcon from "@/shared/assets/icons/HeartIcon";
 
 const Card: React.FC<CardResponse> = ({ id, name, price, image }) => {

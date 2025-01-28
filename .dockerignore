@@ -1,0 +1,14 @@
+# Зависимости
+node_modules
+
+# Файлы сборки
+dist
+build
+.next
+
+.env
+.env.local
+
+# Docker файлы
+Dockerfile
+.dockerignore

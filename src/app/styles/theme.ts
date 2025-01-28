@@ -37,6 +37,15 @@ const theme = createTheme({
       main: "#fff",
     },
   },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          paddingTop: "119px", // Равняется высоте хедера
+        },
+      },
+    },
+  },
 });
 
 export default theme;

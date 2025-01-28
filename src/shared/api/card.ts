@@ -1,9 +1,10 @@
 import axios from "axios";
 import { CardResponse, ImageResponse } from "./types";
+import config from "../../../config";
 
 export const fetchCards = async (): Promise<CardResponse[]> => {
-  const API_URL = "http://192.168.0.11:8081/products/find";
-  const IMAGE_API_URL = "http://192.168.0.11:8081/images?ids=";
+  const API_URL = `${config.apiBaseUrl}/products/find`;
+  const IMAGE_API_URL = `${config.apiBaseUrl}/images?ids=`;
   try {
     const response = await axios.post<CardResponse[]>(
       API_URL,
