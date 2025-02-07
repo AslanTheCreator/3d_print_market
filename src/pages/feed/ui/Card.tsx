@@ -11,7 +11,7 @@ const Card: React.FC<CardResponse> = ({ id, name, price, image }) => {
   return (
     <Link href={`/catalog/card/${id}`}>
       <Box width={"100%"} maxWidth={"160px"} position={"relative"}>
-        {image && image[0]?.imageData ? (
+        {/* {image && image[0]?.imageData ? (
           <Image
             alt={name}
             src={`data:${image[0].contentType};base64,${image[0].imageData}`}
@@ -23,7 +23,16 @@ const Card: React.FC<CardResponse> = ({ id, name, price, image }) => {
           />
         ) : (
           <div>Изображение недоступно</div> // Или использовать заглушку
-        )}
+        )} */}
+        <Image
+          alt={name}
+          src={image}
+          width={318}
+          height={318}
+          layout="responsive"
+          priority
+          style={{ borderRadius: "8px" }}
+        />
         <Button></Button>
         <IconButton
           sx={{

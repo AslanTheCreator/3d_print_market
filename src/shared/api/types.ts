@@ -14,7 +14,7 @@ export interface CardResponse {
   status?: Status;
   category?: Category;
   imageId?: number;
-  image: ImageResponse[];
+  image: string;
 }
 
 export interface ImageResponse {
