@@ -5,7 +5,7 @@ import FeedPage from "@/pages/feed";
 
 export default function Home() {
   return (
-    <Container sx={{ marginTop: "10px" }}>
+    <Container sx={{ paddingTop: "10px", backgroundColor: "#F1F1F1" }}>
       <Typography component={"h2"} variant="h2">
         Свежие предзаказы
       </Typography>

@@ -40,7 +40,7 @@ const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        body: {
+        main: {
           paddingTop: "119px", // Равняется высоте хедера
         },
       },

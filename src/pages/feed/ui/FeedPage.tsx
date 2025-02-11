@@ -29,14 +29,15 @@ const FeedPage: React.FC = () => {
     <Box>
       {/* {isLoading && <p>Загрузка...</p>}
       {error && <p style={{ color: "red" }}>{error}</p>} */}
-      <Grid container spacing={{ xs: 2, sm: 3 }}>
+      <Grid container spacing={{ xs: 1, sm: 3 }}>
         {cardList.map((card) => (
-          <Grid item xs={6} sm={3} key={card.id}>
+          <Grid item xs={6} sm={3} lg={2} key={card.id}>
             <Card
               price={card.price}
               id={card.id}
               name={card.name}
               image={card.image}
+              category={card.category}
             />
           </Grid>
         ))}

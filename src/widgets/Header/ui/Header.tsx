@@ -2,19 +2,28 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { Box, Stack, Typography, Container } from "@mui/material";
+import {
+  Box,
+  Stack,
+  Typography,
+  Container,
+  useMediaQuery,
+} from "@mui/material";
 import { SearchCategories } from "./SearchCategories";
 import { SearchString } from "./SearchString";
 import { HeaderIconLinks } from "./HeaderIconLinks";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import debounce from "lodash.debounce";
 
 const Header = () => {
   const [isVisible, setIsVisible] = useState(true); // Показывает ли хедер
   const [lastScrollY, setLastScrollY] = useState(0); // Последняя позиция прокрутки
 
+  const isMobile = useMediaQuery("(max-width: 768px)"); // Определяем мобильные устройства
+
   useEffect(() => {
+    if (!isMobile) return;
+
     const handleScroll = debounce(() => {
       const currentScrollY = window.scrollY;
 
@@ -32,7 +41,7 @@ const Header = () => {
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [lastScrollY]);
+  }, [lastScrollY, isMobile]);
   return (
     <Box
       component={"header"}
@@ -42,8 +51,8 @@ const Header = () => {
       bgcolor={"#54C5E5"}
       zIndex={999}
       sx={{
-        top: isVisible ? 0 : "-119px",
-        transition: "top 0.5s ease",
+        top: isMobile ? (isVisible ? 0 : "-119px") : 0, // Скроллим только на мобилке
+        transition: isMobile ? "top 0.5s ease" : "none", // Убираем анимацию для десктопа
       }}
       width={"100%"}
     >

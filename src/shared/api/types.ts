@@ -12,7 +12,7 @@ export interface CardResponse {
   originality?: string;
   participantId?: number;
   status?: Status;
-  category?: Category;
+  category?: string;
   imageId?: number;
   image: string;
 }
