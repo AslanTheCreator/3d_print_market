@@ -3,6 +3,12 @@ type Status = "Active" | "Cancelled" | "Completed";
 type Category = { id: number; name: string };
 
 export interface CardResponse {
+  totalElements: number;
+  page: number;
+  content: CardItem[];
+}
+
+export interface CardItem {
   id: number;
   name: string;
   description?: string;
@@ -12,9 +18,10 @@ export interface CardResponse {
   originality?: string;
   participantId?: number;
   status?: Status;
-  category?: string;
+  category?: Category;
   imageId?: number;
-  image: string;
+  imageIds?: number[];
+  image: ImageResponse[];
 }
 
 export interface ImageResponse {

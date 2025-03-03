@@ -14,9 +14,6 @@ import {
   ImageListItem,
   List,
   ListItem,
-  Button,
-  Card,
-  CardContent,
   Grid,
 } from "@mui/material";
 import { ButtonStyled } from "@/shared/ui";
@@ -27,40 +24,16 @@ import img3 from "../../../shared/assets/images/3.webp";
 import img4 from "../../../shared/assets/images/4.webp";
 import StarsIcon from "@/shared/assets/icons/StarsIcon";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import Card from "@/pages/feed/ui/Card";
+import { useParams } from "next/navigation";
+import { authenticate, fetchProductById } from "@/shared/api/card";
+import { CardItem } from "@/shared/api/types";
+import { formatPrice } from "@/shared/lib/format";
 
 const ProductCard = () => {
+  const params = useParams();
+  const id = params?.id as string | undefined;
   const additionalImages = [img, img2, img3, img4];
-
-  const relatedProducts = [
-    {
-      id: 1,
-      image: img,
-      price: "1999 ₽",
-      category: "Обувь",
-      name: "Кроссовки Adidas",
-    },
-    {
-      id: 2,
-      image: img2,
-      price: "2499 ₽",
-      category: "Сумки",
-      name: "Сумка Gucci",
-    },
-    {
-      id: 3,
-      image: img3,
-      price: "1599 ₽",
-      category: "Одежда",
-      name: "Куртка Zara",
-    },
-    {
-      id: 4,
-      image: img4,
-      price: "999 ₽",
-      category: "Аксессуары",
-      name: "Часы Casio",
-    },
-  ];
 
   const characteristics = [
     { label: "Материал", value: "Кожа" },
@@ -69,25 +42,35 @@ const ProductCard = () => {
     { label: "Вес", value: "1.2 кг" },
   ];
 
+  const relatedProducts = [
+    {
+      id: 1,
+    },
+  ];
+
   const description = `Это прекрасный товар, который подойдёт для использования в различных условиях. 
   Долговечный, стильный и комфортный в использовании.`;
-  // const [productCard, setProductCard] = useState(null);
 
-  // useEffect(() => {
-  //   const loadCard = async () => {
-  //     try {
-  //       const data = await fetchCards(); // Запрашиваем данные с POST-запросом
-  //       setProductCard(data);
-  //     } catch (err) {
-  //       console.log((err as Error).message);
-  //     }
-  //   };
-  //   loadCard();
-  // });
+  const [productCard, setProductCard] = useState<CardItem | null>(null);
+
+  useEffect(() => {
+    const loadCard = async () => {
+      try {
+        if (id) {
+          const token = await authenticate("admin", "stas");
+          const data = await fetchProductById(id, token);
+          setProductCard(data);
+        }
+      } catch (err) {
+        console.log((err as Error).message);
+      }
+    };
+    loadCard();
+  }, [id]);
   return (
     <Box pt={"10px"} bgcolor={"whitesmoke"}>
       <Typography component={"h2"} variant={"h3"} pl={"16px"}>
-        Aslan
+        {productCard?.name}
       </Typography>
       <Box>
         <Box
@@ -97,13 +80,15 @@ const ProductCard = () => {
           overflow={"hidden"}
           sx={{ aspectRatio: "246/328" }}
         >
-          <Image
-            alt="Основное изображение товара"
-            fill
-            src={img}
-            priority
-            style={{ objectFit: "cover" }}
-          />
+          {productCard?.image && productCard?.image[0]?.imageData && (
+            <Image
+              alt="Основное изображение товара"
+              fill
+              src={`data:${productCard?.image[0].contentType};base64,${productCard?.image[0].imageData}`}
+              priority
+              style={{ objectFit: "cover" }}
+            />
+          )}
         </Box>
         <Box bgcolor={"white"} p={"16px"} mb={"8px"} borderRadius={"20px"}>
           <ImageList
@@ -143,7 +128,7 @@ const ProductCard = () => {
       <Stack direction={"row"} justifyContent={"space-between"}>
         <Box bgcolor={"white"} borderRadius={"20px"} p={"8px 16px 8px 16px"}>
           <Typography fontWeight={700} fontSize={27}>
-            18 000&#8381;
+            {formatPrice(productCard?.price)}
           </Typography>
         </Box>
         <Box
@@ -263,76 +248,17 @@ const ProductCard = () => {
         </Box>
 
         {/* Сетка карточек */}
-        <Grid container spacing={2} px={"16px"}>
+        <Grid container spacing={"12px"} px={"16px"}>
           {relatedProducts.map((product) => (
             <Grid item xs={6} sm={6} key={product.id}>
               {/* Карточка товара */}
-              <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: 3 }}>
-                {/* Изображение */}
-                <Box
-                  sx={{
-                    position: "relative",
-                    width: "100%",
-                    height: 180, // Высота блока для изображения
-                  }}
-                >
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    layout="fill"
-                    objectFit="cover"
-                    priority={true}
-                  />
-                </Box>
-
-                {/* Контент карточки */}
-                <CardContent>
-                  {/* Цена и категория */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginBottom: 1,
-                    }}
-                  >
-                    <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                      {product.price}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "text.secondary" }}
-                    >
-                      {product.category}
-                    </Typography>
-                  </Box>
-
-                  {/* Название товара */}
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: "500",
-                      color: "text.primary",
-                      marginBottom: 2,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                    title={product.name}
-                  >
-                    {product.name}
-                  </Typography>
-
-                  {/* Кнопка Купить */}
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    fullWidth
-                    sx={{ textTransform: "none", fontWeight: "bold" }}
-                  >
-                    Купить
-                  </Button>
-                </CardContent>
-              </Card>
+              {/* <Card
+                id={product.id}
+                name={product.name}
+                price={product.price}
+                image={""}
+                category={product.category}
+              /> */}
             </Grid>
           ))}
         </Grid>

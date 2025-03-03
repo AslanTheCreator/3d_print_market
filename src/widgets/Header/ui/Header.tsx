@@ -66,7 +66,7 @@ const Header = () => {
           >
             <Link href={"/"}>
               <Stack direction={"row"} alignItems={"center"} gap={1}>
-                <Image src="/logo.png" alt="Logo" width={35} height={35} />
+                <Image src="/" alt="Logo" width={35} height={35} />
                 <Typography
                   component={"h1"}
                   fontWeight={900}
