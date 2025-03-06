@@ -1,13 +1,18 @@
 # Зависимости
 node_modules
 
-# Файлы сборки
-dist
-build
+# Исключаем файлы сборки, так как они будут созданы в контейнере
 .next
+out
+dist
 
+# Исключаем локальные настройки и файлы конфигурации редакторов
 .env
 .env.local
+.env.development
+.vscode
+.idea
+.DS_Store
 
 # Docker файлы
 Dockerfile
