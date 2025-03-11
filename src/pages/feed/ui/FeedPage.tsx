@@ -1,47 +1,68 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
+import { useIntersectionObserver } from "usehooks-ts";
 import Card from "./Card";
 import { Box, Grid } from "@mui/material";
-import { CardItem, CardResponse } from "../../../shared/api/types";
-import { authenticate, fetchCards } from "../../../shared/api/card";
+import { useCardsInfinite } from "../../../shared/api/card";
 
 const FeedPage: React.FC = () => {
-  const [cardList, setCardList] = useState<CardItem[]>([]); // Список карточек
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Индикатор загрузки
-  const [error, setError] = useState<string | null>(null); // Ошибка
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+  } = useCardsInfinite(10);
+
+  const { ref, entry } = useIntersectionObserver({
+    threshold: 0.1,
+  });
 
   useEffect(() => {
-    const loadCards = async () => {
-      try {
-        //const token = await authenticate("admin", "stas");
-        const data = await fetchCards(""); // Запрашиваем данные с POST-запросом
-        setCardList(data);
-      } catch (err) {
-        setError((err as Error).message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadCards();
-  }, []);
+    if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [entry, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  if (isLoading) {
+    return <p>Загрузка...</p>;
+  }
+
+  if (error) {
+    return (
+      <p style={{ color: "red" }}>
+        Ошибка загрузки карточек: {(error as Error).message}
+      </p>
+    );
+  }
+
   return (
     <Box>
-      {isLoading && <p>Загрузка...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
       <Grid container spacing={{ xs: "12px", sm: 3 }}>
-        {cardList.map((card) => (
-          <Grid item xs={6} sm={3} lg={2} key={card.id}>
-            <Card
-              price={card.price}
-              id={card.id}
-              name={card.name}
-              image={card.image}
-              category={card.category}
-            />
-          </Grid>
-        ))}
+        {data?.pages.map((page, pageIndex) =>
+          page.map((card, cardIndex) => {
+            // Определяем, является ли карточка последней в списке
+            const isLastItem =
+              pageIndex === data.pages.length - 1 &&
+              cardIndex === page.length - 1;
+            return (
+              <Grid
+                item
+                xs={6}
+                sm={3}
+                lg={2}
+                key={card.id}
+                ref={isLastItem ? ref : undefined}
+              >
+                <Card {...card} />
+              </Grid>
+            );
+          })
+        )}
       </Grid>
+      {isFetchingNextPage && <p>Загрузка следующей страницы...</p>}
     </Box>
   );
 };

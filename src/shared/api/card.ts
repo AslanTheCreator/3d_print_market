@@ -1,6 +1,10 @@
 import axios, { AxiosError } from "axios";
+import { useInfiniteQuery, QueryFunctionContext } from "@tanstack/react-query";
 import { CardResponse, ImageResponse, CardItem } from "./types";
 import config from "../../../config";
+
+const API_URL = `${config.apiBaseUrl}/products/find`;
+const IMAGE_API_URL = `${config.apiBaseUrl}/images`;
 
 export async function authenticate(
   login: string,
@@ -22,32 +26,53 @@ export async function authenticate(
   }
 }
 
-const API_URL = `${config.apiBaseUrl}/products/find`;
-const IMAGE_API_URL = `${config.apiBaseUrl}/images`;
-
 export const fetchImages = async (
   imageIds: number | number[]
 ): Promise<ImageResponse[]> => {
+  if (!imageIds || (Array.isArray(imageIds) && imageIds.length === 0)) {
+    console.warn("Передан пустой массив или некорректный ID.");
+    return [];
+  }
+
   try {
-    const params = Array.isArray(imageIds)
-      ? imageIds.map((id) => `ids=${id}`).join("&")
-      : `ids=${imageIds}`;
+    const ids = Array.isArray(imageIds) ? imageIds : [imageIds];
+    const queryString = ids.map((id) => `ids=${id}`).join("&");
+
     const { data } = await axios.get<ImageResponse[]>(
-      `${IMAGE_API_URL}?${params}`
+      `${IMAGE_API_URL}?${queryString}`
     );
+
     return data;
   } catch (error) {
     const axiosError = error as AxiosError;
-    console.error(`Ошибка загрузки изображения(ий) ${imageIds}:`, axiosError);
+
+    if (axiosError.response) {
+      console.error(
+        `Ошибка загрузки изображений ${imageIds}. Код: ${axiosError.response.status}`
+      );
+    } else if (axiosError.request) {
+      console.error(`Сервер не ответил на запрос изображений ${imageIds}.`);
+    } else {
+      console.error(`Ошибка при создании запроса изображений ${imageIds}.`);
+    }
+
     return [];
   }
 };
 
-export const fetchCards = async (token: string): Promise<CardItem[]> => {
+export const fetchCards = async (
+  page: number,
+  size: number
+): Promise<CardItem[]> => {
   try {
     const { data } = await axios.post<CardResponse>(
       API_URL,
-      {},
+      {
+        pageable: {
+          size,
+          page,
+        },
+      },
       {
         headers: {
           "Content-Type": "application/json",
@@ -61,8 +86,6 @@ export const fetchCards = async (token: string): Promise<CardItem[]> => {
       console.error("Ошибка: сервер вернул некорректный формат данных", data);
       throw new Error("Некорректный формат данных от сервера");
     }
-
-    console.log("Cards received:", cards);
 
     return Promise.all(
       cards.map(async (card) => {
@@ -106,4 +129,17 @@ export const fetchProductById = async (
     console.error("Ошибка при получении данных о товаре:", error);
     throw error;
   }
+};
+
+export const useCardsInfinite = (size: number) => {
+  return useInfiniteQuery({
+    queryKey: ["cards", size],
+    queryFn: ({ pageParam }) => fetchCards(pageParam, size),
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length > 0 ? allPages.length : undefined;
+    },
+    initialPageParam: 0,
+    staleTime: 1000 * 60 * 5,
+    retry: 2,
+  });
 };

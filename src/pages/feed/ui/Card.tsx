@@ -27,6 +27,9 @@ const Card: React.FC<CardItem> = ({ id, name, price, image, category }) => {
           boxShadow: 2,
           overflow: "hidden",
           position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          height: "100%", // Растягиваем карточку на всю высоту
         }}
       >
         {/* Блок с изображением */}
@@ -43,11 +46,11 @@ const Card: React.FC<CardItem> = ({ id, name, price, image, category }) => {
               alt={name}
               src={`data:${image[0].contentType};base64,${image[0].imageData}`}
               fill
-              priority
+              loading="lazy"
               style={{ objectFit: "cover" }}
             />
           ) : (
-            <div>Изображение недоступно</div> // Или использовать заглушку
+            <div>Изображение недоступно</div>
           )}
         </Box>
 
@@ -58,26 +61,37 @@ const Card: React.FC<CardItem> = ({ id, name, price, image, category }) => {
             top: 10,
             right: 10,
             zIndex: 1,
-            backgroundColor: "rgba(255, 255, 255, 0.8)",
-            "&:hover": { backgroundColor: "rgba(255, 255, 255, 1)" },
+            backgroundColor: "transparent",
+            "&:hover": {
+              backgroundColor: "transparent",
+            },
           }}
           onClick={(e) => {
             e.preventDefault();
             setIsFavorite(!isFavorite);
           }}
         >
-          <FavoriteBorderIcon />
+          <FavoriteBorderIcon
+            sx={{
+              color: "rgba(255, 255, 255, 0.8)",
+              "&:hover": { color: "rgba(255, 255, 255, 1)" }, // Меняем цвет иконки при наведении
+            }}
+          />
         </IconButton>
 
         {/* Контент карточки */}
         <CardContent
-          sx={{ p: "0 10px 10px 10px", mt: "4px", "&:last-child": { pb: 2 } }}
+          sx={{
+            p: "0 10px 10px 10px",
+            mt: "4px",
+            "&:last-child": { pb: 2 },
+            flexGrow: 1, // Растягиваем контент на оставшееся пространство
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between", // Равномерно распределяем контент
+          }}
         >
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-          >
+          <Stack>
             <Typography fontWeight={600} fontSize={16} lineHeight={"22px"}>
               {formatPrice(price)}
             </Typography>
@@ -93,19 +107,22 @@ const Card: React.FC<CardItem> = ({ id, name, price, image, category }) => {
             >
               {category?.name}
             </Typography>
+
+            <Typography
+              fontSize={12}
+              sx={{
+                display: "-webkit-box",
+                WebkitLineClamp: 2, // Ограничиваем текст двумя строками
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                minHeight: "40px", // Фиксированная высота для текста
+              }}
+            >
+              {name}
+            </Typography>
           </Stack>
 
-          <Typography
-            fontSize={14}
-            noWrap
-            sx={{
-              textOverflow: "ellipsis",
-              overflow: "hidden",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {name}
-          </Typography>
           <ButtonStyled variant="contained" fullWidth sx={{ marginTop: "8px" }}>
             Предзаказ
           </ButtonStyled>

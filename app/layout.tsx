@@ -6,6 +6,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import theme from "../src/app/styles/theme";
 import Footer from "@/widgets/footer";
 import Header from "@/widgets/header";
+import QueryProvider from "@/shared/providers/QueryProvider";
 
 export const metadata: Metadata = {
   title: "3D PrintMarket",
@@ -22,10 +23,12 @@ export default function RootLayout({
       <body>
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
-            <CssBaseLine />
-            <Header />
-            <main className="main">{children}</main>
-            <Footer />
+            <QueryProvider>
+              <CssBaseLine />
+              <Header />
+              <main className="main">{children}</main>
+              <Footer />
+            </QueryProvider>
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>
