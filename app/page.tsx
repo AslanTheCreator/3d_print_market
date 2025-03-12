@@ -1,7 +1,7 @@
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import FeedPage from "@/pages/feed";
+import { ProductCatalog } from "@/pages/home/page";
 
 export default function Home() {
   return (
@@ -10,7 +10,7 @@ export default function Home() {
         Свежие предзаказы
       </Typography>
       <Box pt={"20px"}>
-        <FeedPage />
+        <ProductCatalog />
       </Box>
     </Container>
   );

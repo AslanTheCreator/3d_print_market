@@ -18,22 +18,16 @@ import {
 } from "@mui/material";
 import { ButtonStyled } from "@/shared/ui";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import img from "../../../shared/assets/images/1.webp";
-import img2 from "../../../shared/assets/images/2.webp";
-import img3 from "../../../shared/assets/images/3.webp";
-import img4 from "../../../shared/assets/images/4.webp";
 import StarsIcon from "@/shared/assets/icons/StarsIcon";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import Card from "@/pages/feed/ui/Card";
 import { useParams } from "next/navigation";
-import { authenticate, fetchProductById } from "@/shared/api/card";
-import { CardItem } from "@/shared/api/types";
 import { formatPrice } from "@/shared/lib/format";
+import { fetchProductById } from "../api/service";
+import { CardItem } from "../model/types";
 
-const ProductCard = () => {
+const ProductDetails = () => {
   const params = useParams();
   const id = params?.id as string | undefined;
-  const additionalImages = [img, img2, img3, img4];
 
   const characteristics = [
     { label: "Материал", value: "Кожа" },
@@ -57,8 +51,7 @@ const ProductCard = () => {
     const loadCard = async () => {
       try {
         if (id) {
-          const token = await authenticate("admin", "stas");
-          const data = await fetchProductById(id, token);
+          const data = await fetchProductById(id);
           setProductCard(data);
         }
       } catch (err) {
@@ -67,6 +60,14 @@ const ProductCard = () => {
     };
     loadCard();
   }, [id]);
+  const mainImage = productCard?.image?.[0]
+    ? `data:${productCard.image[0].contentType};base64,${productCard.image[0].imageData}`
+    : undefined;
+  const additionalImages =
+    productCard?.image
+      ?.slice(1)
+      .map((img) => `data:${img.contentType};base64,${img.imageData}`) || [];
+
   return (
     <Box pt={"10px"} bgcolor={"whitesmoke"}>
       <Typography component={"h2"} variant={"h3"} pl={"16px"}>
@@ -80,7 +81,7 @@ const ProductCard = () => {
           overflow={"hidden"}
           sx={{ aspectRatio: "246/328" }}
         >
-          {productCard?.image && productCard?.image[0]?.imageData && (
+          {mainImage && (
             <Image
               alt="Основное изображение товара"
               fill
@@ -267,4 +268,4 @@ const ProductCard = () => {
   );
 };
 
-export default ProductCard;
+export default ProductDetails;

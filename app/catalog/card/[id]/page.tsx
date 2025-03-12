@@ -1,6 +1,5 @@
-import ProductCard from "@/pages/product-card";
-import Container from "@mui/material/Container";
+import { Product } from "@/pages/product-details/page";
 
 export default function CardPage() {
-  return <ProductCard />;
+  return <Product />;
 }

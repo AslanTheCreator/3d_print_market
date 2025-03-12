@@ -6,21 +6,27 @@ import {
   Stack,
   Box,
   IconButton,
-  Card as CardMUI,
+  Card,
   CardContent,
 } from "@mui/material";
 import { ButtonStyled } from "@/shared/ui/Button";
-import { CardItem } from "../../../shared/api/types";
+import { CardItem } from "../model/types";
 import HeartIcon from "@/shared/assets/icons/HeartIcon";
 import FavoriteBorderIcon from "@mui/icons-material/Favorite";
 import { formatPrice } from "@/shared/lib/format";
 
-const Card: React.FC<CardItem> = ({ id, name, price, image, category }) => {
+const ProductCard: React.FC<CardItem> = ({
+  id,
+  name,
+  price,
+  image,
+  category,
+}) => {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
 
   return (
     <Link href={`/catalog/card/${id}`}>
-      <CardMUI
+      <Card
         sx={{
           maxWidth: 180,
           borderRadius: 2,
@@ -127,9 +133,9 @@ const Card: React.FC<CardItem> = ({ id, name, price, image, category }) => {
             Предзаказ
           </ButtonStyled>
         </CardContent>
-      </CardMUI>
+      </Card>
     </Link>
   );
 };
 
-export default Card;
+export default ProductCard;
