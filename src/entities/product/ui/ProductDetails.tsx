@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -24,10 +24,13 @@ import { useParams } from "next/navigation";
 import { formatPrice } from "@/shared/lib/format";
 import { fetchProductById } from "../api/service";
 import { CardItem } from "../model/types";
+import MainImage from "./ProductDetails/MainImage";
+import AdditionalImages from "./ProductDetails/AdditionalImages";
 
 const ProductDetails = () => {
   const params = useParams();
   const id = params?.id as string | undefined;
+  const [productCard, setProductCard] = useState<CardItem | null>(null);
 
   const characteristics = [
     { label: "Материал", value: "Кожа" },
@@ -45,8 +48,6 @@ const ProductDetails = () => {
   const description = `Это прекрасный товар, который подойдёт для использования в различных условиях. 
   Долговечный, стильный и комфортный в использовании.`;
 
-  const [productCard, setProductCard] = useState<CardItem | null>(null);
-
   useEffect(() => {
     const loadCard = async () => {
       try {
@@ -60,13 +61,19 @@ const ProductDetails = () => {
     };
     loadCard();
   }, [id]);
-  const mainImage = productCard?.image?.[0]
-    ? `data:${productCard.image[0].contentType};base64,${productCard.image[0].imageData}`
-    : undefined;
-  const additionalImages =
-    productCard?.image
-      ?.slice(1)
-      .map((img) => `data:${img.contentType};base64,${img.imageData}`) || [];
+  const mainImage = useMemo(() => {
+    return productCard?.image?.[0]
+      ? `data:${productCard.image[0].contentType};base64,${productCard.image[0].imageData}`
+      : undefined;
+  }, [productCard]);
+
+  const additionalImages = useMemo(() => {
+    return (
+      productCard?.image
+        ?.slice(1)
+        .map((img) => `data:${img.contentType};base64,${img.imageData}`) || []
+    );
+  }, [productCard]);
 
   return (
     <Box pt={"10px"} bgcolor={"whitesmoke"}>
@@ -74,56 +81,10 @@ const ProductDetails = () => {
         {productCard?.name}
       </Typography>
       <Box>
-        <Box
-          mt={"15px"}
-          width={"100%"}
-          position={"relative"}
-          overflow={"hidden"}
-          sx={{ aspectRatio: "246/328" }}
-        >
-          {mainImage && (
-            <Image
-              alt="Основное изображение товара"
-              fill
-              src={`data:${productCard?.image[0].contentType};base64,${productCard?.image[0].imageData}`}
-              priority
-              style={{ objectFit: "cover" }}
-            />
-          )}
-        </Box>
-        <Box bgcolor={"white"} p={"16px"} mb={"8px"} borderRadius={"20px"}>
-          <ImageList
-            cols={4}
-            gap={8}
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              m: "0",
-            }}
-          >
-            {additionalImages.map((img, index) => (
-              <ImageListItem
-                key={index}
-                sx={{
-                  width: "22%",
-                  aspectRatio: "1 / 1",
-                  position: "relative",
-                }}
-              >
-                <Image
-                  src={img}
-                  alt={`Дополнительное изображение ${index + 1}`}
-                  fill
-                  style={{
-                    objectFit: "cover",
-                    borderRadius: "4px",
-                  }}
-                  sizes="(max-width: 600px) 100px, 200px" // Адаптивная загрузка
-                />
-              </ImageListItem>
-            ))}
-          </ImageList>
-        </Box>
+        <MainImage src={mainImage} />
+        {additionalImages.length > 0 && (
+          <AdditionalImages images={additionalImages} />
+        )}
       </Box>
 
       <Stack direction={"row"} justifyContent={"space-between"}>
