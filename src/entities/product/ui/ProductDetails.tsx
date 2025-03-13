@@ -28,6 +28,7 @@ import MainImage from "./ProductDetails/MainImage";
 import AdditionalImages from "./ProductDetails/AdditionalImages";
 import { authenticate } from "@/shared/api/card";
 import { addToCart } from "@/features/cart/api/addToCart";
+import { useAddToCart } from "@/features/cart/hooks/useAddToCart";
 
 const ProductDetails = () => {
   const params = useParams();
@@ -63,11 +64,11 @@ const ProductDetails = () => {
     };
     loadCard();
   }, [id]);
-
+  const { mutate, isPending } = useAddToCart();
   const handleAddToCart = async () => {
     try {
-      const token = await authenticate("user40", "stas");
-      await addToCart(token, productCard?.id || 0);
+      const token = await authenticate("user50", "stas");
+      mutate({ token, productId: Number(id) });
     } catch (error) {
       console.error("Ошибка при добавлении товара в корзину:", error);
       alert("Не удалось добавить товар в корзину.");

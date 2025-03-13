@@ -12,12 +12,28 @@ import Image from "next/image";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CardItem } from "@/entities/product";
+import { authenticate } from "@/shared/api/card";
+import { fetchCartProducts } from "../api/addToCart";
+import { useCartProducts } from "../hooks/useAddToCart";
 
 const Cart = () => {
   const [cart, setCart] = useState<CardItem[]>([]);
+  const [token, setToken] = useState<string>("");
   const router = useRouter();
+
+  useEffect(() => {
+    const loadCart = async () => {
+      const token = await authenticate("user50", "stas");
+      setToken(token);
+      const data = await fetchCartProducts(token);
+      setCart(data);
+    };
+    loadCart();
+  }, []);
+
+  const { data: cartItems, isLoading, isError, error } = useCartProducts(token);
 
   return (
     <Container sx={{ marginTop: "10px" }}>
@@ -45,7 +61,7 @@ const Cart = () => {
           </Box>
           <Stack>
             <Typography variant="h6" fontWeight="bold">
-              Название товара
+              {}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Категория

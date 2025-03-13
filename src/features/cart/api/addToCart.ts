@@ -2,9 +2,12 @@ import { CardItem, CardResponse } from "@/entities/product";
 import config from "@/shared/config/api";
 import axios from "axios";
 
-export const addToCart = async (token: string, productId: number) => {
-  if (!token || !productId) {
-    throw new Error("addToCart: Token or productId is null or undefined");
+export const addToCart = async (
+  authToken: string,
+  productId: number
+): Promise<void> => {
+  if (!authToken || !productId) {
+    throw new Error("addToCart: authToken or productId is null or undefined");
   }
 
   try {
@@ -14,7 +17,7 @@ export const addToCart = async (token: string, productId: number) => {
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${authToken}`,
         },
       }
     );
@@ -25,39 +28,37 @@ export const addToCart = async (token: string, productId: number) => {
       );
     }
   } catch (error) {
-    console.error("addToCart: Error occurred while adding to cart", error);
     throw error;
   }
 };
 
-export const fetchProductsCart = async (token: string): Promise<CardItem[]> => {
-  if (!token) {
-    throw new Error("fetchProductsCart: Token is null or undefined");
+export const fetchCartProducts = async (
+  authToken: string
+): Promise<CardItem[]> => {
+  if (!authToken) {
+    throw new Error("fetchCartProducts: authToken is null or undefined");
   }
 
   try {
-    const response = await axios.get<CardResponse>(
+    const response = await axios.post<CardResponse[]>(
       `${config.apiBaseUrl}/basket/find`,
+      {},
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${authToken}`,
         },
       }
     );
 
     if (response.status !== 200) {
       throw new Error(
-        `fetchProductsCart: Unable to fetch products from cart, status: ${response.status}`
+        `fetchCartProducts: Unable to fetch products from cart, status: ${response.status}`
       );
     }
 
-    return response.data.content;
+    return response.data[0].content;
   } catch (error) {
-    console.error(
-      "fetchProductsCart: Error occurred while fetching cart",
-      error
-    );
     throw error;
   }
 };
