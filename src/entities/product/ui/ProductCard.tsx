@@ -15,7 +15,7 @@ import { ButtonStyled } from "@/shared/ui/Button";
 import { CardItem } from "../model/types";
 import HeartIcon from "@/shared/assets/icons/HeartIcon";
 import FavoriteBorderIcon from "@mui/icons-material/Favorite";
-import { formatPrice } from "@/shared/lib/format";
+import { formatPrice } from "@/shared/lib/formatPrice";
 
 const ProductCard: React.FC<CardItem> = ({
   id,

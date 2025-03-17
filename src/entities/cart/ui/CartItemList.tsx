@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Button,
   Container,
@@ -10,9 +12,9 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { useState, useEffect } from "react";
 import { authenticate } from "@/shared/api/card";
-import { useCartProducts } from "../hooks/useAddToCart";
 import CartItem from "./CartItem";
 import { ButtonStyled } from "@/shared/ui";
+import { useCartProducts } from "../hooks/useCartProducts";
 
 const CartItemList = () => {
   const [token, setToken] = useState("");

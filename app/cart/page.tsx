@@ -1,6 +1,4 @@
-"use client";
-
-import Cart from "@/features/cart/ui/CartItemList";
+import Cart from "@/entities/cart/ui/CartItemList";
 
 export default function CartPage() {
   return <Cart />;

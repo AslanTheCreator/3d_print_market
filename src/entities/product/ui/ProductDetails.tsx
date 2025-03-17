@@ -18,13 +18,13 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import StarsIcon from "@/shared/assets/icons/StarsIcon";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import { useParams } from "next/navigation";
-import { formatPrice } from "@/shared/lib/format";
+import { formatPrice } from "@/shared/lib/formatPrice";
 import { fetchProductById } from "../api/service";
 import { CardItem } from "../model/types";
 import MainImage from "./ProductDetails/MainImage";
 import AdditionalImages from "./ProductDetails/AdditionalImages";
 import { authenticate } from "@/shared/api/card";
-import { useAddToCart } from "@/features/cart/hooks/useAddToCart";
+import { useAddToCart } from "@/features/add-to-cart/hooks/useAddToCart";
 
 const ProductDetails = () => {
   const params = useParams();

@@ -1,33 +1,6 @@
-import {
-  useMutation,
-  useQueryClient,
-  UseMutationResult,
-  useQuery,
-} from "@tanstack/react-query";
-import { addToCart, fetchCartProducts } from "../api/addToCart";
 import { CardItem } from "@/entities/product";
-export const useAddToCart = (): UseMutationResult<
-  void,
-  Error,
-  { token: string; productId: number }
-> => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      token,
-      productId,
-    }: {
-      token: string;
-      productId: number;
-    }) => {
-      return addToCart(token, productId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-    },
-  });
-};
+import { useQuery } from "@tanstack/react-query";
+import { fetchCartProducts } from "../api/fetchCartProducts";
 
 export const useCartProducts = (token: string) => {
   return useQuery<CardItem[], Error>({
