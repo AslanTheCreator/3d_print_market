@@ -11,7 +11,7 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import { ButtonStyled } from "@/shared/ui/Button";
+import { ButtonStyled } from "@/shared/ui/ButtonStyled";
 import { CardItem } from "../model/types";
 import HeartIcon from "@/shared/assets/icons/HeartIcon";
 import FavoriteBorderIcon from "@mui/icons-material/Favorite";

@@ -1,2 +1,2 @@
-export { ButtonStyled } from "./Button";
+export { ButtonStyled } from "./ButtonStyled";
 export { InfiniteScroll } from "./InfiniteScroll";
