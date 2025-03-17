@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
   Typography,
   Box,
@@ -10,8 +9,6 @@ import {
   AccordionDetails,
   AccordionSummary,
   Stack,
-  ImageList,
-  ImageListItem,
   List,
   ListItem,
   Grid,
@@ -27,7 +24,6 @@ import { CardItem } from "../model/types";
 import MainImage from "./ProductDetails/MainImage";
 import AdditionalImages from "./ProductDetails/AdditionalImages";
 import { authenticate } from "@/shared/api/card";
-import { addToCart } from "@/features/cart/api/addToCart";
 import { useAddToCart } from "@/features/cart/hooks/useAddToCart";
 
 const ProductDetails = () => {
@@ -67,7 +63,7 @@ const ProductDetails = () => {
   const { mutate, isPending } = useAddToCart();
   const handleAddToCart = async () => {
     try {
-      const token = await authenticate("user50", "stas");
+      const token = await authenticate("user42", "stas");
       mutate({ token, productId: Number(id) });
     } catch (error) {
       console.error("Ошибка при добавлении товара в корзину:", error);

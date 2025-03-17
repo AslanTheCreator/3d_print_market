@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import Card from "./ProductCard";
 import { Box, Grid } from "@mui/material";
