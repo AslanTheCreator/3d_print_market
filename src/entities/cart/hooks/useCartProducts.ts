@@ -2,15 +2,22 @@ import { CardItem } from "@/entities/product";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCartProducts } from "../api/fetchCartProducts";
 
-export const useCartProducts = (token: string) => {
+type UseCartProductsOptions = {
+  token: string;
+  staleTime?: number;
+  retry?: number;
+};
+
+export const useCartProducts = ({
+  token,
+  staleTime = 1000 * 60 * 5,
+  retry = 1,
+}: UseCartProductsOptions) => {
   return useQuery<CardItem[], Error>({
-    queryKey: ["cart"], // Уникальный ключ для кэширования
-    queryFn: async () => {
-      if (!token) throw new Error("Token is required");
-      return await fetchCartProducts(token);
-    },
-    enabled: !!token, // Запрос выполнится только при наличии токена
-    staleTime: 1000 * 60 * 5, // Данные считаются "свежими" 5 минут
-    retry: 1, // Количество попыток повтора при ошибках
+    queryKey: ["cart"],
+    queryFn: () => fetchCartProducts(token),
+    enabled: Boolean(token), // Запрос будет выполнен только если token не пустой
+    staleTime, // Время, в течение которого данные считаются актуальными
+    retry, // Количество попыток повторного запроса в случае ошибки
   });
 };

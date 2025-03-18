@@ -11,7 +11,7 @@ import {
 import { useRouter } from "next/navigation";
 import React from "react";
 import { useState, useEffect } from "react";
-import { authenticate } from "@/shared/api/card";
+import { login } from "@/shared/api/auth";
 import CartItem from "./CartItem";
 import { ButtonStyled } from "@/shared/ui";
 import { useCartProducts } from "../hooks/useCartProducts";
@@ -22,12 +22,12 @@ const CartItemList = () => {
 
   useEffect(() => {
     const loadToken = async () => {
-      const authToken = await authenticate("user42", "stas");
-      setToken(authToken);
+      const authToken = await login("user42", "stas");
+      setToken(authToken.accessToken);
     };
     loadToken();
   }, []);
-  const { data: cartItems, isLoading, isError } = useCartProducts(token);
+  const { data: cartItems, isLoading, isError } = useCartProducts({ token });
   if (isLoading) return <Typography>Загрузка...</Typography>;
   if (isError || !cartItems?.length) {
     return (

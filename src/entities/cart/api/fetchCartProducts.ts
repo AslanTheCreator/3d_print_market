@@ -6,11 +6,11 @@ export const fetchCartProducts = async (
   authToken: string
 ): Promise<CardItem[]> => {
   if (!authToken) {
-    throw new Error("fetchCartProducts: authToken is null or undefined");
+    throw new Error("fetchCartProducts: требуется токен для авторизации");
   }
 
   try {
-    const response = await axios.post<CardResponse[]>(
+    const { data, status } = await axios.post<CardResponse[]>(
       `${config.apiBaseUrl}/basket/find`,
       {},
       {
@@ -21,14 +21,15 @@ export const fetchCartProducts = async (
       }
     );
 
-    if (response.status !== 200) {
+    if (status !== 200) {
       throw new Error(
-        `fetchCartProducts: Unable to fetch products from cart, status: ${response.status}`
+        `fetchCartProducts: Unable to fetch products from cart, status: ${status}`
       );
     }
 
-    return response.data[0].content;
+    return data[0].content ?? [];
   } catch (error) {
-    throw error;
+    console.error("fetchCartProducts error:", error);
+    throw new Error("fetchCartProducts: произошла непредвиденная ошибка");
   }
 };

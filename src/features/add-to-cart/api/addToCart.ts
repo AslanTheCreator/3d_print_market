@@ -5,8 +5,11 @@ export const addToCart = async (
   authToken: string,
   productId: number
 ): Promise<void> => {
-  if (!authToken || !productId) {
-    throw new Error("addToCart: authToken or productId is null or undefined");
+  if (!authToken) {
+    throw new Error("Токен авторизации отсутствует.");
+  }
+  if (!productId) {
+    throw new Error("Идентификатор продукта отсутствует.");
   }
 
   try {
@@ -23,7 +26,7 @@ export const addToCart = async (
 
     if (response.status !== 200) {
       throw new Error(
-        `addToCart: Unable to add product to cart, status: ${response.status}`
+        `Не удалось добавить товар в корзину. Статус: ${response.status}`
       );
     }
   } catch (error) {

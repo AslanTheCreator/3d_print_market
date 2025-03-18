@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { authenticate } from "@/shared/api/card";
+import { authenticate } from "@/shared/api/auth";
 import { useAddToCart } from "@/features/add-to-cart/hooks/useAddToCart";
 import { CardItem } from "../model/types";
 import { fetchProductById } from "../api/service";
