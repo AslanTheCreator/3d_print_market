@@ -3,7 +3,6 @@ import { useParams } from "next/navigation";
 import { useAddToCart } from "@/features/add-to-cart/hooks/useAddToCart";
 import { CardItem } from "../model/types";
 import { fetchProductById } from "../api/service";
-import { login } from "@/shared/api/auth";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const useProductDetails = () => {

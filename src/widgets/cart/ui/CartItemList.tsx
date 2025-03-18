@@ -1,14 +1,12 @@
-// widgets/cart/ui/CartItemList.tsx
 "use client";
 
 import React from "react";
 import { Container, Typography } from "@mui/material";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { EmptyCart } from "@/features/cart/ui/EmptyCart";
-import { useCartProducts } from "@/entities/cart/hooks/useCartProducts";
-import { CartList } from "@/entities/cart/ui/CartList";
+import { CartList, useCartProducts } from "@/entities/cart";
+import EmptyCart from "@/features/cart";
 
-export const CartItemList = () => {
+const CartItemList = () => {
   const { token, isLoading: authLoading } = useAuth();
   const {
     data: cartItems,

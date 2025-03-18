@@ -7,7 +7,7 @@ interface CartListProps {
   items: CardItem[];
 }
 
-export const CartList = ({ items }: CartListProps) => {
+const CartList = ({ items }: CartListProps) => {
   return (
     <Container sx={{ marginTop: "10px" }}>
       <Stack>
@@ -21,3 +21,5 @@ export const CartList = ({ items }: CartListProps) => {
     </Container>
   );
 };
+
+export default CartList;
