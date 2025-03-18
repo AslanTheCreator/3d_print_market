@@ -28,7 +28,11 @@ const CartItemList = () => {
     return <EmptyCart />;
   }
 
-  return <CartList items={cartItems} />;
+  return (
+    <Container sx={{ marginTop: "10px" }}>
+      <CartList items={cartItems} />
+    </Container>
+  );
 };
 
 export default CartItemList;
