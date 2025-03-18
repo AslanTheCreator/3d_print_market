@@ -1,12 +1,14 @@
 "use client";
 
 import React from "react";
-import { Container, Typography } from "@mui/material";
+import { Button, Container, Typography } from "@mui/material";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { CartList, useCartProducts } from "@/entities/cart";
 import EmptyCart from "@/features/cart";
+import { useRouter } from "next/navigation";
 
 const CartItemList = () => {
+  const router = useRouter();
   const { token, isLoading: authLoading } = useAuth();
   const {
     data: cartItems,
@@ -31,6 +33,16 @@ const CartItemList = () => {
   return (
     <Container sx={{ marginTop: "10px" }}>
       <CartList items={cartItems} />
+      <Button
+        variant="contained"
+        color="primary"
+        size="large"
+        fullWidth
+        onClick={() => router.push("/checkout")}
+        sx={{ mb: 4 }}
+      >
+        Оформить заказ
+      </Button>
     </Container>
   );
 };

@@ -5,7 +5,7 @@ export default function RegisterPage() {
     <AuthForm
       title="Регистрация"
       subtitle="У вас уже есть учетная запись?"
-      url="/login"
+      url="/auth/login"
       linkText="Авторизуйтесь"
       buttonTitle="Зарегистрироваться"
     />

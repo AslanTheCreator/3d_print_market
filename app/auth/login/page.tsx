@@ -5,7 +5,7 @@ export default function LoginPage() {
     <AuthForm
       title="Вход в аккаунт"
       subtitle="Войдите или "
-      url="/login/register"
+      url="/auth/register"
       linkText="зарегистрируйтесь"
       buttonTitle="Войти"
     />

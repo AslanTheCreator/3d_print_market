@@ -284,6 +284,13 @@ const Checkout = () => {
                 label="Оплата картой"
               />
             </RadioGroup>
+            <RadioGroup
+              name="paymentMethod"
+              value={paymentMethod}
+              onChange={handlePaymentChange}
+            >
+              <FormControlLabel value="card" control={<Radio />} label="СБП" />
+            </RadioGroup>
           </FormControl>
         </Paper>
 

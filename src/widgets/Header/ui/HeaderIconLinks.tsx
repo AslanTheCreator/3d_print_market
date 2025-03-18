@@ -5,7 +5,7 @@ import Link from "next/link";
 
 const headerIcons = [
   {
-    url: "/login",
+    url: "/auth/login",
     icon: <PersonOutlineIcon fontSize={"large"} color="primary" />,
   },
   {
