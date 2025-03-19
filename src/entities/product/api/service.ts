@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { ImageResponse, CardItem, CardResponse } from "../model/types";
-import config from "../../../shared/config/api";
+import config from "@/shared/config/api";
 
 const API_URL = `${config.apiBaseUrl}/products/find`;
 const IMAGE_API_URL = `${config.apiBaseUrl}/images`;
@@ -89,21 +89,20 @@ export const fetchProductById = async (
   token?: string
 ): Promise<CardItem> => {
   try {
-    const response = await axios.get<CardItem>(
+    const { data } = await axios.get<CardItem>(
       `${config.apiBaseUrl}/product/${id}`,
       {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       }
     );
-    const product = response.data;
 
-    if (!product || !product.imageIds) {
-      console.error("Ошибка: некорректные данные товара", product);
+    if (!data || !data.imageIds) {
+      console.error("Ошибка: некорректные данные товара", data);
       throw new Error("Некорректные данные товара");
     }
 
-    const images = await fetchImages(product.imageIds);
-    return { ...product, image: images };
+    const images = await fetchImages(data.imageIds);
+    return { ...data, image: images };
   } catch (error) {
     console.error("Ошибка при получении данных о товаре:", error);
     throw error;

@@ -2,7 +2,7 @@ import { CardItem } from "@/entities/product";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCartProducts } from "../api/fetchCartProducts";
 
-type UseCartProductsOptions = {
+export type UseCartProductsOptions = {
   token: string;
   staleTime?: number;
   retry?: number;

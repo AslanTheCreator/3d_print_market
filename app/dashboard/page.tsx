@@ -14,19 +14,24 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { User, UserInfo } from "@/entities/user";
 import { DashboardNavigation } from "@/widgets/DashboardNavigation";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useUser } from "@/entities/user/hooks/useUser";
 
-const userData: User = {
-  id: 1,
-  login: "alexander",
-  mail: "alexander@mail.ru",
-  fullName: "Александр Петров",
-  phoneNumber: "+7 (999) 123-45-67",
-  imageIds: "/images/avatar.jpg",
-};
+// const userData: User = {
+//   id: 1,
+//   login: "alexander",
+//   mail: "alexander@mail.ru",
+//   fullName: "Александр Петров",
+//   phoneNumber: "+7 (999) 123-45-67",
+//   imageIds: "/images/avatar.jpg",
+// };
 
 export default function DashboardPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { token, isLoading: authLoading } = useAuth();
+  const { data: userData } = useUser({ token });
+  if (!userData) return null;
   return (
     <Container maxWidth="sm" sx={{ p: isMobile ? 2 : 3 }}>
       <Paper
