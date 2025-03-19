@@ -13,18 +13,9 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { User, UserInfo } from "@/entities/user";
-import { DashboardNavigation } from "@/widgets/DashboardNavigation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useUser } from "@/entities/user/hooks/useUser";
-
-// const userData: User = {
-//   id: 1,
-//   login: "alexander",
-//   mail: "alexander@mail.ru",
-//   fullName: "Александр Петров",
-//   phoneNumber: "+7 (999) 123-45-67",
-//   imageIds: "/images/avatar.jpg",
-// };
+import { DashboardNavigation } from "@/widgets/dashboard-navigation";
 
 export default function DashboardPage() {
   const theme = useTheme();
