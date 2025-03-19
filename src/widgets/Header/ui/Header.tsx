@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
   Box,
@@ -8,25 +8,28 @@ import {
   Typography,
   Container,
   useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { SearchCategories } from "./SearchCategories";
 import { SearchString } from "./SearchString";
 import { HeaderIconLinks } from "./HeaderIconLinks";
 import Link from "next/link";
-import debounce from "lodash.debounce";
+import throttle from "lodash.throttle";
 
 const Header = () => {
-  const [isVisible, setIsVisible] = useState(true); // Показывает ли хедер
-  const [lastScrollY, setLastScrollY] = useState(0); // Последняя позиция прокрутки
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  const isMobile = useMediaQuery("(max-width: 768px)"); // Определяем мобильные устройства
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
-  useEffect(() => {
-    if (!isMobile) return;
-
-    const handleScroll = debounce(() => {
+  // Use throttle instead of debounce for smoother scroll handling
+  // And use useCallback to prevent unnecessary recreations
+  const handleScroll = useCallback(
+    throttle(() => {
       const currentScrollY = window.scrollY;
 
+      // Show/hide based on scroll direction and position
       if (currentScrollY > lastScrollY && currentScrollY > 50) {
         setIsVisible(false);
       } else {
@@ -34,44 +37,58 @@ const Header = () => {
       }
 
       setLastScrollY(currentScrollY);
-    }, 50);
+    }, 50),
+    [lastScrollY]
+  );
+
+  useEffect(() => {
+    // Only apply scroll behavior on mobile
+    if (!isMobile) {
+      setIsVisible(true); // Always visible on desktop
+      return;
+    }
 
     window.addEventListener("scroll", handleScroll);
 
     return () => {
+      handleScroll.cancel(); // Cancel any pending throttle
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [lastScrollY, isMobile]);
+  }, [isMobile, handleScroll]);
+
+  const headerHeight = "119px"; // Extracting the magic number for better readability
+
   return (
     <Box
-      component={"header"}
-      borderBottom={1}
-      borderColor={"lightgray"}
-      position={"fixed"}
-      bgcolor={"#54C5E5"}
-      zIndex={999}
+      component="header"
       sx={{
-        top: isMobile ? (isVisible ? 0 : "-119px") : 0, // Скроллим только на мобилке
-        transition: isMobile ? "top 0.5s ease" : "none", // Убираем анимацию для десктопа
+        position: "fixed",
+        width: "100%",
+        top: isMobile ? (isVisible ? 0 : `-${headerHeight}`) : 0,
+        transition: isMobile ? "top 0.5s ease" : "none",
+        backgroundColor: "#54C5E5",
+        borderBottom: 1,
+        borderColor: "lightgray",
+        zIndex: theme.zIndex.appBar || 999,
       }}
-      width={"100%"}
     >
       <Container>
-        <Stack p={"16px 0"} gap={"5px"}>
-          {/* Верхняя часть */}
+        <Stack py={2} gap={0.5}>
+          {/* Logo and icons row */}
           <Stack
-            direction={"row"}
-            alignItems={"center"}
-            justifyContent={"space-between"}
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
           >
-            <Link href={"/"}>
-              <Stack direction={"row"} alignItems={"center"} gap={1}>
-                <Image src="/" alt="Logo" width={35} height={35} />
+            <Link href="/" aria-label="Home">
+              <Stack direction="row" alignItems="center" gap={1}>
+                <Image src="/" alt="Logo" width={35} height={35} priority />
                 <Typography
-                  component={"h1"}
+                  component="h1"
+                  variant="h6"
                   fontWeight={900}
-                  textTransform={"uppercase"}
-                  color={"white"}
+                  textTransform="uppercase"
+                  color="white"
                 >
                   3DM
                 </Typography>
@@ -80,8 +97,8 @@ const Header = () => {
             <HeaderIconLinks />
           </Stack>
 
-          {/* Нижняя часть */}
-          <Stack direction={"row"} alignItems={"center"} gap={"10px"}>
+          {/* Search row */}
+          <Stack direction="row" alignItems="center" gap={1}>
             <SearchCategories />
             <SearchString />
           </Stack>
