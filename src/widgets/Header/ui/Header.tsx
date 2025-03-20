@@ -11,10 +11,10 @@ import {
   useTheme,
 } from "@mui/material";
 import { SearchCategories } from "./SearchCategories";
-import { SearchString } from "./SearchString";
 import { HeaderIconLinks } from "./HeaderIconLinks";
 import Link from "next/link";
 import throttle from "lodash.throttle";
+import SearchString from "./SearchString";
 
 const Header = () => {
   const theme = useTheme();
