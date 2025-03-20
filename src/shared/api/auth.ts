@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import config from "../config/api";
 
-export async function login(
+export async function loginUser(
   login: string,
   password: string
 ): Promise<{ accessToken: string; refreshToken: string }> {

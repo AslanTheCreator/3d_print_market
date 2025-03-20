@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { login } from "@/shared/api/auth";
+import { loginUser } from "@/shared/api/auth";
+import { RegisterUserDTO } from "@/shared/api/dto/userRegister.dto";
 
-export const useAuth = () => {
+export const useAuth = ({ login, password }: RegisterUserDTO) => {
   const [token, setToken] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -10,7 +11,7 @@ export const useAuth = () => {
     const loadToken = async () => {
       try {
         setIsLoading(true);
-        const authToken = await login("user43", "stas");
+        const authToken = await loginUser(login, password);
         setToken(authToken.accessToken);
       } catch (error) {
         console.error("Ошибка авторизации:", error);
