@@ -2,7 +2,7 @@ import config from "@/shared/config/api";
 import axios from "axios";
 import { CartProductModel, CartResponseModel } from "../model/types";
 
-export const fetchCartProducts = async (
+export const getCartProducts = async (
   authToken: string
 ): Promise<CartProductModel[]> => {
   if (!authToken) {

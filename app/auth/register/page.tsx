@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import AuthForm from "@/widgets/auth-form";
-import { registerUser } from "@/features/auth/api/register";
+import { registerUser } from "@/features/auth/api/authApi";
 import { User } from "@/entities/user";
 import { RegisterUserDTO } from "@/shared/api/dto/userRegister.dto";
 

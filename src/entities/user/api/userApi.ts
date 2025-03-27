@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import config from "@/shared/config/api";
 import { User } from "../model/types";
 
-export const fetchUser = async (token: string): Promise<User> => {
+export const getUser = async (token: string): Promise<User> => {
   try {
     const { data } = await axios.get<User>(`${config.apiBaseUrl}/participant`, {
       headers: {

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchCartProducts } from "../api/fetchCartProducts";
+import { getCartProducts } from "../api/cartApi";
 import { CartProductModel } from "../model/types";
 
 export type UseCartProductsOptions = {
@@ -15,7 +15,7 @@ export const useCartProducts = ({
 }: UseCartProductsOptions) => {
   return useQuery<CartProductModel[], Error>({
     queryKey: ["cart"],
-    queryFn: () => fetchCartProducts(token),
+    queryFn: () => getCartProducts(token),
     enabled: Boolean(token), // Запрос будет выполнен только если token не пустой
     staleTime, // Время, в течение которого данные считаются актуальными
     retry, // Количество попыток повторного запроса в случае ошибки

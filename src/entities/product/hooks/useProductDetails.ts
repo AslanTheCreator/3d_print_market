@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useAddToCart } from "@/features/add-to-cart/hooks/useAddToCart";
 import { ProductDetailsModel } from "../model/types";
-import { fetchProductById } from "../api/service";
+import { getProductById } from "../api/productApi";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const useProductDetails = () => {
@@ -16,7 +16,7 @@ export const useProductDetails = () => {
     const loadCard = async () => {
       try {
         if (id) {
-          const data = await fetchProductById(id);
+          const data = await getProductById(id);
           setProductCard(data);
         }
       } catch (err) {

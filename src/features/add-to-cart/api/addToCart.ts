@@ -1,7 +1,7 @@
 import config from "@/shared/config/api";
 import axios from "axios";
 
-export const addToCart = async (
+export const addProductToCard = async (
   authToken: string,
   productId: number
 ): Promise<void> => {

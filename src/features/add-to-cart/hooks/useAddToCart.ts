@@ -3,7 +3,7 @@ import {
   useQueryClient,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { addToCart } from "../api/addToCart";
+import { addProductToCard } from "../api/addToCart";
 export const useAddToCart = (): UseMutationResult<
   void,
   Error,
@@ -19,7 +19,7 @@ export const useAddToCart = (): UseMutationResult<
       token: string;
       productId: number;
     }) => {
-      return addToCart(token, productId);
+      return addProductToCard(token, productId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });

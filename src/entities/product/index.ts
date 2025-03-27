@@ -1,6 +1,6 @@
 export { ProductList } from "./ui/ProductList";
 export { ProductDetails } from "./ui/ProductDetails/ProductDetails";
-export { fetchProducts, fetchProductById } from "./api/service";
+export { getProducts, getProductById } from "./api/productApi";
 export type {
   ProductResponseModel,
   ProductDetailsModel,
