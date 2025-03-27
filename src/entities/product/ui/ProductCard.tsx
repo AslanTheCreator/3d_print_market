@@ -15,26 +15,22 @@ import {
   alpha,
   useMediaQuery,
 } from "@mui/material";
-import { CardItem } from "../model/types";
+import { ProductCardModel } from "../model/types";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import FavoriteBorderIcon from "@mui/icons-material/Favorite";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { formatPrice } from "@/shared/lib/formatPrice";
 
-// interface ProductCard {
-//   card: CardItem;
-// }
-
-const ProductCard: React.FC<CardItem> = ({
+export const ProductCard: React.FC<ProductCardModel> = ({
   id,
   name,
   price,
   category,
   image,
-  status,
 }) => {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
+  const [status, setStatus] = useState<string>("Active");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -305,5 +301,3 @@ const ProductCard: React.FC<CardItem> = ({
     </Card>
   );
 };
-
-export default ProductCard;

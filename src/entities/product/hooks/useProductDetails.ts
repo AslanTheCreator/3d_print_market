@@ -1,14 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useAddToCart } from "@/features/add-to-cart/hooks/useAddToCart";
-import { CardItem } from "../model/types";
+import { ProductDetailsModel } from "../model/types";
 import { fetchProductById } from "../api/service";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const useProductDetails = () => {
   const params = useParams();
   const id = params?.id as string | undefined;
-  const [productCard, setProductCard] = useState<CardItem | null>(null);
+  const [productCard, setProductCard] = useState<ProductDetailsModel | null>(
+    null
+  );
 
   useEffect(() => {
     const loadCard = async () => {

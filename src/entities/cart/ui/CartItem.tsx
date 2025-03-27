@@ -1,11 +1,16 @@
-import { CardItem } from "@/entities/product";
 import { Box, IconButton, Stack, Typography, Divider } from "@mui/material";
 import Image from "next/image";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
+import { CartProductModel } from "../model/types";
 
-const CartItem: React.FC<CardItem> = ({ id, name, price, image, category }) => {
+const CartItem: React.FC<CartProductModel> = ({
+  id,
+  name,
+  price,
+  category,
+}) => {
   return (
     <Box display="flex" flexDirection={"column"} pt={"16px"} pb={"8px"}>
       <Stack pb={"10px"} flexDirection={"row"}>

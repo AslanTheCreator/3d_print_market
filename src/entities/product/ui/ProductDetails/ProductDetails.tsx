@@ -13,7 +13,7 @@ import MainImage from "./MainImage";
 import AdditionalImages from "./AdditionalImages";
 import { useProductDetails } from "../../hooks/useProductDetails";
 
-const ProductDetails = () => {
+export const ProductDetails = () => {
   const {
     productCard,
     handleAddToCart,
@@ -113,5 +113,3 @@ const ProductDetails = () => {
     </Box>
   );
 };
-
-export default ProductDetails;

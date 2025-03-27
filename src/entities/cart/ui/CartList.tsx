@@ -1,10 +1,10 @@
 import React from "react";
 import { Divider, Stack } from "@mui/material";
-import { CardItem } from "@/entities/product";
 import CartItem from "./CartItem";
+import { CartProductModel } from "../model/types";
 
 interface CartListProps {
-  items: CardItem[];
+  items: CartProductModel[];
 }
 
 const CartList = ({ items }: CartListProps) => {

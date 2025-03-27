@@ -1,31 +1,26 @@
+import { ImageResponse } from "@/entities/image/model/types";
+import { ProductBaseModel } from "@/shared/types";
+
 type Currency = "RUB" | "USD" | "EUR" | "GBP" | "JPY" | "CNY";
 type Status = "Active" | "Cancelled" | "Completed";
 type Category = { id: number; name: string };
 
-export interface CardResponse {
+export interface ProductResponseModel {
   totalElements: number;
   page: number;
-  content: CardItem[];
+  content: ProductCardModel[];
 }
 
-export interface CardItem {
-  id: number;
-  name: string;
-  description?: string;
-  price: number;
-  count?: number;
-  currency?: Currency;
-  originality?: string;
-  participantId?: number;
-  status?: Status;
-  category?: Category;
-  imageId?: number;
-  imageIds?: number[];
+export interface ProductCardModel
+  extends Omit<
+    ProductBaseModel,
+    "description" | "originality" | "participantId" | "status"
+  > {
+  imageId: number;
   image: ImageResponse[];
 }
 
-export interface ImageResponse {
-  filename: string;
-  contentType: string;
-  imageData: string; // Base64-данные изображения
+export interface ProductDetailsModel extends ProductBaseModel {
+  imageIds: number[];
+  image: ImageResponse[];
 }

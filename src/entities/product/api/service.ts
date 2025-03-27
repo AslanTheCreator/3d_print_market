@@ -1,6 +1,11 @@
 import axios, { AxiosError } from "axios";
-import { ImageResponse, CardItem, CardResponse } from "../model/types";
+import {
+  ProductResponseModel,
+  ProductCardModel,
+  ProductDetailsModel,
+} from "../model/types";
 import config from "@/shared/config/api";
+import { ImageResponse } from "@/entities/image/model/types";
 
 const API_URL = `${config.apiBaseUrl}/products/find`;
 const IMAGE_API_URL = `${config.apiBaseUrl}/images`;
@@ -42,9 +47,9 @@ export const fetchImages = async (
 export const fetchProducts = async (
   page: number,
   size: number
-): Promise<CardItem[]> => {
+): Promise<ProductCardModel[]> => {
   try {
-    const { data } = await axios.post<CardResponse>(
+    const { data } = await axios.post<ProductResponseModel>(
       API_URL,
       {
         pageable: {
@@ -60,7 +65,6 @@ export const fetchProducts = async (
     );
 
     const cards = data.content;
-
     if (!Array.isArray(cards)) {
       console.error("Ошибка: сервер вернул некорректный формат данных", data);
       throw new Error("Некорректный формат данных от сервера");
@@ -87,9 +91,9 @@ export const fetchProducts = async (
 export const fetchProductById = async (
   id: string,
   token?: string
-): Promise<CardItem> => {
+): Promise<ProductDetailsModel> => {
   try {
-    const { data } = await axios.get<CardItem>(
+    const { data } = await axios.get<ProductDetailsModel>(
       `${config.apiBaseUrl}/product/${id}`,
       {
         headers: token ? { Authorization: `Bearer ${token}` } : {},

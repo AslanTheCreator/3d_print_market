@@ -1,14 +1,14 @@
 import React from "react";
-import Card from "./ProductCard";
 import { Box, Grid, useMediaQuery, useTheme } from "@mui/material";
-import { CardItem } from "../model/types";
+import { ProductCardModel } from "../model/types";
+import { ProductCard } from "./ProductCard";
 
 interface ProductListProps {
-  products: CardItem[];
+  products: ProductCardModel[];
   ref?: (node?: Element | null | undefined) => void;
 }
 
-const ProductList: React.FC<ProductListProps> = ({ products, ref }) => {
+export const ProductList: React.FC<ProductListProps> = ({ products, ref }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -35,12 +35,10 @@ const ProductList: React.FC<ProductListProps> = ({ products, ref }) => {
               padding: isMobile ? "4px" : undefined,
             }}
           >
-            <Card {...product} />
+            <ProductCard {...product} />
           </Grid>
         ))}
       </Grid>
     </Box>
   );
 };
-
-export default ProductList;

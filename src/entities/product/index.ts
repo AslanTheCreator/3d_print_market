@@ -1,4 +1,8 @@
-export { default as ProductList } from "./ui/ProductList";
-export { default as ProductDetails } from "./ui/ProductDetails/ProductDetails";
+export { ProductList } from "./ui/ProductList";
+export { ProductDetails } from "./ui/ProductDetails/ProductDetails";
 export { fetchProducts, fetchProductById } from "./api/service";
-export type { CardItem, CardResponse } from "./model/types";
+export type {
+  ProductResponseModel,
+  ProductDetailsModel,
+  ProductCardModel,
+} from "./model/types";

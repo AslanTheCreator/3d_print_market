@@ -1,16 +1,16 @@
-import { CardItem, CardResponse } from "@/entities/product";
 import config from "@/shared/config/api";
 import axios from "axios";
+import { CartProductModel, CartResponseModel } from "../model/types";
 
 export const fetchCartProducts = async (
   authToken: string
-): Promise<CardItem[]> => {
+): Promise<CartProductModel[]> => {
   if (!authToken) {
     throw new Error("Требуется токен для авторизации");
   }
 
   try {
-    const { data } = await axios.post<CardResponse[]>(
+    const { data } = await axios.post<CartResponseModel[]>(
       `${config.apiBaseUrl}/basket/find`,
       {},
       {
