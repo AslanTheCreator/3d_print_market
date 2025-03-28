@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { loginUser } from "@/shared/api/auth";
+import { authApi } from "../api/authApi";
 
 export const useAuth = () => {
   const [token, setToken] = useState("");
@@ -10,7 +10,7 @@ export const useAuth = () => {
     const loadToken = async () => {
       try {
         setIsLoading(true);
-        const authToken = await loginUser("user22", "stas");
+        const authToken = await authApi.loginUser("user22", "stas");
         setToken(authToken.accessToken);
       } catch (error) {
         console.error("Ошибка авторизации:", error);

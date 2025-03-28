@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import AuthForm from "@/widgets/auth-form";
-import { registerUser } from "@/features/auth/api/authApi";
+import { authApi } from "@/features/auth/api/authApi";
 import { AuthFormModel } from "@/features/auth/model/types";
 
 export default function RegisterPage() {
@@ -14,7 +14,7 @@ export default function RegisterPage() {
         email,
         password,
       };
-      await registerUser(userData);
+      await authApi.registerUser(userData);
       // Здесь можно добавить редирект на страницу логина или другие действия после успешной регистрации
     } catch (error) {
       console.error("Registration failed:", error);

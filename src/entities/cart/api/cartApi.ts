@@ -1,22 +1,18 @@
 import config from "@/shared/config/api";
-import axios from "axios";
 import { CartProductModel, CartResponseModel } from "../model/types";
 import { errorHandler } from "@/shared/lib/errorHandler";
+import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
 
 export const cartApi = {
-  async getCartProducts(authToken: string): Promise<CartProductModel[]> {
-    if (!authToken) {
-      throw new Error("Требуется токен для авторизации");
-    }
-
+  async getCartProducts(): Promise<CartProductModel[]> {
+    const authenticatedAxios = createAuthenticatedAxiosInstance();
     try {
-      const { data } = await axios.post<CartResponseModel[]>(
+      const { data } = await authenticatedAxios.post<CartResponseModel[]>(
         `${config.apiBaseUrl}/basket/find`,
         {},
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
           },
         }
       );
