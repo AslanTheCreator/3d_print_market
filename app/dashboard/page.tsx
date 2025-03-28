@@ -12,7 +12,7 @@ import {
   Grid,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { User, UserInfo } from "@/entities/user";
+import { UserInfo } from "@/entities/user";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useUser } from "@/entities/user/hooks/useUser";
 import { DashboardNavigation } from "@/widgets/dashboard-navigation";

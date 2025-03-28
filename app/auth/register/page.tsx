@@ -3,17 +3,16 @@
 import { useState } from "react";
 import AuthForm from "@/widgets/auth-form";
 import { registerUser } from "@/features/auth/api/authApi";
-import { User } from "@/entities/user";
-import { RegisterUserDTO } from "@/shared/api/dto/userRegister.dto";
+import { AuthFormModel } from "@/features/auth/model/types";
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const handleRegister = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const userData: RegisterUserDTO = {
-        login: email,
-        password: password,
+      const userData: AuthFormModel = {
+        email,
+        password,
       };
       await registerUser(userData);
       // Здесь можно добавить редирект на страницу логина или другие действия после успешной регистрации

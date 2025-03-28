@@ -4,8 +4,8 @@ import React from "react";
 import { Button, Container, Typography } from "@mui/material";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { CartList, useCartProducts } from "@/entities/cart";
-import EmptyCart from "@/features/cart";
 import { useRouter } from "next/navigation";
+import EmptyCart from "@/entities/cart/ui/EmptyCart";
 
 const CartItemList = () => {
   const router = useRouter();

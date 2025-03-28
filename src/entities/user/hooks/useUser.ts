@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getUser } from "../api/userApi";
+import { userApi } from "../api/userApi";
 import { User } from "../model/types";
 import { UseCartProductsOptions } from "@/entities/cart/hooks/useCartProducts";
 
@@ -10,7 +10,7 @@ export const useUser = ({
 }: UseCartProductsOptions) => {
   return useQuery<User, Error>({
     queryKey: ["user", token],
-    queryFn: () => getUser(token),
+    queryFn: () => userApi.getUser(token),
     enabled: Boolean(token), // Запрос выполняется только при наличии токена
     staleTime,
     retry,

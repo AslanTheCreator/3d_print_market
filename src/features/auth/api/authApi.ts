@@ -1,14 +1,14 @@
 import axios from "axios";
 import config from "@/shared/config/api";
-import { RegisterUserDTO } from "@/shared/api/dto/userRegister.dto";
+import { AuthFormModel } from "../model/types";
 
 const API_URL = `${config.apiBaseUrl}/participant`;
 
-export const registerUser = async ({ login, password }: RegisterUserDTO) => {
+export const registerUser = async ({ email, password }: AuthFormModel) => {
   try {
     const { status, data } = await axios.post(
       API_URL,
-      { login, password },
+      { email, password },
       {
         headers: { "Content-Type": "application/json" },
       }

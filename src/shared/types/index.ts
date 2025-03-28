@@ -1,5 +1,5 @@
-type Currency = "RUB" | "USD" | "EUR" | "GBP" | "JPY" | "CNY";
-type Status = "Active" | "Cancelled" | "Completed";
+export type Currency = "USD" | "EUR" | "GBP" | "JPY" | "CNY" | "RUB";
+type Status = "ACTIVE" | "DELETED";
 type Category = { id: number; name: string };
 
 export interface ProductBaseModel {

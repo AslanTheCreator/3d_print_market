@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { loginUser } from "@/shared/api/auth";
-import { RegisterUserDTO } from "@/shared/api/dto/userRegister.dto";
 
 export const useAuth = () => {
   const [token, setToken] = useState("");
