@@ -13,15 +13,13 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { UserInfo } from "@/entities/user";
-import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useUser } from "@/entities/user/hooks/useUser";
 import { DashboardNavigation } from "@/widgets/dashboard-navigation";
 
 export default function DashboardPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { token, isLoading: authLoading } = useAuth();
-  const { data: userData } = useUser({ token });
+  const { data: userData } = useUser({});
   if (!userData) return null;
   return (
     <Container maxWidth="sm" sx={{ p: isMobile ? 2 : 3 }}>

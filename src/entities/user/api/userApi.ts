@@ -2,17 +2,15 @@ import axios from "axios";
 import config from "@/shared/config/api";
 import { User } from "../model/types";
 import { errorHandler } from "@/shared/lib/errorHandler";
+import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
 
 const API_URL = `${config.apiBaseUrl}/participant`;
 
 export const userApi = {
-  async getUser(token: string): Promise<User> {
+  async getUser(): Promise<User> {
+    const authenticatedAxios = createAuthenticatedAxiosInstance();
     try {
-      const { data } = await axios.get<User>(API_URL, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const { data } = await authenticatedAxios.get<User>(API_URL);
       if (!data) {
         throw new Error("Пустой ответ от сервера");
       }

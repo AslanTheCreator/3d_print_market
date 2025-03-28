@@ -1,14 +1,12 @@
 "use client";
 
 import { useUser } from "@/entities/user/hooks/useUser";
-import { useAuth } from "@/features/auth/hooks/useAuth";
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import ProfileWidget from "@/widgets/profile/ui/Profile";
 
 export default function ProfilePage() {
-  const { token, isLoading: authLoading } = useAuth();
-  const { data: userData, isLoading, isError } = useUser({ token });
+  const { data: userData, isLoading, isError } = useUser({});
 
   if (isError || !userData) {
     return (

@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { CartList, useCartProducts } from "@/entities/cart";
-import { useAuth } from "@/features/auth/hooks/useAuth";
 import {
   Container,
   Typography,
@@ -39,8 +38,7 @@ type PaymentMethod = "card";
 
 const Checkout = () => {
   const router = useRouter();
-  const { token } = useAuth();
-  const { data: cartItems, isLoading } = useCartProducts({ token });
+  const { data: cartItems, isLoading } = useCartProducts({  });
 
   const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddressForm>({
     region: "",
