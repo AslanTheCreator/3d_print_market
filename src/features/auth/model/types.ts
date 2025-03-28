@@ -1,4 +1,4 @@
 export type AuthFormModel = {
-  email: string;
+  login: string;
   password: string;
 };

@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { Axios, AxiosError } from "axios";
 import config from "@/shared/config/api";
 import { AuthFormModel } from "../model/types";
 import { errorHandler } from "@/shared/lib/errorHandler";
@@ -9,11 +9,11 @@ const API_URL_LOGIN = `${config.apiBaseUrl}/auth/login`;
 const API_URL_REFRESH = `${config.apiBaseUrl}/auth/refresh`;
 
 export const authApi = {
-  async registerUser({ email, password }: AuthFormModel) {
+  async registerUser({ login, password }: AuthFormModel) {
     try {
       const { status, data } = await axios.post(
         API_URL_REGISTER,
-        { email, password },
+        { login, password },
         {
           headers: { "Content-Type": "application/json" },
         }
@@ -26,16 +26,15 @@ export const authApi = {
       throw errorHandler.handleAxiosError(error, "Ошибка регистрации");
     }
   },
-  async loginUser({ email, password }: AuthFormModel) {
+  async loginUser({ login, password }: AuthFormModel) {
     try {
-      const { data } = await axios.post<{
+      const { data, status } = await axios.post<{
         access_token: string;
         refresh_token: string;
       }>(API_URL_LOGIN, {
-        email,
+        login,
         password,
       });
-
       const tokens = {
         accessToken: data.access_token,
         refreshToken: data.refresh_token,

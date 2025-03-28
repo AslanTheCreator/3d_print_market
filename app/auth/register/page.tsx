@@ -7,11 +7,11 @@ import { AuthFormModel } from "@/features/auth/model/types";
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const handleRegister = async (email: string, password: string) => {
+  const handleRegister = async (login: string, password: string) => {
     try {
       setIsLoading(true);
       const userData: AuthFormModel = {
-        email,
+        login,
         password,
       };
       await authApi.registerUser(userData);
