@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { useAddToCart } from "@/features/add-to-cart/hooks/useAddToCart";
 import { ProductDetailsModel } from "../model/types";
 import { productApi } from "../api/productApi";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAddToCart } from "@/features/cart/add-to-cart/hooks/useAddToCart";
 
 export const useProductDetails = () => {
   const params = useParams();
@@ -27,10 +26,9 @@ export const useProductDetails = () => {
   }, [id]);
 
   const { mutate, isPending } = useAddToCart();
-  const { token, isLoading: authLoading } = useAuth();
   const handleAddToCart = async () => {
     try {
-      mutate({ token, productId: Number(id) });
+      mutate({ productId: Number(id) });
     } catch (error) {
       console.error("Ошибка при добавлении товара в корзину:", error);
       alert("Не удалось добавить товар в корзину.");

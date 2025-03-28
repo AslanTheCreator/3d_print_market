@@ -2,21 +2,13 @@
 
 import React from "react";
 import { Button, Container, Typography } from "@mui/material";
-import { useAuth } from "@/features/auth/hooks/useAuth";
 import { CartList, useCartProducts } from "@/entities/cart";
 import { useRouter } from "next/navigation";
 import EmptyCart from "@/entities/cart/ui/EmptyCart";
 
 const CartItemList = () => {
   const router = useRouter();
-  const { token, isLoading: authLoading } = useAuth();
-  const {
-    data: cartItems,
-    isLoading: cartLoading,
-    isError,
-  } = useCartProducts({ token });
-
-  const isLoading = authLoading || cartLoading;
+  const { data: cartItems, isLoading, isError } = useCartProducts({});
 
   if (isLoading) {
     return (
