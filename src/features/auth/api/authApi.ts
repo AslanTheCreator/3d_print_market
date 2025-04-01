@@ -1,12 +1,11 @@
-import axios, { Axios, AxiosError } from "axios";
+import axios from "axios";
 import config from "@/shared/config/api";
 import { AuthFormModel } from "../model/types";
 import { errorHandler } from "@/shared/lib/errorHandler";
 import { tokenStorage } from "@/shared/lib/token/tokenStorage";
 
 const API_URL_REGISTER = `${config.apiBaseUrl}/participant`;
-const API_URL_LOGIN = `${config.apiBaseUrl}/auth/login`;
-const API_URL_REFRESH = `${config.apiBaseUrl}/auth/refresh`;
+const API_URL_AUTH = `${config.apiBaseUrl}/auth`;
 
 export const authApi = {
   async registerUser({ login, password }: AuthFormModel) {
@@ -18,20 +17,20 @@ export const authApi = {
           headers: { "Content-Type": "application/json" },
         }
       );
-
       if (status === 200) {
         console.log("Пользователь успешно зарегестрирован, его id: ", data);
       }
+      return true;
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка регистрации");
     }
   },
   async loginUser({ login, password }: AuthFormModel) {
     try {
-      const { data, status } = await axios.post<{
+      const { data } = await axios.post<{
         access_token: string;
         refresh_token: string;
-      }>(API_URL_LOGIN, {
+      }>(`${API_URL_AUTH}/login`, {
         login,
         password,
       });
@@ -43,8 +42,28 @@ export const authApi = {
       console.log("Токен: ", tokens.accessToken);
 
       tokenStorage.saveTokens(tokens); // Сохраняем токены в куки
+      return true;
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка авторизации");
+    }
+  },
+  async profileUser() {
+    const accessToken = tokenStorage.getAccessToken();
+
+    if (!accessToken) {
+      tokenStorage.clearTokens();
+      throw new Error("Access token отсутствует");
+    }
+
+    try {
+      const { data } = await axios.get(`${API_URL_AUTH}/profile`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      return data;
+    } catch (error) {
+      throw errorHandler.handleAxiosError(error, "Ошибка получения профиля");
     }
   },
   async refreshAccessToken() {
@@ -57,7 +76,7 @@ export const authApi = {
 
     try {
       const { data: accessToken } = await axios.post<string>(
-        API_URL_REFRESH,
+        `${API_URL_AUTH}/refresh`,
         {},
         {
           headers: {

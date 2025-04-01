@@ -4,8 +4,10 @@ import { authApi } from "@/features/auth/api/authApi";
 import AuthForm from "@/widgets/auth-form";
 import { useState } from "react";
 import { Snackbar, Alert } from "@mui/material";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const handleLogin = async (login: string, password: string) => {
     try {
@@ -13,12 +15,13 @@ export default function LoginPage() {
         login,
         password,
       };
-      await authApi.loginUser(userData);
-      // Здесь можно добавить редирект на главную страницу или другие действия после успешного входа
+      const isLoginSuccessful = await authApi.loginUser(userData);
+      if (isLoginSuccessful) {
+        router.push("/");
+      }
     } catch (error) {
       console.error("Login failed:", error);
       setError("Ошибка авторизации. Проверьте логин и пароль.");
-      // Здесь можно добавить обработку ошибок, например, показать уведомление
     }
   };
 
