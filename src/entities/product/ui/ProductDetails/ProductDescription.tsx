@@ -8,13 +8,14 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 interface ProductDescriptionProps {
-  description: string | undefined;
+  description: string;
 }
 
-const ProductDescription: React.FC<ProductDescriptionProps> = ({
+export const ProductDescription: React.FC<ProductDescriptionProps> = ({
   description,
 }) => (
   <Accordion
+    defaultExpanded={false}
     sx={{
       "&::before": { content: "none" },
       boxShadow: "none",
@@ -30,10 +31,8 @@ const ProductDescription: React.FC<ProductDescriptionProps> = ({
     </AccordionSummary>
     <AccordionDetails>
       <Typography variant="body2" sx={{ color: "text.secondary" }}>
-        {description}
+        {description || "Описание товара отсутствует"}
       </Typography>
     </AccordionDetails>
   </Accordion>
 );
-
-export default ProductDescription;

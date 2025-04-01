@@ -7,8 +7,8 @@ import { useAddToCart } from "@/features/cart/add-to-cart/hooks/useAddToCart";
 export const useProductDetails = () => {
   const params = useParams();
   const id = params?.id as string | undefined;
-  const [productCard, setProductCard] = useState<ProductDetailsModel | null>(
-    null
+  const [productCard, setProductCard] = useState<ProductDetailsModel>(
+    {} as ProductDetailsModel
   );
 
   useEffect(() => {

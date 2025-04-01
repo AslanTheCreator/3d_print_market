@@ -10,17 +10,18 @@ interface ProductCharacteristicsProps {
   characteristics: Characteristic[];
 }
 
-const ProductCharacteristics: React.FC<ProductCharacteristicsProps> = ({
+export const ProductCharacteristics: React.FC<ProductCharacteristicsProps> = ({
   characteristics,
 }) => (
-  <List sx={{ padding: 0 }}>
+  <List sx={{ p: 0 }}>
     {characteristics.map((item, index) => (
       <ListItem
         key={index}
         sx={{
           display: "flex",
           justifyContent: "space-between",
-          padding: "8px 16px",
+          py: 1.5,
+          px: { xs: 1, sm: 2 },
         }}
       >
         <Typography variant="body1" sx={{ fontWeight: "500" }}>
@@ -33,5 +34,3 @@ const ProductCharacteristics: React.FC<ProductCharacteristicsProps> = ({
     ))}
   </List>
 );
-
-export default ProductCharacteristics;

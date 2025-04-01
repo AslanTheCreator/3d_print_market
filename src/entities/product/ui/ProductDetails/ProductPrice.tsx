@@ -1,17 +1,28 @@
 import React from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Paper } from "@mui/material";
 import { formatPrice } from "@/shared/lib/formatPrice";
 
 interface ProductPriceProps {
-  price?: number;
+  price: number;
 }
 
-const ProductPrice: React.FC<ProductPriceProps> = ({ price }) => (
-  <Box bgcolor={"white"} borderRadius={"20px"} p={"8px 16px 8px 16px"}>
-    <Typography fontWeight={700} fontSize={27}>
+export const ProductPrice: React.FC<ProductPriceProps> = ({ price }) => (
+  <Paper
+    elevation={0}
+    sx={{
+      borderRadius: "20px",
+      p: "12px 20px",
+      display: "flex",
+      flexDirection: "column",
+    }}
+  >
+    <Typography
+      fontWeight={700}
+      fontSize={{ xs: 24, sm: 28 }}
+      lineHeight={1.1}
+      color="primary.main"
+    >
       {formatPrice(price)}
     </Typography>
-  </Box>
+  </Paper>
 );
-
-export default ProductPrice;

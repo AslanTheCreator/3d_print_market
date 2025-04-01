@@ -3,6 +3,7 @@ import { PersonOutline, ShoppingCartOutlined } from "@mui/icons-material";
 import { Stack, IconButton, useTheme, useMediaQuery } from "@mui/material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export const HeaderIconLinks = () => {
   const theme = useTheme();
