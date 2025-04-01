@@ -25,14 +25,19 @@ export const useProductDetails = () => {
     loadCard();
   }, [id]);
 
-  const { mutate, isPending } = useAddToCart();
+  const { mutate } = useAddToCart();
   const handleAddToCart = async () => {
-    try {
-      mutate({ productId: Number(id) });
-    } catch (error) {
-      console.error("Ошибка при добавлении товара в корзину:", error);
-      alert("Не удалось добавить товар в корзину.");
-    }
+    mutate(
+      { productId: productCard.id },
+      {
+        onSuccess: () => {
+          console.log("Товар успешно добавлен в корзину");
+        },
+        onError: () => {
+          alert("Не удалось добавить товар в корзину.");
+        },
+      }
+    );
   };
 
   const mainImage = useMemo(() => {
@@ -54,6 +59,5 @@ export const useProductDetails = () => {
     handleAddToCart,
     mainImage,
     additionalImages,
-    isPending,
   };
 };

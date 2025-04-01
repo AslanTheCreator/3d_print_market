@@ -4,6 +4,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { CartProductModel } from "../model/types";
+import { useRemoveFromCart } from "@/features/cart/add-to-cart/hooks/useRemoveFromCart";
 
 const CartItem: React.FC<CartProductModel> = ({
   id,
@@ -11,6 +12,20 @@ const CartItem: React.FC<CartProductModel> = ({
   price,
   category,
 }) => {
+  const { mutate, isPending } = useRemoveFromCart();
+  const handleRemove = () => {
+    mutate(
+      { productId: id },
+      {
+        onSuccess: () => {
+          console.log("Товар успешно удален из корзины");
+        },
+        onError: () => {
+          alert("Не удалось удалить товар из корзины.");
+        },
+      }
+    );
+  };
   return (
     <Box display="flex" flexDirection={"column"} pt={"16px"} pb={"8px"}>
       <Stack pb={"10px"} flexDirection={"row"}>
@@ -37,7 +52,12 @@ const CartItem: React.FC<CartProductModel> = ({
       </Stack>
       <Divider />
       <Stack pt={"8px"} justifyContent="space-between" flexDirection="row">
-        <IconButton sx={{ p: 1, bgcolor: "#ebebeb", borderRadius: "5px" }}>
+        <IconButton
+          sx={{ p: 1, bgcolor: "#ebebeb", borderRadius: "5px" }}
+          onClick={handleRemove}
+          disabled={isPending}
+          aria-label="Удалить товар из корзины"
+        >
           <DeleteIcon />
         </IconButton>
         <Box display="flex" alignItems="center" gap={1}>

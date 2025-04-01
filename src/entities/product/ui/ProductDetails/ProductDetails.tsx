@@ -21,13 +21,9 @@ import { AdditionalImages } from "./AdditionalImages";
 import { useProductDetails } from "../../hooks/useProductDetails";
 
 export const ProductDetails = () => {
-  const {
-    productCard,
-    handleAddToCart,
-    mainImage,
-    additionalImages,
-    isPending,
-  } = useProductDetails();
+  const isPending = false;
+  const { productCard, handleAddToCart, mainImage, additionalImages } =
+    useProductDetails();
 
   // Заглушка для характеристик
   const characteristics = [
