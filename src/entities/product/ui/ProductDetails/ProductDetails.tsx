@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import StarsIcon from "@/shared/assets/icons/StarsIcon";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import AddToCartButton from "@/features/cart/add-to-cart/ui/AddToCartButton";
+import { AddToCartButton } from "@/features/cart/add-to-cart/ui/AddToCartButton";
 import { ProductPrice } from "./ProductPrice";
 import { ProductCharacteristics } from "./ProductCharacteristics";
 import { ProductDescription } from "./ProductDescription";
@@ -22,8 +22,13 @@ import { useProductDetails } from "../../hooks/useProductDetails";
 
 export const ProductDetails = () => {
   const isPending = false;
-  const { productCard, handleAddToCart, mainImage, additionalImages } =
-    useProductDetails();
+  const {
+    productCard,
+    handleAddToCart,
+    mainImage,
+    additionalImages,
+    isInCart,
+  } = useProductDetails();
 
   // Заглушка для характеристик
   const characteristics = [
@@ -150,7 +155,10 @@ export const ProductDetails = () => {
           boxShadow: "0px -2px 10px rgba(0, 0, 0, 0.1)",
         }}
       >
-        <AddToCartButton onAddToCart={handleAddToCart} />
+        <AddToCartButton
+          onAddToCart={handleAddToCart}
+          isInCart={isInCart ?? false}
+        />
       </Paper>
     </Box>
   );

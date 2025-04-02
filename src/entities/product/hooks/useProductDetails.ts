@@ -3,6 +3,8 @@ import { useParams } from "next/navigation";
 import { ProductDetailsModel } from "../model/types";
 import { productApi } from "../api/productApi";
 import { useAddToCart } from "@/features/cart/add-to-cart/hooks/useAddToCart";
+import { useCartProducts } from "@/entities/cart";
+import { useRouter } from "next/navigation";
 
 export const useProductDetails = () => {
   const params = useParams();
@@ -10,6 +12,11 @@ export const useProductDetails = () => {
   const [productCard, setProductCard] = useState<ProductDetailsModel>(
     {} as ProductDetailsModel
   );
+  const router = useRouter();
+
+  const { data: cartItems } = useCartProducts({});
+
+  const isInCart = cartItems?.some((item) => item.id === productCard.id);
 
   useEffect(() => {
     const loadCard = async () => {
@@ -27,17 +34,20 @@ export const useProductDetails = () => {
 
   const { mutate } = useAddToCart();
   const handleAddToCart = async () => {
-    mutate(
-      { productId: productCard.id },
-      {
-        onSuccess: () => {
-          console.log("Товар успешно добавлен в корзину");
-        },
-        onError: () => {
-          alert("Не удалось добавить товар в корзину.");
-        },
-      }
-    );
+    if (isInCart) router.push("/cart");
+    else {
+      mutate(
+        { productId: productCard.id },
+        {
+          onSuccess: () => {
+            console.log("Товар успешно добавлен в корзину");
+          },
+          onError: () => {
+            alert("Не удалось добавить товар в корзину.");
+          },
+        }
+      );
+    }
   };
 
   const mainImage = useMemo(() => {
@@ -59,5 +69,6 @@ export const useProductDetails = () => {
     handleAddToCart,
     mainImage,
     additionalImages,
+    isInCart,
   };
 };

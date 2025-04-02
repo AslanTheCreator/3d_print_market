@@ -14,12 +14,16 @@ import {
   useTheme,
   alpha,
   useMediaQuery,
+  Button,
 } from "@mui/material";
 import { ProductCardModel } from "../model/types";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import FavoriteBorderIcon from "@mui/icons-material/Favorite";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { formatPrice } from "@/shared/lib/formatPrice";
+import { useAddToCart } from "@/features/cart/add-to-cart/hooks/useAddToCart";
+import { useRouter } from "next/navigation";
+import { useCartProducts } from "@/entities/cart";
 
 export const ProductCard: React.FC<ProductCardModel> = ({
   id,
@@ -30,9 +34,13 @@ export const ProductCard: React.FC<ProductCardModel> = ({
 }) => {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
-  const [status, setStatus] = useState<string>("Active");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const router = useRouter();
+
+  const { data: cartItems } = useCartProducts({});
+
+  const isInCart = cartItems?.some((item) => item.id === id);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -41,10 +49,25 @@ export const ProductCard: React.FC<ProductCardModel> = ({
     // Здесь можно добавить логику сохранения состояния избранного
   };
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const { mutate } = useAddToCart();
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Логика добавления в корзину
+    if (isInCart) router.push("/cart");
+    else {
+      mutate(
+        { productId: id },
+        {
+          onSuccess: () => {
+            console.log("Товар успешно добавлен в корзину");
+          },
+          onError: () => {
+            alert("Не удалось добавить товар в корзину.");
+          },
+        }
+      );
+    }
   };
 
   return (
@@ -190,72 +213,73 @@ export const ProductCard: React.FC<ProductCardModel> = ({
           </Stack>
 
           {isMobile ? (
-            <Box
-              component="button"
+            <Button
               onClick={handleAddToCart}
+              variant="contained"
+              fullWidth
+              startIcon={
+                !isInCart && (
+                  <ShoppingCartOutlinedIcon sx={{ fontSize: "0.875rem" }} />
+                )
+              }
               sx={{
                 mt: "auto",
                 pt: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 0.5,
-                bgcolor: theme.palette.primary.main,
-                color: "white",
-                border: "none",
-                borderRadius: 1,
                 py: 0.75,
                 fontSize: "0.75rem",
                 fontWeight: 600,
-                cursor: "pointer",
-                width: "100%",
-                transition: "background-color 0.2s",
-                "&:hover": {
-                  bgcolor: theme.palette.primary.dark,
-                },
-                "&:disabled": {
-                  bgcolor: alpha(theme.palette.primary.main, 0.5),
-                  cursor: "not-allowed",
-                },
+                borderRadius: 1,
+                ...(isInCart
+                  ? {
+                      bgcolor: alpha(theme.palette.primary.light, 0.2),
+                      color: theme.palette.primary.main,
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.primary.light, 0.3),
+                      },
+                    }
+                  : {
+                      "&:hover": {
+                        bgcolor: theme.palette.primary.dark,
+                      },
+                    }),
               }}
-              disabled={status === "Cancelled"}
             >
-              <ShoppingCartOutlinedIcon sx={{ fontSize: "0.875rem" }} />
-              {status === "Active" ? "В корзину" : "Предзаказ"}
-            </Box>
+              {isInCart ? "В корзине" : "Купить"}
+            </Button>
           ) : (
             <Stack direction="row" spacing={1} sx={{ mt: "auto", pt: 1 }}>
-              <Box
-                component="button"
+              <Button
                 onClick={handleAddToCart}
+                variant="contained"
+                fullWidth
+                startIcon={
+                  !isInCart && <ShoppingCartOutlinedIcon fontSize="small" />
+                }
                 sx={{
                   flexGrow: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
                   gap: 1,
-                  bgcolor: theme.palette.primary.main,
-                  color: "white",
-                  border: "none",
                   borderRadius: 1.5,
                   py: 1,
                   fontSize: "0.875rem",
                   fontWeight: 600,
-                  cursor: "pointer",
                   transition: "background-color 0.2s",
-                  "&:hover": {
-                    bgcolor: theme.palette.primary.dark,
-                  },
-                  "&:disabled": {
-                    bgcolor: alpha(theme.palette.primary.main, 0.5),
-                    cursor: "not-allowed",
-                  },
+                  ...(isInCart
+                    ? {
+                        bgcolor: alpha(theme.palette.primary.light, 0.2),
+                        color: theme.palette.primary.main,
+                        "&:hover": {
+                          bgcolor: alpha(theme.palette.primary.light, 0.3),
+                        },
+                      }
+                    : {
+                        "&:hover": {
+                          bgcolor: theme.palette.primary.dark,
+                        },
+                      }),
                 }}
-                disabled={status === "Cancelled"}
               >
-                <ShoppingCartOutlinedIcon fontSize="small" />
-                {status === "Active" ? "В корзину" : "Предзаказ"}
-              </Box>
+                {isInCart ? "В корзине" : "Купить"}
+              </Button>
             </Stack>
           )}
         </CardContent>
