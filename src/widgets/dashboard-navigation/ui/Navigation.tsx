@@ -15,7 +15,6 @@ import {
   History as HistoryIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { LogoutButton } from "@/features/auth";
 
 interface NavigationItem {

@@ -21,8 +21,11 @@ export default function DashboardPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { data: userData } = useUser({});
   if (!userData) return null;
+  const displayName = userData.fullName?.trim()
+    ? userData.fullName
+    : userData.login;
   return (
-    <Container maxWidth="sm" sx={{ p: isMobile ? 2 : 3 }}>
+    <Container maxWidth="sm" sx={{ p: isMobile ? 2 : 3, marginTop: 2 }}>
       <Paper
         elevation={3}
         sx={{
@@ -39,7 +42,7 @@ export default function DashboardPage() {
       <Box sx={{ mb: 3 }}>
         <Box sx={{ py: 2 }}>
           <Typography variant="h5" component="h2" gutterBottom>
-            Добро пожаловать, {userData.fullName}!
+            Добро пожаловать, {displayName}!
           </Typography>
 
           <Typography variant="body1" color="text.secondary" paragraph>

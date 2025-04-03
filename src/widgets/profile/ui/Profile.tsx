@@ -17,7 +17,7 @@ const ProfileWidget: React.FC<ProfileWidgetProps> = ({ userData }) => {
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Профиль пользователя
+        Личные данные
       </Typography>
 
       <Box sx={{ p: 3, mb: 3, borderRadius: 2, bgcolor: "background.paper" }}>
