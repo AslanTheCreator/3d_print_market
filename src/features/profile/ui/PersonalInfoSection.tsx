@@ -10,16 +10,16 @@ import {
   Typography,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
-import { User } from "@/entities/user";
+import { UserBaseModel } from "@/entities/user";
 
 interface PersonalInfoSectionProps {
-  userData: User;
+  userData: UserBaseModel;
 }
 
 const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   userData,
 }) => {
-  const [formData, setFormData] = useState<Partial<User>>(userData);
+  const [formData, setFormData] = useState<Partial<UserBaseModel>>(userData);
 
   const handleChange =
     (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {

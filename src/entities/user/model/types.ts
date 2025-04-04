@@ -8,19 +8,10 @@ type Sending =
   | "RUSSIAN_POST"
   | "FREE_POST";
 
-export interface User {
-  id: number;
-  login: string;
-  mail: string;
-  password: string;
-  fullName: string;
-  phoneNumber: string;
-  status?: string;
-  imageIds: string;
-}
-
 export interface UserProfileModel
-  extends Pick<UserBaseModel, "id" | "fullName"> {}
+  extends Pick<UserBaseModel, "id" | "fullName" | "login" | "mail"> {
+  role: string;
+}
 
 export interface UserBaseModel {
   id: number;
@@ -35,6 +26,9 @@ export interface UserBaseModel {
   accounts: Account[];
   transfers: Transfer[];
 }
+
+export interface UserUpdateModel
+  extends Omit<UserBaseModel, "id" | "login" | "status"> {}
 
 interface Adress {
   id: number;

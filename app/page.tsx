@@ -6,6 +6,8 @@ import Box from "@mui/material/Box";
 import { useCardsInfinite } from "@/features/product";
 import { InfiniteScroll } from "@/shared/ui";
 import { ProductList } from "@/entities/product";
+import { useEffect } from "react";
+import { userApi } from "@/entities/user/api/userApi";
 
 export default function HomePage() {
   const {
@@ -16,6 +18,13 @@ export default function HomePage() {
     isLoading,
     error,
   } = useCardsInfinite(10);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      await userApi.getProfileUser();
+    };
+    fetchData();
+  }, []);
 
   if (isLoading) return <p>Загрузка...</p>;
   if (error) return <p style={{ color: "red" }}>Ошибка: {error.message}</p>;

@@ -23,13 +23,10 @@ const Header = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  // Use throttle instead of debounce for smoother scroll handling
-  // And use useCallback to prevent unnecessary recreations
   const handleScroll = useCallback(
     throttle(() => {
       const currentScrollY = window.scrollY;
 
-      // Show/hide based on scroll direction and position
       if (currentScrollY > lastScrollY && currentScrollY > 50) {
         setIsVisible(false);
       } else {
@@ -42,21 +39,20 @@ const Header = () => {
   );
 
   useEffect(() => {
-    // Only apply scroll behavior on mobile
     if (!isMobile) {
-      setIsVisible(true); // Always visible on desktop
+      setIsVisible(true);
       return;
     }
 
     window.addEventListener("scroll", handleScroll);
 
     return () => {
-      handleScroll.cancel(); // Cancel any pending throttle
+      handleScroll.cancel();
       window.removeEventListener("scroll", handleScroll);
     };
   }, [isMobile, handleScroll]);
 
-  const headerHeight = "119px"; // Extracting the magic number for better readability
+  const headerHeight = "119px";
 
   return (
     <Box

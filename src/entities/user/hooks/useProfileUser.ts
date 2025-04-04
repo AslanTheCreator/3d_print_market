@@ -1,15 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { userApi } from "../api/userApi";
-import { UserBaseModel } from "../model/types";
+import { UserProfileModel } from "../model/types";
 import { UseCartProductsOptions } from "@/entities/cart/hooks/useCartProducts";
 
-export const useUser = ({
+export const useProfileUser = ({
   staleTime = 1000 * 60 * 5,
   retry = 1,
 }: UseCartProductsOptions) => {
-  return useQuery<UserBaseModel, Error>({
+  return useQuery<UserProfileModel, Error>({
     queryKey: ["user"],
-    queryFn: () => userApi.getUser(),
+    queryFn: () => userApi.getProfileUser(),
     staleTime,
     retry,
   });

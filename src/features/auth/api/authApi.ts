@@ -47,25 +47,6 @@ export const authApi = {
       throw errorHandler.handleAxiosError(error, "Ошибка авторизации");
     }
   },
-  async profileUser() {
-    const accessToken = tokenStorage.getAccessToken();
-
-    if (!accessToken) {
-      tokenStorage.clearTokens();
-      throw new Error("Access token отсутствует");
-    }
-
-    try {
-      const { data } = await axios.get(`${API_URL_AUTH}/profile`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      return data;
-    } catch (error) {
-      throw errorHandler.handleAxiosError(error, "Ошибка получения профиля");
-    }
-  },
   async refreshAccessToken() {
     const refreshToken = tokenStorage.getRefreshToken();
 

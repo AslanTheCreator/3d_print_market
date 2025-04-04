@@ -13,13 +13,13 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { UserInfo } from "@/entities/user";
-import { useUser } from "@/entities/user/hooks/useUser";
 import { DashboardNavigation } from "@/widgets/dashboard-navigation";
+import { useProfileUser } from "@/entities/user/hooks/useProfileUser";
 
 export default function DashboardPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { data: userData } = useUser({});
+  const { data: userData } = useProfileUser({});
   if (!userData) return null;
   const displayName = userData.fullName?.trim()
     ? userData.fullName
@@ -34,7 +34,7 @@ export default function DashboardPage() {
           mb: 2,
         }}
       >
-        {/* User Profile Header */}
+        {/* UserBaseModel Profile Header */}
         <UserInfo user={userData} />
       </Paper>
 
