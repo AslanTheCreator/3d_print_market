@@ -16,7 +16,7 @@ import {
   useMediaQuery,
   Button,
 } from "@mui/material";
-import { ProductCardModel } from "../model/types";
+import { ProductCardModel } from "../../model/types";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import FavoriteBorderIcon from "@mui/icons-material/Favorite";
 import FavoriteIcon from "@mui/icons-material/Favorite";

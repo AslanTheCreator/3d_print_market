@@ -15,9 +15,8 @@ export default function HomePage() {
     isFetchingNextPage,
     isLoading,
     error,
-  } = useCardsInfinite(6);
+  } = useCardsInfinite(10);
 
-  if (isLoading) return <p>Загрузка...</p>;
   if (error) return <p style={{ color: "red" }}>Ошибка: {error.message}</p>;
   return (
     <Container sx={{ pt: "20px" }}>
@@ -30,7 +29,10 @@ export default function HomePage() {
           hasNextPage={!!hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
         >
-          <ProductList products={data?.pages.flat() ?? []} />
+          <ProductList
+            products={data?.pages.flat() ?? []}
+            isLoading={isLoading}
+          />
         </InfiniteScroll>
       </Box>
     </Container>
