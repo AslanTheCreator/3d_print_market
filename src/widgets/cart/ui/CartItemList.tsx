@@ -4,9 +4,9 @@ import React from "react";
 import { Button, Container, Typography } from "@mui/material";
 import { CartList, useCartProducts } from "@/entities/cart";
 import { useRouter } from "next/navigation";
-import EmptyCart from "@/entities/cart/ui/EmptyCart";
+import { EmptyCart } from "@/entities/cart/ui/EmptyCart";
 
-const CartItemList = () => {
+export const CartItemList = () => {
   const router = useRouter();
   const { data: cartItems, isLoading, isError } = useCartProducts({});
 
@@ -38,5 +38,3 @@ const CartItemList = () => {
     </Container>
   );
 };
-
-export default CartItemList;

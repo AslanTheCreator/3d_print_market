@@ -6,8 +6,6 @@ import Box from "@mui/material/Box";
 import { useCardsInfinite } from "@/features/product";
 import { InfiniteScroll } from "@/shared/ui";
 import { ProductList } from "@/entities/product";
-import { useEffect } from "react";
-import { userApi } from "@/entities/user/api/userApi";
 
 export default function HomePage() {
   const {
@@ -17,19 +15,12 @@ export default function HomePage() {
     isFetchingNextPage,
     isLoading,
     error,
-  } = useCardsInfinite(10);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      await userApi.getProfileUser();
-    };
-    fetchData();
-  }, []);
+  } = useCardsInfinite(6);
 
   if (isLoading) return <p>Загрузка...</p>;
   if (error) return <p style={{ color: "red" }}>Ошибка: {error.message}</p>;
   return (
-    <Container sx={{ paddingTop: "10px", backgroundColor: "#F1F1F1" }}>
+    <Container sx={{ pt: "20px" }}>
       <Typography component={"h2"} variant="h2">
         Свежие предзаказы
       </Typography>

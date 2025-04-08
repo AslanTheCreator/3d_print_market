@@ -1,13 +1,13 @@
 import React from "react";
 import { Divider, Stack } from "@mui/material";
-import CartItem from "./CartItem";
+import { CartItem } from "./CartItem";
 import { CartProductModel } from "../model/types";
 
 interface CartListProps {
   items: CartProductModel[];
 }
 
-const CartList = ({ items }: CartListProps) => {
+export const CartList = ({ items }: CartListProps) => {
   return (
     <Stack>
       {items.map((item, index) => (
@@ -19,5 +19,3 @@ const CartList = ({ items }: CartListProps) => {
     </Stack>
   );
 };
-
-export default CartList;

@@ -1,3 +1,3 @@
-export { default as CartList } from "./ui/CartList";
+export { CartList } from "./ui/CartList";
 
 export { useCartProducts } from "./hooks/useCartProducts";

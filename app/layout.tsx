@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import CssBaseline from "@mui/material/CssBaseline";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
-import CssBaseLine from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "../src/app/styles/theme";
-import Footer from "@/widgets/footer";
-import Header from "@/widgets/header";
+import { Footer } from "@/widgets/footer";
+import { Header } from "@/widgets/header";
 import QueryProvider from "@/app";
 
 export const metadata: Metadata = {
@@ -24,7 +24,7 @@ export default function RootLayout({
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <QueryProvider>
-              <CssBaseLine />
+              <CssBaseline />
               <Header />
               <main className="main">{children}</main>
               <Footer />

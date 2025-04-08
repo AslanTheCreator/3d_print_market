@@ -295,7 +295,7 @@ theme = createTheme(theme, {
       styleOverrides: {
         root: ({ theme }: { theme: Theme }) => ({
           [theme.breakpoints.down("sm")]: {
-            padding: "0 16px",
+            padding: "0px 16px",
           },
         }),
       },

@@ -3,7 +3,7 @@ import { Box, Container, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { ButtonStyled } from "@/shared/ui";
 
-const EmptyCart = () => {
+export const EmptyCart = () => {
   const router = useRouter();
 
   return (
@@ -33,5 +33,3 @@ const EmptyCart = () => {
     </Container>
   );
 };
-
-export default EmptyCart;

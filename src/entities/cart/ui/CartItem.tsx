@@ -6,7 +6,7 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import { CartProductModel } from "../model/types";
 import { useRemoveFromCart } from "@/features/cart/add-to-cart/hooks/useRemoveFromCart";
 
-const CartItem: React.FC<CartProductModel> = ({
+export const CartItem: React.FC<CartProductModel> = ({
   id,
   name,
   price,
@@ -79,5 +79,3 @@ const CartItem: React.FC<CartProductModel> = ({
     </Box>
   );
 };
-
-export default CartItem;

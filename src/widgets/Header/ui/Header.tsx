@@ -16,7 +16,7 @@ import Link from "next/link";
 import throttle from "lodash.throttle";
 import SearchString from "./SearchString";
 
-const Header = () => {
+export const Header = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -104,4 +104,3 @@ const Header = () => {
   );
 };
 
-export default Header;
