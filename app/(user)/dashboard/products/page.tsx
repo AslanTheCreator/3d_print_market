@@ -1,3 +1,5 @@
+import { CreateProductForm } from "@/features/product/create-product/ui/CreateProductForm";
+
 export default function ProductsPage() {
-  return <div>ProductsPage</div>;
+  return <CreateProductForm />;
 }
