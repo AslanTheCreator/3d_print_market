@@ -35,6 +35,7 @@ const navigationItems: NavigationItem[] = [
     icon: <AccessTimeIcon />,
     path: "/dashboard/pre-orders",
   },
+  { text: "Товары", icon: <ShoppingBagIcon />, path: "/dashboard/products" },
   { text: "Избранное", icon: <FavoriteIcon />, path: "/dashboard/favorites" },
   {
     text: "История покупок",

@@ -3,10 +3,12 @@ import {
   ProductResponseModel,
   ProductCardModel,
   ProductDetailsModel,
+  ProductCreateModel,
 } from "../model/types";
 import config from "@/shared/config/api";
 import { imageApi } from "@/entities/image/api/imageApi";
 import { errorHandler } from "@/shared/lib/errorHandler";
+import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
 
 const API_URL = `${config.apiBaseUrl}/products/find`;
 
@@ -67,6 +69,22 @@ export const productApi = {
         error,
         `Ошибка при получении данных о товаре с ID: ${id}`
       );
+    }
+  },
+  async createProduct(data: ProductCreateModel) {
+    try {
+      const authenticatedAxios = createAuthenticatedAxiosInstance();
+      await authenticatedAxios.post(
+        `${config.apiBaseUrl}/product`,
+        { data },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    } catch (error) {
+      throw errorHandler.handleAxiosError(error, "Ошибка при создании товара");
     }
   },
 };

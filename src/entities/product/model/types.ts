@@ -20,3 +20,12 @@ export interface ProductDetailsModel extends ProductBaseModel {
   imageIds: number[];
   image: ImageResponse[];
 }
+
+export interface ProductCreateModel
+  extends Omit<
+    ProductBaseModel,
+    "id" | "category" | "participantId" | "status"
+  > {
+  categoryId: number;
+  imageIds: number[];
+}

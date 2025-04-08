@@ -1,1 +1,1 @@
-export { useCardsInfinite } from "./hooks/useCardsInfinite";
+export { useCardsInfinite } from "./cards-infinite/hooks/useCardsInfinite";
