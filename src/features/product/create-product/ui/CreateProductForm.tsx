@@ -27,6 +27,7 @@ import { CategoryModel } from "@/shared/model/types/category";
 import { styled } from "@mui/material/styles";
 import { CloudUpload } from "@mui/icons-material";
 import { Currency } from "@/shared/model/types";
+import { imageApi } from "@/entities/image/api/imageApi";
 
 // Список валют
 const currencies: { code: Currency; symbol: string }[] = [
@@ -84,6 +85,9 @@ export const CreateProductForm = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [severity, setSeverity] = useState<"success" | "error">("success");
 
+  const [imageId, setImageId] = useState<number[]>([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
   const { mutate: createProduct, isPending } = useCreateProduct();
 
   const {
@@ -101,7 +105,7 @@ export const CreateProductForm = () => {
     },
   });
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
@@ -110,6 +114,7 @@ export const CreateProductForm = () => {
         setImageError("Размер файла не должен превышать 5 МБ");
         setImage(null);
         setImagePreview(null);
+        setImageId([]);
         return;
       }
 
@@ -118,6 +123,7 @@ export const CreateProductForm = () => {
         setImageError("Пожалуйста, загрузите изображение");
         setImage(null);
         setImagePreview(null);
+        setImageId([]);
         return;
       }
 
@@ -128,25 +134,34 @@ export const CreateProductForm = () => {
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+
+      try {
+        setIsUploadingImage(true);
+        const response = await imageApi.saveImage(file, "PRODUCT");
+        setImageId(response); // Сохраняем ID изображения
+        setIsUploadingImage(false);
+      } catch (error) {
+        console.error("Ошибка при загрузке изображения:", error);
+        setImageError("Не удалось загрузить изображение на сервер");
+        setIsUploadingImage(false);
+      }
     }
   };
 
   const onSubmit = (data: FormValues) => {
-    if (!image) {
+    if (!image || !imageId) {
       setImageError("Пожалуйста, загрузите изображение товара");
       return;
     }
 
-    // В реальном приложении здесь нужно будет загрузить изображение на сервер и получить URL
-    const mockImageUrl = "https://example.com/image.jpg";
-
     const productData = {
       categoryId: parseInt(data.categoryId),
       name: data.name,
-      imageIds: [1],
+      imageIds: imageId,
       price: parseFloat(data.price),
       currency: data.currency,
       description: data.description,
+      count: 1,
     };
 
     createProduct(productData, {

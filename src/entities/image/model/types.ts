@@ -3,3 +3,5 @@ export interface ImageResponse {
   contentType: string;
   imageData: string;
 }
+
+export type ImageTag = "PARTICIPANT" | "PRODUCT" | "ORDER" | "SYSTEM";

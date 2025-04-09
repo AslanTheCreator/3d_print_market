@@ -24,7 +24,7 @@ export interface ProductDetailsModel extends ProductBaseModel {
 export interface ProductCreateModel
   extends Omit<
     ProductBaseModel,
-    "id" | "category" | "participantId" | "status" | "originality" | "count"
+    "id" | "category" | "participantId" | "status" | "originality"
   > {
   categoryId: number;
   imageIds: number[];

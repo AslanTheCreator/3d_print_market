@@ -74,15 +74,16 @@ export const productApi = {
   async createProduct(data: ProductCreateModel) {
     try {
       const authenticatedAxios = createAuthenticatedAxiosInstance();
-      await authenticatedAxios.post(
+      const response = await authenticatedAxios.post(
         `${config.apiBaseUrl}/product`,
-        { data },
+        data,
         {
           headers: {
             "Content-Type": "application/json",
           },
         }
       );
+      //console.log(response.data);
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка при создании товара");
     }
