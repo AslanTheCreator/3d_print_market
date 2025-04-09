@@ -1,5 +1,5 @@
 import { ImageResponse } from "@/entities/image/model/types";
-import { ProductBaseModel } from "@/shared/types";
+import { ProductBaseModel } from "@/shared/model/types";
 
 export interface ProductResponseModel {
   totalElements: number;

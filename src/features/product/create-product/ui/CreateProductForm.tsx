@@ -8,11 +8,12 @@ import {
   Typography,
   InputAdornment,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductCreateModel } from "@/entities/product/model/types";
 import { useCreateProduct } from "../hooks/useCreateProduct";
+import { categoryApi } from "@/entities/category/api/categoryApi";
+import { CategoryModel } from "@/shared/model/types/category";
 
-const categories = ["Одежда", "Обувь", "Аксессуары"];
 const currencies = ["₽", "$", "€"];
 
 export const CreateProductForm = () => {
@@ -27,6 +28,17 @@ export const CreateProductForm = () => {
     count: 1,
     originality: "NEW",
   });
+
+  const [categories, setCategories] = useState<CategoryModel[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await categoryApi.getCategories();
+      console.log(data);
+      setCategories(data);
+    };
+    fetchData();
+  }, []);
 
   const handleChange = (key: keyof ProductCreateModel, value: any) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -57,13 +69,13 @@ export const CreateProductForm = () => {
       <TextField
         select
         label="Категория"
-        value={form.categoryId}
+        value
         onChange={(e) => handleChange("categoryId", e.target.value)}
         fullWidth
       >
         {categories.map((cat) => (
-          <MenuItem key={cat} value={cat}>
-            {cat}
+          <MenuItem key={cat.id} value={cat.id}>
+            {cat.name}
           </MenuItem>
         ))}
       </TextField>

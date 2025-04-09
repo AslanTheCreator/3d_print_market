@@ -1,4 +1,4 @@
-import { ProductBaseModel } from "@/shared/types";
+import { ProductBaseModel } from "@/shared/model/types";
 
 export interface CartResponseModel {
   totalElements: number;

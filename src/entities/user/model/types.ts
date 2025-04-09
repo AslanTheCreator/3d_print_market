@@ -1,4 +1,4 @@
-import { Currency } from "@/shared/types";
+import { Currency } from "@/shared/model/types";
 
 type Status = "ACTIVE" | "BLOCKED" | "DELETED";
 type TransferMoney = "BANK_CARD" | "BANK_SBP" | "CASH";
