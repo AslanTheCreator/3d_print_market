@@ -10,29 +10,53 @@ import {
   Paper,
   Tabs,
   Tab,
+  IconButton,
+  TextField,
+  Button,
 } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { styled } from "@mui/material/styles";
 import { useState } from "react";
 
 interface ProfileWidgetProps {
-  userData: UserUpdateModel;
+  //userData: UserUpdateModel;
+  onBack: () => void;
 }
 
-const ProfileWidget: React.FC<ProfileWidgetProps> = ({ userData }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleSave = () => {};
+const ProfileWidget: React.FC<ProfileWidgetProps> = ({ onBack }) => {
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 4 }}>
-        Личные данные
-      </Typography>
-    </Container>
+    <Box sx={{ py: 2 }}>
+      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+        <IconButton onClick={onBack} sx={{ mr: 1 }}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h5" component="h2">
+          Профиль
+        </Typography>
+      </Box>
+
+      <Paper sx={{ p: 2 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <TextField fullWidth label="Логин" defaultValue={""} disabled />
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField fullWidth label="Полное имя" defaultValue={""} />
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField fullWidth label="Email" type="email" defaultValue={""} />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Button variant="contained" color="primary">
+              Сохранить изменения
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
+    </Box>
   );
 };
 

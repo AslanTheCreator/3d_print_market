@@ -1,73 +1,65 @@
 "use client";
 
-import React from "react";
-import {
-  Box,
-  Container,
-  Paper,
-  useMediaQuery,
-  Typography,
-  Card,
-  CardContent,
-  Grid,
-} from "@mui/material";
+import React, { useState } from "react";
+import { Box, Container, Paper, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { UserInfo } from "@/entities/user";
-import { DashboardNavigation } from "@/widgets/dashboard-navigation";
 import { useProfileUser } from "@/entities/user/hooks/useProfileUser";
+import ProfileWidget from "@/widgets/profile/ui/Profile";
+import { DashboardContent } from "@/widgets/dashboard";
+import { DashboardNavigation } from "@/widgets/dashboard";
+
+// Перечисление для секций дашборда
+type DashboardSection = "main" | "profile" | "payment-methods";
 
 export default function DashboardPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { data: userData } = useProfileUser({});
-  if (!userData) return null;
-  const displayName = userData.fullName?.trim()
-    ? userData.fullName
-    : userData.login;
+
+  const [activeSection, setActiveSection] = useState<DashboardSection>("main");
+
+  if (!userData) return null; // заглушка
+
+  const navigateTo = (section: DashboardSection) => {
+    setActiveSection(section);
+  };
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case "profile":
+        return <ProfileWidget onBack={() => navigateTo("main")} />;
+      case "main":
+      default:
+        return <DashboardContent user={userData} />;
+    }
+  };
+
   return (
     <Container maxWidth="sm" sx={{ p: isMobile ? 2 : 3, marginTop: 2 }}>
-      <Paper
-        elevation={3}
-        sx={{
-          borderRadius: 2,
-          overflow: "hidden",
-          mb: 2,
-        }}
-      >
-        {/* UserBaseModel Profile Header */}
-        <UserInfo user={userData} />
-      </Paper>
+      {activeSection === "main" && (
+        <Paper
+          elevation={3}
+          sx={{
+            borderRadius: 2,
+            overflow: "hidden",
+            mb: 2,
+          }}
+        >
+          <UserInfo user={userData} />
+        </Paper>
+      )}
 
       {/* Main Content */}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ py: 2 }}>
-          <Typography variant="h5" component="h2" gutterBottom>
-            Добро пожаловать, {displayName}!
-          </Typography>
-
-          <Typography variant="body1" color="text.secondary" paragraph>
-            Управляйте вашими заказами и настройками через личный кабинет.
-          </Typography>
-
-          <Grid container spacing={2} sx={{ mt: 2 }}>
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Активность
-                  </Typography>
-                  <Typography variant="body2">
-                    У вас нет текущих заказов.
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </Box>
-      </Box>
+      <Box sx={{ mb: 3 }}>{renderContent()}</Box>
 
       {/* Navigation Menu */}
-      <DashboardNavigation />
+      {activeSection === "main" && (
+        <DashboardNavigation
+          onNavigate={navigateTo}
+          activeSection={activeSection}
+        />
+      )}
     </Container>
   );
 }
