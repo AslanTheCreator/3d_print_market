@@ -3,7 +3,7 @@ import {
   useQueryClient,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { addToCartService } from "../model/add-to-cart-service";
+import { cartApi } from "@/entities/cart/api/cartApi";
 
 export const useRemoveFromCart = (): UseMutationResult<
   void,
@@ -14,7 +14,7 @@ export const useRemoveFromCart = (): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ productId }: { productId: number }) => {
-      return addToCartService.removeProduct(productId);
+      return cartApi.removeFromCart(productId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });

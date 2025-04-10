@@ -13,7 +13,7 @@ export const useCartProducts = ({
 }: UseCartProductsOptions) => {
   return useQuery<CartProductModel[], Error>({
     queryKey: ["cart"],
-    queryFn: () => cartApi.getCartProducts(),
+    queryFn: () => cartApi.getCart(),
     staleTime, // Время, в течение которого данные считаются актуальными
     retry, // Количество попыток повторного запроса в случае ошибки
   });
