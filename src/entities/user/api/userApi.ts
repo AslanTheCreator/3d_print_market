@@ -6,6 +6,7 @@ import {
 } from "../model/types";
 import { errorHandler } from "@/shared/lib/errorHandler";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
+import { imageApi } from "@/entities/image/api/imageApi";
 
 const API_URL = `${config.apiBaseUrl}/participant`;
 const API_URL_PROFILE = `${config.apiBaseUrl}/auth/profile`;
@@ -32,7 +33,9 @@ export const userApi = {
       const { data } = await authenticatedAxios.get<UserProfileModel>(
         API_URL_PROFILE
       );
-      return data;
+
+      const image = await imageApi.getImages(data.imageId);
+      return { ...data, image: image };
     } catch (error) {
       throw errorHandler.handleAxiosError(
         error,

@@ -1,4 +1,3 @@
-// components/dashboard/DashboardContent.tsx
 import React from "react";
 import { Box, Typography, Card, CardContent, Grid } from "@mui/material";
 import { UserProfileModel } from "@/entities/user";

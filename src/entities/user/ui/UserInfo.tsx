@@ -9,7 +9,7 @@ interface UserInfoProps {
 
 export const UserInfo: React.FC<UserInfoProps> = ({ user }) => {
   const displayName = user.fullName?.trim() ? user.fullName : user.login;
-  //const hasImage = Array.isArray(user.imageIds) && user.imageIds.length > 0;
+  const hasImage = user.image && user.image[0]?.imageData;
 
   return (
     <Box
@@ -23,8 +23,8 @@ export const UserInfo: React.FC<UserInfoProps> = ({ user }) => {
         borderRadius: 2,
       }}
     >
-      {/* <Avatar
-        src={hasImage ? user.imageIds[0] : undefined}
+      <Avatar
+        src={`data:${user.image[0].contentType};base64,${user.image[0].imageData}`}
         alt={displayName}
         sx={{
           width: 80,
@@ -35,7 +35,7 @@ export const UserInfo: React.FC<UserInfoProps> = ({ user }) => {
         }}
       >
         {!hasImage && <PersonIcon sx={{ fontSize: 40 }} color="secondary" />}
-      </Avatar> */}
+      </Avatar>
       <Typography variant="h6" component="h1">
         {displayName}
       </Typography>

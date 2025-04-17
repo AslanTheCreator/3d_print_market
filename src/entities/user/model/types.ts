@@ -1,3 +1,4 @@
+import { ImageResponse } from "@/entities/image/model/types";
 import { Currency } from "@/shared/model/types";
 
 type Status = "ACTIVE" | "BLOCKED" | "DELETED";
@@ -11,6 +12,8 @@ type Sending =
 export interface UserProfileModel
   extends Pick<UserBaseModel, "id" | "fullName" | "login" | "mail"> {
   role: string;
+  imageId: number;
+  image: ImageResponse[];
 }
 
 export interface UserBaseModel {
