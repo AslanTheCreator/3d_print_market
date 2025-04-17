@@ -10,7 +10,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { SearchCategories } from "./SearchCategories";
+import { CategoryToggleButton } from "./CategoryToggleButton";
 import { HeaderIconLinks } from "./HeaderIconLinks";
 import Link from "next/link";
 import throttle from "lodash.throttle";
@@ -95,7 +95,7 @@ export const Header = () => {
 
           {/* Search row */}
           <Stack direction="row" alignItems="center" gap={1}>
-            <SearchCategories />
+            <CategoryToggleButton />
             <SearchString />
           </Stack>
         </Stack>
@@ -103,4 +103,3 @@ export const Header = () => {
     </Box>
   );
 };
-
