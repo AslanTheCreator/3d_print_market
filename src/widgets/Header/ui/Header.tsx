@@ -15,6 +15,7 @@ import { HeaderIconLinks } from "./HeaderIconLinks";
 import Link from "next/link";
 import throttle from "lodash.throttle";
 import SearchString from "./SearchString";
+import logo from "../../../shared/assets/icons/logo.svg";
 
 export const Header = () => {
   const theme = useTheme();
@@ -78,7 +79,7 @@ export const Header = () => {
           >
             <Link href="/" aria-label="Home">
               <Stack direction="row" alignItems="center" gap={1}>
-                <Image src="/" alt="Logo" width={35} height={35} priority />
+                <Image src={logo} alt="Logo" width={35} height={35} priority />
                 <Typography
                   component="h1"
                   variant="h6"

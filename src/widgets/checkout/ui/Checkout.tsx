@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/shared/lib/formatPrice";
+import { useCreateOrder } from "@/features/order/create-order/hooks/useCreateOrder";
 
 type DeliveryAddressForm = {
   region: string;
@@ -38,7 +39,9 @@ type PaymentMethod = "card";
 
 const Checkout = () => {
   const router = useRouter();
-  const { data: cartItems, isLoading } = useCartProducts({  });
+  const { data: cartItems, isLoading } = useCartProducts({});
+
+  const { mutate: createOrder, isPending } = useCreateOrder();
 
   const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddressForm>({
     region: "",
