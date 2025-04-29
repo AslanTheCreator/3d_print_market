@@ -2,12 +2,13 @@ import config from "@/shared/config/api";
 import { CartProductModel, CartResponseModel } from "../model/types";
 import { errorHandler } from "@/shared/lib/errorHandler";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
+import { imageApi } from "@/entities/image/api/imageApi";
 
 export const cartApi = {
   getCart: async (): Promise<CartProductModel[]> => {
     const authenticatedAxios = createAuthenticatedAxiosInstance();
     try {
-      const { data } = await authenticatedAxios.post<CartResponseModel[]>(
+      const { data } = await authenticatedAxios.post<CartResponseModel>(
         `${config.apiBaseUrl}/basket/find`,
         {},
         {
@@ -16,8 +17,22 @@ export const cartApi = {
           },
         }
       );
+      const products = data.content;
 
-      return data[0].content ?? [];
+      if (!Array.isArray(products)) {
+        console.error("Ошибка: сервер вернул некорректный формат данных", data);
+        throw new Error("Некорректный формат данных от сервера");
+      }
+
+      return Promise.all(
+        products.map(async (product) => {
+          const images =
+            product.imageId !== undefined
+              ? await imageApi.getImages(product.imageId)
+              : [];
+          return { ...product, image: images };
+        })
+      );
     } catch (error) {
       throw errorHandler.handleAxiosError(
         error,

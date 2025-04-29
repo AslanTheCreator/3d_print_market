@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { CartList, useCartProducts } from "@/entities/cart";
 import {
   Container,
@@ -16,70 +16,107 @@ import {
   Paper,
   Divider,
   Stack,
+  FormHelperText,
+  Checkbox,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/shared/lib/formatPrice";
 import { useCreateOrder } from "@/features/order/create-order/hooks/useCreateOrder";
+import { useForm, Controller } from "react-hook-form";
+import { useUser } from "@/entities/user/hooks/useUser";
 
-type DeliveryAddressForm = {
+type DeliveryMethod = "pickup" | "delivery-company" | "russian-post";
+type PaymentMethod = "card" | "sbp";
+
+type CheckoutFormValues = {
+  // Адрес доставки
   region: string;
   city: string;
   address: string;
-};
 
-type RecipientForm = {
-  firstName: string;
-  lastName: string;
-  middleName: string;
+  // Получатель
+  fullName: string;
   email: string;
   phone: string;
-};
 
-type PaymentMethod = "card";
+  // Способ доставки
+  deliveryMethod: DeliveryMethod;
+
+  // Способ оплаты
+  paymentMethod: PaymentMethod;
+
+  // Комментарий
+  comment: string;
+
+  // Использовать данные из профиля
+  useProfileAddress: boolean;
+};
 
 const Checkout = () => {
   const router = useRouter();
-  const { data: cartItems, isLoading } = useCartProducts({});
-
+  const { data: cartItems, isLoading: isCartLoading } = useCartProducts({});
   const { mutate: createOrder, isPending } = useCreateOrder();
+  const { data: userProfile, isLoading: isUserLoading } = useUser({});
 
-  const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddressForm>({
-    region: "",
-    city: "",
-    address: "",
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+    reset,
+  } = useForm<CheckoutFormValues>({
+    defaultValues: {
+      region: "",
+      city: "",
+      address: "",
+      fullName: "",
+      email: "",
+      phone: "",
+      deliveryMethod: "pickup",
+      paymentMethod: "card",
+      comment: "",
+      useProfileAddress: true,
+    },
   });
 
-  const [recipient, setRecipient] = useState<RecipientForm>({
-    firstName: "",
-    lastName: "",
-    middleName: "",
-    email: "",
-    phone: "",
-  });
+  // Следим за чекбоксом использования данных из профиля
+  const useProfileAddress = watch("useProfileAddress");
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
-  const [comment, setComment] = useState("");
+  // Предзаполняем данные из профиля пользователя при загрузке
+  useEffect(() => {
+    if (userProfile && !isUserLoading && useProfileAddress) {
+      // Предзаполняем данные адреса, если они есть в профиле
+      if (userProfile.addresses[0]) {
+        setValue("region", userProfile.addresses[0].country || "");
+        setValue("city", userProfile.addresses[0].city || "");
+        setValue("address", userProfile.addresses[0].fullAddress || "");
+      }
 
-  const handleDeliveryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDeliveryAddress({
-      ...deliveryAddress,
-      [e.target.name]: e.target.value,
-    });
-  };
+      // Предзаполняем данные пользователя
+      setValue("fullName", userProfile.fullName || "");
+      setValue("email", userProfile.mail || "");
+      setValue("phone", userProfile.phoneNumber || "");
+    }
+  }, [userProfile, isUserLoading, setValue, useProfileAddress]);
 
-  const handleRecipientChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRecipient({
-      ...recipient,
-      [e.target.name]: e.target.value,
-    });
-  };
+  // Обработчик переключения использования данных из профиля
+  const handleUseProfileAddressChange = (checked: boolean) => {
+    setValue("useProfileAddress", checked);
 
-  const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPaymentMethod(e.target.value as PaymentMethod);
-  };
-
-  const handleCommentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setComment(e.target.value);
+    if (checked && userProfile) {
+      // Если выбрано использование данных из профиля, заполняем поля
+      if (userProfile.addresses[0]) {
+        setValue("region", userProfile.addresses[0].country || "");
+        setValue("city", userProfile.addresses[0].city || "");
+        setValue("address", userProfile.addresses[0].fullAddress || "");
+      }
+    } else {
+      // Если отключено использование данных из профиля, очищаем поля адреса
+      setValue("region", "");
+      setValue("city", "");
+      setValue("address", "");
+    }
   };
 
   // Расчет итоговой суммы
@@ -98,23 +135,63 @@ const Checkout = () => {
 
   const { subtotal, deliveryPrice, total } = calculateTotals();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const onSubmit = (data: CheckoutFormValues) => {
     // Здесь будет логика отправки заказа на сервер
     console.log({
       items: cartItems,
-      deliveryAddress,
-      recipient,
-      paymentMethod,
-      comment,
+      deliveryAddress: {
+        region: data.region,
+        city: data.city,
+        address: data.address,
+      },
+      recipient: {
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+      },
+      deliveryMethod: data.deliveryMethod,
+      paymentMethod: data.paymentMethod,
+      comment: data.comment,
       total,
     });
+
+    // Создание заказа через API
+    // createOrder({
+    //   items:
+    //     cartItems?.map((item) => ({ productId: item.id, quantity: 1 })) || [],
+    //   deliveryAddress: `${data.region}, ${data.city}, ${data.address}`,
+    //   recipientName: data.fullName,
+    //   recipientEmail: data.email,
+    //   recipientPhone: data.phone,
+    //   deliveryMethod: data.deliveryMethod,
+    //   paymentMethod: data.paymentMethod,
+    //   comment: data.comment,
+    // });
 
     // Перенаправление на страницу успешного оформления
     // router.push("/checkout/success");
     alert("Заказ успешно оформлен!"); // Временная замена перенаправления
   };
+
+  // Сохранение данных адреса в профиль пользователя (если они обновились)
+  const saveAddressToProfile = () => {
+    // Предполагается, что у вас есть API для обновления данных профиля
+    if (userProfile && !useProfileAddress) {
+      // Логика для сохранения обновленного адреса в профиле пользователя
+      // Пример: updateUserProfile({ address: { region, city, street } })
+    }
+  };
+
+  // Проверка на загрузку данных и наличие товаров
+  if (isCartLoading) {
+    return (
+      <Container sx={{ my: 4, textAlign: "center" }}>
+        <Typography variant="h5" gutterBottom>
+          Загрузка корзины...
+        </Typography>
+      </Container>
+    );
+  }
 
   // Проверка на наличие товаров
   if (!cartItems?.length) {
@@ -129,23 +206,304 @@ const Checkout = () => {
       </Container>
     );
   }
+
   return (
     <Container maxWidth="sm" sx={{ my: 4 }}>
       <Typography variant="h5" component="h1" gutterBottom>
         Оформление заказа
       </Typography>
-      <form onSubmit={handleSubmit}>
+
+      <form onSubmit={handleSubmit(onSubmit)}>
+        {/* Адрес доставки */}
+        <Paper sx={{ mb: 3, p: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Typography variant="h6">Адрес доставки</Typography>
+
+            {userProfile && userProfile.addresses[0] && (
+              <FormControlLabel
+                control={
+                  <Controller
+                    name="useProfileAddress"
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox
+                        checked={field.value}
+                        onChange={(e) =>
+                          handleUseProfileAddressChange(e.target.checked)
+                        }
+                      />
+                    )}
+                  />
+                }
+                label="Использовать адрес из профиля"
+                sx={{ ml: 0 }}
+              />
+            )}
+          </Box>
+
+          {isUserLoading ? (
+            <Box sx={{ textAlign: "center", py: 2 }}>
+              <Typography>Загрузка данных пользователя...</Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Controller
+                  name="region"
+                  control={control}
+                  rules={{ required: "Это поле обязательно" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="Регион"
+                      error={!!errors.region}
+                      helperText={errors.region?.message}
+                      disabled={
+                        useProfileAddress &&
+                        !!userProfile?.addresses[0]?.country
+                      }
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Controller
+                  name="city"
+                  control={control}
+                  rules={{ required: "Это поле обязательно" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="Город"
+                      error={!!errors.city}
+                      helperText={errors.city?.message}
+                      disabled={
+                        useProfileAddress && !!userProfile?.addresses[0]?.city
+                      }
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Controller
+                  name="address"
+                  control={control}
+                  rules={{ required: "Это поле обязательно" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="Улица, дом, квартира"
+                      error={!!errors.address}
+                      helperText={errors.address?.message}
+                      disabled={
+                        useProfileAddress && !!userProfile?.addresses[0]?.street
+                      }
+                    />
+                  )}
+                />
+              </Grid>
+            </Grid>
+          )}
+        </Paper>
+
+        {/* Получатель */}
         <Paper sx={{ mb: 3, p: 2 }}>
           <Typography variant="h6" gutterBottom>
-            Товары в заказе
+            Получатель
+          </Typography>
+          {isUserLoading ? (
+            <Box sx={{ textAlign: "center", py: 2 }}>
+              <Typography>Загрузка данных пользователя...</Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Controller
+                  name="fullName"
+                  control={control}
+                  rules={{ required: "Это поле обязательно" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="Имя"
+                      error={!!errors.fullName}
+                      helperText={errors.fullName?.message}
+                      disabled={useProfileAddress && !!userProfile?.fullName}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Controller
+                  name="email"
+                  control={control}
+                  rules={{
+                    required: "Это поле обязательно",
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Некорректный email адрес",
+                    },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="Email"
+                      type="email"
+                      error={!!errors.email}
+                      helperText={errors.email?.message}
+                      disabled={useProfileAddress && !!userProfile?.mail}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Controller
+                  name="phone"
+                  control={control}
+                  rules={{
+                    required: "Это поле обязательно",
+                    pattern: {
+                      value:
+                        /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/,
+                      message: "Некорректный номер телефона",
+                    },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="Телефон"
+                      error={!!errors.phone}
+                      helperText={errors.phone?.message}
+                      disabled={useProfileAddress && !!userProfile?.phoneNumber}
+                    />
+                  )}
+                />
+              </Grid>
+            </Grid>
+          )}
+        </Paper>
+
+        {/* Товары в корзине */}
+        <Paper sx={{ mb: 3, p: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Товары в корзине
           </Typography>
           <CartList items={cartItems} />
         </Paper>
+
+        {/* Способ доставки */}
+        <Paper sx={{ mb: 3, p: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Способ получения
+          </Typography>
+          <FormControl
+            component="fieldset"
+            fullWidth
+            error={!!errors.deliveryMethod}
+          >
+            <Controller
+              name="deliveryMethod"
+              control={control}
+              rules={{ required: "Выберите способ доставки" }}
+              render={({ field }) => (
+                <RadioGroup {...field}>
+                  <FormControlLabel
+                    value="pickup"
+                    control={<Radio />}
+                    label="Самовывоз"
+                  />
+                  <FormControlLabel
+                    value="delivery-company"
+                    control={<Radio />}
+                    label="Транспортная компания"
+                  />
+                  <FormControlLabel
+                    value="russian-post"
+                    control={<Radio />}
+                    label="Почта России"
+                  />
+                </RadioGroup>
+              )}
+            />
+            {errors.deliveryMethod && (
+              <FormHelperText>{errors.deliveryMethod.message}</FormHelperText>
+            )}
+          </FormControl>
+        </Paper>
+
+        {/* Способ оплаты */}
+        <Paper sx={{ mb: 3, p: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Способ оплаты
+          </Typography>
+          <FormControl
+            component="fieldset"
+            fullWidth
+            error={!!errors.paymentMethod}
+          >
+            <Controller
+              name="paymentMethod"
+              control={control}
+              rules={{ required: "Выберите способ оплаты" }}
+              render={({ field }) => (
+                <RadioGroup {...field}>
+                  <FormControlLabel
+                    value="card"
+                    control={<Radio />}
+                    label="Оплата картой"
+                  />
+                  <FormControlLabel
+                    value="sbp"
+                    control={<Radio />}
+                    label="СБП"
+                  />
+                </RadioGroup>
+              )}
+            />
+            {errors.paymentMethod && (
+              <FormHelperText>{errors.paymentMethod.message}</FormHelperText>
+            )}
+          </FormControl>
+        </Paper>
+
+        {/* Комментарий */}
+        <Paper sx={{ mb: 3, p: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Комментарий к заказу
+          </Typography>
+          <Controller
+            name="comment"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                multiline
+                rows={3}
+                placeholder="Дополнительная информация для продавца"
+              />
+            )}
+          />
+        </Paper>
+
+        {/* Итоговая информация о заказе */}
         <Paper sx={{ mb: 3, p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Ваш заказ
           </Typography>
-
           <Stack spacing={2}>
             <Box display="flex" justifyContent="space-between">
               <Typography>Товары ({cartItems.length}):</Typography>
@@ -170,157 +528,30 @@ const Checkout = () => {
           </Stack>
         </Paper>
 
-        {/* Адрес доставки */}
-        <Paper sx={{ mb: 3, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Адрес доставки
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                label="Регион"
-                name="region"
-                value={deliveryAddress.region}
-                onChange={handleDeliveryChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                label="Город"
-                name="city"
-                value={deliveryAddress.city}
-                onChange={handleDeliveryChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                label="Улица, дом, квартира"
-                name="address"
-                value={deliveryAddress.address}
-                onChange={handleDeliveryChange}
-              />
-            </Grid>
-          </Grid>
-        </Paper>
-
-        {/* Получатель */}
-        <Paper sx={{ mb: 3, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Получатель
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                label="Имя"
-                name="firstName"
-                value={recipient.firstName}
-                onChange={handleRecipientChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                label="Фамилия"
-                name="lastName"
-                value={recipient.lastName}
-                onChange={handleRecipientChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Отчество"
-                name="middleName"
-                value={recipient.middleName}
-                onChange={handleRecipientChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                label="Email"
-                name="email"
-                type="email"
-                value={recipient.email}
-                onChange={handleRecipientChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                required
-                fullWidth
-                label="Телефон"
-                name="phone"
-                value={recipient.phone}
-                onChange={handleRecipientChange}
-              />
-            </Grid>
-          </Grid>
-        </Paper>
-
-        {/* Способ оплаты */}
-        <Paper sx={{ mb: 3, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Способ оплаты
-          </Typography>
-          <FormControl component="fieldset">
-            <RadioGroup
-              name="paymentMethod"
-              value={paymentMethod}
-              onChange={handlePaymentChange}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 4 }}>
+          {userProfile && !useProfileAddress && (
+            <Button
+              variant="outlined"
+              color="primary"
+              size="medium"
+              onClick={saveAddressToProfile}
+              sx={{ mb: 1 }}
             >
-              <FormControlLabel
-                value="card"
-                control={<Radio />}
-                label="Оплата картой"
-              />
-            </RadioGroup>
-            <RadioGroup
-              name="paymentMethod"
-              value={paymentMethod}
-              onChange={handlePaymentChange}
-            >
-              <FormControlLabel value="card" control={<Radio />} label="СБП" />
-            </RadioGroup>
-          </FormControl>
-        </Paper>
+              Сохранить этот адрес в профиле
+            </Button>
+          )}
 
-        {/* Комментарий */}
-        <Paper sx={{ mb: 3, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Комментарий к заказу
-          </Typography>
-          <TextField
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            size="large"
             fullWidth
-            multiline
-            rows={3}
-            name="comment"
-            value={comment}
-            onChange={handleCommentChange}
-            placeholder="Дополнительная информация для продавца"
-          />
-        </Paper>
-
-        <Button
-          variant="contained"
-          color="primary"
-          size="large"
-          fullWidth
-          onClick={handleSubmit}
-          sx={{ mb: 4 }}
-        >
-          Подтвердить заказ
-        </Button>
+            disabled={isPending}
+          >
+            {isPending ? "Оформление..." : "Подтвердить заказ"}
+          </Button>
+        </Box>
       </form>
     </Container>
   );
