@@ -136,41 +136,26 @@ const Checkout = () => {
   const { subtotal, deliveryPrice, total } = calculateTotals();
 
   const onSubmit = (data: CheckoutFormValues) => {
-    // Здесь будет логика отправки заказа на сервер
-    console.log({
-      items: cartItems,
-      deliveryAddress: {
-        region: data.region,
-        city: data.city,
-        address: data.address,
-      },
-      recipient: {
-        fullName: data.fullName,
-        email: data.email,
-        phone: data.phone,
-      },
-      deliveryMethod: data.deliveryMethod,
-      paymentMethod: data.paymentMethod,
+    const orderData = {
+      productId: cartItems?.[0].id || 0,
+      count: cartItems?.[0].count || 1,
+      addressId: userProfile?.addresses[0]?.id || 0,
+      transferId: 1,
       comment: data.comment,
-      total,
-    });
+    };
 
     // Создание заказа через API
-    // createOrder({
-    //   items:
-    //     cartItems?.map((item) => ({ productId: item.id, quantity: 1 })) || [],
-    //   deliveryAddress: `${data.region}, ${data.city}, ${data.address}`,
-    //   recipientName: data.fullName,
-    //   recipientEmail: data.email,
-    //   recipientPhone: data.phone,
-    //   deliveryMethod: data.deliveryMethod,
-    //   paymentMethod: data.paymentMethod,
-    //   comment: data.comment,
-    // });
+    createOrder(orderData, {
+      onSuccess: () => {
+        // Очистка корзины после успешного оформления заказа
+        // cartApi.clearCart(); // Предполагается, что у вас есть метод для очистки корзины
+        console.log("Заказ успешно оформлен", orderData);
+        reset(); // Сброс формы
+      },
+    });
 
     // Перенаправление на страницу успешного оформления
     // router.push("/checkout/success");
-    alert("Заказ успешно оформлен!"); // Временная замена перенаправления
   };
 
   // Сохранение данных адреса в профиль пользователя (если они обновились)

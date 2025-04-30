@@ -1,7 +1,7 @@
 import { ImageResponse } from "@/entities/image/model/types";
 import { Currency } from "@/shared/model/types";
 
-type Status = "ACTIVE" | "BLOCKED" | "DELETED";
+type UserStatus = "ACTIVE" | "BLOCKED" | "DELETED";
 type TransferMoney = "BANK_CARD" | "BANK_SBP" | "CASH";
 type Sending =
   | "PRODUCT_PICKUP"
@@ -22,7 +22,7 @@ export interface UserBaseModel {
   mail: string;
   fullName: string;
   phoneNumber: string;
-  status: Status;
+  status: UserStatus;
   imageIds: number[];
   addresses: Adress[];
   password: string;
@@ -33,7 +33,7 @@ export interface UserBaseModel {
 export interface UserUpdateModel
   extends Omit<UserBaseModel, "id" | "login" | "status"> {}
 
-interface Adress {
+export interface Adress {
   id: number;
   country: string;
   city: string;
@@ -53,7 +53,7 @@ interface Account {
   participantId: number;
 }
 
-interface Transfer {
+export interface Transfer {
   id: number;
   sending: Sending;
   price: number;
