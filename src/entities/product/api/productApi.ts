@@ -4,6 +4,8 @@ import {
   ProductCardModel,
   ProductDetailsModel,
   ProductCreateModel,
+  ProductFilter,
+  ProductRequestModel,
 } from "../model/types";
 import config from "@/shared/config/api";
 import { imageApi } from "@/entities/image/api/imageApi";
@@ -12,38 +14,37 @@ import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticat
 
 const API_URL = `${config.apiBaseUrl}/products/find`;
 
+const fetchImages = async (imageId: number | undefined) => {
+  return imageId !== undefined ? await imageApi.getImages(imageId) : [];
+};
+
 export const productApi = {
-  async getProducts(page: number, size: number): Promise<ProductCardModel[]> {
+  getProducts: async (
+    page: number,
+    size: number,
+    filters?: ProductFilter
+  ): Promise<ProductCardModel[]> => {
     try {
+      const requestData: ProductRequestModel = {
+        pageable: { size, page },
+        ...filters,
+      };
+
       const { data } = await axios.post<ProductResponseModel>(
         API_URL,
-        {
-          pageable: {
-            size,
-            page,
-          },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        requestData
       );
 
-      const cards = data.content;
-      if (!Array.isArray(cards)) {
+      if (!Array.isArray(data.content)) {
         console.error("Ошибка: сервер вернул некорректный формат данных", data);
         throw new Error("Некорректный формат данных от сервера");
       }
 
       return Promise.all(
-        cards.map(async (card) => {
-          const images =
-            card.imageId !== undefined
-              ? await imageApi.getImages(card.imageId)
-              : [];
-          return { ...card, image: images };
-        })
+        data.content.map(async (card) => ({
+          ...card,
+          image: await fetchImages(card.imageId),
+        }))
       );
     } catch (error) {
       throw errorHandler.handleAxiosError(
@@ -52,7 +53,8 @@ export const productApi = {
       );
     }
   },
-  async getProductById(id: string): Promise<ProductDetailsModel> {
+
+  getProductById: async (id: string): Promise<ProductDetailsModel> => {
     try {
       const { data } = await axios.get<ProductDetailsModel>(
         `${config.apiBaseUrl}/product/${id}`
@@ -71,19 +73,11 @@ export const productApi = {
       );
     }
   },
-  async createProduct(data: ProductCreateModel) {
+
+  createProduct: async (data: ProductCreateModel) => {
     try {
       const authenticatedAxios = createAuthenticatedAxiosInstance();
-      const response = await authenticatedAxios.post(
-        `${config.apiBaseUrl}/product`,
-        data,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      //console.log(response.data);
+      await authenticatedAxios.post(`${config.apiBaseUrl}/product`, data);
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка при создании товара");
     }

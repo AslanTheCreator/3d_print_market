@@ -2,7 +2,6 @@ import { Box, Typography } from "@mui/material";
 import Image from "next/image";
 export const MainImage: React.FC<{ src?: string }> = ({ src }) => (
   <Box
-    mt="15px"
     width="100%"
     position="relative"
     overflow="hidden"

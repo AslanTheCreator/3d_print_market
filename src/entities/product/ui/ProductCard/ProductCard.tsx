@@ -94,7 +94,7 @@ export const ProductCard: React.FC<ProductCardModel> = ({
       }}
     >
       <Link
-        href={`/catalog/card/${id}`}
+        href={`/catalog/${id}/detail`}
         style={{
           textDecoration: "none",
           color: "inherit",

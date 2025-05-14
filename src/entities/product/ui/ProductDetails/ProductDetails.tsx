@@ -16,18 +16,19 @@ import StarsIcon from "@/shared/assets/icons/StarsIcon";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import { AddToCartButton } from "@/features/cart/add-to-cart/ui/AddToCartButton";
 import { ProductPrice } from "./ProductPrice";
-import { ProductCharacteristics } from "./ProductCharacteristics";
 import { ProductDescription } from "./ProductDescription";
 import { MainImage } from "./MainImage";
 import { AdditionalImages } from "./AdditionalImages";
 import { useProductDetails } from "../../hooks/useProductDetails";
+import { useCardsInfinite } from "@/features/product";
+import { InfiniteScroll } from "@/shared/ui";
+import { ProductList } from "../ProductList";
 
 export const ProductDetails = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
 
-  const isPending = false;
   const {
     productCard,
     handleAddToCart,
@@ -36,13 +37,16 @@ export const ProductDetails = () => {
     isInCart,
   } = useProductDetails();
 
-  // Заглушка для характеристик
-  const characteristics = [
-    { label: "Материал", value: "Кожа" },
-    { label: "Цвет", value: "Черный" },
-    { label: "Размер", value: "42" },
-    { label: "Вес", value: "1.2 кг" },
-  ];
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+  } = useCardsInfinite(10, { categoryId: productCard.category?.id });
+
+  const isPending = false;
 
   if (isPending) {
     return (
@@ -90,7 +94,6 @@ export const ProductDetails = () => {
       sx={{
         bgcolor: "background.default",
         pb: 10,
-        px: { xs: 2, sm: 3 },
       }}
     >
       <Typography
@@ -125,9 +128,10 @@ export const ProductDetails = () => {
 
       {/* Блок цены и рейтинга продавца */}
       <Stack
-        direction={{ xs: "column", sm: "row" }}
-        justifyContent={"space-between"}
-        spacing={{ xs: 1.5, sm: 0 }}
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        spacing={2}
         mb={{ xs: 1.5, sm: 2 }}
       >
         <ProductPrice price={productCard.price} />
@@ -137,7 +141,6 @@ export const ProductDetails = () => {
             borderRadius: { xs: "16px", sm: "20px" },
             p: { xs: "8px 16px", sm: "12px 16px" },
             height: "fit-content",
-            alignSelf: { xs: "flex-start", sm: "center" },
           }}
         >
           <Link href={""} style={{ textDecoration: "none", color: "inherit" }}>
@@ -167,7 +170,7 @@ export const ProductDetails = () => {
         </Paper>
       </Stack>
 
-      {/* Характеристики и описание */}
+      {/* Описание */}
       <Paper
         elevation={0}
         sx={{
@@ -183,9 +186,8 @@ export const ProductDetails = () => {
             gutterBottom
             sx={{ fontSize: { xs: "1rem", sm: "1.125rem" } }}
           >
-            Характеристики и описание
+            Описание
           </Typography>
-          <ProductCharacteristics characteristics={characteristics} />
           <ProductDescription description={productCard.description} />
         </Box>
       </Paper>
@@ -201,6 +203,18 @@ export const ProductDetails = () => {
           <Typography variant="h6" fontWeight={"bold"}>
             Смотрите также
           </Typography>
+          <Box pt={"20px"}>
+            <InfiniteScroll
+              onLoadMore={fetchNextPage}
+              hasNextPage={!!hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+            >
+              <ProductList
+                products={data?.pages.flat() ?? []}
+                isLoading={isLoading}
+              />
+            </InfiniteScroll>
+          </Box>
         </Box>
       </Paper>
       {/* Фиксированная кнопка добавления в корзину */}

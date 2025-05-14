@@ -29,26 +29,15 @@ type DeliveryMethod = "pickup" | "delivery-company" | "russian-post";
 type PaymentMethod = "card" | "sbp";
 
 type CheckoutFormValues = {
-  // Адрес доставки
   region: string;
   city: string;
   address: string;
-
-  // Получатель
   fullName: string;
   email: string;
   phone: string;
-
-  // Способ доставки
   deliveryMethod: DeliveryMethod;
-
-  // Способ оплаты
   paymentMethod: PaymentMethod;
-
-  // Комментарий
   comment: string;
-
-  // Использовать данные из профиля
   useProfileAddress: boolean;
 };
 
@@ -80,51 +69,45 @@ const Checkout = () => {
     },
   });
 
-  // Следим за чекбоксом использования данных из профиля
   const useProfileAddress = watch("useProfileAddress");
 
-  // Предзаполняем данные из профиля пользователя при загрузке
   useEffect(() => {
     if (userProfile && !isUserLoading && useProfileAddress) {
-      // Предзаполняем данные адреса, если они есть в профиле
-      if (userProfile.addresses[0]) {
-        setValue("region", userProfile.addresses[0].country || "");
-        setValue("city", userProfile.addresses[0].city || "");
-        setValue("address", userProfile.addresses[0].fullAddress || "");
-      }
-
-      // Предзаполняем данные пользователя
-      setValue("fullName", userProfile.fullName || "");
-      setValue("email", userProfile.mail || "");
-      setValue("phone", userProfile.phoneNumber || "");
+      prefillAddressFromProfile(userProfile);
     }
   }, [userProfile, isUserLoading, setValue, useProfileAddress]);
 
-  // Обработчик переключения использования данных из профиля
+  const prefillAddressFromProfile = (profile: typeof userProfile) => {
+    if (profile?.addresses[0]) {
+      setValue("region", profile.addresses[0].country || "");
+      setValue("city", profile.addresses[0].city || "");
+      setValue("address", profile.addresses[0].fullAddress || "");
+    }
+    setValue("fullName", profile?.fullName || "");
+    setValue("email", profile?.mail || "");
+    setValue("phone", profile?.phoneNumber || "");
+  };
+
   const handleUseProfileAddressChange = (checked: boolean) => {
     setValue("useProfileAddress", checked);
-
     if (checked && userProfile) {
-      // Если выбрано использование данных из профиля, заполняем поля
-      if (userProfile.addresses[0]) {
-        setValue("region", userProfile.addresses[0].country || "");
-        setValue("city", userProfile.addresses[0].city || "");
-        setValue("address", userProfile.addresses[0].fullAddress || "");
-      }
+      prefillAddressFromProfile(userProfile);
     } else {
-      // Если отключено использование данных из профиля, очищаем поля адреса
-      setValue("region", "");
-      setValue("city", "");
-      setValue("address", "");
+      clearAddressFields();
     }
   };
 
-  // Расчет итоговой суммы
+  const clearAddressFields = () => {
+    setValue("region", "");
+    setValue("city", "");
+    setValue("address", "");
+  };
+
   const calculateTotals = () => {
     if (!cartItems?.length) return { subtotal: 0, deliveryPrice: 0, total: 0 };
 
     const subtotal = cartItems.reduce((sum, item) => sum + item.price * 1, 0);
-    const deliveryPrice = subtotal > 3000 ? 0 : 300; // Пример: доставка бесплатна от 3000₽
+    const deliveryPrice = subtotal > 3000 ? 0 : 300;
 
     return {
       subtotal,
@@ -136,38 +119,25 @@ const Checkout = () => {
   const { subtotal, deliveryPrice, total } = calculateTotals();
 
   const onSubmit = (data: CheckoutFormValues) => {
-    const orderData = {
-      productId: cartItems?.[0].id || 0,
-      count: cartItems?.[0].count || 1,
-      addressId: userProfile?.addresses[0]?.id || 0,
-      transferId: 1,
-      comment: data.comment,
-    };
+    const orderData = createOrderData(data);
+    console.log("Данные заказа:", orderData);
 
-    // Создание заказа через API
     createOrder(orderData, {
       onSuccess: () => {
-        // Очистка корзины после успешного оформления заказа
-        // cartApi.clearCart(); // Предполагается, что у вас есть метод для очистки корзины
         console.log("Заказ успешно оформлен", orderData);
-        reset(); // Сброс формы
+        reset();
       },
     });
-
-    // Перенаправление на страницу успешного оформления
-    // router.push("/checkout/success");
   };
 
-  // Сохранение данных адреса в профиль пользователя (если они обновились)
-  const saveAddressToProfile = () => {
-    // Предполагается, что у вас есть API для обновления данных профиля
-    if (userProfile && !useProfileAddress) {
-      // Логика для сохранения обновленного адреса в профиле пользователя
-      // Пример: updateUserProfile({ address: { region, city, street } })
-    }
-  };
+  const createOrderData = (data: CheckoutFormValues) => ({
+    productId: cartItems?.[1]?.id || 0,
+    count: cartItems?.[0]?.count || 1,
+    addressId: userProfile?.addresses[0]?.id || 0,
+    transferId: 1,
+    comment: data.comment,
+  });
 
-  // Проверка на загрузку данных и наличие товаров
   if (isCartLoading) {
     return (
       <Container sx={{ my: 4, textAlign: "center" }}>
@@ -178,7 +148,6 @@ const Checkout = () => {
     );
   }
 
-  // Проверка на наличие товаров
   if (!cartItems?.length) {
     return (
       <Container sx={{ my: 4, textAlign: "center" }}>
@@ -519,7 +488,9 @@ const Checkout = () => {
               variant="outlined"
               color="primary"
               size="medium"
-              onClick={saveAddressToProfile}
+              onClick={() => {
+                // Logic to save address to profile
+              }}
               sx={{ mb: 1 }}
             >
               Сохранить этот адрес в профиле

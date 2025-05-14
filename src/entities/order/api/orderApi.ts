@@ -10,14 +10,13 @@ import {
 const authenticatedAxios = createAuthenticatedAxiosInstance();
 
 export const orderApi = {
-  createOrder: async (orderData: OrderCreateModel): Promise<number> => {
+  createOrder: async (orderData: OrderCreateModel) => {
     try {
       const { data } = await authenticatedAxios.post<number>(
         `${config.apiBaseUrl}/order`,
         orderData
       );
       console.log(data);
-      return data;
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка при создании заказа");
     }

@@ -18,11 +18,11 @@ export const ProductPrice: React.FC<ProductPriceProps> = ({ price }) => (
   >
     <Typography
       fontWeight={700}
-      fontSize={{ xs: 24, sm: 28 }}
+      fontSize={{ xs: 21, sm: 25 }}
       lineHeight={1.1}
-      color="primary.main"
+      color="primary.secondary"
     >
-      {formatPrice(price)}
+      {formatPrice(price) + " ₽"}
     </Typography>
   </Paper>
 );

@@ -84,9 +84,9 @@ export const CreateProductForm = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [severity, setSeverity] = useState<"success" | "error">("success");
-
   const [imageId, setImageId] = useState<number[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [categories, setCategories] = useState<CategoryModel[]>([]);
 
   const { mutate: createProduct, isPending } = useCreateProduct();
 
@@ -105,92 +105,100 @@ export const CreateProductForm = () => {
     },
   });
 
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await categoryApi.getCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error("Ошибка при загрузке категорий:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
-      // Проверка размера файла (не более 5 МБ)
-      if (file.size > 5 * 1024 * 1024) {
-        setImageError("Размер файла не должен превышать 5 МБ");
-        setImage(null);
-        setImagePreview(null);
-        setImageId([]);
-        return;
-      }
-
-      // Проверка типа файла
-      if (!file.type.startsWith("image/")) {
-        setImageError("Пожалуйста, загрузите изображение");
-        setImage(null);
-        setImagePreview(null);
-        setImageId([]);
-        return;
-      }
+      if (!validateImage(file)) return;
 
       setImageError(null);
       setImage(file);
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setImagePreview(URL.createObjectURL(file));
 
       try {
         setIsUploadingImage(true);
         const response = await imageApi.saveImage(file, "PRODUCT");
-        setImageId(response); // Сохраняем ID изображения
-        setIsUploadingImage(false);
+        setImageId(response);
       } catch (error) {
         console.error("Ошибка при загрузке изображения:", error);
         setImageError("Не удалось загрузить изображение на сервер");
+      } finally {
         setIsUploadingImage(false);
       }
     }
   };
 
+  const validateImage = (file: File): boolean => {
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError("Размер файла не должен превышать 5 МБ");
+      resetImageState();
+      return false;
+    }
+    if (!file.type.startsWith("image/")) {
+      setImageError("Пожалуйста, загрузите изображение");
+      resetImageState();
+      return false;
+    }
+    return true;
+  };
+
+  const resetImageState = () => {
+    setImage(null);
+    setImagePreview(null);
+    setImageId([]);
+  };
+
   const onSubmit = (data: FormValues) => {
-    if (!image || !imageId) {
+    if (!image || !imageId.length) {
       setImageError("Пожалуйста, загрузите изображение товара");
       return;
     }
 
-    const productData = {
-      categoryId: parseInt(data.categoryId),
-      name: data.name,
-      imageIds: imageId,
-      price: parseFloat(data.price),
-      currency: data.currency,
-      description: data.description,
-      count: 1,
-    };
+    const productData = createProductData(data);
 
     createProduct(productData, {
       onSuccess: () => {
-        setSnackbarMessage("Товар успешно создан!");
-        setSeverity("success");
-        setOpenSnackbar(true);
-        // Очистка формы после успешного создания
-        reset();
-        setImage(null);
-        setImagePreview(null);
+        handleSnackbar("Товар успешно создан!", "success");
+        resetForm();
       },
       onError: () => {
-        setSnackbarMessage("Произошла ошибка при создании товара");
-        setSeverity("error");
-        setOpenSnackbar(true);
+        handleSnackbar("Произошла ошибка при создании товара", "error");
       },
     });
   };
 
-  const [categories, setCategories] = useState<CategoryModel[]>([]);
+  const createProductData = (data: FormValues) => ({
+    categoryId: parseInt(data.categoryId),
+    name: data.name,
+    imageIds: imageId,
+    price: parseFloat(data.price),
+    currency: data.currency,
+    description: data.description,
+    count: 1,
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const data = await categoryApi.getCategories();
-      setCategories(data);
-    };
-    fetchData();
-  }, []);
+  const handleSnackbar = (message: string, severity: "success" | "error") => {
+    setSnackbarMessage(message);
+    setSeverity(severity);
+    setOpenSnackbar(true);
+  };
+
+  const resetForm = () => {
+    reset();
+    resetImageState();
+  };
 
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);
