@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Box, IconButton, Drawer } from "@mui/material";
+import { IconButton, Drawer } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu"; // или используйте свою иконку
 import CloseIcon from "@mui/icons-material/Close";
 import { CategoriesMenu } from "./CategoriesMenu"; // новый компонент, который мы создадим
@@ -20,10 +20,10 @@ export const CategoryToggleButton = () => {
         aria-label="Открыть категории"
         sx={{
           backgroundColor: "primary.main",
-          color: "white",
+          color: "primary.contrastText",
           borderRadius: 1,
-          width: 40,
-          height: 40,
+          width: 33,
+          height: 33,
           "&:hover": {
             backgroundColor: "primary.dark",
           },
@@ -40,7 +40,6 @@ export const CategoryToggleButton = () => {
           sx: {
             width: "300px",
             maxWidth: "80%",
-            pt: 2,
             pb: 2,
           },
         }}

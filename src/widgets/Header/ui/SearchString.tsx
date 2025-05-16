@@ -12,7 +12,7 @@ const SearchString = () => {
         display: "flex",
         alignItems: "center",
         width: "100%",
-        height: 40,
+        height: 35,
         borderRadius: "8px",
         backgroundColor: "white",
         boxShadow: "none",

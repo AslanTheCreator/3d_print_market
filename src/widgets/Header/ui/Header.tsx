@@ -15,7 +15,7 @@ import { HeaderIconLinks } from "./HeaderIconLinks";
 import Link from "next/link";
 import throttle from "lodash.throttle";
 import SearchString from "./SearchString";
-import logo from "../../../shared/assets/icons/logo.svg";
+import Logo from "../../../shared/assets/icon.svg";
 
 export const Header = () => {
   const theme = useTheme();
@@ -63,40 +63,67 @@ export const Header = () => {
         width: "100%",
         top: isMobile ? (isVisible ? 0 : `-${headerHeight}`) : 0,
         transition: isMobile ? "top 0.5s ease" : "none",
-        backgroundColor: "#54C5E5",
-        borderBottom: 1,
-        borderColor: "lightgray",
+        backgroundColor: "secondary.main", // Заменить на значение из темы
         zIndex: theme.zIndex.appBar || 999,
       }}
     >
       <Container>
-        <Stack py={2} gap={0.5}>
-          {/* Logo and icons row */}
+        <Stack
+          pb={2}
+          pt={1.5}
+          gap={1}
+          direction={"row"}
+          alignItems={"center"}
+          justifyContent={"space-between"}
+        >
+          {/* Logo*/}
+
           <Stack
             direction="row"
             alignItems="center"
-            justifyContent="space-between"
+            sx={{ position: "relative", minWidth: 60 }}
           >
-            <Link href="/" aria-label="Home">
-              <Stack direction="row" alignItems="center" gap={1}>
-                <Image src={logo} alt="Logo" width={35} height={35} priority />
+            <Image
+              src={Logo}
+              alt="Logo"
+              width={60}
+              height={90}
+              priority
+              style={{ objectFit: "contain" }}
+            />
+
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: 4,
+                left: 17,
+              }}
+            >
+              <CategoryToggleButton />
+            </Box>
+          </Stack>
+
+          <Stack direction="column" flex={1} spacing={0.5}>
+            {/* Заголовок и иконки */}
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+            >
+              <Link href="/" aria-label="Home">
                 <Typography
                   component="h1"
                   variant="h6"
                   fontWeight={900}
                   textTransform="uppercase"
-                  color="white"
+                  color={"secondary.contrastText"}
                 >
                   3DM
                 </Typography>
-              </Stack>
-            </Link>
-            <HeaderIconLinks />
-          </Stack>
-
-          {/* Search row */}
-          <Stack direction="row" alignItems="center" gap={1}>
-            <CategoryToggleButton />
+              </Link>
+              <HeaderIconLinks />
+            </Stack>
+            {/* Search row */}
             <SearchString />
           </Stack>
         </Stack>

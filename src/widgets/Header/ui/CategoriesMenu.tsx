@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import CloseIcon from "@mui/icons-material/Close";
+import { alpha } from "@mui/material/styles";
 
 // Импортируйте нужные иконки для категорий
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports"; // Настольные игры
@@ -77,16 +77,58 @@ interface CategoriesMenuProps {
 
 export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
   return (
-    <Box sx={{ width: "100%" }}>
-      <Box sx={{ display: "flex", justifyContent: "flex-end", p: 1 }}>
-        <IconButton onClick={onClose} edge="end" aria-label="Закрыть">
-          <CloseIcon />
-        </IconButton>
+    <Box
+      sx={{
+        width: "100%",
+        maxHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflowX: "hidden",
+        overflowY: "auto",
+        "&::-webkit-scrollbar": {
+          width: "8px",
+          display: "none",
+        },
+        "&:hover::-webkit-scrollbar": {
+          display: "block",
+        },
+        "&::-webkit-scrollbar-track": {
+          background: "transparent",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          backgroundColor: (theme) => alpha(theme.palette.secondary.main, 0.3),
+          borderRadius: "4px",
+        },
+        "&::-webkit-scrollbar-thumb:hover": {
+          backgroundColor: (theme) => alpha(theme.palette.secondary.main, 0.5),
+        },
+      }}
+    >
+      {/* Header with Figurzill title */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          height: "57px",
+          px: 2,
+          py: 2,
+          borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{
+            flexGrow: 1,
+            fontWeight: 600,
+            color: "secondary.main",
+          }}
+        >
+          Figurzilla
+        </Typography>
       </Box>
 
-      <Divider sx={{ mb: 2 }} />
-
-      <List sx={{ width: "100%", p: 0 }}>
+      <List sx={{ width: "100%", p: 0, mt: 0 }}>
         {categories.map((category) => (
           <ListItem key={category.id} disablePadding divider>
             <ListItemButton
@@ -96,11 +138,19 @@ export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
               sx={{
                 py: 1.5,
                 "&:hover": {
-                  backgroundColor: "rgba(0, 0, 0, 0.04)",
+                  backgroundColor: (theme) =>
+                    alpha(theme.palette.primary.main, 0.04),
                 },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 40 }}>{category.icon}</ListItemIcon>
+              <ListItemIcon
+                sx={{
+                  minWidth: 40,
+                  color: "primary.main",
+                }}
+              >
+                {category.icon}
+              </ListItemIcon>
               <ListItemText
                 primary={category.name}
                 primaryTypographyProps={{
@@ -108,7 +158,12 @@ export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
                   color: "text.primary",
                 }}
               />
-              <ChevronRightIcon color="action" />
+              <ChevronRightIcon
+                sx={{
+                  color: "action.active",
+                  opacity: 0.7,
+                }}
+              />
             </ListItemButton>
           </ListItem>
         ))}

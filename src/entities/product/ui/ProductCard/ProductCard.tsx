@@ -205,7 +205,7 @@ export const ProductCard: React.FC<ProductCardModel> = ({
               <Typography
                 fontWeight={700}
                 fontSize={isMobile ? "0.875rem" : "1rem"}
-                color="primary.secondary"
+                color="text.primary"
               >
                 {formatPrice(price) + " ₽"}
               </Typography>

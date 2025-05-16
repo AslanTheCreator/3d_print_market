@@ -18,10 +18,10 @@ const primaryColor = {
 };
 
 const secondaryColor = {
-  light: "#f5f5f5",
-  main: "#ffffff",
-  dark: "#e0e0e0",
-  contrastText: "#424242",
+  light: "#7ad4ee", // светлее на ~15%
+  main: "#54C5E5", // ваш запрошенный цвет
+  dark: "#3ca8c6", // темнее на ~15%
+  contrastText: "#ffffff", // белый для хорошего контраста с голубым
 };
 
 // Создаем базовую тему без компонентов

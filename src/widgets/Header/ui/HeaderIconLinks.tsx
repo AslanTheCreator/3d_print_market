@@ -36,7 +36,12 @@ export const HeaderIconLinks = () => {
   ];
 
   return (
-    <Stack direction="row" spacing={isMobile ? 0.5 : 1} alignItems="center">
+    <Stack
+      direction="row"
+      spacing={isMobile ? 0.5 : 1}
+      alignItems="center"
+      minHeight={isMobile ? 40 : 50}
+    >
       {headerIcons.map(({ url, icon, label, onClick }, index) => (
         <Link
           href={url}
