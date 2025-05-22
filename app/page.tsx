@@ -1,8 +1,6 @@
 "use client";
 
-import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
+import { Container, Typography, Box } from "@mui/material";
 import { useCardsInfinite } from "@/features/product";
 import { InfiniteScroll } from "@/shared/ui";
 import { ProductList } from "@/entities/product";

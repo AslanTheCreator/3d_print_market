@@ -15,7 +15,8 @@ import { HeaderIconLinks } from "./HeaderIconLinks";
 import Link from "next/link";
 import throttle from "lodash.throttle";
 import SearchString from "./SearchString";
-import Logo from "../../../shared/assets/icon.svg";
+import Logo from "@/shared/assets/images/logo.svg";
+import headerBg from "@/shared/assets/images/header-bg.png";
 
 export const Header = () => {
   const theme = useTheme();
@@ -63,8 +64,11 @@ export const Header = () => {
         width: "100%",
         top: isMobile ? (isVisible ? 0 : `-${headerHeight}`) : 0,
         transition: isMobile ? "top 0.5s ease" : "none",
-        backgroundColor: "secondary.main", // Заменить на значение из темы
+        backgroundColor: "secondary.main",
         zIndex: theme.zIndex.appBar || 999,
+        backgroundImage: `url(${headerBg.src})`,
+        border: `2px solid ${theme.palette.secondary.main}`,
+        boxShadow: "0 0 10px rgba(0, 0, 0, 0.15)",
       }}
     >
       <Container>
@@ -105,12 +109,8 @@ export const Header = () => {
 
           <Stack direction="column" flex={1} spacing={0.5}>
             {/* Заголовок и иконки */}
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-            >
-              <Link href="/" aria-label="Home">
+            <Stack direction="row" alignItems="center" justifyContent="end">
+              {/* <Link href="/" aria-label="Home">
                 <Typography
                   component="h1"
                   variant="h6"
@@ -120,7 +120,7 @@ export const Header = () => {
                 >
                   3DM
                 </Typography>
-              </Link>
+              </Link> */}
               <HeaderIconLinks />
             </Stack>
             {/* Search row */}

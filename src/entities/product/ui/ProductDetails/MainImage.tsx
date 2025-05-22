@@ -1,6 +1,8 @@
 import { Box, Typography } from "@mui/material";
-import Image from "next/image";
-export const MainImage: React.FC<{ src?: string }> = ({ src }) => (
+import Image, { StaticImageData } from "next/image";
+export const MainImage: React.FC<{ src?: string | StaticImageData }> = ({
+  src,
+}) => (
   <Box
     width="100%"
     position="relative"

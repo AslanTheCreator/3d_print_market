@@ -8,6 +8,7 @@ import { useProfileUser } from "@/entities/user/hooks/useProfileUser";
 import ProfileWidget from "@/widgets/profile/ui/Profile";
 import { DashboardContent } from "@/widgets/dashboard";
 import { DashboardNavigation } from "@/widgets/dashboard";
+import { mockUserProfile } from "@/entities/user/model/mocks/userProfile.mock";
 
 // Перечисление для секций дашборда
 type DashboardSection = "main" | "profile" | "payment-methods";
@@ -15,11 +16,11 @@ type DashboardSection = "main" | "profile" | "payment-methods";
 export default function DashboardPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { data: userData } = useProfileUser({});
+  //const { data: userData } = useProfileUser({});
 
   const [activeSection, setActiveSection] = useState<DashboardSection>("main");
 
-  if (!userData) return null; // заглушка
+  //if (!userData) return null; // заглушка
 
   const navigateTo = (section: DashboardSection) => {
     setActiveSection(section);
@@ -31,12 +32,12 @@ export default function DashboardPage() {
         return <ProfileWidget onBack={() => navigateTo("main")} />;
       case "main":
       default:
-        return <DashboardContent user={userData} />;
+        return <DashboardContent user={mockUserProfile} />;
     }
   };
 
   return (
-    <Container maxWidth="sm" sx={{ p: isMobile ? 2 : 3, marginTop: 2 }}>
+    <Container maxWidth="sm" sx={{ p: isMobile ? 2 : 3, marginTop: 2, mb: 3 }}>
       {activeSection === "main" && (
         <Paper
           elevation={3}
@@ -46,7 +47,7 @@ export default function DashboardPage() {
             mb: 2,
           }}
         >
-          <UserInfo user={userData} />
+          <UserInfo user={mockUserProfile} />
         </Paper>
       )}
 

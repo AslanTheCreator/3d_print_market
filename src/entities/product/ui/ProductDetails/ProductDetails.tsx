@@ -23,6 +23,7 @@ import { useProductDetails } from "../../hooks/useProductDetails";
 import { useCardsInfinite } from "@/features/product";
 import { InfiniteScroll } from "@/shared/ui";
 import { ProductList } from "../ProductList";
+import { ImageGallery } from "./ImageGallery";
 
 export const ProductDetails = () => {
   const theme = useTheme();
@@ -99,9 +100,10 @@ export const ProductDetails = () => {
       <Typography
         component={"h1"}
         variant={"h4"}
+        fontWeight={700}
+        my={{ xs: 1.5, sm: 2 }}
+        ml={1.5}
         sx={{
-          fontWeight: 700,
-          mb: { xs: 1.5, sm: 2 },
           fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
           lineHeight: 1.2,
         }}
@@ -109,22 +111,7 @@ export const ProductDetails = () => {
         {productCard.name}
       </Typography>
 
-      {/* Основное изображение */}
-      <Paper
-        elevation={0}
-        sx={{
-          borderRadius: { xs: "16px", sm: "20px" },
-          overflow: "hidden",
-          mb: { xs: 1.5, sm: 2 },
-        }}
-      >
-        <MainImage src={mainImage} />
-      </Paper>
-
-      {/* Дополнительные изображения */}
-      {additionalImages.length > 0 && (
-        <AdditionalImages images={additionalImages} />
-      )}
+      <ImageGallery mainImage={mainImage} additionalImages={additionalImages} />
 
       {/* Блок цены и рейтинга продавца */}
       <Stack

@@ -62,12 +62,6 @@ const navigationItems: NavigationItem[] = [
     action: "link",
     target: "/dashboard/favorites",
   },
-  {
-    text: "История покупок",
-    icon: <HistoryIcon />,
-    action: "link",
-    target: "/dashboard/order-history",
-  },
 ];
 
 export const DashboardNavigation: React.FC<DashboardNavigationProps> = ({

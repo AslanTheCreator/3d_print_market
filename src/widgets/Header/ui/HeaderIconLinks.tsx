@@ -3,7 +3,9 @@ import { PersonOutline, ShoppingCartOutlined } from "@mui/icons-material";
 import { Stack, IconButton, useTheme, useMediaQuery } from "@mui/material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { Person, ShoppingCart, PersonTwoTone } from "@mui/icons-material";
+import PersonOutlineTwoToneIcon from "@mui/icons-material/PersonOutlineTwoTone";
+import { PersonCustomIcon } from "@/shared/assets/icons/SvgIcon";
 
 export const HeaderIconLinks = () => {
   const theme = useTheme();
@@ -13,7 +15,7 @@ export const HeaderIconLinks = () => {
 
   const handleProfileClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (isAuthenticated) {
+    if (true) {
       router.push("/dashboard");
     } else {
       router.push("/auth/login");
@@ -23,13 +25,13 @@ export const HeaderIconLinks = () => {
   const headerIcons = [
     {
       url: "/auth/login",
-      icon: <PersonOutline />,
+      icon: <Person />,
       label: "Профиль",
       onClick: handleProfileClick,
     },
     {
       url: "/cart",
-      icon: <ShoppingCartOutlined />,
+      icon: <ShoppingCart />,
       label: "Корзина",
       onClick: undefined,
     },
@@ -52,15 +54,28 @@ export const HeaderIconLinks = () => {
         >
           <IconButton
             aria-label={label}
+            color="primary"
             sx={{
-              color: "white",
               padding: isMobile ? 1 : 1.5,
-              "& .MuiSvgIcon-root": {
-                fontSize: isMobile ? 28 : 32,
-              },
               "&:hover": {
-                bgcolor: "rgba(255, 255, 255, 0.15)",
+                backgroundColor: "rgba(255, 255, 255, 0.15)",
               },
+              "& .MuiSvgIcon-root": {
+                fontSize: isMobile ? 30 : 32,
+              },
+              // "& .MuiSvgIcon-root": {
+              //   fontSize: isMobile ? 30 : 32,
+              //   WebkitTextStroke: "1px #ffffff", // Белый контур для контраста
+              //   filter: `
+              //     drop-shadow(0px 0px 2px rgba(211, 44, 108, 0.8))
+              //     drop-shadow(0px 0px 1px rgba(0, 0, 0, 0.7))
+              //   `, // Комбинация теней для глубины
+              //   transition: "all 0.2s ease",
+              // },
+              // "&:hover .MuiSvgIcon-root": {
+              //   color: "#f76ea0", // При наведении используем светлый оттенок primary
+              //   transform: "scale(1.1)",
+              // },
             }}
           >
             {icon}
