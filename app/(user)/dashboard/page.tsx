@@ -16,11 +16,11 @@ type DashboardSection = "main" | "profile" | "payment-methods";
 export default function DashboardPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  //const { data: userData } = useProfileUser({});
+  const { data: userData } = useProfileUser({});
 
   const [activeSection, setActiveSection] = useState<DashboardSection>("main");
 
-  //if (!userData) return null; // заглушка
+  if (!userData) return null; // заглушка
 
   const navigateTo = (section: DashboardSection) => {
     setActiveSection(section);
@@ -32,7 +32,7 @@ export default function DashboardPage() {
         return <ProfileWidget onBack={() => navigateTo("main")} />;
       case "main":
       default:
-        return <DashboardContent user={mockUserProfile} />;
+        return <DashboardContent user={userData} />;
     }
   };
 
@@ -47,7 +47,7 @@ export default function DashboardPage() {
             mb: 2,
           }}
         >
-          <UserInfo user={mockUserProfile} />
+          <UserInfo user={userData} />
         </Paper>
       )}
 

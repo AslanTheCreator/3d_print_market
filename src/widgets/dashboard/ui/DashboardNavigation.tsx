@@ -57,6 +57,12 @@ const navigationItems: NavigationItem[] = [
     target: "/dashboard/products",
   },
   {
+    text: "Мои товары",
+    icon: <ShoppingBagIcon />,
+    action: "link",
+    target: "/dashboard/products",
+  },
+  {
     text: "Избранное",
     icon: <FavoriteIcon />,
     action: "link",

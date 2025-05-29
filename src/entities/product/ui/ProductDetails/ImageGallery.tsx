@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { Paper } from "@mui/material";
+import { Paper, useTheme, useMediaQuery } from "@mui/material";
 import { MainImage } from "./MainImage";
 import { AdditionalImages } from "./AdditionalImages";
-import img from "@/shared/assets/cat.jpg";
-import img2 from "@/shared/assets/images/cat2.webp";
 
 interface ImageGalleryProps {
   mainImage?: string;
@@ -14,12 +12,14 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   mainImage,
   additionalImages,
 }) => {
-  //const mockImages = [img, img2, img, img2, img, img2, img, img, img, img];
-  //Создаем массив всех изображений
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+
+  // Создаем массив всех изображений
   const allImages = mainImage
     ? [mainImage, ...additionalImages]
     : additionalImages;
-  //const allImages = mockImages;
 
   // Состояние для индекса текущего главного изображения
   const [currentMainIndex, setCurrentMainIndex] = useState(0);
@@ -35,9 +35,17 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
       <Paper
         elevation={0}
         sx={{
-          borderRadius: { xs: "16px", sm: "20px" },
+          borderRadius: { xs: "16px", sm: "20px", md: "24px" },
           overflow: "hidden",
-          mb: { xs: 1.5, sm: 2 },
+          mb: { xs: 1.5, sm: 2, md: 2.5 },
+          // Увеличиваем высоту для больших экранов
+          "& > div": {
+            aspectRatio: {
+              xs: "4/3",
+              sm: "16/10",
+              md: "3/2",
+            },
+          },
         }}
       >
         <MainImage src={allImages[currentMainIndex]} />

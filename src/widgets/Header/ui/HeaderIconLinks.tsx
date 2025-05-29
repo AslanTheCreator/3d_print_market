@@ -1,11 +1,10 @@
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { PersonOutline, ShoppingCartOutlined } from "@mui/icons-material";
 import { Stack, IconButton, useTheme, useMediaQuery } from "@mui/material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Person, ShoppingCart, PersonTwoTone } from "@mui/icons-material";
-import PersonOutlineTwoToneIcon from "@mui/icons-material/PersonOutlineTwoTone";
-import { PersonCustomIcon } from "@/shared/assets/icons/SvgIcon";
+import Image from "next/image";
+import PersonCustomIcon from "@/shared/assets/icons/userAccount.svg";
+import ShoppingCartCustomIcon from "@/shared/assets/icons/backet.svg";
 
 export const HeaderIconLinks = () => {
   const theme = useTheme();
@@ -22,16 +21,39 @@ export const HeaderIconLinks = () => {
     }
   };
 
+  // Адаптивные размеры иконок
+  const iconSize = isMobile ? 28 : 32;
+
   const headerIcons = [
     {
       url: "/auth/login",
-      icon: <Person />,
+      icon: (
+        <Image
+          src={PersonCustomIcon}
+          alt="Профиль"
+          width={iconSize}
+          height={iconSize}
+          style={{
+            objectFit: "contain",
+          }}
+        />
+      ),
       label: "Профиль",
       onClick: handleProfileClick,
     },
     {
       url: "/cart",
-      icon: <ShoppingCart />,
+      icon: (
+        <Image
+          src={ShoppingCartCustomIcon}
+          alt="Корзина"
+          width={iconSize}
+          height={iconSize}
+          style={{
+            objectFit: "contain",
+          }}
+        />
+      ),
       label: "Корзина",
       onClick: undefined,
     },
@@ -42,7 +64,9 @@ export const HeaderIconLinks = () => {
       direction="row"
       spacing={isMobile ? 0.5 : 1}
       alignItems="center"
-      minHeight={isMobile ? 40 : 50}
+      sx={{
+        minHeight: { xs: 40, sm: 50 },
+      }}
     >
       {headerIcons.map(({ url, icon, label, onClick }, index) => (
         <Link
@@ -54,28 +78,34 @@ export const HeaderIconLinks = () => {
         >
           <IconButton
             aria-label={label}
-            color="primary"
             sx={{
-              padding: isMobile ? 1 : 1.5,
+              padding: { xs: 1, sm: 1.5 },
+              borderRadius: theme.shape.borderRadius + "px",
+              transition: theme.transitions.create(
+                ["background-color", "transform"],
+                {
+                  duration: theme.transitions.duration.shorter,
+                  easing: theme.transitions.easing.easeInOut,
+                }
+              ),
               "&:hover": {
                 backgroundColor: "rgba(255, 255, 255, 0.15)",
+                transform: "scale(1.05)",
               },
-              "& .MuiSvgIcon-root": {
-                fontSize: isMobile ? 30 : 32,
+              "&:active": {
+                transform: "scale(0.95)",
               },
-              // "& .MuiSvgIcon-root": {
-              //   fontSize: isMobile ? 30 : 32,
-              //   WebkitTextStroke: "1px #ffffff", // Белый контур для контраста
-              //   filter: `
-              //     drop-shadow(0px 0px 2px rgba(211, 44, 108, 0.8))
-              //     drop-shadow(0px 0px 1px rgba(0, 0, 0, 0.7))
-              //   `, // Комбинация теней для глубины
-              //   transition: "all 0.2s ease",
-              // },
-              // "&:hover .MuiSvgIcon-root": {
-              //   color: "#f76ea0", // При наведении используем светлый оттенок primary
-              //   transform: "scale(1.1)",
-              // },
+              // Добавляем дополнительные стили для кастомных иконок
+              "& img": {
+                transition: theme.transitions.create(["filter", "transform"], {
+                  duration: theme.transitions.duration.shorter,
+                }),
+              },
+              "&:hover img": {
+                filter: `brightness(0) invert(1) 
+                         drop-shadow(0px 0px 4px rgba(247, 110, 160, 0.6))`,
+                transform: "scale(1.1)",
+              },
             }}
           >
             {icon}

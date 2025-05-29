@@ -167,7 +167,6 @@ let theme = createTheme({
   },
 });
 
-// Расширяем тему с компонентами, теперь можно безопасно использовать theme
 theme = createTheme(theme, {
   components: {
     MuiCssBaseline: {
@@ -184,18 +183,26 @@ theme = createTheme(theme, {
         },
         // Глобальные стили для скроллбара
         "*::-webkit-scrollbar": {
-          width: "8px",
-          height: "8px",
+          width: "4px",
+          height: "4px",
         },
         "*::-webkit-scrollbar-track": {
-          background: theme.palette.background.default,
+          background: "transparent",
         },
         "*::-webkit-scrollbar-thumb": {
-          background: alpha(theme.palette.primary.main, 0.2),
-          borderRadius: "4px",
+          background: "rgba(0, 0, 0, 0.1)",
+          borderRadius: "2px",
         },
         "*::-webkit-scrollbar-thumb:hover": {
-          background: alpha(theme.palette.primary.main, 0.3),
+          background: "rgba(0, 0, 0, 0.2)",
+        },
+        "*::-webkit-scrollbar-corner": {
+          background: "transparent",
+        },
+        // Для Firefox
+        "*": {
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(0, 0, 0, 0.1) transparent",
         },
       }),
     },

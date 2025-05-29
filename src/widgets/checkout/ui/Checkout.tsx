@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { CartList, useCartProducts } from "@/entities/cart";
 import {
   Container,
@@ -24,6 +24,10 @@ import { formatPrice } from "@/shared/lib/formatPrice";
 import { useCreateOrder } from "@/features/order/create-order/hooks/useCreateOrder";
 import { useForm, Controller } from "react-hook-form";
 import { useUser } from "@/entities/user/hooks/useUser";
+import { AddressSelector } from "@/features/address/address-selector/ui/AddressSelector";
+import { AddressBaseModel } from "@/entities/address/model/types";
+import { useAddAddressDialog } from "@/features/address/create-address/hooks/useAddressDialog";
+import { AddressDialog } from "@/features/address/create-address/ui/AddressDialog";
 
 type DeliveryMethod = "pickup" | "delivery-company" | "russian-post";
 type PaymentMethod = "card" | "sbp";
@@ -56,18 +60,17 @@ const Checkout = () => {
     reset,
   } = useForm<CheckoutFormValues>({
     defaultValues: {
-      region: "",
-      city: "",
-      address: "",
       fullName: "",
       email: "",
       phone: "",
       deliveryMethod: "pickup",
       paymentMethod: "card",
       comment: "",
-      useProfileAddress: true,
     },
   });
+
+  const [selectedAddress, setSelectedAddress] =
+    useState<AddressBaseModel | null>(null);
 
   const useProfileAddress = watch("useProfileAddress");
 
@@ -86,21 +89,6 @@ const Checkout = () => {
     setValue("fullName", profile?.fullName || "");
     setValue("email", profile?.mail || "");
     setValue("phone", profile?.phoneNumber || "");
-  };
-
-  const handleUseProfileAddressChange = (checked: boolean) => {
-    setValue("useProfileAddress", checked);
-    if (checked && userProfile) {
-      prefillAddressFromProfile(userProfile);
-    } else {
-      clearAddressFields();
-    }
-  };
-
-  const clearAddressFields = () => {
-    setValue("region", "");
-    setValue("city", "");
-    setValue("address", "");
   };
 
   const calculateTotals = () => {
@@ -133,9 +121,16 @@ const Checkout = () => {
   const createOrderData = (data: CheckoutFormValues) => ({
     productId: cartItems?.[1]?.id || 0,
     count: cartItems?.[0]?.count || 1,
-    addressId: userProfile?.addresses[0]?.id || 0,
+    addressId: selectedAddress?.id || 0,
     transferId: 1,
     comment: data.comment,
+  });
+
+  // Используем хук для управления диалогом
+  const addressDialog = useAddAddressDialog(() => {
+    // Коллбек при успешном добавлении адреса
+    // Можно добавить логику обновления списка адресов
+    console.log("Адрес успешно добавлен!");
   });
 
   if (isCartLoading) {
@@ -170,184 +165,14 @@ const Checkout = () => {
       <form onSubmit={handleSubmit(onSubmit)}>
         {/* Адрес доставки */}
         <Paper sx={{ mb: 3, p: 2 }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mb: 2,
-            }}
-          >
-            <Typography variant="h6">Адрес доставки</Typography>
-
-            {userProfile && userProfile.addresses[0] && (
-              <FormControlLabel
-                control={
-                  <Controller
-                    name="useProfileAddress"
-                    control={control}
-                    render={({ field }) => (
-                      <Checkbox
-                        checked={field.value}
-                        onChange={(e) =>
-                          handleUseProfileAddressChange(e.target.checked)
-                        }
-                      />
-                    )}
-                  />
-                }
-                label="Использовать адрес из профиля"
-                sx={{ ml: 0 }}
-              />
-            )}
-          </Box>
-
-          {isUserLoading ? (
-            <Box sx={{ textAlign: "center", py: 2 }}>
-              <Typography>Загрузка данных пользователя...</Typography>
-            </Box>
-          ) : (
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Controller
-                  name="region"
-                  control={control}
-                  rules={{ required: "Это поле обязательно" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Регион"
-                      error={!!errors.region}
-                      helperText={errors.region?.message}
-                      disabled={
-                        useProfileAddress &&
-                        !!userProfile?.addresses[0]?.country
-                      }
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Controller
-                  name="city"
-                  control={control}
-                  rules={{ required: "Это поле обязательно" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Город"
-                      error={!!errors.city}
-                      helperText={errors.city?.message}
-                      disabled={
-                        useProfileAddress && !!userProfile?.addresses[0]?.city
-                      }
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Controller
-                  name="address"
-                  control={control}
-                  rules={{ required: "Это поле обязательно" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Улица, дом, квартира"
-                      error={!!errors.address}
-                      helperText={errors.address?.message}
-                      disabled={
-                        useProfileAddress && !!userProfile?.addresses[0]?.street
-                      }
-                    />
-                  )}
-                />
-              </Grid>
-            </Grid>
-          )}
-        </Paper>
-
-        {/* Получатель */}
-        <Paper sx={{ mb: 3, p: 2 }}>
           <Typography variant="h6" gutterBottom>
-            Получатель
+            Адрес доставки
           </Typography>
-          {isUserLoading ? (
-            <Box sx={{ textAlign: "center", py: 2 }}>
-              <Typography>Загрузка данных пользователя...</Typography>
-            </Box>
-          ) : (
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Controller
-                  name="fullName"
-                  control={control}
-                  rules={{ required: "Это поле обязательно" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Имя"
-                      error={!!errors.fullName}
-                      helperText={errors.fullName?.message}
-                      disabled={useProfileAddress && !!userProfile?.fullName}
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Controller
-                  name="email"
-                  control={control}
-                  rules={{
-                    required: "Это поле обязательно",
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: "Некорректный email адрес",
-                    },
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Email"
-                      type="email"
-                      error={!!errors.email}
-                      helperText={errors.email?.message}
-                      disabled={useProfileAddress && !!userProfile?.mail}
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Controller
-                  name="phone"
-                  control={control}
-                  rules={{
-                    required: "Это поле обязательно",
-                    pattern: {
-                      value:
-                        /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/,
-                      message: "Некорректный номер телефона",
-                    },
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Телефон"
-                      error={!!errors.phone}
-                      helperText={errors.phone?.message}
-                      disabled={useProfileAddress && !!userProfile?.phoneNumber}
-                    />
-                  )}
-                />
-              </Grid>
-            </Grid>
-          )}
+          <AddressSelector
+            selectedAddressId={selectedAddress?.id}
+            onAddressSelect={setSelectedAddress}
+            onAddNewAddress={addressDialog.openDialog}
+          />
         </Paper>
 
         {/* Товары в корзине */}
@@ -483,20 +308,6 @@ const Checkout = () => {
         </Paper>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 4 }}>
-          {userProfile && !useProfileAddress && (
-            <Button
-              variant="outlined"
-              color="primary"
-              size="medium"
-              onClick={() => {
-                // Logic to save address to profile
-              }}
-              sx={{ mb: 1 }}
-            >
-              Сохранить этот адрес в профиле
-            </Button>
-          )}
-
           <Button
             type="submit"
             variant="contained"
@@ -509,6 +320,12 @@ const Checkout = () => {
           </Button>
         </Box>
       </form>
+
+      <AddressDialog
+        open={addressDialog.isOpen}
+        onClose={addressDialog.closeDialog}
+        onSuccess={addressDialog.handleSuccess}
+      />
     </Container>
   );
 };

@@ -15,12 +15,14 @@ import { HeaderIconLinks } from "./HeaderIconLinks";
 import Link from "next/link";
 import throttle from "lodash.throttle";
 import SearchString from "./SearchString";
-import Logo from "@/shared/assets/images/logo.svg";
+import Logo from "@/shared/assets/logo/logo.svg";
 import headerBg from "@/shared/assets/images/header-bg.png";
+import site from "@/shared/assets/logo/site.png";
 
 export const Header = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("md", "lg"));
 
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -55,6 +57,15 @@ export const Header = () => {
   }, [isMobile, handleScroll]);
 
   const headerHeight = "119px";
+
+  // Адаптивные размеры логотипа site
+  const getSiteLogoSize = () => {
+    if (isMobile) return { width: 50, height: 24 };
+    if (isTablet) return { width: 100, height: 30 };
+    return { width: 120, height: 36 };
+  };
+
+  const siteLogoSize = getSiteLogoSize();
 
   return (
     <Box
@@ -109,18 +120,39 @@ export const Header = () => {
 
           <Stack direction="column" flex={1} spacing={0.5}>
             {/* Заголовок и иконки */}
-            <Stack direction="row" alignItems="center" justifyContent="end">
-              {/* <Link href="/" aria-label="Home">
-                <Typography
-                  component="h1"
-                  variant="h6"
-                  fontWeight={900}
-                  textTransform="uppercase"
-                  color={"secondary.contrastText"}
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+            >
+              <Link href="/" aria-label="Home">
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    filter: "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))",
+                    transition: theme.transitions.create("transform", {
+                      duration: theme.transitions.duration.shorter,
+                    }),
+                    "&:hover": {
+                      transform: "scale(1.02)",
+                    },
+                  }}
                 >
-                  3DM
-                </Typography>
-              </Link> */}
+                  <Image
+                    src={site}
+                    alt="Site Logo"
+                    width={siteLogoSize.width}
+                    height={siteLogoSize.height}
+                    priority
+                    style={{
+                      objectFit: "contain",
+                      maxWidth: "100%",
+                      height: "auto",
+                    }}
+                  />
+                </Box>
+              </Link>
               <HeaderIconLinks />
             </Stack>
             {/* Search row */}
