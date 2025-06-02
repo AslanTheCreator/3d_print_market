@@ -15,6 +15,7 @@ import {
   alpha,
   useMediaQuery,
   Button,
+  CircularProgress,
 } from "@mui/material";
 import { ProductCardModel } from "../../model/types";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
@@ -24,6 +25,11 @@ import { formatPrice } from "@/shared/lib/formatPrice";
 import { useAddToCart } from "@/features/cart/add-to-cart/hooks/useAddToCart";
 import { useRouter } from "next/navigation";
 import { useCartProducts } from "@/entities/cart";
+import {
+  useAddToFavorites,
+  useIsFavorite,
+  useToggleFavorite,
+} from "@/entities/favorites/api/queries";
 
 export const ProductCard: React.FC<ProductCardModel> = ({
   id,
@@ -32,7 +38,6 @@ export const ProductCard: React.FC<ProductCardModel> = ({
   category,
   image,
 }) => {
-  const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -40,13 +45,15 @@ export const ProductCard: React.FC<ProductCardModel> = ({
 
   const { data: cartItems } = useCartProducts({});
 
+  const isFavorite = useIsFavorite(id);
+  const { toggleFavorite, isLoading: isFavoriteLoading } = useToggleFavorite();
+
   const isInCart = cartItems?.some((item) => item.id === id);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsFavorite(!isFavorite);
-    // Здесь можно добавить логику сохранения состояния избранного
+    toggleFavorite(id);
   };
 
   const { mutate } = useAddToCart();
@@ -300,13 +307,23 @@ export const ProductCard: React.FC<ProductCardModel> = ({
           "&:hover": {
             bgcolor: alpha(theme.palette.background.paper, 0.9),
           },
+          "&:disabled": {
+            bgcolor: alpha(theme.palette.background.paper, 0.5),
+          },
         }}
         onClick={handleFavoriteClick}
+        disabled={isFavoriteLoading}
         aria-label={
           isFavorite ? "Удалить из избранного" : "Добавить в избранное"
         }
       >
-        {isFavorite ? (
+        {isFavoriteLoading ? (
+          <CircularProgress
+            size={isMobile ? 16 : 20}
+            thickness={4}
+            sx={{ color: theme.palette.text.secondary }}
+          />
+        ) : isFavorite ? (
           <FavoriteIcon
             sx={{
               color: theme.palette.error.main,

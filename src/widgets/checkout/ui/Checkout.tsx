@@ -1,46 +1,43 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { CartList, useCartProducts } from "@/entities/cart";
 import {
   Container,
   Typography,
   Box,
-  Grid,
   TextField,
-  FormControl,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
   Button,
   Paper,
   Divider,
   Stack,
-  FormHelperText,
-  Checkbox,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/shared/lib/formatPrice";
 import { useCreateOrder } from "@/features/order/create-order/hooks/useCreateOrder";
 import { useForm, Controller } from "react-hook-form";
-import { useUser } from "@/entities/user/hooks/useUser";
 import { AddressSelector } from "@/features/address/address-selector/ui/AddressSelector";
 import { AddressBaseModel } from "@/entities/address/model/types";
-import { useAddAddressDialog } from "@/features/address/create-address/hooks/useAddressDialog";
+import { useAddressDialog } from "@/features/address/create-address/hooks/useAddressDialog";
 import { AddressDialog } from "@/features/address/create-address/ui/AddressDialog";
-
-type DeliveryMethod = "pickup" | "delivery-company" | "russian-post";
-type PaymentMethod = "card" | "sbp";
+import {
+  ShoppingMethods,
+  TransferBaseModel,
+} from "@/entities/transfer/model/types";
+import { TransferSelector } from "@/features/transfer/transfer-selector/TransferSelector";
+import {
+  AccountsBaseModel,
+  TransferMoney,
+} from "@/entities/accounts/model/types";
+import { PaymentSelector } from "@/features/accounts/account-selector/ui/PaymentSelector";
 
 type CheckoutFormValues = {
-  region: string;
-  city: string;
-  address: string;
   fullName: string;
   email: string;
   phone: string;
-  deliveryMethod: DeliveryMethod;
-  paymentMethod: PaymentMethod;
+  deliveryMethod: ShoppingMethods;
+  paymentMethod: TransferMoney;
+  paymentAccountId?: number;
   comment: string;
   useProfileAddress: boolean;
 };
@@ -49,7 +46,6 @@ const Checkout = () => {
   const router = useRouter();
   const { data: cartItems, isLoading: isCartLoading } = useCartProducts({});
   const { mutate: createOrder, isPending } = useCreateOrder();
-  const { data: userProfile, isLoading: isUserLoading } = useUser({});
 
   const {
     control,
@@ -63,33 +59,18 @@ const Checkout = () => {
       fullName: "",
       email: "",
       phone: "",
-      deliveryMethod: "pickup",
-      paymentMethod: "card",
+      deliveryMethod: "TRANSPORT_COMPANY",
+      paymentMethod: "BANK_CARD",
       comment: "",
     },
   });
 
+  const [selectedTransfer, setSelectedTransfer] =
+    useState<TransferBaseModel | null>(null);
   const [selectedAddress, setSelectedAddress] =
     useState<AddressBaseModel | null>(null);
-
-  const useProfileAddress = watch("useProfileAddress");
-
-  useEffect(() => {
-    if (userProfile && !isUserLoading && useProfileAddress) {
-      prefillAddressFromProfile(userProfile);
-    }
-  }, [userProfile, isUserLoading, setValue, useProfileAddress]);
-
-  const prefillAddressFromProfile = (profile: typeof userProfile) => {
-    if (profile?.addresses[0]) {
-      setValue("region", profile.addresses[0].country || "");
-      setValue("city", profile.addresses[0].city || "");
-      setValue("address", profile.addresses[0].fullAddress || "");
-    }
-    setValue("fullName", profile?.fullName || "");
-    setValue("email", profile?.mail || "");
-    setValue("phone", profile?.phoneNumber || "");
-  };
+  const [selectedPayment, setSelectedPayment] =
+    useState<AccountsBaseModel | null>(null);
 
   const calculateTotals = () => {
     if (!cartItems?.length) return { subtotal: 0, deliveryPrice: 0, total: 0 };
@@ -122,16 +103,35 @@ const Checkout = () => {
     productId: cartItems?.[1]?.id || 0,
     count: cartItems?.[0]?.count || 1,
     addressId: selectedAddress?.id || 0,
-    transferId: 1,
+    transferId: selectedTransfer?.id || 0,
     comment: data.comment,
   });
 
   // Используем хук для управления диалогом
-  const addressDialog = useAddAddressDialog(() => {
+  const addressDialog = useAddressDialog(() => {
     // Коллбек при успешном добавлении адреса
     // Можно добавить логику обновления списка адресов
     console.log("Адрес успешно добавлен!");
   });
+
+  const handleTransferSelect = (transfer: TransferBaseModel | null) => {
+    setSelectedTransfer(transfer);
+
+    // Дополнительная логика при выборе способа доставки
+    if (transfer) {
+      // Например, обновляем общую стоимость заказа
+      console.log(
+        `Выбран способ доставки: ${transfer.sending}, стоимость: ${transfer.price}`
+      );
+    }
+  };
+
+  const handlePaymentSelect = (payment: AccountsBaseModel | null) => {
+    setSelectedPayment(payment);
+    // if (payment) {
+    //   setValue("paymentAccountId", payment);
+    // }
+  };
 
   if (isCartLoading) {
     return (
@@ -188,39 +188,15 @@ const Checkout = () => {
           <Typography variant="h6" gutterBottom>
             Способ получения
           </Typography>
-          <FormControl
-            component="fieldset"
-            fullWidth
-            error={!!errors.deliveryMethod}
-          >
-            <Controller
-              name="deliveryMethod"
-              control={control}
-              rules={{ required: "Выберите способ доставки" }}
-              render={({ field }) => (
-                <RadioGroup {...field}>
-                  <FormControlLabel
-                    value="pickup"
-                    control={<Radio />}
-                    label="Самовывоз"
-                  />
-                  <FormControlLabel
-                    value="delivery-company"
-                    control={<Radio />}
-                    label="Транспортная компания"
-                  />
-                  <FormControlLabel
-                    value="russian-post"
-                    control={<Radio />}
-                    label="Почта России"
-                  />
-                </RadioGroup>
-              )}
-            />
-            {errors.deliveryMethod && (
-              <FormHelperText>{errors.deliveryMethod.message}</FormHelperText>
-            )}
-          </FormControl>
+
+          <TransferSelector
+            control={control}
+            name="deliveryMethod"
+            error={errors.deliveryMethod}
+            onTransferSelect={handleTransferSelect}
+            showDescriptions={true}
+            hideUnavailable={true} // Показываем только методы из dictionary
+          />
         </Paper>
 
         {/* Способ оплаты */}
@@ -228,34 +204,15 @@ const Checkout = () => {
           <Typography variant="h6" gutterBottom>
             Способ оплаты
           </Typography>
-          <FormControl
-            component="fieldset"
-            fullWidth
-            error={!!errors.paymentMethod}
-          >
-            <Controller
-              name="paymentMethod"
-              control={control}
-              rules={{ required: "Выберите способ оплаты" }}
-              render={({ field }) => (
-                <RadioGroup {...field}>
-                  <FormControlLabel
-                    value="card"
-                    control={<Radio />}
-                    label="Оплата картой"
-                  />
-                  <FormControlLabel
-                    value="sbp"
-                    control={<Radio />}
-                    label="СБП"
-                  />
-                </RadioGroup>
-              )}
-            />
-            {errors.paymentMethod && (
-              <FormHelperText>{errors.paymentMethod.message}</FormHelperText>
-            )}
-          </FormControl>
+          <PaymentSelector
+            control={control}
+            paymentMethodName="paymentMethod"
+            accountIdName="paymentAccountId"
+            error={errors.paymentMethod}
+            onPaymentSelect={handlePaymentSelect}
+            showDescriptions={true}
+            hideUnavailable={true}
+          />
         </Paper>
 
         {/* Комментарий */}

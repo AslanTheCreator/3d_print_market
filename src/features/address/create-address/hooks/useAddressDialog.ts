@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 
-interface UseAddAddressDialogReturn {
+interface UseAddressDialogReturn {
   isOpen: boolean;
   openDialog: () => void;
   closeDialog: () => void;
@@ -10,9 +10,9 @@ interface UseAddAddressDialogReturn {
 /**
  * Хук для управления состоянием диалога добавления адреса
  */
-export const useAddAddressDialog = (
+export const useAddressDialog = (
   onSuccess?: () => void
-): UseAddAddressDialogReturn => {
+): UseAddressDialogReturn => {
   const [isOpen, setIsOpen] = useState(false);
 
   const openDialog = useCallback(() => {

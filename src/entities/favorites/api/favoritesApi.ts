@@ -9,11 +9,8 @@ const authenticatedAxios = createAuthenticatedAxiosInstance();
 export const favoritesApi = {
   getFavorites: async (): Promise<ProductCardModel[]> => {
     try {
-      const { data } = await authenticatedAxios.post<ProductResponseModel>(
-        `${API_URL}/find`,
-        {}
-      );
-      return data.content;
+      const { data } = await authenticatedAxios.post(`${API_URL}/find`, {});
+      return data[0].content;
     } catch (error) {
       throw errorHandler.handleAxiosError(
         error,

@@ -1,15 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addressApi } from "./addressApi";
 import { AddressBaseModel } from "../model/types";
-
-// Query keys
-export const addressKeys = {
-  all: ["addresses"] as const,
-  lists: () => [...addressKeys.all, "list"] as const,
-  list: (filters: string) => [...addressKeys.lists(), { filters }] as const,
-  details: () => [...addressKeys.all, "detail"] as const,
-  detail: (id: number) => [...addressKeys.details(), id] as const,
-};
+import { addressKeys } from "./queryKeys";
 
 // Queries
 export const useUserAddresses = () => {
