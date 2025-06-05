@@ -1,5 +1,5 @@
-import { ProductDetails } from "@/entities/product";
+import { ProductDetailsWidget } from "@/widgets/product-details";
 
 export default function CardPage() {
-  return <ProductDetails />;
+  return <ProductDetailsWidget />;
 }

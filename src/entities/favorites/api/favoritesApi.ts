@@ -1,4 +1,5 @@
-import { ProductCardModel, ProductResponseModel } from "@/entities/product";
+import { imageApi } from "@/entities/image/api/imageApi";
+import { ProductCardModel } from "@/entities/product";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
 import config from "@/shared/config/api";
 import { errorHandler } from "@/shared/lib/errorHandler";
@@ -9,8 +10,25 @@ const authenticatedAxios = createAuthenticatedAxiosInstance();
 export const favoritesApi = {
   getFavorites: async (): Promise<ProductCardModel[]> => {
     try {
-      const { data } = await authenticatedAxios.post(`${API_URL}/find`, {});
-      return data[0].content;
+      const { data } = await authenticatedAxios.post<ProductCardModel[]>(
+        `${API_URL}/find`,
+        {}
+      );
+
+      if (!Array.isArray(data)) {
+        console.error("Ошибка: сервер вернул некорректный формат данных", data);
+        throw new Error("Некорректный формат данных от сервера");
+      }
+
+      return Promise.all(
+        data.map(async (product) => {
+          const images =
+            product.imageId !== undefined
+              ? await imageApi.getImages(product.imageId)
+              : [];
+          return { ...product, image: images };
+        })
+      );
     } catch (error) {
       throw errorHandler.handleAxiosError(
         error,

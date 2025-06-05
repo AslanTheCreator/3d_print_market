@@ -30,6 +30,7 @@ import {
   TransferMoney,
 } from "@/entities/accounts/model/types";
 import { PaymentSelector } from "@/features/accounts/account-selector/ui/PaymentSelector";
+import { useOrderData } from "@/entities/order/api/queries";
 
 type CheckoutFormValues = {
   fullName: string;
@@ -44,8 +45,14 @@ type CheckoutFormValues = {
 
 const Checkout = () => {
   const router = useRouter();
-  const { data: cartItems, isLoading: isCartLoading } = useCartProducts({});
+  const { data: cartItems, isLoading: isCartLoading } = useCartProducts();
   const { mutate: createOrder, isPending } = useCreateOrder();
+  const {
+    data: orderData,
+    isLoading: isOrderDataLoading,
+    isError: isOrderError,
+    error,
+  } = useOrderData(cartItems?.[0]?.id || 0);
 
   const {
     control,
@@ -172,6 +179,8 @@ const Checkout = () => {
             selectedAddressId={selectedAddress?.id}
             onAddressSelect={setSelectedAddress}
             onAddNewAddress={addressDialog.openDialog}
+            addresses={orderData?.addresses || []}
+            isLoading={isOrderDataLoading}
           />
         </Paper>
 
@@ -196,6 +205,9 @@ const Checkout = () => {
             onTransferSelect={handleTransferSelect}
             showDescriptions={true}
             hideUnavailable={true} // Показываем только методы из dictionary
+            transfers={orderData?.sellerTransfers || []}
+            isError={isOrderError}
+            isLoading={isOrderDataLoading}
           />
         </Paper>
 

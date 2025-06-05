@@ -10,21 +10,22 @@ import {
   Skeleton,
 } from "@mui/material";
 import { AddressBaseModel } from "@/entities/address/model/types";
-import { useUserAddresses } from "@/entities/address/api/queries";
 
 interface AddressSelectorProps {
+  addresses: AddressBaseModel[];
+  isLoading: boolean;
   selectedAddressId?: number;
   onAddressSelect: (address: AddressBaseModel) => void;
   onAddNewAddress: () => void;
 }
 
 export const AddressSelector = ({
+  addresses,
   selectedAddressId,
   onAddressSelect,
   onAddNewAddress,
+  isLoading,
 }: AddressSelectorProps) => {
-  const { data: addresses, isLoading } = useUserAddresses();
-
   if (isLoading) {
     return (
       <Box>

@@ -1,13 +1,9 @@
+import { AddressBaseModel } from "@/entities/address/model/types";
 import { ImageResponse } from "@/entities/image/model/types";
-import { Currency } from "@/shared/model/types";
+import { TransferBaseModel } from "@/entities/transfer/model/types";
 
 type UserStatus = "ACTIVE" | "BLOCKED" | "DELETED";
 type TransferMoney = "BANK_CARD" | "BANK_SBP" | "CASH";
-type Sending =
-  | "PRODUCT_PICKUP"
-  | "TRANSPORT_COMPANY"
-  | "RUSSIAN_POST"
-  | "FREE_POST";
 
 export interface UserProfileModel
   extends Pick<UserBaseModel, "id" | "fullName" | "login" | "mail"> {
@@ -24,25 +20,30 @@ export interface UserBaseModel {
   phoneNumber: string;
   status: UserStatus;
   imageIds: number[];
-  addresses: Adress[];
+  addresses: AddressBaseModel[];
   password: string;
   accounts: Account[];
-  transfers: Transfer[];
+  transfers: TransferBaseModel[];
+}
+
+export interface UserFindModel {
+  id: number;
+  login: string;
+  country: string;
+  city: string;
+  imageId: number;
+  experience: string;
+  orderCompletedCount: number;
+  orderPurchaseCount: number;
+  deadlineSending: number;
+  deadlinePayment: number;
+  sellerStatus: "DEFAULT" | "VIP" | "PRO"; // создать тип
+  averageRating: number;
+  transferMoneys: TransferMoney[];
 }
 
 export interface UserUpdateModel
   extends Omit<UserBaseModel, "id" | "login" | "status"> {}
-
-export interface Adress {
-  id: number;
-  country: string;
-  city: string;
-  street: string;
-  houseNumber: string;
-  apartmentNumber: string;
-  index: number;
-  fullAddress: string;
-}
 
 interface Account {
   id: number;
@@ -50,13 +51,5 @@ interface Account {
   username: string;
   entityValue: string;
   comment: string;
-  participantId: number;
-}
-
-export interface Transfer {
-  id: number;
-  sending: Sending;
-  price: number;
-  currency: Currency;
   participantId: number;
 }

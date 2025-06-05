@@ -1,11 +1,11 @@
 import axios from "axios";
 import {
-  ProductResponseModel,
   ProductCardModel,
   ProductDetailsModel,
   ProductCreateModel,
   ProductFilter,
   ProductRequestModel,
+  SortBy,
 } from "../model/types";
 import config from "@/shared/config/api";
 import { imageApi } from "@/entities/image/api/imageApi";
@@ -20,28 +20,37 @@ const fetchImages = async (imageId: number | undefined) => {
 
 export const productApi = {
   getProducts: async (
-    page: number,
     size: number,
-    filters?: ProductFilter
+    filters?: ProductFilter,
+    lastCreatedAt?: string,
+    lastPrice?: number,
+    lastId?: number,
+    sortBy: SortBy = "DATE_DESC"
   ): Promise<ProductCardModel[]> => {
     try {
       const requestData: ProductRequestModel = {
-        pageable: { size, page },
+        pageable: {
+          size,
+          ...(lastCreatedAt && { lastCreatedAt }),
+          ...(lastPrice && { lastPrice }),
+          ...(lastId && { lastId }),
+          sortBy,
+        },
         ...filters,
       };
 
-      const { data } = await axios.post<ProductResponseModel>(
+      const { data } = await axios.post<ProductCardModel[]>(
         API_URL,
         requestData
       );
 
-      if (!Array.isArray(data.content)) {
+      if (!Array.isArray(data)) {
         console.error("Ошибка: сервер вернул некорректный формат данных", data);
         throw new Error("Некорректный формат данных от сервера");
       }
 
       return Promise.all(
-        data.content.map(async (card) => ({
+        data.map(async (card) => ({
           ...card,
           image: await fetchImages(card.imageId),
         }))

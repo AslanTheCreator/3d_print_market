@@ -3,7 +3,7 @@
 import { Container, Typography, Box } from "@mui/material";
 import { useCardsInfinite } from "@/features/product";
 import { InfiniteScroll } from "@/shared/ui";
-import { ProductList } from "@/entities/product";
+import { ProductCatalog } from "@/widgets/product-catalog";
 
 export default function HomePage() {
   const {
@@ -27,7 +27,7 @@ export default function HomePage() {
           hasNextPage={!!hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
         >
-          <ProductList
+          <ProductCatalog
             products={data?.pages.flat() ?? []}
             isLoading={isLoading}
           />

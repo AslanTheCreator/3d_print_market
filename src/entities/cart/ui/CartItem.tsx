@@ -26,18 +26,19 @@ export const CartItem: React.FC<CartProductModel> = ({
   category,
   image,
 }) => {
-  const { mutate, isPending } = useRemoveFromCart();
+  const { mutate: removeFromCart, isPending: isRemoving } = useRemoveFromCart();
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const handleRemove = () => {
-    mutate(
+    removeFromCart(
       { productId: id },
       {
         onSuccess: () => {
           console.log("Товар успешно удален из корзины");
         },
         onError: () => {
+          console.error("Ошибка удаления товара из корзины");
           alert("Не удалось удалить товар из корзины.");
         },
       }
@@ -55,6 +56,8 @@ export const CartItem: React.FC<CartProductModel> = ({
         "&:hover": {
           boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
         },
+        opacity: isRemoving ? 0.6 : 1,
+        pointerEvents: isRemoving ? "none" : "auto",
       }}
     >
       {/* Верхняя часть с изображением и информацией */}
@@ -121,6 +124,8 @@ export const CartItem: React.FC<CartProductModel> = ({
               sx={{
                 fontSize: isMobile ? "0.625rem" : "0.75rem",
                 fontWeight: 500,
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
               }}
             >
               {category.name}
@@ -136,6 +141,7 @@ export const CartItem: React.FC<CartProductModel> = ({
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
               textOverflow: "ellipsis",
+              lineHeight: 1.3,
             }}
           >
             {name}
@@ -163,7 +169,7 @@ export const CartItem: React.FC<CartProductModel> = ({
       >
         <IconButton
           onClick={handleRemove}
-          disabled={isPending}
+          disabled={isRemoving}
           aria-label="Удалить товар из корзины"
           sx={{
             p: 1,
@@ -173,7 +179,11 @@ export const CartItem: React.FC<CartProductModel> = ({
             "&:hover": {
               bgcolor: alpha(theme.palette.error.main, 0.15),
             },
-            transition: "background-color 0.2s",
+            "&:disabled": {
+              bgcolor: alpha(theme.palette.error.main, 0.05),
+              color: alpha(theme.palette.error.main, 0.5),
+            },
+            transition: "all 0.2s",
           }}
         >
           <DeleteOutlineIcon fontSize={isMobile ? "small" : "medium"} />

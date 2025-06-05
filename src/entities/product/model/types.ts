@@ -1,32 +1,52 @@
 import { ImageResponse } from "@/entities/image/model/types";
-import { ProductBaseModel } from "@/shared/model/types";
+import { ReviewModel } from "@/entities/reviews/model/types";
+import { Currency } from "@/shared/model/types";
+import { CategoryModel } from "@/shared/model/types/category";
 
-export interface ProductResponseModel {
-  totalElements: number;
-  page: number;
-  content: ProductCardModel[];
+export type Availability = "PURCHASABLE" | "PREORDER" | "EXTERNAL_ONLY";
+type Status = "ACTIVE" | "DELETED";
+
+interface BaseProduct {
+  id: number;
+  name: string;
+  price: number;
+  currency: Currency;
+  category: CategoryModel;
+  availability: Availability;
 }
 
-export interface ProductCardModel
-  extends Omit<
-    ProductBaseModel,
-    "description" | "originality" | "participantId" | "status"
-  > {
+export interface ProductCardModel extends BaseProduct {
+  count: number;
+  createdAt: string; // ISO date string
   imageId: number;
+  sellerId: number;
   image: ImageResponse[];
 }
 
-export interface ProductDetailsModel extends ProductBaseModel {
+export interface ProductDetailsModel extends BaseProduct {
+  description: string;
+  prepaymentAmount: number;
+  count: number;
+  originality: string;
+  participantId: number;
+  status: Status;
+  externalUrl: string;
+  reviews: ReviewModel[];
   imageIds: number[];
   image: ImageResponse[];
 }
 
-export interface ProductCreateModel
-  extends Omit<
-    ProductBaseModel,
-    "id" | "category" | "participantId" | "status" | "originality"
-  > {
+export interface ProductCreateModel {
+  name: string;
+  description: string;
+  price: number;
+  prepaymentAmount?: number;
   categoryId: number;
+  count: number;
+  currency: Currency;
+  originality: string;
+  availability?: Availability;
+  externalUrl?: string;
   imageIds: number[];
 }
 
@@ -43,7 +63,7 @@ interface DateRange {
 }
 
 export interface ProductFilter {
-  productName?: string;
+  name?: string;
   categoryId?: number;
   originality?: string;
   participantId?: number;
@@ -51,19 +71,17 @@ export interface ProductFilter {
   imageId?: number;
   dateRange?: DateRange;
 }
+
+export type SortBy = "DATE_DESC" | "PRICE_ASC" | "PRICE_DESC";
 
 interface Pageable {
   size: number;
-  page: number;
+  lastCreatedAt?: string;
+  lastPrice?: number;
+  lastId?: number;
+  sortBy?: SortBy;
 }
 
-export interface ProductRequestModel {
-  productName?: string;
-  categoryId?: number;
-  originality?: string;
-  participantId?: number;
-  priceRange?: PriceRange;
-  imageId?: number;
-  dateRange?: DateRange;
+export interface ProductRequestModel extends ProductFilter {
   pageable: Pageable;
 }

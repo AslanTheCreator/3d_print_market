@@ -1,14 +1,6 @@
-import {
-  useMutation,
-  useQueryClient,
-  UseMutationResult,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { cartApi } from "@/entities/cart/api/cartApi";
-export const useAddToCart = (): UseMutationResult<
-  void,
-  Error,
-  { productId: number }
-> => {
+export const useAddToCart = () => {
   const queryClient = useQueryClient();
 
   return useMutation({

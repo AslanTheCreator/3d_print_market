@@ -2,9 +2,9 @@
 
 import { useCardsInfinite } from "@/features/product";
 import { Container, Typography, Box } from "@mui/material";
-import { ProductList } from "@/entities/product";
 import { InfiniteScroll } from "@/shared/ui";
 import { useSearchParams } from "next/navigation";
+import { ProductCatalog } from "@/widgets/product-catalog";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -17,7 +17,7 @@ export default function SearchPage() {
     isLoading,
     error,
   } = useCardsInfinite(10, {
-    productName: query,
+    name: query,
   });
 
   return (
@@ -31,7 +31,7 @@ export default function SearchPage() {
           hasNextPage={!!hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
         >
-          <ProductList
+          <ProductCatalog
             products={data?.pages.flat() ?? []}
             isLoading={isLoading}
           />

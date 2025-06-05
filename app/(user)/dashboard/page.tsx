@@ -8,7 +8,6 @@ import { useProfileUser } from "@/entities/user/hooks/useProfileUser";
 import ProfileWidget from "@/widgets/profile/ui/Profile";
 import { DashboardContent } from "@/widgets/dashboard";
 import { DashboardNavigation } from "@/widgets/dashboard";
-import { mockUserProfile } from "@/entities/user/model/mocks/userProfile.mock";
 
 // Перечисление для секций дашборда
 type DashboardSection = "main" | "profile" | "payment-methods";
@@ -16,7 +15,7 @@ type DashboardSection = "main" | "profile" | "payment-methods";
 export default function DashboardPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { data: userData } = useProfileUser({});
+  const { data: userData } = useProfileUser();
 
   const [activeSection, setActiveSection] = useState<DashboardSection>("main");
 

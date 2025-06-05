@@ -29,6 +29,9 @@ interface TransferSelectorProps {
   onTransferSelect?: (transfer: TransferBaseModel | null) => void;
   showDescriptions?: boolean;
   hideUnavailable?: boolean;
+  transfers: TransferBaseModel[];
+  isLoading?: boolean;
+  isError?: boolean;
 }
 
 export const TransferSelector: React.FC<TransferSelectorProps> = ({
@@ -39,14 +42,10 @@ export const TransferSelector: React.FC<TransferSelectorProps> = ({
   onTransferSelect,
   showDescriptions = true,
   hideUnavailable = false,
+  transfers,
+  isLoading: transfersLoading = false,
+  isError: transfersError = false,
 }) => {
-  const {
-    data: transfers,
-    isLoading: transfersLoading,
-    isError: transfersError,
-    error: queryError,
-  } = useUserTransfers();
-
   const {
     data: shoppingMethods,
     isLoading: methodsLoading,
@@ -129,7 +128,7 @@ export const TransferSelector: React.FC<TransferSelectorProps> = ({
   if (isError) {
     return (
       <Alert severity="error" sx={{ mb: 2 }}>
-        {queryError?.message || "Ошибка при загрузке данных"}
+        {error?.message || "Ошибка при загрузке данных"}
       </Alert>
     );
   }

@@ -28,6 +28,7 @@ import { styled } from "@mui/material/styles";
 import { CloudUpload } from "@mui/icons-material";
 import { Currency } from "@/shared/model/types";
 import { imageApi } from "@/entities/image/api/imageApi";
+import { Availability } from "@/entities/product/model/types";
 
 // Список валют
 const currencies: { code: Currency; symbol: string }[] = [
@@ -75,6 +76,9 @@ interface FormValues {
   price: string;
   currency: Currency;
   description: string;
+  originality: string;
+  availability: Availability;
+  imageIds: number[];
 }
 
 export const CreateProductForm = () => {
@@ -187,6 +191,7 @@ export const CreateProductForm = () => {
     currency: data.currency,
     description: data.description,
     count: 1,
+    originality: "ORIGINAL",
   });
 
   const handleSnackbar = (message: string, severity: "success" | "error") => {

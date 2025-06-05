@@ -12,13 +12,24 @@ const authenticatedAxios = createAuthenticatedAxiosInstance();
 export const orderApi = {
   createOrder: async (orderData: OrderCreateModel) => {
     try {
-      const { data } = await authenticatedAxios.post<number>(
-        `${config.apiBaseUrl}/order`,
+      await authenticatedAxios.post<number>(
+        `${config.apiBaseUrl}/order/BOOKED`,
         orderData
       );
-      console.log(data);
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка при создании заказа");
+    }
+  },
+  confirmOrderBySeller: async (orderId: number, accountId: number) => {
+    try {
+      await authenticatedAxios.post(
+        `${config.apiBaseUrl}/order/${orderId}/AWAITING_PREPAYMENT?accountId=${accountId}`
+      );
+    } catch (error) {
+      throw errorHandler.handleAxiosError(
+        error,
+        "Ошибка при подтверждении заказа продавцом"
+      );
     }
   },
   getOrderData: async (productId: number): Promise<OrderGetDataModel> => {
@@ -29,6 +40,7 @@ export const orderApi = {
       if (!data) {
         throw new Error("Пустой ответ от сервера");
       }
+
       return data;
     } catch (error) {
       throw errorHandler.handleAxiosError(
@@ -37,11 +49,10 @@ export const orderApi = {
       );
     }
   },
-  confirmOrder: async (orderId: number) => {},
   getSellerOrders: async () => {
     try {
       const { data } = await authenticatedAxios.get<SellerOrdersModel>(
-        `${config.apiBaseUrl}/order/seller/54`
+        `${config.apiBaseUrl}/order/seller`
       );
       if (!data) {
         throw new Error("Пустой ответ от сервера");

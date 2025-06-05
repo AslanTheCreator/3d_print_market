@@ -1,12 +1,14 @@
 import config from "@/shared/config/api";
 import {
   UserBaseModel,
+  UserFindModel,
   UserProfileModel,
   UserUpdateModel,
 } from "../model/types";
 import { errorHandler } from "@/shared/lib/errorHandler";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
 import { imageApi } from "@/entities/image/api/imageApi";
+import axios from "axios";
 
 const API_URL = `${config.apiBaseUrl}/participant`;
 const API_URL_PROFILE = `${config.apiBaseUrl}/auth/profile`;
@@ -25,6 +27,23 @@ export const userApi = {
       throw errorHandler.handleAxiosError(
         error,
         " Ошибка при загрузке пользователя"
+      );
+    }
+  },
+  async getUserByParams(id?: number): Promise<UserFindModel[]> {
+    try {
+      const { data } = await axios.post<UserFindModel[]>(
+        `${config.apiBaseUrl}/participants/find`,
+        {
+          id,
+        }
+      );
+      console.log(data);
+      return data;
+    } catch (error) {
+      throw errorHandler.handleAxiosError(
+        error,
+        " Ошибка при загрузке пользователя по параметрам"
       );
     }
   },

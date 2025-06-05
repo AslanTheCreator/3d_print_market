@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import PersonCustomIcon from "@/shared/assets/icons/userAccount.svg";
 import ShoppingCartCustomIcon from "@/shared/assets/icons/backet.svg";
+import { FavoriteBorderOutlined } from "@mui/icons-material";
 
 export const HeaderIconLinks = () => {
   const theme = useTheme();
@@ -14,7 +15,7 @@ export const HeaderIconLinks = () => {
 
   const handleProfileClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (true) {
+    if (isAuthenticated) {
       router.push("/dashboard");
     } else {
       router.push("/auth/login");
@@ -25,6 +26,12 @@ export const HeaderIconLinks = () => {
   const iconSize = isMobile ? 28 : 32;
 
   const headerIcons = [
+    {
+      url: "favorites",
+      icon: <FavoriteBorderOutlined />,
+      label: "Избранное",
+      oncClick: undefined,
+    },
     {
       url: "/auth/login",
       icon: (

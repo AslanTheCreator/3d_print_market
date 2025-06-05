@@ -5,7 +5,6 @@ import {
   CardContent,
   Skeleton,
   Box,
-  Stack,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
