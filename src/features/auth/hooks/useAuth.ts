@@ -1,24 +1,21 @@
-import { useState, useEffect } from "react";
-import { tokenStorage } from "@/shared/lib/token/tokenStorage";
+import { useAuthStore } from "@/shared/store/authStore";
 
 export const useAuth = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const accessToken = tokenStorage.getAccessToken();
-    setIsAuthenticated(!!accessToken);
-    console.log(isAuthenticated);
-  }, [isAuthenticated]);
-
-  const checkAuthStatus = () => {
-    const accessToken = tokenStorage.getAccessToken();
-    const authenticated = !!accessToken;
-    setIsAuthenticated(authenticated);
-    return authenticated;
-  };
+  const {
+    isAuthenticated,
+    isInitialized,
+    user,
+    login,
+    logout,
+    checkAuthStatus,
+  } = useAuthStore();
 
   return {
     isAuthenticated,
+    isInitialized,
+    user,
+    login,
+    logout,
     checkAuthStatus,
   };
 };

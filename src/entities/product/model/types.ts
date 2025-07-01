@@ -45,7 +45,7 @@ export interface ProductCreateModel {
   count: number;
   currency: Currency;
   originality: string;
-  availability?: Availability;
+  availability?: Availability | string; // убрать string
   externalUrl?: string;
   imageIds: number[];
 }

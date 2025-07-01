@@ -39,10 +39,16 @@ const navigationItems: NavigationItem[] = [
     target: "profile",
   },
   {
-    text: "Текущие заказы",
+    text: "Покупки",
     icon: <ShoppingBagIcon />,
     action: "link",
-    target: "/dashboard/current-orders",
+    target: "/dashboard/purchase",
+  },
+  {
+    text: "Продажи",
+    icon: <ShoppingBagIcon />,
+    action: "link",
+    target: "/dashboard/sales",
   },
   {
     text: "Предзаказы",
@@ -52,12 +58,6 @@ const navigationItems: NavigationItem[] = [
   },
   {
     text: "Товары",
-    icon: <ShoppingBagIcon />,
-    action: "link",
-    target: "/dashboard/products",
-  },
-  {
-    text: "Мои товары",
     icon: <ShoppingBagIcon />,
     action: "link",
     target: "/dashboard/products",

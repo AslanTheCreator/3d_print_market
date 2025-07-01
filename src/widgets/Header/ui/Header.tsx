@@ -2,14 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import {
-  Box,
-  Stack,
-  Typography,
-  Container,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
+import { Box, Stack, Container, useMediaQuery, useTheme } from "@mui/material";
 import { CategoryToggleButton } from "./CategoryToggleButton";
 import { HeaderIconLinks } from "./HeaderIconLinks";
 import Link from "next/link";

@@ -13,6 +13,29 @@ type OrderStatus =
   | "COMPLETED"
   | "FAILED";
 
+interface OrderTransfer {
+  transferId: number;
+  addressId: number;
+  imageId: number;
+  address: string;
+  price: number;
+  currency: Currency;
+}
+
+interface OrderHistory {
+  status: OrderStatus;
+  comment: string;
+  changedAt: string;
+}
+
+interface OrderUserInfo {
+  id: number;
+  imageId: number;
+  login: string;
+  phoneNumber: string;
+  mail: string;
+}
+
 export interface OrderCreateModel {
   productId: number;
   count: number;
@@ -26,28 +49,14 @@ export interface OrderGetDataModel {
   sellerTransfers: TransferBaseModel[];
 }
 
-export interface SellerOrdersModel {
+export interface ListOrdersModel {
   orderId: number;
   actualStatus: OrderStatus;
   totalPrice: number;
   createdAt: string;
+  userInfo: OrderUserInfo;
   product: ProductCardModel;
   transfer: OrderTransfer;
   images: number[];
-  histories: OrderTransferHistory[];
-}
-
-interface OrderTransfer {
-  transferId: number;
-  addressId: number;
-  imageId: number;
-  address: string;
-  price: number;
-  currency: Currency;
-}
-
-interface OrderTransferHistory {
-  status: OrderStatus;
-  comment: string;
-  changedAt: string;
+  histories: OrderHistory[];
 }

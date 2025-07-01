@@ -26,10 +26,6 @@ export const ErrorCartState: React.FC<ErrorCartStateProps> = ({
 
   return (
     <Container sx={{ marginTop: "10px" }}>
-      <Typography variant="h5" component="h1" gutterBottom>
-        Корзина
-      </Typography>
-
       <Box
         display="flex"
         flexDirection="column"

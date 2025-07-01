@@ -39,9 +39,7 @@ export const authApi = {
         refreshToken: data.refresh_token,
       };
 
-      console.log("Токен: ", tokens.accessToken);
-
-      tokenStorage.saveTokens(tokens); // Сохраняем токены в куки
+      tokenStorage.saveTokens(tokens);
       return true;
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка авторизации");

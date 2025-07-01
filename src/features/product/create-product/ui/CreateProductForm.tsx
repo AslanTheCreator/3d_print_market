@@ -79,6 +79,7 @@ interface FormValues {
   originality: string;
   availability: Availability;
   imageIds: number[];
+  count: number;
 }
 
 export const CreateProductForm = () => {
@@ -106,6 +107,7 @@ export const CreateProductForm = () => {
       price: "",
       currency: "RUB",
       description: "",
+      count: 1,
     },
   });
 
@@ -171,6 +173,7 @@ export const CreateProductForm = () => {
     }
 
     const productData = createProductData(data);
+    console.log("Данные товара для создания:", productData);
 
     createProduct(productData, {
       onSuccess: () => {
@@ -183,6 +186,7 @@ export const CreateProductForm = () => {
     });
   };
 
+  // Убрать хардкодинг и сделать типы более строгими
   const createProductData = (data: FormValues) => ({
     categoryId: parseInt(data.categoryId),
     name: data.name,
@@ -192,6 +196,7 @@ export const CreateProductForm = () => {
     description: data.description,
     count: 1,
     originality: "ORIGINAL",
+    availability: "PURCHASABLE", // должен быть тип Availability
   });
 
   const handleSnackbar = (message: string, severity: "success" | "error") => {

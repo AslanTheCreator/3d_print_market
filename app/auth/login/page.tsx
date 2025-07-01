@@ -5,23 +5,29 @@ import AuthForm from "@/widgets/auth-form";
 import { useState } from "react";
 import { Snackbar, Alert } from "@mui/material";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/shared/store/authStore";
 
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const handleLogin = async (login: string, password: string) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const login = useAuthStore((state) => state.login);
+
+  const handleLogin = async (userLogin: string, password: string) => {
     try {
-      const userData = {
-        login,
-        password,
-      };
-      const isLoginSuccessful = await authApi.loginUser(userData);
+      setIsLoading(true);
+      setError(null);
+
+      const isLoginSuccessful = await login(userLogin, password);
+
       if (isLoginSuccessful) {
         router.push("/");
       }
     } catch (error) {
       console.error("Login failed:", error);
       setError("Ошибка авторизации. Проверьте логин и пароль.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -34,6 +40,7 @@ export default function LoginPage() {
         linkText="зарегистрируйтесь"
         buttonTitle="Войти"
         onSubmit={handleLogin}
+        isLoading={isLoading}
       />
       <Snackbar
         open={!!error}

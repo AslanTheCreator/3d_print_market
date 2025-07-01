@@ -14,7 +14,6 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/shared/lib/formatPrice";
-import { useCreateOrder } from "@/features/order/create-order/hooks/useCreateOrder";
 import { useForm, Controller } from "react-hook-form";
 import { AddressSelector } from "@/features/address/address-selector/ui/AddressSelector";
 import { AddressBaseModel } from "@/entities/address/model/types";
@@ -30,7 +29,7 @@ import {
   TransferMoney,
 } from "@/entities/accounts/model/types";
 import { PaymentSelector } from "@/features/accounts/account-selector/ui/PaymentSelector";
-import { useOrderData } from "@/entities/order/api/queries";
+import { useCreateOrder, useOrderData } from "@/entities/order";
 
 type CheckoutFormValues = {
   fullName: string;
@@ -107,7 +106,7 @@ const Checkout = () => {
   };
 
   const createOrderData = (data: CheckoutFormValues) => ({
-    productId: cartItems?.[1]?.id || 0,
+    productId: cartItems?.[0]?.id || 0,
     count: cartItems?.[0]?.count || 1,
     addressId: selectedAddress?.id || 0,
     transferId: selectedTransfer?.id || 0,
