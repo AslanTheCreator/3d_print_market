@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
-import { useToggleFavorite } from "@/entities/favorites/api/queries";
+import { useToggleFavorite } from "@/entities/favorites/hooks";
 
 interface FavoriteButtonProps {
   productId: number;

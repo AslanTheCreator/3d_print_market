@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useCartProducts } from "../api/queries";
+import { useCartProducts } from "./useCartQueries"; // Updated import path
 
 export const useCartChecks = () => {
   const { data: cartItems } = useCartProducts();

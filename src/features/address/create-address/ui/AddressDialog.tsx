@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import CloseIcon from "@mui/icons-material/Close";
-import { useCreateAddress } from "@/entities/address/api/queries";
+import { useCreateAddress } from "@/entities/address/hooks";
 import { AddressForm } from "@/entities/address/ui/AddressForm";
 
 interface AddressFormData {
