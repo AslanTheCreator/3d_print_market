@@ -8,7 +8,6 @@ type OrderStatus =
   | "AWAITING_PAYMENT"
   | "ASSEMBLING"
   | "ON_THE_WAY"
-  | "RECEIVED"
   | "DISPUTED"
   | "COMPLETED"
   | "FAILED";

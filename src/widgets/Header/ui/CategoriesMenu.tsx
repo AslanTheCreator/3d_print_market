@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   List,
@@ -9,73 +9,137 @@ import {
   ListItemIcon,
   ListItemText,
   IconButton,
-  Divider,
   Typography,
+  Collapse,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import Link from "next/link";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import CategoryIcon from "@mui/icons-material/Category";
 import { alpha } from "@mui/material/styles";
-
-// Импортируйте нужные иконки для категорий
-import SportsEsportsIcon from "@mui/icons-material/SportsEsports"; // Настольные игры
-import CasinoIcon from "@mui/icons-material/Casino"; // Ролевые игры
-import ToysIcon from "@mui/icons-material/Toys"; // Экшен-фигурки
-import ViewInArIcon from "@mui/icons-material/ViewInAr"; // Варгеймы
-import DirectionsCarIcon from "@mui/icons-material/DirectionsCar"; // Стендовые модели
-import BuildIcon from "@mui/icons-material/Build"; // Все для моделирования
-import StyleIcon from "@mui/icons-material/Style"; // Коллекционные карточные игры
-
-// Список категорий с иконками
-const categories = [
-  {
-    id: 1,
-    name: "Варгеймы",
-    icon: <ViewInArIcon />,
-    path: "/categories/wargames",
-  },
-  {
-    id: 2,
-    name: "Стендовые модели",
-    icon: <DirectionsCarIcon />,
-    path: "/categories/models",
-  },
-  {
-    id: 3,
-    name: "Все для моделирования",
-    icon: <BuildIcon />,
-    path: "/categories/modeling",
-  },
-  {
-    id: 4,
-    name: "Настольные игры",
-    icon: <SportsEsportsIcon />,
-    path: "/categories/board-games",
-  },
-  {
-    id: 5,
-    name: "Ролевые игры",
-    icon: <CasinoIcon />,
-    path: "/categories/rpg",
-  },
-  {
-    id: 6,
-    name: "Экшен-фигурки",
-    icon: <ToysIcon />,
-    path: "/categories/action-figures",
-  },
-  {
-    id: 7,
-    name: "Коллекционные карточные игры",
-    icon: <StyleIcon />,
-    path: "/categories/card-games",
-  },
-];
+import { CategoryModel } from "@/entities/category/model/types";
+import { useCategories } from "@/entities/category/hooks/useCategories";
 
 interface CategoriesMenuProps {
   onClose: () => void;
 }
 
+interface CategoryItemProps {
+  category: CategoryModel;
+  onClose: () => void;
+  level?: number;
+}
+
+const CategoryItem: React.FC<CategoryItemProps> = ({
+  category,
+  onClose,
+  level = 0,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasChildren = category.childs && category.childs.length > 0;
+
+  const handleToggle = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsExpanded(!isExpanded);
+  };
+
+  const handleCategoryClick = () => {
+    if (!hasChildren) {
+      onClose();
+    }
+  };
+
+  const categoryPath = `/categories/${category.id}`;
+
+  return (
+    <>
+      <ListItem
+        disablePadding
+        divider={level === 0}
+        sx={{
+          pl: level * 2, // Отступ для вложенных элементов
+        }}
+      >
+        <ListItemButton
+          component={hasChildren ? "div" : Link}
+          href={hasChildren ? undefined : categoryPath}
+          onClick={handleCategoryClick}
+          sx={{
+            py: 1.5,
+            pl: level > 0 ? 2 : 2,
+            minHeight: 48,
+            "&:hover": {
+              backgroundColor: (theme) =>
+                alpha(theme.palette.primary.main, 0.04),
+            },
+          }}
+        >
+          <ListItemIcon
+            sx={{
+              minWidth: 40,
+              color: level === 0 ? "primary.main" : "text.secondary",
+            }}
+          >
+            <CategoryIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary={category.name}
+            primaryTypographyProps={{
+              fontWeight: level === 0 ? 500 : 400,
+              fontSize: level === 0 ? "1rem" : "0.875rem",
+              color: level === 0 ? "text.primary" : "text.secondary",
+            }}
+          />
+          {hasChildren ? (
+            <IconButton
+              onClick={handleToggle}
+              size="small"
+              sx={{
+                color: "action.active",
+                opacity: 0.7,
+                "&:hover": {
+                  backgroundColor: (theme) =>
+                    alpha(theme.palette.primary.main, 0.04),
+                },
+              }}
+            >
+              {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            </IconButton>
+          ) : (
+            <ChevronRightIcon
+              sx={{
+                color: "action.active",
+                opacity: 0.7,
+              }}
+            />
+          )}
+        </ListItemButton>
+      </ListItem>
+      {hasChildren && (
+        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            {category.childs.map((childCategory) => (
+              <CategoryItem
+                key={childCategory.id}
+                category={childCategory}
+                onClose={onClose}
+                level={level + 1}
+              />
+            ))}
+          </List>
+        </Collapse>
+      )}
+    </>
+  );
+};
+
 export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
+  const { categories, loading, error } = useCategories();
+
   return (
     <Box
       sx={{
@@ -104,7 +168,7 @@ export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
         },
       }}
     >
-      {/* Header with Figurzill title */}
+      {/* Header with Figurzilla title */}
       <Box
         sx={{
           display: "flex",
@@ -128,46 +192,66 @@ export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
         </Typography>
       </Box>
 
-      <List sx={{ width: "100%", p: 0, mt: 0 }}>
-        {categories.map((category) => (
-          <ListItem key={category.id} disablePadding divider>
-            <ListItemButton
-              component={Link}
-              href={category.path}
-              onClick={onClose}
-              sx={{
-                py: 1.5,
-                "&:hover": {
-                  backgroundColor: (theme) =>
-                    alpha(theme.palette.primary.main, 0.04),
-                },
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  minWidth: 40,
-                  color: "primary.main",
-                }}
-              >
-                {category.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={category.name}
-                primaryTypographyProps={{
-                  fontWeight: 500,
-                  color: "text.primary",
-                }}
-              />
-              <ChevronRightIcon
-                sx={{
-                  color: "action.active",
-                  opacity: 0.7,
-                }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+      {/* Loading state */}
+      {loading && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "200px",
+          }}
+        >
+          <CircularProgress size={40} />
+        </Box>
+      )}
+
+      {/* Error state */}
+      {error && !loading && (
+        <Box sx={{ p: 2 }}>
+          <Alert severity="error" sx={{ borderRadius: 2 }}>
+            {error}
+          </Alert>
+        </Box>
+      )}
+
+      {/* Categories list */}
+      {!loading && !error && categories.length > 0 && (
+        <List sx={{ width: "100%", p: 0, mt: 0 }}>
+          {categories.map((category) => (
+            <CategoryItem
+              key={category.id}
+              category={category}
+              onClose={onClose}
+            />
+          ))}
+        </List>
+      )}
+
+      {/* Empty state */}
+      {!loading && !error && categories.length === 0 && (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "200px",
+            px: 2,
+          }}
+        >
+          <CategoryIcon
+            sx={{
+              fontSize: 48,
+              color: "text.secondary",
+              mb: 2,
+            }}
+          />
+          <Typography variant="body2" color="text.secondary" textAlign="center">
+            Категории не найдены
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };

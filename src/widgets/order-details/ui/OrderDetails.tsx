@@ -430,7 +430,7 @@ const CustomerActions = ({ order }: { order: ListOrdersModel }) => {
   };
 
   const canPay = order.actualStatus === "AWAITING_PAYMENT";
-  const canConfirmReceipt = order.actualStatus === "RECEIVED";
+  const canConfirmReceipt = order.actualStatus === "ON_THE_WAY";
 
   return (
     <>
