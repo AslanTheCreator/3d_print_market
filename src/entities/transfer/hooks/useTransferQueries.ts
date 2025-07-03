@@ -1,14 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { transferApi } from "./transferApi";
+import { transferApi } from "../api/transferApi"; // Исправленный путь к transferApi
+import { transferKeys } from "./queryKeys"; // Импорт ключей
 
-// Query keys
-export const transferKeys = {
-  all: ["transfers"] as const,
-  lists: () => [...transferKeys.all, "list"] as const,
-  userTransfers: () => [...transferKeys.lists(), "user"] as const,
-};
-
-// Queries
 export const useUserTransfers = () => {
   return useQuery({
     queryKey: transferKeys.userTransfers(),
