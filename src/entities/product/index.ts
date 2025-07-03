@@ -7,5 +7,5 @@ export { ProductRating } from "./ui/ProductDetails/ProductRating";
 export { ProductDetailsSkeleton } from "./ui/ProductDetails/ProductDetailsSkeleton";
 
 export { productApi } from "./api/productApi";
-export { useProductDetails } from "./hooks/useProductDetails";
+export * from "./hooks"; // Exports all from ./hooks/index.ts
 export type { ProductDetailsModel, ProductCardModel } from "./model/types";

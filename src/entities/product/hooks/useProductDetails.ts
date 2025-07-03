@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
-import { useProductById } from "./useProductQueries"; // Updated import
+import { useProductById } from "./useProductQueries";
 import { ProductDetailsModel } from "../model/types";
-import { useUserByParams } from "@/entities/user/api/queries"; // This will be updated later
+import { useUserByParams } from "@/entities/user/hooks/useUserQueries"; // Corrected import path
 
 interface UseProductDetailsReturn {
   productCard: ProductDetailsModel | undefined;
