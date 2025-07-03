@@ -1,6 +1,6 @@
 "use client";
 
-import { useCustomerOrders } from "@/entities/order/api/queries";
+import { useCustomerOrders } from "@/entities/order";
 import OrderDetails from "@/widgets/order-details/ui/OrderDetails";
 
 export const CustomerOrdersWidget = () => {

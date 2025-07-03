@@ -40,12 +40,12 @@ export interface ProductCreateModel {
   name: string;
   description: string;
   price: number;
-  prepaymentAmount?: number;
+  prepaymentAmount: number;
   categoryId: number;
   count: number;
   currency: Currency;
   originality: string;
-  availability?: Availability | string; // убрать string
+  availability: Availability;
   externalUrl?: string;
   imageIds: number[];
 }

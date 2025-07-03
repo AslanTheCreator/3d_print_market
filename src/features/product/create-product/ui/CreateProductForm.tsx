@@ -19,6 +19,8 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useCreateProduct } from "../hooks/useCreateProduct";
@@ -55,7 +57,7 @@ const VisuallyHiddenInput = styled("input")({
 
 const ImagePreview = styled(Box)(({ theme }) => ({
   width: "100%",
-  height: 200,
+  height: 150,
   borderRadius: theme.shape.borderRadius,
   backgroundColor: theme.palette.grey[100],
   display: "flex",
@@ -63,9 +65,11 @@ const ImagePreview = styled(Box)(({ theme }) => ({
   justifyContent: "center",
   overflow: "hidden",
   marginTop: theme.spacing(1),
-  marginBottom: theme.spacing(2),
-  [theme.breakpoints.up("md")]: {
-    height: 300,
+  marginBottom: theme.spacing(1),
+  border: `1px solid ${theme.palette.divider}`,
+  position: "relative",
+  [theme.breakpoints.up("sm")]: {
+    height: 200,
   },
 }));
 
@@ -76,10 +80,8 @@ interface FormValues {
   price: string;
   currency: Currency;
   description: string;
-  originality: string;
-  availability: Availability;
-  imageIds: number[];
-  count: number;
+  isPreorder: boolean;
+  prepaymentAmount: string;
 }
 
 export const CreateProductForm = () => {
@@ -99,6 +101,7 @@ export const CreateProductForm = () => {
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
@@ -107,9 +110,12 @@ export const CreateProductForm = () => {
       price: "",
       currency: "RUB",
       description: "",
-      count: 1,
+      isPreorder: false,
+      prepaymentAmount: "",
     },
   });
+
+  const isPreorder = watch("isPreorder");
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -186,7 +192,6 @@ export const CreateProductForm = () => {
     });
   };
 
-  // Убрать хардкодинг и сделать типы более строгими
   const createProductData = (data: FormValues) => ({
     categoryId: parseInt(data.categoryId),
     name: data.name,
@@ -194,9 +199,14 @@ export const CreateProductForm = () => {
     price: parseFloat(data.price),
     currency: data.currency,
     description: data.description,
+    availability: data.isPreorder
+      ? "PREORDER"
+      : ("PURCHASABLE" as Availability),
+    prepaymentAmount: data.isPreorder ? parseFloat(data.prepaymentAmount) : 0,
+    // Захардкоженные поля
     count: 1,
     originality: "ORIGINAL",
-    availability: "PURCHASABLE", // должен быть тип Availability
+    externalUrl: undefined,
   });
 
   const handleSnackbar = (message: string, severity: "success" | "error") => {
@@ -298,22 +308,35 @@ export const CreateProductForm = () => {
                 variant="outlined"
                 startIcon={<CloudUpload />}
                 fullWidth
+                disabled={isUploadingImage}
                 sx={{
                   height: 56,
                   borderColor: imageError ? "error.main" : undefined,
                   color: imageError ? "error.main" : undefined,
                 }}
               >
-                {image ? "Изменить изображение" : "Загрузить изображение"}
+                {isUploadingImage ? (
+                  <>
+                    <CircularProgress size={16} sx={{ mr: 1 }} />
+                    Загрузка...
+                  </>
+                ) : image ? (
+                  "Изменить изображение"
+                ) : (
+                  "Загрузить изображение"
+                )}
                 <VisuallyHiddenInput
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
+                  disabled={isUploadingImage}
                 />
               </Button>
 
               {imageError && (
-                <FormHelperText error>{imageError}</FormHelperText>
+                <FormHelperText error sx={{ mt: 1 }}>
+                  {imageError}
+                </FormHelperText>
               )}
 
               {imagePreview && (
@@ -322,8 +345,8 @@ export const CreateProductForm = () => {
                     src={imagePreview}
                     alt="Предпросмотр товара"
                     fill
-                    sizes="(max-width: 768px) 100vw, 800px"
-                    style={{ objectFit: "contain" }}
+                    sizes="(max-width: 600px) 100vw, 600px"
+                    style={{ objectFit: "cover" }}
                   />
                 </ImagePreview>
               )}
@@ -355,9 +378,8 @@ export const CreateProductForm = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          {currencies.find((c) => c.code === field.value)
-                            ?.symbol ||
-                            currencies.find((c) => c.code === "RUB")?.symbol}
+                          {currencies.find((c) => c.code === watch("currency"))
+                            ?.symbol || "₽"}
                         </InputAdornment>
                       ),
                     }}
@@ -395,6 +417,66 @@ export const CreateProductForm = () => {
               />
             </Grid>
 
+            {/* Чекбокс предзаказа */}
+            <Grid item xs={12}>
+              <Controller
+                name="isPreorder"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={field.value}
+                        onChange={field.onChange}
+                        color="primary"
+                      />
+                    }
+                    label="Предзаказ"
+                  />
+                )}
+              />
+            </Grid>
+
+            {/* Сумма предоплаты (показывается только если выбран предзаказ) */}
+            {isPreorder && (
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="prepaymentAmount"
+                  control={control}
+                  rules={{
+                    required: "Введите сумму предоплаты",
+                    pattern: {
+                      value: /^\d+(\.\d{1,2})?$/,
+                      message: "Введите корректную сумму",
+                    },
+                    validate: (value) =>
+                      parseFloat(value) > 0 || "Сумма должна быть больше нуля",
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      fullWidth
+                      id="prepaymentAmount"
+                      label="Сумма предоплаты"
+                      type="number"
+                      placeholder="0.00"
+                      error={!!errors.prepaymentAmount}
+                      helperText={errors.prepaymentAmount?.message}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            {currencies.find(
+                              (c) => c.code === watch("currency")
+                            )?.symbol || "₽"}
+                          </InputAdornment>
+                        ),
+                      }}
+                      {...field}
+                    />
+                  )}
+                />
+              </Grid>
+            )}
+
             {/* Описание товара */}
             <Grid item xs={12}>
               <Controller
@@ -429,7 +511,7 @@ export const CreateProductForm = () => {
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={isPending}
+                disabled={isPending || isUploadingImage}
                 sx={{
                   mt: 2,
                   py: 1.5,

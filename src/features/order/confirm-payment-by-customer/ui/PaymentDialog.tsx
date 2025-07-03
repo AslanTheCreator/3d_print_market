@@ -13,10 +13,13 @@ import {
   Stack,
   IconButton,
   Paper,
+  CircularProgress,
+  FormHelperText,
 } from "@mui/material";
 import { Close, CloudUpload, Payment, CheckCircle } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order/model/types";
 import { useConfirmPaymentByCustomer } from "@/entities/order";
+import { imageApi } from "@/entities/image/api/imageApi";
 
 interface PaymentDialogProps {
   open: boolean;
@@ -29,30 +32,59 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageId, setImageId] = useState<number | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const confirmPaymentMutation = useConfirmPaymentByCustomer();
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const validateImage = (file: File): boolean => {
+    if (file.size > 10 * 1024 * 1024) {
+      setImageError("Размер файла не должен превышать 10 МБ");
+      resetImageState();
+      return false;
+    }
+    if (!file.type.startsWith("image/")) {
+      setImageError("Пожалуйста, загрузите изображение");
+      resetImageState();
+      return false;
+    }
+    return true;
+  };
+
+  const resetImageState = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    setImageId(null);
+  };
+
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setSelectedImage(file);
+    if (!file) return;
 
-      // Создаем превью изображения
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!validateImage(file)) return;
 
-      // Здесь должна быть логика загрузки файла на сервер
-      // и получения imageId
-      // Пока что устанавливаем заглушку
-      setImageId(1);
+    setImageError(null);
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+
+    try {
+      setIsUploadingImage(true);
+      const response = await imageApi.saveImage(file, "ORDER");
+      setImageId(response[0]); // Предполагаем, что API возвращает массив ID
+    } catch (error) {
+      console.error("Ошибка при загрузке изображения:", error);
+      setImageError("Не удалось загрузить изображение на сервер");
+      resetImageState();
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
   const handleConfirmPayment = () => {
     if (!imageId) {
+      setImageError("Пожалуйста, загрузите подтверждение оплаты");
       return;
     }
 
@@ -75,10 +107,13 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
     setSelectedImage(null);
     setImagePreview(null);
     setImageId(null);
+    setImageError(null);
+    setIsUploadingImage(false);
     onClose();
   };
 
-  const canConfirmPayment = imageId && !confirmPaymentMutation.isPending;
+  const canConfirmPayment =
+    imageId && !confirmPaymentMutation.isPending && !isUploadingImage;
 
   return (
     <Dialog
@@ -140,6 +175,7 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
             id="payment-proof-upload"
             type="file"
             onChange={handleImageUpload}
+            disabled={isUploadingImage}
           />
 
           <label htmlFor="payment-proof-upload">
@@ -158,7 +194,14 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
                 },
               }}
             >
-              {imagePreview ? (
+              {isUploadingImage ? (
+                <Stack alignItems="center" spacing={1}>
+                  <CircularProgress size={48} />
+                  <Typography variant="body2" color="text.secondary">
+                    Загрузка изображения...
+                  </Typography>
+                </Stack>
+              ) : imagePreview ? (
                 <Box>
                   <img
                     src={imagePreview}
@@ -188,6 +231,12 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
               )}
             </Paper>
           </label>
+
+          {imageError && (
+            <FormHelperText error sx={{ mt: 1 }}>
+              {imageError}
+            </FormHelperText>
+          )}
         </Box>
 
         {/* Комментарий */}
@@ -200,6 +249,7 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           sx={{ mb: 2 }}
+          disabled={isUploadingImage}
         />
 
         {/* Предупреждение */}
@@ -214,7 +264,7 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
       <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button
           onClick={handleClose}
-          disabled={confirmPaymentMutation.isPending}
+          disabled={confirmPaymentMutation.isPending || isUploadingImage}
         >
           Отмена
         </Button>
