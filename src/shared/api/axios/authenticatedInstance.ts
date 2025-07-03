@@ -1,7 +1,7 @@
 import axios from "axios";
 import { tokenStorage } from "@/shared/lib/token/tokenStorage";
 import { authApi } from "@/features/auth/api/authApi";
-import { useAuthStore } from "@/shared/store/authStore";
+import { useAuthStore } from "@/app/store";
 
 export const createAuthenticatedAxiosInstance = () => {
   const axiosInstance = axios.create();

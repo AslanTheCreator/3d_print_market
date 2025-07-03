@@ -5,7 +5,7 @@ import AuthForm from "@/widgets/auth-form";
 import { useState } from "react";
 import { Snackbar, Alert } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/shared/store/authStore";
+import { useAuthStore } from "@/app/store";
 
 export default function LoginPage() {
   const router = useRouter();
