@@ -15,7 +15,7 @@ import {
   useTheme,
 } from "@mui/material";
 
-import { useFavorites } from "@/entities/favorites/api/queries";
+import { useFavorites } from "@/entities/favorites/hooks";
 import { ProductCard } from "@/entities/product/ui/ProductCard";
 
 const FavoritesSkeleton: React.FC = () => (

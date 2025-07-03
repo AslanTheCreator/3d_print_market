@@ -1,4 +1,4 @@
-import { useIsFavorite } from "@/entities/favorites/api/queries";
+import { useIsFavorite } from "@/entities/favorites/hooks";
 import { ProductCard, ProductCardModel } from "@/entities/product";
 import { FavoriteButton } from "@/features/toggle-favorite/ui/FavoriteButton";
 import { useRouter } from "next/navigation";

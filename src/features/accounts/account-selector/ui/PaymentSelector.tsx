@@ -21,7 +21,7 @@ import {
 } from "@/entities/accounts/model/types";
 import { useTransferMoney } from "@/shared/model/dictionary/useDictionaryHooks";
 import { DictionaryItem } from "@/shared/api/dictionary/types";
-import { useUserAccounts } from "@/entities/accounts/api/queries";
+import { useUserAccounts } from "@/entities/accounts/hooks";
 
 interface PaymentSelectorProps {
   control: Control<any>;
