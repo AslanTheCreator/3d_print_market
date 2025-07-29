@@ -1,6 +1,5 @@
 import axios from "axios";
 import { tokenStorage } from "@/shared/lib/token/tokenStorage";
-import { authApi } from "@/features/auth/api/authApi";
 import { useAuthStore } from "@/app/store";
 
 export const createAuthenticatedAxiosInstance = () => {
@@ -39,6 +38,7 @@ export const createAuthenticatedAxiosInstance = () => {
           }
         } catch (refreshError) {
           // При ошибке обновления токена делаем logout
+          console.log("Error refreshing token:", refreshError);
           useAuthStore.getState().logout();
           return Promise.reject(refreshError);
         }

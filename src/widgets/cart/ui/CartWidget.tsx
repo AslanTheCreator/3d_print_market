@@ -20,11 +20,14 @@ import {
   LoadingCartState,
 } from "@/shared/ui";
 import { formatPrice } from "@/shared/lib";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { UnauthorizedCartState } from "@/shared/ui/states/UnauthorizedCartState";
 
 export const CartWidget = () => {
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { isAuthenticated } = useAuth();
 
   const {
     data: cartItems,
@@ -32,9 +35,13 @@ export const CartWidget = () => {
     isError,
     error,
     refetch,
-  } = useCartProducts();
+  } = useCartProducts({ enabled: isAuthenticated });
 
-  const { getCartTotal, getCartItemsCount } = useCartChecks();
+  const { getCartTotal, getCartItemsCount } = useCartChecks(cartItems);
+
+  if (!isAuthenticated) {
+    return <UnauthorizedCartState />;
+  }
 
   if (isLoading) {
     return <LoadingCartState />;

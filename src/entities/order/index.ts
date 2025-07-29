@@ -6,6 +6,8 @@ export {
 export {
   useCreateOrder,
   useConfirmOrderBySeller,
+  useConfirmPreOrderBySeller,
+  useConfirmPrepaymentByCustomer,
   useConfirmPaymentByCustomer,
   useConfirmReceiptByCustomer,
   useSendOrderBySeller,
@@ -15,5 +17,9 @@ export {
   useCustomerOrdersStats,
   useSellerOrdersStats,
 } from "./hooks/useOrderStats";
+
+export { OrderHistory } from "./ui/OrderHistory";
+export { OrderProgress } from "./ui/OrderProgress";
+export { OrderStatusChip } from "./ui/OrderStatusChip";
 
 export type { ListOrdersModel } from "./model/types";

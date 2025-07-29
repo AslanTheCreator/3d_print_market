@@ -15,6 +15,7 @@ import {
 import { ArrowBack, CloudUpload } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { useState } from "react";
+import { useUpdateUser } from "@/entities/user";
 
 interface ProfileWidgetProps {
   //userData: UserUpdateModel;
@@ -33,6 +34,8 @@ const ProfileWidget: React.FC<ProfileWidgetProps> = ({ onBack }) => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [severity, setSeverity] = useState<"success" | "error">("success");
 
+  const { mutateAsync } = useUpdateUser();
+
   const {
     control,
     handleSubmit,
@@ -45,7 +48,16 @@ const ProfileWidget: React.FC<ProfileWidgetProps> = ({ onBack }) => {
     },
   });
 
-  const onSubmit = (data: ProfileFormValues) => {};
+  const onSubmit = (data: ProfileFormValues) => {
+    try {
+      const updateData = {
+        ...data,
+        imageIds: [1], // Предполагается, что у пользователя есть хотя бы одно изображение
+        deadlineSending: 0, // Скрытые поля с дефолтными значениями
+        deadlinePayment: 0,
+      };
+    } catch (error) {}
+  };
 
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);

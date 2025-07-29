@@ -1,59 +1,31 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import {
   Box,
   Container,
   Typography,
   Card,
   CardContent,
-  Button,
   Chip,
   Avatar,
   Divider,
   Stack,
   Alert,
   Skeleton,
-  IconButton,
-  Collapse,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  DialogContentText,
-  Paper,
 } from "@mui/material";
 import {
   Phone,
   Email,
   LocationOn,
-  ExpandMore,
-  ExpandLess,
-  CheckCircle,
-  AccessTime,
   ShoppingCart,
-  Person,
   LocalShipping,
-  History,
-  Payment,
-  Receipt,
-  Cancel,
-  ThumbUp,
-  Warning,
   Store,
   AccountCircle,
 } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order/model/types";
 import { UseQueryResult } from "@tanstack/react-query";
-import ShippingDialog from "@/features/order/send-order-by-seller/ui/ShippingDialog";
-import PaymentDialog from "@/features/order/confirm-payment-by-customer/ui/PaymentDialog";
-import {
-  useConfirmOrderBySeller,
-  useConfirmReceiptByCustomer,
-} from "@/entities/order";
+import { OrderHistory, OrderProgress, OrderStatusChip } from "@/entities/order";
+import { CustomerActions, SellerActions } from "@/features/order";
 
 type UserRole = "seller" | "customer";
 
@@ -67,81 +39,6 @@ interface OrdersPageProps {
   query: UseQueryResult<ListOrdersModel[]>;
   userRole: UserRole;
 }
-
-// Компонент для отображения статуса заказа
-const OrderStatusChip = ({ status }: { status: string }) => {
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case "BOOKED":
-        return {
-          color: "warning" as const,
-          label: "Забронирован",
-          icon: <AccessTime sx={{ fontSize: 16 }} />,
-        };
-      case "AWAITING_PAYMENT":
-        return {
-          color: "info" as const,
-          label: "Ожидает оплату",
-          icon: <Payment sx={{ fontSize: 16 }} />,
-        };
-      case "ASSEMBLING":
-        return {
-          color: "primary" as const,
-          label: "Собирается",
-          icon: <ShoppingCart sx={{ fontSize: 16 }} />,
-        };
-      case "ON_THE_WAY":
-        return {
-          color: "primary" as const,
-          label: "В пути",
-          icon: <LocalShipping sx={{ fontSize: 16 }} />,
-        };
-      case "RECEIVED":
-        return {
-          color: "success" as const,
-          label: "Получен",
-          icon: <Receipt sx={{ fontSize: 16 }} />,
-        };
-      case "COMPLETED":
-        return {
-          color: "success" as const,
-          label: "Завершен",
-          icon: <CheckCircle sx={{ fontSize: 16 }} />,
-        };
-      case "DISPUTED":
-        return {
-          color: "error" as const,
-          label: "Спор",
-          icon: <Warning sx={{ fontSize: 16 }} />,
-        };
-      case "FAILED":
-        return {
-          color: "error" as const,
-          label: "Отменен",
-          icon: <Cancel sx={{ fontSize: 16 }} />,
-        };
-      default:
-        return {
-          color: "default" as const,
-          label: status,
-          icon: null,
-        };
-    }
-  };
-
-  const config = getStatusConfig(status);
-
-  return (
-    <Chip
-      label={config.label}
-      color={config.color}
-      size="small"
-      variant="filled"
-      icon={config.icon ?? undefined}
-      sx={{ minWidth: 120 }}
-    />
-  );
-};
 
 // Компонент для отображения информации о пользователе (продавец или покупатель)
 const UserInfo = ({
@@ -263,352 +160,13 @@ const DeliveryInfo = ({
   </Box>
 );
 
-// Компонент для отображения истории заказа
-const OrderHistory = ({
-  histories,
-}: {
-  histories: ListOrdersModel["histories"];
-}) => {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <Box>
-      <Button
-        startIcon={<History />}
-        endIcon={expanded ? <ExpandLess /> : <ExpandMore />}
-        onClick={() => setExpanded(!expanded)}
-        size="small"
-        sx={{ mb: 1 }}
-      >
-        История заказа ({histories.length})
-      </Button>
-      <Collapse in={expanded}>
-        <List dense>
-          {histories.map((history, index) => (
-            <ListItem key={index} sx={{ py: 0.5, px: 0 }}>
-              <ListItemIcon sx={{ minWidth: 32 }}>
-                <CheckCircle sx={{ fontSize: 16 }} color="success" />
-              </ListItemIcon>
-              <ListItemText
-                primary={history.status}
-                secondary={
-                  <Stack direction="column" spacing={0.5}>
-                    {history.comment && (
-                      <Typography variant="caption" color="text.secondary">
-                        {history.comment}
-                      </Typography>
-                    )}
-                    <Typography variant="caption" color="text.secondary">
-                      {new Date(history.changedAt).toLocaleString("ru-RU")}
-                    </Typography>
-                  </Stack>
-                }
-                primaryTypographyProps={{ variant: "body2", fontWeight: 500 }}
-              />
-            </ListItem>
-          ))}
-        </List>
-      </Collapse>
-    </Box>
-  );
-};
-
-// Компонент для действий продавца
-const SellerActions = ({ order }: { order: ListOrdersModel }) => {
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [shippingDialogOpen, setShippingDialogOpen] = useState(false);
-  const confirmOrderMutation = useConfirmOrderBySeller();
-
-  const handleConfirmOrder = () => {
-    confirmOrderMutation.mutate(
-      {
-        orderId: order.orderId,
-        accountId: order.userInfo.id,
-      },
-      {
-        onSuccess: () => {
-          setConfirmDialogOpen(false);
-        },
-      }
-    );
-  };
-
-  const canConfirmOrder = order.actualStatus === "BOOKED";
-  const canShipOrder = order.actualStatus === "ASSEMBLING";
-
-  return (
-    <>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-        {canConfirmOrder && (
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<CheckCircle />}
-            onClick={() => setConfirmDialogOpen(true)}
-            disabled={confirmOrderMutation.isPending}
-            size="small"
-            fullWidth={true}
-          >
-            {confirmOrderMutation.isPending
-              ? "Подтверждение..."
-              : "Подтвердить заказ"}
-          </Button>
-        )}
-
-        {canShipOrder && (
-          <Button
-            variant="contained"
-            color="secondary"
-            startIcon={<LocalShipping />}
-            onClick={() => setShippingDialogOpen(true)}
-            size="small"
-            fullWidth={true}
-          >
-            Отправить товар
-          </Button>
-        )}
-      </Stack>
-
-      {/* Диалог подтверждения заказа */}
-      <Dialog
-        open={confirmDialogOpen}
-        onClose={() => setConfirmDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Подтвердить заказ</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Вы уверены, что хотите подтвердить заказ #{order.orderId}? После
-            подтверждения покупатель сможет перейти к оплате.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setConfirmDialogOpen(false)}
-            disabled={confirmOrderMutation.isPending}
-          >
-            Отмена
-          </Button>
-          <Button
-            onClick={handleConfirmOrder}
-            variant="contained"
-            disabled={confirmOrderMutation.isPending}
-          >
-            Подтвердить
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Диалог отправки товара */}
-      <ShippingDialog
-        open={shippingDialogOpen}
-        onClose={() => setShippingDialogOpen(false)}
-        order={order}
-      />
-    </>
-  );
-};
-
-// Компонент для действий покупателя
-const CustomerActions = ({ order }: { order: ListOrdersModel }) => {
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
-  const confirmReceiptMutation = useConfirmReceiptByCustomer();
-
-  const handleConfirmReceipt = () => {
-    confirmReceiptMutation.mutate(
-      {
-        orderId: order.orderId,
-      },
-      {
-        onSuccess: () => {
-          setReceiptDialogOpen(false);
-        },
-      }
-    );
-  };
-
-  const canPay = order.actualStatus === "AWAITING_PAYMENT";
-  const canConfirmReceipt = order.actualStatus === "ON_THE_WAY";
-
-  return (
-    <>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-        {canPay && (
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<Payment />}
-            onClick={() => setPaymentDialogOpen(true)}
-            size="small"
-            fullWidth={true}
-          >
-            Подтвердить оплату
-          </Button>
-        )}
-
-        {canConfirmReceipt && (
-          <Button
-            variant="contained"
-            color="success"
-            startIcon={<ThumbUp />}
-            onClick={() => setReceiptDialogOpen(true)}
-            disabled={confirmReceiptMutation.isPending}
-            size="small"
-            fullWidth={true}
-          >
-            {confirmReceiptMutation.isPending
-              ? "Подтверждение..."
-              : "Подтвердить получение"}
-          </Button>
-        )}
-      </Stack>
-
-      {/* Диалог оплаты */}
-      <PaymentDialog
-        open={paymentDialogOpen}
-        onClose={() => setPaymentDialogOpen(false)}
-        order={order}
-      />
-
-      {/* Диалог подтверждения получения */}
-      <Dialog
-        open={receiptDialogOpen}
-        onClose={() => setReceiptDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Подтвердить получение заказа</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Вы уверены, что получили заказ #{order.orderId} и он соответствует
-            описанию? После подтверждения заказ будет считаться завершенным.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setReceiptDialogOpen(false)}
-            disabled={confirmReceiptMutation.isPending}
-          >
-            Отмена
-          </Button>
-          <Button
-            onClick={handleConfirmReceipt}
-            variant="contained"
-            color="success"
-            disabled={confirmReceiptMutation.isPending}
-          >
-            Подтвердить получение
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
-  );
-};
-
-// Компонент для отображения прогресса заказа
-const OrderProgress = ({
-  status,
-  userRole,
-}: {
-  status: string;
-  userRole: UserRole;
-}) => {
-  const steps = [
-    { key: "BOOKED", label: "Забронирован", sellerAction: true },
-    { key: "AWAITING_PAYMENT", label: "Ожидает оплату", customerAction: true },
-    { key: "ASSEMBLING", label: "Собирается", sellerAction: true },
-    { key: "ON_THE_WAY", label: "В пути", info: true },
-    { key: "RECEIVED", label: "Получен", customerAction: true },
-    { key: "COMPLETED", label: "Завершен", info: true },
-  ];
-
-  const currentStepIndex = steps.findIndex((step) => step.key === status);
-
-  return (
-    <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: "grey.50" }}>
-      <Typography variant="subtitle2" gutterBottom sx={{ mb: 2 }}>
-        Прогресс заказа
-      </Typography>
-      <Stack direction="row" spacing={1} sx={{ overflowX: "auto", pb: 1 }}>
-        {steps.map((step, index) => {
-          const isActive = index === currentStepIndex;
-          const isCompleted = index < currentStepIndex;
-          const needsAction =
-            isActive &&
-            ((step.sellerAction && userRole === "seller") ||
-              (step.customerAction && userRole === "customer"));
-
-          return (
-            <Box
-              key={step.key}
-              sx={{
-                minWidth: 80,
-                textAlign: "center",
-                position: "relative",
-              }}
-            >
-              <Box
-                sx={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  bgcolor: isCompleted
-                    ? "success.main"
-                    : isActive
-                    ? needsAction
-                      ? "warning.main"
-                      : "primary.main"
-                    : "grey.300",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  mx: "auto",
-                  mb: 1,
-                }}
-              >
-                {isCompleted ? (
-                  <CheckCircle sx={{ fontSize: 16, color: "white" }} />
-                ) : (
-                  <Typography variant="caption" color="white" fontWeight={600}>
-                    {index + 1}
-                  </Typography>
-                )}
-              </Box>
-              <Typography
-                variant="caption"
-                color={isActive ? "primary.main" : "text.secondary"}
-                fontWeight={isActive ? 600 : 400}
-                sx={{ display: "block", lineHeight: 1.2 }}
-              >
-                {step.label}
-              </Typography>
-              {needsAction && (
-                <Typography
-                  variant="caption"
-                  color="warning.main"
-                  fontWeight={600}
-                  sx={{ display: "block", mt: 0.5 }}
-                >
-                  Требует действия
-                </Typography>
-              )}
-            </Box>
-          );
-        })}
-      </Stack>
-    </Paper>
-  );
-};
-
 // Основной компонент карточки заказа
 const OrderCard = ({ order, userRole }: OrderCardProps) => {
   const needsAttention =
     (userRole === "seller" &&
       ["BOOKED", "ASSEMBLING"].includes(order.actualStatus)) ||
     (userRole === "customer" &&
-      ["AWAITING_PAYMENT", "RECEIVED"].includes(order.actualStatus));
+      ["AWAITING_PAYMENT", "ON_THE_WAY"].includes(order.actualStatus));
 
   return (
     <Card
@@ -778,7 +336,7 @@ const OrderDetails = ({ title, query, userRole }: OrdersPageProps) => {
       (userRole === "seller" &&
         ["BOOKED", "ASSEMBLING"].includes(order.actualStatus)) ||
       (userRole === "customer" &&
-        ["AWAITING_PAYMENT", "RECEIVED"].includes(order.actualStatus))
+        ["AWAITING_PAYMENT", "ON_THE_WAY"].includes(order.actualStatus))
   );
 
   // Сортировка: сначала заказы, требующие внимания, затем по дате создания

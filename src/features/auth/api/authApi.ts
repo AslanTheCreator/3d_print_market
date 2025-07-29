@@ -52,6 +52,7 @@ export const authApi = {
       tokenStorage.clearTokens();
       throw new Error("Refresh token отсутствует");
     }
+    console.log("Обновление токена доступа...");
 
     try {
       const { data: accessToken } = await axios.post<string>(
@@ -63,7 +64,7 @@ export const authApi = {
           },
         }
       );
-
+      console.log("Токен доступа успешно обновлен:", accessToken);
       tokenStorage.saveTokens({ accessToken, refreshToken });
     } catch (error) {
       tokenStorage.clearTokens();

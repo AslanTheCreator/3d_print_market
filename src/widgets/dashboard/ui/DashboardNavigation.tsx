@@ -62,12 +62,6 @@ const navigationItems: NavigationItem[] = [
     action: "link",
     target: "/dashboard/products",
   },
-  {
-    text: "Избранное",
-    icon: <FavoriteIcon />,
-    action: "link",
-    target: "/dashboard/favorites",
-  },
 ];
 
 export const DashboardNavigation: React.FC<DashboardNavigationProps> = ({

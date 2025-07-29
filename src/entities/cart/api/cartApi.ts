@@ -2,38 +2,31 @@ import config from "@/shared/config/api";
 import { CartProductModel } from "../model/types";
 import { errorHandler } from "@/shared/lib/errorHandler";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
-import { imageApi } from "@/entities/image/api/imageApi";
+import { fetchProductsWithImages } from "@/shared/api/common/productDataFetcher";
+import { ProductFilter, SortBy } from "@/entities/product/model/types";
 
 const authenticatedAxios = createAuthenticatedAxiosInstance();
 
 export const cartApi = {
-  getCart: async (): Promise<CartProductModel[]> => {
-    try {
-      const { data } = await authenticatedAxios.post<CartProductModel[]>(
-        `${config.apiBaseUrl}/basket/find`,
-        {}
-      );
-
-      if (!Array.isArray(data)) {
-        console.error("Ошибка: сервер вернул некорректный формат данных", data);
-        throw new Error("Некорректный формат данных от сервера");
-      }
-
-      return Promise.all(
-        data.map(async (product) => {
-          const images =
-            product.imageId !== undefined
-              ? await imageApi.getImages(product.imageId)
-              : [];
-          return { ...product, image: images };
-        })
-      );
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при загрузке товаров из корзины"
-      );
-    }
+  getCart: async (
+    size: number = 100,
+    filters?: ProductFilter,
+    lastCreatedAt?: string,
+    lastPrice?: number,
+    lastId?: number,
+    sortBy: SortBy = "DATE_DESC"
+  ): Promise<CartProductModel[]> => {
+    return fetchProductsWithImages(
+      authenticatedAxios,
+      `${config.apiBaseUrl}/basket/find`,
+      size,
+      filters,
+      lastCreatedAt,
+      lastPrice,
+      lastId,
+      sortBy,
+      "Ошибка при загрузке товаров из корзины"
+    ) as Promise<CartProductModel[]>;
   },
   addToCart: async (productId: number) => {
     try {

@@ -179,7 +179,6 @@ export const CreateProductForm = () => {
     }
 
     const productData = createProductData(data);
-    console.log("Данные товара для создания:", productData);
 
     createProduct(productData, {
       onSuccess: () => {

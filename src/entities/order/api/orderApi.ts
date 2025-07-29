@@ -10,6 +10,7 @@ import {
 const authenticatedAxios = createAuthenticatedAxiosInstance();
 
 export const orderApi = {
+  //1
   createOrder: async (orderData: OrderCreateModel) => {
     try {
       const { data } = await authenticatedAxios.post<number>(
@@ -20,6 +21,7 @@ export const orderApi = {
       throw errorHandler.handleAxiosError(error, "Ошибка при создании заказа");
     }
   },
+  //2
   confirmOrderBySeller: async (
     orderId: number,
     accountId: number,
@@ -40,6 +42,46 @@ export const orderApi = {
       );
     }
   },
+  //3.2
+  confirmPreOrderBySeller: async (orderId: number, comment: string = "") => {
+    try {
+      await authenticatedAxios.post(
+        `${
+          config.apiBaseUrl
+        }/order/${orderId}/AWAITING_PAYMENT?comment=${encodeURIComponent(
+          comment
+        )}`
+      );
+    } catch (error) {
+      throw errorHandler.handleAxiosError(
+        error,
+        "Ошибка при подтверждении предзаказа продавцом"
+      );
+    }
+  },
+  //3.1
+  confirmPrepaymentByCustomer: async (
+    orderId: number,
+    imageId: number,
+    comment: string = ""
+  ) => {
+    try {
+      const { data } = await authenticatedAxios.post<number>(
+        `${
+          config.apiBaseUrl
+        }/order/${orderId}/AWAITING_PREPAYMENT_APPROVAL?imageId=${imageId}&comment=${encodeURIComponent(
+          comment
+        )}`
+      );
+      console.log("Покупатель подтвердил предоплату, его id: ", data);
+    } catch (error) {
+      throw errorHandler.handleAxiosError(
+        error,
+        "Ошибка при подтверждении предоплаты покупателем"
+      );
+    }
+  },
+  //3.3
   confirmPaymentByCustomer: async (
     orderId: number,
     imageId: number,
@@ -57,10 +99,11 @@ export const orderApi = {
     } catch (error) {
       throw errorHandler.handleAxiosError(
         error,
-        "Ошибка при подтверждении заказа покупателем"
+        "Ошибка при подтверждении оплаты заказа покупателем"
       );
     }
   },
+  //5
   confirmReceiptByCustomer: async (orderId: number, comment: string = "") => {
     try {
       const { data } = await authenticatedAxios.post<number>(
@@ -76,6 +119,7 @@ export const orderApi = {
       );
     }
   },
+  //4
   sendOrderBySeller: async (
     orderId: number,
     deliveryUrl: string,

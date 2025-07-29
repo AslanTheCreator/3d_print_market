@@ -18,16 +18,64 @@ import {
 } from "@mui/material";
 import { Close, CloudUpload, Payment, CheckCircle } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order/model/types";
-import { useConfirmPaymentByCustomer } from "@/entities/order";
 import { imageApi } from "@/entities/image/api/imageApi";
+import { UseMutationResult } from "@tanstack/react-query";
 
+// Типы для различных видов оплаты
+export type PaymentType = "payment" | "prepayment";
+
+// Интерфейс для параметров мутации
+interface PaymentMutationParams {
+  orderId: number;
+  imageId: number;
+  comment?: string;
+}
+
+// Интерфейс для пропсов компонента
 interface PaymentDialogProps {
   open: boolean;
   onClose: () => void;
   order: ListOrdersModel;
+  paymentType: PaymentType;
+  paymentMutation: UseMutationResult<
+    any,
+    Error,
+    PaymentMutationParams,
+    unknown
+  >;
 }
 
-const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
+// Конфигурация для разных типов оплаты
+const paymentConfig = {
+  payment: {
+    title: "Подтверждение оплаты",
+    buttonText: "Подтвердить оплату",
+    buttonLoadingText: "Подтверждение...",
+    instruction:
+      "Переведите указанную сумму продавцу любым удобным способом и загрузите скриншот или фото чека как подтверждение оплаты.",
+    warning:
+      "Убедитесь, что сумма и реквизиты верны. После подтверждения оплаты изменить данные будет невозможно.",
+    amountLabel: "К оплате:",
+  },
+  prepayment: {
+    title: "Подтверждение предоплаты",
+    buttonText: "Подтвердить предоплату",
+    buttonLoadingText: "Подтверждение...",
+    instruction:
+      "Переведите указанную сумму предоплаты продавцу любым удобным способом и загрузите скриншот или фото чека как подтверждение предоплаты.",
+    warning:
+      "Убедитесь, что сумма и реквизиты верны. После подтверждения предоплаты изменить данные будет невозможно.",
+    amountLabel: "К предоплате:",
+  },
+};
+
+const PaymentDialog = ({
+  open,
+  onClose,
+  order,
+  paymentType,
+  paymentMutation,
+}: PaymentDialogProps) => {
   const [comment, setComment] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -35,7 +83,8 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
   const [imageError, setImageError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const confirmPaymentMutation = useConfirmPaymentByCustomer();
+  // Получаем конфигурацию для текущего типа оплаты
+  const config = paymentConfig[paymentType];
 
   const validateImage = (file: File): boolean => {
     if (file.size > 10 * 1024 * 1024) {
@@ -72,7 +121,7 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
     try {
       setIsUploadingImage(true);
       const response = await imageApi.saveImage(file, "ORDER");
-      setImageId(response[0]); // Предполагаем, что API возвращает массив ID
+      setImageId(response[0]);
     } catch (error) {
       console.error("Ошибка при загрузке изображения:", error);
       setImageError("Не удалось загрузить изображение на сервер");
@@ -84,11 +133,15 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
 
   const handleConfirmPayment = () => {
     if (!imageId) {
-      setImageError("Пожалуйста, загрузите подтверждение оплаты");
+      setImageError(
+        `Пожалуйста, загрузите подтверждение ${
+          paymentType === "payment" ? "оплаты" : "предоплаты"
+        }`
+      );
       return;
     }
 
-    confirmPaymentMutation.mutate(
+    paymentMutation.mutate(
       {
         orderId: order.orderId,
         imageId: imageId,
@@ -113,7 +166,7 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
   };
 
   const canConfirmPayment =
-    imageId && !confirmPaymentMutation.isPending && !isUploadingImage;
+    imageId && !paymentMutation.isPending && !isUploadingImage;
 
   return (
     <Dialog
@@ -133,7 +186,7 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
         >
           <Stack direction="row" alignItems="center" spacing={1}>
             <Payment color="primary" />
-            <Typography variant="h6">Подтверждение оплаты</Typography>
+            <Typography variant="h6">{config.title}</Typography>
           </Stack>
           <IconButton onClick={handleClose} size="small">
             <Close />
@@ -151,22 +204,20 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
             {order.product.name}
           </Typography>
           <Typography variant="h6" color="primary.main" fontWeight={600}>
-            К оплате: {order.totalPrice} {order.product.currency}
+            {config.amountLabel} {order.totalPrice} {order.product.currency}
           </Typography>
         </Paper>
 
         {/* Инструкция по оплате */}
         <Alert severity="info" sx={{ mb: 3 }}>
-          <Typography variant="body2">
-            Переведите указанную сумму продавцу любым удобным способом и
-            загрузите скриншот или фото чека как подтверждение оплаты.
-          </Typography>
+          <Typography variant="body2">{config.instruction}</Typography>
         </Alert>
 
         {/* Загрузка чека */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle2" gutterBottom>
-            Подтверждение оплаты *
+            Подтверждение {paymentType === "payment" ? "оплаты" : "предоплаты"}{" "}
+            *
           </Typography>
 
           <input
@@ -205,7 +256,9 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
                 <Box>
                   <img
                     src={imagePreview}
-                    alt="Подтверждение оплаты"
+                    alt={`Подтверждение ${
+                      paymentType === "payment" ? "оплаты" : "предоплаты"
+                    }`}
                     style={{
                       maxWidth: "100%",
                       maxHeight: 200,
@@ -245,7 +298,9 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
           multiline
           rows={3}
           label="Комментарий (необязательно)"
-          placeholder="Добавьте комментарий к оплате..."
+          placeholder={`Добавьте комментарий к ${
+            paymentType === "payment" ? "оплате" : "предоплате"
+          }...`}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           sx={{ mb: 2 }}
@@ -254,17 +309,14 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
 
         {/* Предупреждение */}
         <Alert severity="warning" sx={{ mb: 2 }}>
-          <Typography variant="body2">
-            Убедитесь, что сумма и реквизиты верны. После подтверждения оплаты
-            изменить данные будет невозможно.
-          </Typography>
+          <Typography variant="body2">{config.warning}</Typography>
         </Alert>
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button
           onClick={handleClose}
-          disabled={confirmPaymentMutation.isPending || isUploadingImage}
+          disabled={paymentMutation.isPending || isUploadingImage}
         >
           Отмена
         </Button>
@@ -272,11 +324,11 @@ const PaymentDialog = ({ open, onClose, order }: PaymentDialogProps) => {
           onClick={handleConfirmPayment}
           variant="contained"
           disabled={!canConfirmPayment}
-          startIcon={confirmPaymentMutation.isPending ? null : <Payment />}
+          startIcon={paymentMutation.isPending ? null : <Payment />}
         >
-          {confirmPaymentMutation.isPending
-            ? "Подтверждение..."
-            : "Подтвердить оплату"}
+          {paymentMutation.isPending
+            ? config.buttonLoadingText
+            : config.buttonText}
         </Button>
       </DialogActions>
     </Dialog>

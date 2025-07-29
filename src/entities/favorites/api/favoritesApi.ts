@@ -1,6 +1,7 @@
-import { imageApi } from "@/entities/image/api/imageApi";
 import { ProductCardModel } from "@/entities/product";
+import { ProductFilter, SortBy } from "@/entities/product/model/types";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
+import { fetchProductsWithImages } from "@/shared/api/common/productDataFetcher";
 import config from "@/shared/config/api";
 import { errorHandler } from "@/shared/lib/errorHandler";
 
@@ -8,33 +9,25 @@ const API_URL = `${config.apiBaseUrl}/favorites`;
 const authenticatedAxios = createAuthenticatedAxiosInstance();
 
 export const favoritesApi = {
-  getFavorites: async (): Promise<ProductCardModel[]> => {
-    try {
-      const { data } = await authenticatedAxios.post<ProductCardModel[]>(
-        `${API_URL}/find`,
-        {}
-      );
-
-      if (!Array.isArray(data)) {
-        console.error("Ошибка: сервер вернул некорректный формат данных", data);
-        throw new Error("Некорректный формат данных от сервера");
-      }
-
-      return Promise.all(
-        data.map(async (product) => {
-          const images =
-            product.imageId !== undefined
-              ? await imageApi.getImages(product.imageId)
-              : [];
-          return { ...product, image: images };
-        })
-      );
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при загрузке избранных товаров"
-      );
-    }
+  getFavorites: async (
+    size: number = 100,
+    filters?: ProductFilter,
+    lastCreatedAt?: string,
+    lastPrice?: number,
+    lastId?: number,
+    sortBy: SortBy = "DATE_DESC"
+  ): Promise<ProductCardModel[]> => {
+    return fetchProductsWithImages(
+      authenticatedAxios,
+      `${API_URL}/find`,
+      size,
+      filters,
+      lastCreatedAt,
+      lastPrice,
+      lastId,
+      sortBy,
+      "Ошибка при загрузке избранных товаров"
+    );
   },
   addToFavorites: async (productId: number) => {
     try {

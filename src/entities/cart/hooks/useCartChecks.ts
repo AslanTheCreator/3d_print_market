@@ -1,9 +1,7 @@
 import { useMemo } from "react";
-import { useCartProducts } from "./useCartQueries"; // Updated import path
+import { CartProductModel } from "../model/types";
 
-export const useCartChecks = () => {
-  const { data: cartItems } = useCartProducts();
-
+export const useCartChecks = (cartItems?: CartProductModel[]) => {
   const isProductInCart = useMemo(() => {
     return (productId: number) => {
       return Boolean(cartItems?.some((item) => item.id === productId));

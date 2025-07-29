@@ -5,6 +5,8 @@ import { Currency } from "@/shared/model/types";
 
 type OrderStatus =
   | "BOOKED"
+  | "AWAITING_PREPAYMENT"
+  | "AWAITING_PREPAYMENT_APPROVAL"
   | "AWAITING_PAYMENT"
   | "ASSEMBLING"
   | "ON_THE_WAY"

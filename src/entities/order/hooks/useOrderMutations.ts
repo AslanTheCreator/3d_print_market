@@ -58,6 +58,66 @@ export const useConfirmOrderBySeller = () => {
   });
 };
 
+// Хук для подтверждения предзаказа продавцом
+export const useConfirmPreOrderBySeller = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      orderId,
+      comment = "",
+    }: {
+      orderId: number;
+      comment?: string;
+    }) => orderApi.confirmPreOrderBySeller(orderId, comment),
+    onSuccess: () => {
+      // Инвалидируем заказы продавца
+      queryClient.invalidateQueries({
+        queryKey: orderQueryKeys.sellerOrders(),
+      });
+
+      // Инвалидируем заказы покупателя
+      queryClient.invalidateQueries({
+        queryKey: orderQueryKeys.customerOrders(),
+      });
+    },
+    onError: (error) => {
+      console.error("Ошибка подтверждения предзаказа продавцом:", error);
+    },
+  });
+};
+
+// Хук для подтверждения предоплаты покупателем
+export const useConfirmPrepaymentByCustomer = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      orderId,
+      imageId,
+      comment = "",
+    }: {
+      orderId: number;
+      imageId: number;
+      comment?: string;
+    }) => orderApi.confirmPrepaymentByCustomer(orderId, imageId, comment),
+    onSuccess: () => {
+      // Инвалидируем заказы покупателя
+      queryClient.invalidateQueries({
+        queryKey: orderQueryKeys.customerOrders(),
+      });
+
+      // Инвалидируем заказы продавца
+      queryClient.invalidateQueries({
+        queryKey: orderQueryKeys.sellerOrders(),
+      });
+    },
+    onError: (error) => {
+      console.error("Ошибка подтверждения предоплаты:", error);
+    },
+  });
+};
+
 // Хук для подтверждения оплаты покупателем
 export const useConfirmPaymentByCustomer = () => {
   const queryClient = useQueryClient();

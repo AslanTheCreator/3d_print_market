@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { productApi } from "../api/productApi";
 import { productKeys } from "./queryKeys";
-import { ProductDetailsModel } from "../model/types"; // For return type
+import { ProductDetailsModel, ProductFilter, SortBy } from "../model/types"; // For return type
+import { useInfiniteProducts } from "@/shared/hooks/useInfiniteProducts";
 
 // Note: The getProducts function is complex and uses infinite scrolling paradigm
 // in app/page.tsx via useCardsInfinite from features/product.
@@ -9,11 +10,26 @@ import { ProductDetailsModel } from "../model/types"; // For return type
 // Here we only include useProductById as it was in the original queries.tsx.
 
 export const useProductById = (id: string) => {
-  return useQuery<ProductDetailsModel>({ // Specify return type
+  return useQuery<ProductDetailsModel>({
+    // Specify return type
     queryKey: productKeys.detail(id), // Use new queryKeys
     queryFn: () => productApi.getProductById(id!),
     enabled: Boolean(id),
     staleTime: 5 * 60 * 1000,
     retry: 2,
+  });
+};
+
+export const useProductsInfinite = (
+  size: number,
+  filters?: ProductFilter,
+  sortBy?: SortBy
+) => {
+  return useInfiniteProducts({
+    size,
+    filters,
+    sortBy,
+    fetchFunction: productApi.getProducts,
+    queryKey: ["products"],
   });
 };

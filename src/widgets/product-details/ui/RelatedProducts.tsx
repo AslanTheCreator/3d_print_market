@@ -2,9 +2,9 @@
 
 import { Box, Typography, Paper } from "@mui/material";
 import { memo } from "react";
-import { useCardsInfinite } from "@/features/product";
 import { InfiniteScroll } from "@/shared/ui";
 import { ProductCatalog } from "@/widgets/product-catalog";
+import { useProductsInfinite } from "@/entities/product";
 
 interface RelatedProductsProps {
   categoryId: number;
@@ -12,7 +12,7 @@ interface RelatedProductsProps {
 
 export const RelatedProducts = memo<RelatedProductsProps>(({ categoryId }) => {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useCardsInfinite(10, { categoryId });
+    useProductsInfinite(10, { categoryId });
 
   return (
     <Paper

@@ -11,6 +11,7 @@ import config from "@/shared/config/api";
 import { imageApi } from "@/entities/image/api/imageApi";
 import { errorHandler } from "@/shared/lib/errorHandler";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
+import { fetchProductsWithImages } from "@/shared/api/common/productDataFetcher";
 
 const API_URL = `${config.apiBaseUrl}/products/find`;
 
@@ -27,40 +28,17 @@ export const productApi = {
     lastId?: number,
     sortBy: SortBy = "DATE_DESC"
   ): Promise<ProductCardModel[]> => {
-    try {
-      const requestData: ProductRequestModel = {
-        pageable: {
-          size,
-          ...(lastCreatedAt && { lastCreatedAt }),
-          ...(lastPrice && { lastPrice }),
-          ...(lastId && { lastId }),
-          sortBy,
-        },
-        ...filters,
-      };
-
-      const { data } = await axios.post<ProductCardModel[]>(
-        API_URL,
-        requestData
-      );
-
-      if (!Array.isArray(data)) {
-        console.error("Ошибка: сервер вернул некорректный формат данных", data);
-        throw new Error("Некорректный формат данных от сервера");
-      }
-
-      return Promise.all(
-        data.map(async (card) => ({
-          ...card,
-          image: await fetchImages(card.imageId),
-        }))
-      );
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при загрузки карточек товаров"
-      );
-    }
+    return fetchProductsWithImages(
+      axios,
+      API_URL,
+      size,
+      filters,
+      lastCreatedAt,
+      lastPrice,
+      lastId,
+      sortBy,
+      "Ошибка при загрузке карточек товаров"
+    );
   },
 
   getProductById: async (id: string): Promise<ProductDetailsModel> => {

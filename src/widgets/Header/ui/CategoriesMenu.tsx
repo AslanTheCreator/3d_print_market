@@ -31,15 +31,22 @@ interface CategoryItemProps {
   category: CategoryModel;
   onClose: () => void;
   level?: number;
+  parentPath?: string;
 }
 
 const CategoryItem: React.FC<CategoryItemProps> = ({
   category,
   onClose,
   level = 0,
+  parentPath = "",
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const hasChildren = category.childs && category.childs.length > 0;
+  const hasChildren = category.childs?.length > 0;
+
+  const currentSlug = encodeURIComponent(category.name); // экранируем спец. символы
+  const categoryPath = parentPath
+    ? `${parentPath}/${currentSlug}`
+    : `catalog/category/${currentSlug}`;
 
   const handleToggle = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -52,8 +59,6 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
       onClose();
     }
   };
-
-  const categoryPath = `/categories/${category.id}`;
 
   return (
     <>
@@ -128,6 +133,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
                 category={childCategory}
                 onClose={onClose}
                 level={level + 1}
+                parentPath={categoryPath}
               />
             ))}
           </List>
