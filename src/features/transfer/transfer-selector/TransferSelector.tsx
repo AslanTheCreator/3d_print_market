@@ -12,7 +12,6 @@ import {
   Chip,
 } from "@mui/material";
 import { Controller, Control, FieldError } from "react-hook-form";
-import { useUserTransfers } from "@/entities/transfer/api/queries";
 import {
   ShoppingMethods,
   TransferBaseModel,

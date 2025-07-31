@@ -106,20 +106,23 @@ const MobileProductDetails = memo(
 
       <ImageGallery images={allImages} alt={productCard.name} />
 
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        spacing={2}
-        mb={1.5}
-      >
-        <ProductPrice price={productCard.price} />
+      <Box sx={{ px: 2, py: 1.5 }}>
+        <ProductPrice
+          price={productCard.price}
+          preorderPrice={productCard.prepaymentAmount}
+          isPreorder={productCard.availability === "PREORDER"}
+          variant="mobile"
+        />
+      </Box>
+
+      {/* Рейтинг и продавец */}
+      <Box sx={{ px: 2, pb: 1.5 }}>
         <ProductRating
           sellerName={sellerName}
           rating={averageRating}
           reviewsCount={0}
         />
-      </Stack>
+      </Box>
 
       <DescriptionSection description={productCard.description} />
       <RelatedProducts categoryId={productCard.category.id} />

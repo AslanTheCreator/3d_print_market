@@ -3,19 +3,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Box, Stack, Container, useMediaQuery, useTheme } from "@mui/material";
-import { CategoryToggleButton } from "./CategoryToggleButton";
-import { HeaderIconLinks } from "./HeaderIconLinks";
+import { HeaderActions } from "./HeaderActions";
+import { HeaderSearch } from "./HeaderSearch";
 import Link from "next/link";
 import throttle from "lodash.throttle";
-import SearchString from "./SearchString";
-import Logo from "@/shared/assets/logo/logo.svg";
-import headerBg from "@/shared/assets/images/header-bg.png";
 import site from "@/shared/assets/logo/site.png";
+import { HeaderLogo } from "./HeaderLogo";
 
 export const Header = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const isTablet = useMediaQuery(theme.breakpoints.between("md", "lg"));
 
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -53,9 +50,8 @@ export const Header = () => {
 
   // Адаптивные размеры логотипа site
   const getSiteLogoSize = () => {
-    if (isMobile) return { width: 50, height: 24 };
-    if (isTablet) return { width: 100, height: 30 };
-    return { width: 120, height: 36 };
+    if (isMobile) return { width: 50, height: 50 };
+    return { width: 116, height: 58 }; // Увеличили название сайта
   };
 
   const siteLogoSize = getSiteLogoSize();
@@ -67,90 +63,73 @@ export const Header = () => {
         position: "fixed",
         width: "100%",
         top: isMobile ? (isVisible ? 0 : `-${headerHeight}`) : 0,
-        transition: isMobile ? "top 0.5s ease" : "none",
-        backgroundColor: "secondary.main",
-        zIndex: theme.zIndex.appBar || 999,
-        backgroundImage: `url(${headerBg.src})`,
+        transition: isMobile
+          ? theme.transitions.create(["top"], {
+              duration: theme.transitions.duration.standard,
+              easing: theme.transitions.easing.easeInOut,
+            })
+          : "none",
+        backgroundColor: theme.palette.secondary.main,
+        zIndex: theme.zIndex.appBar,
         border: `2px solid ${theme.palette.secondary.main}`,
-        boxShadow: "0 0 10px rgba(0, 0, 0, 0.15)",
+        boxShadow: theme.shadows[4],
       }}
     >
       <Container>
         <Stack
           pb={2}
           pt={1.5}
-          gap={1}
           direction={"row"}
           alignItems={"center"}
           justifyContent={"space-between"}
+          sx={{
+            minHeight: headerHeight,
+          }}
         >
-          {/* Logo*/}
-
-          <Stack
-            direction="row"
-            alignItems="center"
-            sx={{ position: "relative", minWidth: 60 }}
-          >
-            <Image
-              src={Logo}
-              alt="Logo"
-              width={60}
-              height={90}
-              priority
-              style={{ objectFit: "contain" }}
-            />
-
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: 4,
-                left: 17,
-              }}
-            >
-              <CategoryToggleButton />
-            </Box>
-          </Stack>
-
-          <Stack direction="column" flex={1} spacing={0.5}>
-            {/* Заголовок и иконки */}
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-            >
-              <Link href="/" aria-label="Home">
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    filter: "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))",
-                    transition: theme.transitions.create("transform", {
-                      duration: theme.transitions.duration.shorter,
-                    }),
-                    "&:hover": {
-                      transform: "scale(1.02)",
-                    },
-                  }}
+          {!isMobile ? (
+            <>
+              <HeaderLogo />
+              <Stack direction="row" flex={1} spacing={2.5} mr={2.5}>
+                <HeaderSearch />
+              </Stack>
+              <HeaderActions />
+            </>
+          ) : (
+            <>
+              <HeaderLogo />
+              <Stack direction="column" flex={1} spacing={0.5}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
                 >
-                  <Image
-                    src={site}
-                    alt="Site Logo"
-                    width={siteLogoSize.width}
-                    height={siteLogoSize.height}
-                    priority
-                    style={{
-                      objectFit: "contain",
-                      maxWidth: "100%",
-                      height: "auto",
-                    }}
-                  />
-                </Box>
-              </Link>
-              <HeaderIconLinks />
-            </Stack>
-            {/* Search row */}
-            <SearchString />
-          </Stack>
+                  <Link href="/" aria-label="Home">
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Image
+                        src={site}
+                        alt="Site Logo"
+                        width={siteLogoSize.width}
+                        height={siteLogoSize.height}
+                        priority
+                        style={{
+                          objectFit: "contain",
+                          maxWidth: "100%",
+                          height: "auto",
+                        }}
+                      />
+                    </Box>
+                  </Link>
+                  <HeaderActions />
+                </Stack>
+                <HeaderSearch isMobile />
+              </Stack>
+            </>
+          )}
         </Stack>
       </Container>
     </Box>

@@ -11,12 +11,12 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { CategoriesMenu } from "./CategoriesMenu";
 
-interface MobileCategoriesDrawerProps {
+interface CategoriesDrawerProps {
   open: boolean;
   onClose: () => void;
 }
 
-export const MobileCategoriesDrawer: React.FC<MobileCategoriesDrawerProps> = ({
+export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
   open,
   onClose,
 }) => {

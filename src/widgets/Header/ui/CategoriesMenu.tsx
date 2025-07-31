@@ -14,7 +14,7 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -31,22 +31,29 @@ interface CategoryItemProps {
   category: CategoryModel;
   onClose: () => void;
   level?: number;
-  parentPath?: string;
+  parentSlugs?: string[];
 }
 
 const CategoryItem: React.FC<CategoryItemProps> = ({
   category,
   onClose,
   level = 0,
-  parentPath = "",
+  parentSlugs = [],
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const router = useRouter();
   const hasChildren = category.childs?.length > 0;
 
-  const currentSlug = encodeURIComponent(category.name); // экранируем спец. символы
-  const categoryPath = parentPath
-    ? `${parentPath}/${currentSlug}`
-    : `catalog/category/${currentSlug}`;
+  // Создаем текущий slug для категории
+  // В CategoriesMenu.tsx
+  const currentSlug = `${category.id}-${encodeURIComponent(
+    category.name.toLowerCase().replace(/\s+/g, "-")
+  )}`;
+
+  // Формируем полный путь категории
+  const categoryPath = `/catalog/category/${[...parentSlugs, currentSlug].join(
+    "/"
+  )}`;
 
   const handleToggle = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -56,6 +63,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
 
   const handleCategoryClick = () => {
     if (!hasChildren) {
+      router.replace(categoryPath);
       onClose();
     }
   };
@@ -70,8 +78,6 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
         }}
       >
         <ListItemButton
-          component={hasChildren ? "div" : Link}
-          href={hasChildren ? undefined : categoryPath}
           onClick={handleCategoryClick}
           sx={{
             py: 1.5,
@@ -133,7 +139,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
                 category={childCategory}
                 onClose={onClose}
                 level={level + 1}
-                parentPath={categoryPath}
+                parentSlugs={[...parentSlugs, currentSlug]}
               />
             ))}
           </List>

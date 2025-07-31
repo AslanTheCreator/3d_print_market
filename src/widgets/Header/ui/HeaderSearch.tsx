@@ -5,12 +5,12 @@ import {
   alpha,
   IconButton,
   InputAdornment,
+  useTheme,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import { useRouter } from "next/navigation";
 
-const SearchString = () => {
+export const HeaderSearch = ({ isMobile }: { isMobile?: boolean }) => {
   const theme = useTheme();
   const router = useRouter();
 
@@ -42,11 +42,14 @@ const SearchString = () => {
         display: "flex",
         alignItems: "center",
         width: "100%",
-        height: 35,
-        borderRadius: "8px",
+        height: isMobile ? 35 : 58,
+        borderRadius: isMobile ? 1 : 2,
         backgroundColor: "white",
         boxShadow: "none",
         border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+        transition: theme.transitions.create(["border-color", "box-shadow"], {
+          duration: theme.transitions.duration.shorter,
+        }),
         "&:hover": {
           border: `1px solid ${alpha(theme.palette.primary.main, 0.4)}`,
         },
@@ -57,17 +60,17 @@ const SearchString = () => {
       }}
     >
       <InputBase
-        placeholder="Поиск..."
+        placeholder="Поиск"
         value={searchQuery}
         onChange={handleSearchChange}
         fullWidth
         sx={{
-          ml: 1,
+          ml: 2,
           flex: 1,
           color: theme.palette.text.primary,
           "& .MuiInputBase-input": {
-            padding: "10px 0",
-            fontSize: "0.875rem",
+            padding: isMobile ? "8px 0" : "10px 0",
+            fontSize: isMobile ? "16px" : "18px",
             "&::placeholder": {
               color: theme.palette.text.secondary,
               opacity: 1,
@@ -82,6 +85,20 @@ const SearchString = () => {
                 onClick={handleClearSearch}
                 edge="end"
                 size="small"
+                sx={{
+                  mr: 1,
+                  color: theme.palette.text.secondary,
+                  transition: theme.transitions.create(
+                    ["color", "background-color"],
+                    {
+                      duration: theme.transitions.duration.shorter,
+                    }
+                  ),
+                  "&:hover": {
+                    color: theme.palette.text.primary,
+                    backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                  },
+                }}
               >
                 <CloseIcon fontSize="small" />
               </IconButton>
@@ -92,5 +109,3 @@ const SearchString = () => {
     </Paper>
   );
 };
-
-export default SearchString;

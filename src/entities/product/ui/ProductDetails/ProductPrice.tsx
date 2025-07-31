@@ -1,17 +1,26 @@
 "use client";
 
-import { Box, Typography, Paper, useTheme, useMediaQuery } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Paper,
+  useTheme,
+  useMediaQuery,
+  Chip,
+  Stack,
+} from "@mui/material";
 import { memo } from "react";
 import { formatPrice } from "@/shared/lib/formatPrice";
 
 interface ProductPriceProps {
   price: number;
-  originalPrice?: number;
-  discount?: number;
+  preorderPrice?: number;
+  isPreorder?: boolean;
+  variant?: "default" | "compact" | "mobile";
 }
 
 export const ProductPrice = memo<ProductPriceProps>(
-  ({ price, originalPrice, discount }) => {
+  ({ price, preorderPrice, isPreorder = false, variant = "default" }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -58,35 +67,6 @@ export const ProductPrice = memo<ProductPriceProps>(
           >
             {formatPrice(price)} ₽
           </Typography>
-
-          {originalPrice && originalPrice > price && (
-            <>
-              <Typography
-                component="span"
-                variant="body2"
-                sx={{
-                  textDecoration: "line-through",
-                  color: "text.secondary",
-                  fontSize: { xs: "0.875rem", md: "1rem" },
-                }}
-              >
-                {formatPrice(originalPrice)} ₽
-              </Typography>
-              {discount && (
-                <Typography
-                  component="span"
-                  variant="body2"
-                  sx={{
-                    color: "error.main",
-                    fontWeight: 600,
-                    fontSize: { xs: "0.75rem", md: "0.875rem" },
-                  }}
-                >
-                  -{discount}%
-                </Typography>
-              )}
-            </>
-          )}
         </Box>
 
         {!isMobile && (
