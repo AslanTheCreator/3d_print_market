@@ -11,18 +11,26 @@ import {
 } from "@mui/material";
 import { memo } from "react";
 import { formatPrice } from "@/shared/lib/formatPrice";
+import { Availability } from "../../model/types";
 
 interface ProductPriceProps {
   price: number;
-  preorderPrice?: number;
-  isPreorder?: boolean;
+  prepaymentAmount: number;
+  availability: Availability;
   variant?: "default" | "compact" | "mobile";
 }
 
 export const ProductPrice = memo<ProductPriceProps>(
-  ({ price, preorderPrice, isPreorder = false, variant = "default" }) => {
+  ({
+    price,
+    prepaymentAmount,
+    availability = "PURCHASABLE",
+    variant = "default",
+  }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+    const isPreorder = availability === "PREORDER";
 
     return (
       <Paper
@@ -65,7 +73,7 @@ export const ProductPrice = memo<ProductPriceProps>(
               color: "primary.main",
             }}
           >
-            {formatPrice(price)} ₽
+            {isPreorder ? formatPrice(prepaymentAmount) : formatPrice(price)} ₽
           </Typography>
         </Box>
 
@@ -79,10 +87,10 @@ export const ProductPrice = memo<ProductPriceProps>(
                 fontWeight: 500,
               }}
             >
-              Цена за единицу
+              Полная цена
             </Typography>
 
-            <Typography
+            {/* <Typography
               variant="caption"
               color="success.main"
               sx={{
@@ -93,7 +101,7 @@ export const ProductPrice = memo<ProductPriceProps>(
               }}
             >
               ✓ Лучшая цена
-            </Typography>
+            </Typography> */}
           </Box>
         )}
       </Paper>

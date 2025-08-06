@@ -1,7 +1,7 @@
 "use client";
 
 import { Typography, Box } from "@mui/material";
-import { memo, useState } from "react";
+import { memo } from "react";
 
 interface ProductDescriptionProps {
   description: string;

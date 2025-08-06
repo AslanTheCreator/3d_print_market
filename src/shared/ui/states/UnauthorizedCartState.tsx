@@ -64,7 +64,7 @@ export const UnauthorizedCartState: React.FC = () => {
           <ButtonStyled
             variant="contained"
             startIcon={<LoginIcon />}
-            onClick={() => router.push("/login")}
+            onClick={() => router.push("/auth/login")}
             size={isMobile ? "medium" : "large"}
             sx={{ minWidth: isMobile ? "100%" : 140 }}
           >
@@ -74,7 +74,7 @@ export const UnauthorizedCartState: React.FC = () => {
           <ButtonStyled
             variant="outlined"
             startIcon={<PersonAddOutlinedIcon />}
-            onClick={() => router.push("/register")}
+            onClick={() => router.push("/auth/register")}
             size={isMobile ? "medium" : "large"}
             sx={{ minWidth: isMobile ? "100%" : 160 }}
           >

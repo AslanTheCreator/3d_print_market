@@ -24,6 +24,13 @@ const secondaryColor = {
   contrastText: "#ffffff",
 };
 
+const preorderColor = {
+  light: "#81c784", // Светло-зеленый
+  main: "#4caf50", // Основной зеленый (Material Design Green 500)
+  dark: "#388e3c", // Темно-зеленый
+  contrastText: "#ffffff",
+};
+
 // Создаем базовую тему без компонентов
 let theme = createTheme({
   spacing: 8, // Базовый размер для отступов
@@ -117,6 +124,7 @@ let theme = createTheme({
     mode: "light",
     primary: primaryColor,
     secondary: secondaryColor,
+    preorder: preorderColor,
     error: {
       main: "#f44336",
       light: "#e57373",
@@ -409,3 +417,13 @@ theme = createTheme(theme, {
 theme = responsiveFontSizes(theme);
 
 export default theme;
+
+declare module "@mui/material/styles" {
+  interface Palette {
+    preorder: Palette["primary"];
+  }
+
+  interface PaletteOptions {
+    preorder?: PaletteOptions["primary"];
+  }
+}

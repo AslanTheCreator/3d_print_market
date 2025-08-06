@@ -19,10 +19,6 @@ export const EmptyCartState: React.FC = () => {
 
   return (
     <Container sx={{ marginTop: "10px" }}>
-      <Typography variant="h5" component="h1" gutterBottom>
-        Корзина
-      </Typography>
-
       <Box
         display="flex"
         flexDirection="column"
@@ -72,15 +68,6 @@ export const EmptyCartState: React.FC = () => {
             sx={{ minWidth: isMobile ? "100%" : 160 }}
           >
             Перейти к покупкам
-          </ButtonStyled>
-
-          <ButtonStyled
-            variant="contained"
-            onClick={() => router.push("/login")}
-            size={isMobile ? "medium" : "large"}
-            sx={{ minWidth: isMobile ? "100%" : 120 }}
-          >
-            Войти
           </ButtonStyled>
         </Stack>
       </Box>

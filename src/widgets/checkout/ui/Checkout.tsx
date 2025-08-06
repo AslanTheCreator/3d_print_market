@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { CartList, useCartProducts } from "@/entities/cart";
 import {
   Container,
@@ -11,6 +11,8 @@ import {
   Paper,
   Divider,
   Stack,
+  Alert,
+  Snackbar,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/shared/lib/formatPrice";
@@ -30,28 +32,31 @@ import {
 } from "@/entities/accounts/model/types";
 import { PaymentSelector } from "@/features/accounts/account-selector/ui/PaymentSelector";
 import { useCreateOrder, useOrderData } from "@/entities/order";
+import { CartProductModel } from "@/entities/cart/model/types";
+
+// Типы для групп товаров по продавцам
+type SellerGroup = {
+  sellerId: number;
+  sellerName?: string;
+  items: CartProductModel[];
+};
 
 type CheckoutFormValues = {
-  fullName: string;
-  email: string;
-  phone: string;
-  deliveryMethod: ShoppingMethods;
-  paymentMethod: TransferMoney;
-  paymentAccountId?: number;
-  comment: string;
-  useProfileAddress: boolean;
+  comment: Record<number, string>;
+  [key: string]: any;
 };
 
 const Checkout = () => {
   const router = useRouter();
   const { data: cartItems, isLoading: isCartLoading } = useCartProducts();
   const { mutate: createOrder, isPending } = useCreateOrder();
-  const {
-    data: orderData,
-    isLoading: isOrderDataLoading,
-    isError: isOrderError,
-    error,
-  } = useOrderData(cartItems?.[0]?.id || 0);
+
+  // Состояние для Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    "success" | "error" | "warning"
+  >("success");
 
   const {
     control,
@@ -62,21 +67,49 @@ const Checkout = () => {
     reset,
   } = useForm<CheckoutFormValues>({
     defaultValues: {
-      fullName: "",
-      email: "",
-      phone: "",
-      deliveryMethod: "TRANSPORT_COMPANY",
-      paymentMethod: "BANK_CARD",
-      comment: "",
+      comment: {},
     },
   });
 
-  const [selectedTransfer, setSelectedTransfer] =
-    useState<TransferBaseModel | null>(null);
+  // Состояния для каждого продавца
+  const [selectedTransfers, setSelectedTransfers] = useState<
+    Record<number, TransferBaseModel | null>
+  >({});
+  const [selectedPayments, setSelectedPayments] = useState<
+    Record<number, AccountsBaseModel | null>
+  >({});
   const [selectedAddress, setSelectedAddress] =
     useState<AddressBaseModel | null>(null);
-  const [selectedPayment, setSelectedPayment] =
-    useState<AccountsBaseModel | null>(null);
+
+  // Группировка товаров по продавцам
+  const sellerGroups = useMemo<SellerGroup[]>(() => {
+    if (!cartItems?.length) return [];
+
+    const groups = cartItems.reduce((acc, item) => {
+      const sellerId = item.sellerId;
+      if (!acc[sellerId]) {
+        acc[sellerId] = {
+          sellerId,
+          sellerName: `Продавец ${sellerId}`,
+          items: [],
+        };
+      }
+      acc[sellerId].items.push(item);
+      return acc;
+    }, {} as Record<number, SellerGroup>);
+
+    return Object.values(groups);
+  }, [cartItems]);
+
+  // Используем хуки для получения данных заказа для каждого продавца
+  const orderDataQueries = sellerGroups.map((group) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const query = useOrderData(group.items[0]?.id || 0);
+    return {
+      sellerId: group.sellerId,
+      ...query,
+    };
+  });
 
   const calculateTotals = () => {
     if (!cartItems?.length) return { subtotal: 0, deliveryPrice: 0, total: 0 };
@@ -93,51 +126,110 @@ const Checkout = () => {
 
   const { subtotal, deliveryPrice, total } = calculateTotals();
 
-  const onSubmit = (data: CheckoutFormValues) => {
-    const orderData = createOrderData(data);
-    console.log("Данные заказа:", orderData);
-
-    createOrder(orderData, {
-      onSuccess: () => {
-        console.log("Заказ успешно оформлен", orderData);
-        reset();
-      },
-    });
+  const showSnackbar = (
+    message: string,
+    severity: "success" | "error" | "warning"
+  ) => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
   };
 
-  const createOrderData = (data: CheckoutFormValues) => ({
-    productId: cartItems?.[0]?.id || 0,
-    count: cartItems?.[0]?.count || 1,
+  const onSubmit = async (data: CheckoutFormValues) => {
+    // Подготавливаем данные заказов для каждого продавца
+    const orders = sellerGroups.map((group) => ({
+      data: createOrderData(data, group),
+      sellerName: group.sellerName,
+      sellerId: group.sellerId,
+    }));
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < orders.length; i++) {
+      const currentOrder = orders[i];
+
+      try {
+        await new Promise<void>((resolve, reject) => {
+          createOrder(currentOrder.data, {
+            onSuccess: (response) => {
+              console.log(
+                `✅ Заказ успешно создан  ${currentOrder.data.transferId}`
+              );
+              successCount++;
+              resolve();
+            },
+            onError: (error) => {
+              console.log(currentOrder.data.count);
+              // Логируем только ошибки
+              console.error(
+                `❌ Ошибка при создании заказа для ${currentOrder.sellerName}:`,
+                error
+              );
+              reject(error);
+            },
+          });
+        });
+      } catch (error) {
+        errorCount++;
+      }
+    }
+
+    // Обрабатываем результаты
+    if (successCount === orders.length) {
+      // Все заказы созданы успешно
+      showSnackbar("Все заказы успешно созданы!", "success");
+      reset();
+      // Переходим на страницу успеха через 2 секунды
+      setTimeout(() => {
+        router.push("/checkout/success");
+      }, 2000);
+    } else if (successCount > 0) {
+      // Частичный успех
+      showSnackbar(
+        `Создано ${successCount} из ${orders.length} заказов`,
+        "warning"
+      );
+    } else {
+      // Все заказы упали
+      showSnackbar("Не удалось создать ни одного заказа", "error");
+    }
+  };
+
+  const createOrderData = (data: CheckoutFormValues, group: SellerGroup) => ({
+    productId: group.items[0]?.id,
+    count: group.items[0]?.count,
     addressId: selectedAddress?.id || 0,
-    transferId: selectedTransfer?.id || 0,
-    comment: data.comment,
+    transferId: selectedTransfers[group.sellerId]?.id || 0,
+    comment: data.comment[group.sellerId] || "",
   });
 
   // Используем хук для управления диалогом
   const addressDialog = useAddressDialog(() => {
-    // Коллбек при успешном добавлении адреса
-    // Можно добавить логику обновления списка адресов
-    console.log("Адрес успешно добавлен!");
+    showSnackbar("Адрес успешно добавлен!", "success");
   });
 
-  const handleTransferSelect = (transfer: TransferBaseModel | null) => {
-    setSelectedTransfer(transfer);
-
-    // Дополнительная логика при выборе способа доставки
-    if (transfer) {
-      // Например, обновляем общую стоимость заказа
-      console.log(
-        `Выбран способ доставки: ${transfer.sending}, стоимость: ${transfer.price}`
-      );
-    }
+  const handleTransferSelect = (
+    sellerId: number,
+    transfer: TransferBaseModel | null
+  ) => {
+    setSelectedTransfers((prev) => ({
+      ...prev,
+      [sellerId]: transfer,
+    }));
   };
 
-  const handlePaymentSelect = (payment: AccountsBaseModel | null) => {
-    setSelectedPayment(payment);
-    // if (payment) {
-    //   setValue("paymentAccountId", payment);
-    // }
+  const handlePaymentSelect = (
+    sellerId: number,
+    payment: AccountsBaseModel | null
+  ) => {
+    setSelectedPayments((prev) => ({
+      ...prev,
+      [sellerId]: payment,
+    }));
   };
+
+  // Компонент для отображения результатов заказов удален - используются только уведомления
 
   if (isCartLoading) {
     return (
@@ -169,7 +261,7 @@ const Checkout = () => {
       </Typography>
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        {/* Адрес доставки */}
+        {/* Адрес доставки - общий для всех продавцов */}
         <Paper sx={{ mb: 3, p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Адрес доставки
@@ -178,73 +270,116 @@ const Checkout = () => {
             selectedAddressId={selectedAddress?.id}
             onAddressSelect={setSelectedAddress}
             onAddNewAddress={addressDialog.openDialog}
-            addresses={orderData?.addresses || []}
-            isLoading={isOrderDataLoading}
+            addresses={orderDataQueries[0]?.data?.addresses || []}
+            isLoading={orderDataQueries[0]?.isLoading || false}
           />
         </Paper>
 
-        {/* Товары в корзине */}
-        <Paper sx={{ mb: 3, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Товары в корзине
-          </Typography>
-          <CartList items={cartItems} />
-        </Paper>
+        {/* Группы товаров по продавцам */}
+        {sellerGroups.map((group, index) => {
+          const orderQuery = orderDataQueries.find(
+            (q) => q.sellerId === group.sellerId
+          );
 
-        {/* Способ доставки */}
-        <Paper sx={{ mb: 3, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Способ получения
-          </Typography>
+          return (
+            <Box key={group.sellerId} sx={{ mb: 4 }}>
+              {/* Заголовок продавца */}
+              <Typography
+                variant="h6"
+                component="h2"
+                gutterBottom
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  backgroundColor: "primary.main",
+                  color: "primary.contrastText",
+                  borderRadius: 1,
+                }}
+              >
+                {group.sellerName}
+              </Typography>
 
-          <TransferSelector
-            control={control}
-            name="deliveryMethod"
-            error={errors.deliveryMethod}
-            onTransferSelect={handleTransferSelect}
-            showDescriptions={true}
-            hideUnavailable={true} // Показываем только методы из dictionary
-            transfers={orderData?.sellerTransfers || []}
-            isError={isOrderError}
-            isLoading={isOrderDataLoading}
-          />
-        </Paper>
+              {/* Товары продавца */}
+              <Paper sx={{ mb: 3, p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Товары
+                </Typography>
+                <CartList items={group.items} />
+              </Paper>
 
-        {/* Способ оплаты */}
-        <Paper sx={{ mb: 3, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Способ оплаты
-          </Typography>
-          <PaymentSelector
-            control={control}
-            paymentMethodName="paymentMethod"
-            accountIdName="paymentAccountId"
-            error={errors.paymentMethod}
-            onPaymentSelect={handlePaymentSelect}
-            showDescriptions={true}
-            hideUnavailable={true}
-          />
-        </Paper>
+              {/* Способ доставки для продавца */}
+              <Paper sx={{ mb: 3, p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Способ получения
+                </Typography>
+                <TransferSelector
+                  control={control}
+                  name={`deliveryMethod_${group.sellerId}`}
+                  error={
+                    errors[`deliveryMethod_${group.sellerId}`] as
+                      | import("react-hook-form").FieldError
+                      | undefined
+                  }
+                  onTransferSelect={(transfer) =>
+                    handleTransferSelect(group.sellerId, transfer)
+                  }
+                  showDescriptions={true}
+                  hideUnavailable={true}
+                  transfers={orderQuery?.data?.sellerTransfers || []}
+                  isError={orderQuery?.isError || false}
+                  isLoading={orderQuery?.isLoading || false}
+                />
+              </Paper>
 
-        {/* Комментарий */}
-        <Paper sx={{ mb: 3, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Комментарий к заказу
-          </Typography>
-          <Controller
-            name="comment"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                multiline
-                rows={3}
-                placeholder="Дополнительная информация для продавца"
-              />
-            )}
-          />
-        </Paper>
+              {/* Способ оплаты для продавца */}
+              <Paper sx={{ mb: 3, p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Способ оплаты
+                </Typography>
+                <PaymentSelector
+                  control={control}
+                  paymentMethodName={`paymentMethod_${group.sellerId}`}
+                  accountIdName={`paymentAccountId_${group.sellerId}`}
+                  error={(() => {
+                    const err = errors[`paymentMethod_${group.sellerId}`];
+                    return err && typeof err === "object" && "type" in err
+                      ? (err as import("react-hook-form").FieldError)
+                      : undefined;
+                  })()}
+                  onPaymentSelect={(payment) =>
+                    handlePaymentSelect(group.sellerId, payment)
+                  }
+                  showDescriptions={true}
+                  hideUnavailable={true}
+                />
+              </Paper>
+
+              <Paper sx={{ mb: 3, p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Комментарий к заказу
+                </Typography>
+                <Controller
+                  name={`comment.${group.sellerId}`}
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      multiline
+                      rows={3}
+                      placeholder="Дополнительная информация для продавцов"
+                    />
+                  )}
+                />
+              </Paper>
+
+              {/* Разделитель между продавцами */}
+              {index < sellerGroups.length - 1 && (
+                <Divider sx={{ my: 4, borderWidth: 2 }} />
+              )}
+            </Box>
+          );
+        })}
 
         {/* Итоговая информация о заказе */}
         <Paper sx={{ mb: 3, p: 2 }}>
@@ -294,6 +429,23 @@ const Checkout = () => {
         onClose={addressDialog.closeDialog}
         onSuccess={addressDialog.handleSuccess}
       />
+
+      {/* Snackbar для уведомлений */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

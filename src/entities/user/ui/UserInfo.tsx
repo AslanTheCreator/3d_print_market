@@ -24,7 +24,11 @@ export const UserInfo: React.FC<UserInfoProps> = ({ user }) => {
       }}
     >
       <Avatar
-        src={`data:${user.image[0]?.contentType};base64,${user.image[0]?.imageData}`}
+        src={
+          hasImage
+            ? `data:${user.image[0].contentType};base64,${user.image[0].imageData}`
+            : undefined
+        }
         alt={displayName}
         sx={{
           width: 80,

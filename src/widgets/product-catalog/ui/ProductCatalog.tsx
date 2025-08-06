@@ -85,7 +85,7 @@ interface GridProps {
   isMobile: boolean;
 }
 
-const ProductGrid: React.FC<GridProps> = ({ children, isMobile }) => (
+export const ProductGrid: React.FC<GridProps> = ({ children, isMobile }) => (
   <Grid
     container
     spacing={{ xs: 1, sm: 1.5, md: 2.5 }}
@@ -103,7 +103,10 @@ interface GridItemProps {
   isMobile: boolean;
 }
 
-const ProductGridItem: React.FC<GridItemProps> = ({ children, isMobile }) => (
+export const ProductGridItem: React.FC<GridItemProps> = ({
+  children,
+  isMobile,
+}) => (
   <Grid
     item
     xs={6}

@@ -16,7 +16,12 @@ export const ProductCardWithActions: React.FC<{
       <ProductCard
         {...product}
         onCardClick={() => router.push(`/catalog/${product.id}/detail`)}
-        actions={<AddToCartButton productId={product.id} />}
+        actions={
+          <AddToCartButton
+            productId={product.id}
+            availability={product.availability}
+          />
+        }
       />
       <FavoriteButton productId={product.id} isFavorite={isFavorite} />
     </Box>

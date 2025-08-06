@@ -14,7 +14,6 @@ import { memo } from "react";
 import { ImageGallery } from "@/shared/ui";
 import { RelatedProducts } from "./RelatedProducts";
 import {
-  ProductCharacteristics,
   ProductDetailsModel,
   ProductDescription,
   ProductPrice,
@@ -23,6 +22,7 @@ import {
   ProductDetailsSkeleton,
 } from "@/entities/product";
 import { AddToCartButton } from "@/features/cart";
+import { Availability } from "@/entities/product/model/types";
 
 export const ProductDetailsWidget = memo(() => {
   const theme = useTheme();
@@ -109,9 +109,8 @@ const MobileProductDetails = memo(
       <Box sx={{ px: 2, py: 1.5 }}>
         <ProductPrice
           price={productCard.price}
-          preorderPrice={productCard.prepaymentAmount}
-          isPreorder={productCard.availability === "PREORDER"}
-          variant="mobile"
+          prepaymentAmount={productCard.prepaymentAmount}
+          availability={productCard.availability}
         />
       </Box>
 
@@ -127,7 +126,10 @@ const MobileProductDetails = memo(
       <DescriptionSection description={productCard.description} />
       <RelatedProducts categoryId={productCard.category.id} />
 
-      <FixedBottomCart productId={productCard.id} />
+      <FixedBottomCart
+        productId={productCard.id}
+        availability={productCard.availability}
+      />
     </Box>
   )
 );
@@ -181,7 +183,11 @@ const DesktopProductDetails = memo(
         <Grid item xs={12} md={6} lg={5}>
           <Stack spacing={{ xs: 2, sm: 3 }}>
             <Stack spacing={2}>
-              <ProductPrice price={productCard.price} />
+              <ProductPrice
+                price={productCard.price}
+                prepaymentAmount={productCard.prepaymentAmount}
+                availability={productCard.availability}
+              />
               <ProductRating
                 sellerName={sellerName}
                 rating={averageRating}
@@ -190,18 +196,14 @@ const DesktopProductDetails = memo(
             </Stack>
 
             <Box sx={{ pt: { xs: 1, sm: 2 } }}>
-              <AddToCartButton productId={productCard.id} />
+              <AddToCartButton
+                productId={productCard.id}
+                availability={productCard.availability}
+                variant="detailed"
+              />
             </Box>
 
             <DescriptionSection description={productCard.description} />
-
-            {isDesktop && (
-              <ProductCharacteristics
-                characteristics={[]}
-                productId={productCard.id}
-                categoryName={productCard.category.name}
-              />
-            )}
           </Stack>
         </Grid>
       </Grid>
@@ -245,24 +247,31 @@ DescriptionSection.displayName = "DescriptionSection";
 
 interface FixedBottomCartProps {
   productId: number;
+  availability: Availability;
 }
 
-const FixedBottomCart = memo(({ productId }: FixedBottomCartProps) => (
-  <Paper
-    elevation={2}
-    sx={{
-      position: "fixed",
-      bottom: 0,
-      left: 0,
-      width: "100%",
-      zIndex: 10,
-      borderRadius: "20px 20px 0 0",
-      p: "12px",
-      boxShadow: "0px -2px 10px rgba(0, 0, 0, 0.1)",
-    }}
-  >
-    <AddToCartButton productId={productId} />
-  </Paper>
-));
+const FixedBottomCart = memo(
+  ({ productId, availability }: FixedBottomCartProps) => (
+    <Paper
+      elevation={2}
+      sx={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        width: "100%",
+        zIndex: 10,
+        borderRadius: "20px 20px 0 0",
+        p: "12px",
+        boxShadow: "0px -2px 10px rgba(0, 0, 0, 0.1)",
+      }}
+    >
+      <AddToCartButton
+        productId={productId}
+        availability={availability}
+        variant="detailed"
+      />
+    </Paper>
+  )
+);
 
 FixedBottomCart.displayName = "FixedBottomCart";

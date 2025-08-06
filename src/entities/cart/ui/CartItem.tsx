@@ -188,48 +188,6 @@ export const CartItem: React.FC<CartProductModel> = ({
         >
           <DeleteOutlineIcon fontSize={isMobile ? "small" : "medium"} />
         </IconButton>
-
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <IconButton
-            size={isMobile ? "small" : "medium"}
-            sx={{
-              p: isMobile ? 0.75 : 1,
-              bgcolor: alpha(theme.palette.primary.main, 0.1),
-              borderRadius: "8px",
-              color: theme.palette.primary.main,
-              "&:hover": {
-                bgcolor: alpha(theme.palette.primary.main, 0.15),
-              },
-              transition: "background-color 0.2s",
-            }}
-          >
-            <RemoveIcon fontSize={isMobile ? "small" : "medium"} />
-          </IconButton>
-
-          <Typography
-            variant={isMobile ? "body2" : "body1"}
-            fontWeight={600}
-            sx={{ minWidth: isMobile ? "24px" : "28px", textAlign: "center" }}
-          >
-            1
-          </Typography>
-
-          <IconButton
-            size={isMobile ? "small" : "medium"}
-            sx={{
-              p: isMobile ? 0.75 : 1,
-              bgcolor: alpha(theme.palette.primary.main, 0.1),
-              borderRadius: "8px",
-              color: theme.palette.primary.main,
-              "&:hover": {
-                bgcolor: alpha(theme.palette.primary.main, 0.15),
-              },
-              transition: "background-color 0.2s",
-            }}
-          >
-            <AddIcon fontSize={isMobile ? "small" : "medium"} />
-          </IconButton>
-        </Stack>
       </Stack>
     </Paper>
   );
