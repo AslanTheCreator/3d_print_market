@@ -4,18 +4,19 @@ import { ProductCardModel } from "@/entities/product/model/types";
 import { ProductCardSkeleton } from "@/entities/product";
 import { ProductCardWithActions } from "./ProductCardWithActions";
 import { EmptyCatalogState } from "@/shared/ui/states/EmptyCatalogState";
+import { ErrorState } from "@/shared/ui";
 
 interface ProductCatalogProps {
   products: ProductCardModel[];
   isLoading?: boolean;
-  error?: Error | null;
+  isError?: boolean;
   onRetry?: () => void;
 }
 
 export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   products,
   isLoading,
-  error,
+  isError,
   onRetry,
 }) => {
   const theme = useTheme();
@@ -27,18 +28,6 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
     if (isTablet) return 8;
     return 12;
   };
-
-  if (error) {
-    return (
-      <EmptyCatalogState
-        type="error"
-        title="Упс! Что-то пошло не так"
-        description="Не удалось загрузить товары. Проверьте подключение к интернету и попробуйте снова."
-        actionLabel="Повторить"
-        onAction={onRetry}
-      />
-    );
-  }
 
   if (isLoading) {
     return (
@@ -52,6 +41,10 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
         </ProductGrid>
       </Box>
     );
+  }
+
+  if (isError) {
+    return <ErrorState type="products" onRetry={onRetry} />;
   }
 
   if (!products || products.length === 0) {

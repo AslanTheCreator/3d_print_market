@@ -6,17 +6,46 @@ import {
   Stack,
   useTheme,
   useMediaQuery,
+  Button,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { ButtonStyled } from "@/shared/ui";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import LoginIcon from "@mui/icons-material/Login";
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 
-export const UnauthorizedCartState: React.FC = () => {
+type UnauthorizedStateType = "cart" | "favorites";
+
+const configs: Record<
+  UnauthorizedStateType,
+  {
+    description: string;
+    caption: string;
+  }
+> = {
+  cart: {
+    description:
+      "Чтобы добавлять товары в корзину и оформлять заказы, необходимо войти в свой аккаунт или зарегистрироваться.",
+    caption:
+      "У вас уже есть товары в корзине? После входа в аккаунт они автоматически восстановятся.",
+  },
+  favorites: {
+    description:
+      "Чтобы добавлять товары в избранное и оформлять заказы, необходимо войти в свой аккаунт или зарегистрироваться.",
+    caption:
+      "У вас уже есть товары в избранное? После входа в аккаунт они автоматически восстановятся.",
+  },
+};
+
+export const UnauthorizedState = ({
+  type,
+}: {
+  type: UnauthorizedStateType;
+}) => {
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const config = configs[type];
 
   return (
     <Container sx={{ marginTop: "10px" }}>
@@ -51,8 +80,7 @@ export const UnauthorizedCartState: React.FC = () => {
             color="text.secondary"
             sx={{ maxWidth: 400 }}
           >
-            Чтобы добавлять товары в корзину и оформлять заказы, необходимо
-            войти в свой аккаунт или зарегистрироваться.
+            {config.description}
           </Typography>
         </Stack>
 
@@ -61,25 +89,25 @@ export const UnauthorizedCartState: React.FC = () => {
           spacing={2}
           sx={{ width: isMobile ? "100%" : "auto" }}
         >
-          <ButtonStyled
+          <Button
             variant="contained"
             startIcon={<LoginIcon />}
             onClick={() => router.push("/auth/login")}
             size={isMobile ? "medium" : "large"}
-            sx={{ minWidth: isMobile ? "100%" : 140 }}
+            sx={{ minWidth: isMobile ? "100%" : 140, textTransform: "none" }}
           >
             Войти
-          </ButtonStyled>
+          </Button>
 
-          <ButtonStyled
+          <Button
             variant="outlined"
             startIcon={<PersonAddOutlinedIcon />}
             onClick={() => router.push("/auth/register")}
             size={isMobile ? "medium" : "large"}
-            sx={{ minWidth: isMobile ? "100%" : 160 }}
+            sx={{ minWidth: isMobile ? "100%" : 160, textTransform: "none" }}
           >
             Регистрация
-          </ButtonStyled>
+          </Button>
         </Stack>
 
         <Typography
@@ -91,8 +119,7 @@ export const UnauthorizedCartState: React.FC = () => {
             lineHeight: 1.5,
           }}
         >
-          У вас уже есть товары в корзине? После входа в аккаунт они
-          автоматически восстановятся.
+          {config.caption}
         </Typography>
       </Box>
     </Container>

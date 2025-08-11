@@ -4,7 +4,6 @@ import {
   ProductDetailsModel,
   ProductCreateModel,
   ProductFilter,
-  ProductRequestModel,
   SortBy,
 } from "../model/types";
 import config from "@/shared/config/api";
@@ -14,10 +13,6 @@ import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticat
 import { fetchProductsWithImages } from "@/shared/api/common/productDataFetcher";
 
 const API_URL = `${config.apiBaseUrl}/products/find`;
-
-const fetchImages = async (imageId: number | undefined) => {
-  return imageId !== undefined ? await imageApi.getImages(imageId) : [];
-};
 
 export const productApi = {
   getProducts: async (

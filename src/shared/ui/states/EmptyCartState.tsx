@@ -6,9 +6,9 @@ import {
   Stack,
   useTheme,
   useMediaQuery,
+  Button,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { ButtonStyled } from "@/shared/ui";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 
@@ -60,15 +60,15 @@ export const EmptyCartState: React.FC = () => {
           spacing={2}
           sx={{ width: isMobile ? "100%" : "auto" }}
         >
-          <ButtonStyled
+          <Button
             variant="outlined"
             startIcon={<SearchIcon />}
             onClick={() => router.push("/")}
             size={isMobile ? "medium" : "large"}
-            sx={{ minWidth: isMobile ? "100%" : 160 }}
+            sx={{ minWidth: isMobile ? "100%" : 160, textTransform: "none" }}
           >
             Перейти к покупкам
-          </ButtonStyled>
+          </Button>
         </Stack>
       </Box>
     </Container>

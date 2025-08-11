@@ -3,6 +3,7 @@
 import React from "react";
 import {
   alpha,
+  Button,
   Container,
   Divider,
   Paper,
@@ -14,14 +15,13 @@ import {
 import { CartList, useCartChecks, useCartProducts } from "@/entities/cart";
 import { useRouter } from "next/navigation";
 import {
-  ButtonStyled,
   EmptyCartState,
-  ErrorCartState,
+  ErrorState,
   LoadingCartState,
+  UnauthorizedState,
 } from "@/shared/ui";
 import { formatPrice } from "@/shared/lib";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { UnauthorizedCartState } from "@/shared/ui/states/UnauthorizedCartState";
 
 export const CartWidget = () => {
   const router = useRouter();
@@ -33,14 +33,12 @@ export const CartWidget = () => {
     data: cartItems,
     isLoading,
     isError,
-    error,
     refetch,
   } = useCartProducts({ enabled: isAuthenticated });
 
   const { getCartTotal, getCartItemsCount } = useCartChecks(cartItems);
-
   if (!isAuthenticated) {
-    return <UnauthorizedCartState />;
+    return <UnauthorizedState type="cart" />;
   }
 
   if (isLoading) {
@@ -48,12 +46,7 @@ export const CartWidget = () => {
   }
 
   if (isError) {
-    return (
-      <ErrorCartState
-        onRetry={() => refetch()}
-        error={error instanceof Error ? error.message : "Неизвестная ошибка"}
-      />
-    );
+    return <ErrorState onRetry={() => refetch()} type="cart" />;
   }
 
   if (!cartItems?.length) {
@@ -104,7 +97,7 @@ export const CartWidget = () => {
 
             <Divider />
 
-            <ButtonStyled
+            <Button
               variant="contained"
               color="primary"
               size="large"
@@ -114,10 +107,11 @@ export const CartWidget = () => {
                 py: isMobile ? 1.5 : 2,
                 fontSize: isMobile ? "1rem" : "1.125rem",
                 fontWeight: 600,
+                textTransform: "none",
               }}
             >
               Оформить заказ
-            </ButtonStyled>
+            </Button>
           </Stack>
         </Paper>
       </Stack>

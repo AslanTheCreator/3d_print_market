@@ -13,6 +13,7 @@ export const HomeProductCatalog = () => {
     isFetchingNextPage,
     isLoading,
     error,
+    isError,
     refetch,
   } = useProductsInfinite(20);
 
@@ -41,7 +42,7 @@ export const HomeProductCatalog = () => {
           <ProductCatalog
             products={products}
             isLoading={isLoading}
-            error={error}
+            isError={isError}
             onRetry={() => refetch()}
           />
         </InfiniteScroll>
