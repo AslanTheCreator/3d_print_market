@@ -7,7 +7,6 @@ import { Stack, Box, useTheme, useMediaQuery } from "@mui/material";
 import { HeaderCategoryButton } from "./HeaderCategoryButton";
 import Logo from "@/shared/assets/logo/logo.svg";
 import LogoDesktop from "@/shared/assets/logo/logo-desktop.png";
-import site from "@/shared/assets/logo/site.png";
 
 export const HeaderLogo: React.FC = () => {
   const theme = useTheme();
@@ -26,7 +25,6 @@ export const HeaderLogo: React.FC = () => {
   };
 
   const logoSize = getLogoSize();
-  const siteLogoSize = getSiteLogoSize();
 
   if (!isMobile) {
     return (

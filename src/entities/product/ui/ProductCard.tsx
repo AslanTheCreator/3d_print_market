@@ -29,8 +29,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   category,
   image,
   actions,
-  availability,
-  onCardClick,
 }) => {
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
   const theme = useTheme();

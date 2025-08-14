@@ -24,16 +24,23 @@ export const useRemoveFromCart = () => {
     // Example of optimistic update (can be more detailed)
     onMutate: async (productId: number) => {
       await queryClient.cancelQueries({ queryKey: cartKeys.all });
-      const previousCart = queryClient.getQueryData<CartProductModel[]>(cartKeys.all);
+      const previousCart = queryClient.getQueryData<CartProductModel[]>(
+        cartKeys.all
+      );
       if (previousCart) {
-        const updatedCart = previousCart.filter(item => item.id !== productId);
+        const updatedCart = previousCart.filter(
+          (item) => item.id !== productId
+        );
         queryClient.setQueryData<CartProductModel[]>(cartKeys.all, updatedCart);
       }
       return { previousCart };
     },
     onError: (err, variables, context) => {
       if (context?.previousCart) {
-        queryClient.setQueryData<CartProductModel[]>(cartKeys.all, context.previousCart);
+        queryClient.setQueryData<CartProductModel[]>(
+          cartKeys.all,
+          context.previousCart
+        );
       }
     },
     onSettled: () => {

@@ -9,7 +9,7 @@ export const ProductCardWithActions: React.FC<{
   product: ProductCardModel;
 }> = ({ product }) => {
   const router = useRouter();
-  const isFavorite = useIsFavorite(product.id); // Теперь хук вызывается в компоненте
+  const isFavorite = useIsFavorite(product.id);
 
   return (
     <Box sx={{ position: "relative" }}>

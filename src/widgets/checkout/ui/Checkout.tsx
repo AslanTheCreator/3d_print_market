@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { CartList, useCartProducts } from "@/entities/cart";
+import { CartList, CartProductModel, useCartProducts } from "@/entities/cart";
 import {
   Container,
   Typography,
@@ -32,7 +32,7 @@ import {
 } from "@/entities/accounts/model/types";
 import { PaymentSelector } from "@/features/accounts/account-selector/ui/PaymentSelector";
 import { useCreateOrder, useOrderData } from "@/entities/order";
-import { CartProductModel } from "@/entities/cart/model/types";
+import { useCartItemRemoval } from "@/features/cart";
 
 // Типы для групп товаров по продавцам
 type SellerGroup = {
@@ -50,6 +50,7 @@ const Checkout = () => {
   const router = useRouter();
   const { data: cartItems, isLoading: isCartLoading } = useCartProducts();
   const { mutate: createOrder, isPending } = useCreateOrder();
+  const { handleRemoveItem, removingItemIds } = useCartItemRemoval();
 
   // Состояние для Snackbar
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -304,7 +305,11 @@ const Checkout = () => {
                 <Typography variant="h6" gutterBottom>
                   Товары
                 </Typography>
-                <CartList items={group.items} />
+                <CartList
+                  items={group.items}
+                  onRemoveItem={handleRemoveItem}
+                  removingItemIds={removingItemIds}
+                />
               </Paper>
 
               {/* Способ доставки для продавца */}

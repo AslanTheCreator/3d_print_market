@@ -1,8 +1,7 @@
 import React from "react";
 import { alpha, Button, useMediaQuery, useTheme } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useAddToCart } from "../hooks/useAddToCart";
-import { useCartChecks, useCartProducts } from "@/entities/cart";
+import { useAddToCart, useCartChecks, useCartProducts } from "@/entities/cart";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { Availability } from "@/entities/product/model/types";
@@ -41,18 +40,15 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     if (isInCart) {
       router.push("/cart");
     } else {
-      addToCart(
-        { productId },
-        {
-          onSuccess: () => {
-            console.log("Товар успешно добавлен в корзину");
-          },
-          onError: (error) => {
-            console.error("Ошибка добавления в корзину:", error);
-            alert("Не удалось добавить товар в корзину.");
-          },
-        }
-      );
+      addToCart(productId, {
+        onSuccess: () => {
+          console.log("Товар успешно добавлен в корзину");
+        },
+        onError: (error) => {
+          console.error("Ошибка добавления в корзину:", error);
+          alert("Не удалось добавить товар в корзину.");
+        },
+      });
     }
   };
 
