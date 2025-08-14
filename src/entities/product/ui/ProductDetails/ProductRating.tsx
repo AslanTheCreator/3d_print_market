@@ -2,7 +2,6 @@
 
 import { Box, Typography, Paper, Stack } from "@mui/material";
 import Link from "next/link";
-import { memo } from "react";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import StarsIcon from "@/shared/assets/icons/StarsIcon";
 
@@ -13,12 +12,17 @@ interface ProductRatingProps {
   sellerName?: string;
 }
 
-export const ProductRating = memo<ProductRatingProps>(
-  ({ rating, reviewsCount, sellerUrl = "", sellerName }) => (
+export function ProductRating({
+  rating,
+  reviewsCount,
+  sellerUrl = "",
+  sellerName,
+}: ProductRatingProps) {
+  return (
     <Paper
       elevation={0}
       sx={{
-        borderRadius: { xs: 2, sm: 2.5 },
+        borderRadius: { xs: 2.5 },
         p: { xs: "12px 16px", sm: "16px 20px" },
         width: "fit-content",
       }}
@@ -28,27 +32,31 @@ export const ProductRating = memo<ProductRatingProps>(
         style={{ textDecoration: "none", color: "inherit" }}
       >
         <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Stack direction="row" alignItems="center" spacing={0.5}>
-            <StarsIcon />
-            <Typography
-              component="span"
-              sx={{
-                fontWeight: 600,
-                fontSize: { xs: "16px", sm: "18px" },
-              }}
-            >
-              {rating?.toFixed(1)}
-            </Typography>
-          </Stack>
+          {rating && (
+            <>
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                <StarsIcon />
+                <Typography
+                  component="span"
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: { xs: "16px", sm: "18px" },
+                  }}
+                >
+                  {rating.toFixed(1)}
+                </Typography>
+              </Stack>
 
-          {reviewsCount && (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
-            >
-              ({reviewsCount} отзывов)
-            </Typography>
+              {reviewsCount && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                >
+                  ({reviewsCount} отзывов)
+                </Typography>
+              )}
+            </>
           )}
 
           <Typography
@@ -63,7 +71,5 @@ export const ProductRating = memo<ProductRatingProps>(
         </Stack>
       </Link>
     </Paper>
-  )
-);
-
-ProductRating.displayName = "ProductRating";
+  );
+}

@@ -2,7 +2,6 @@
 
 import { Box, Typography } from "@mui/material";
 import Image from "next/image";
-import { memo } from "react";
 
 interface MainImageProps {
   src?: string;
@@ -10,8 +9,8 @@ interface MainImageProps {
   priority?: boolean;
 }
 
-export const MainImage = memo<MainImageProps>(
-  ({ src, alt, priority = false }) => (
+export function MainImage({ src, alt, priority = false }: MainImageProps) {
+  return (
     <Box
       sx={{
         width: "100%",
@@ -51,7 +50,5 @@ export const MainImage = memo<MainImageProps>(
         </Box>
       )}
     </Box>
-  )
-);
-
-MainImage.displayName = "MainImage";
+  );
+}

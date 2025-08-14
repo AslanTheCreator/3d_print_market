@@ -1,7 +1,6 @@
 "use client";
 
 import { Box, Typography, Paper } from "@mui/material";
-import { memo } from "react";
 import { InfiniteScroll } from "@/shared/ui";
 import { ProductCatalog } from "@/widgets/product-catalog";
 import { useProductsInfinite } from "@/entities/product";
@@ -10,7 +9,7 @@ interface RelatedProductsProps {
   categoryId: number;
 }
 
-export const RelatedProducts = memo<RelatedProductsProps>(({ categoryId }) => {
+export function RelatedProducts({ categoryId }: RelatedProductsProps) {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useProductsInfinite(10, { categoryId });
 
@@ -18,7 +17,7 @@ export const RelatedProducts = memo<RelatedProductsProps>(({ categoryId }) => {
     <Paper
       elevation={0}
       sx={{
-        borderRadius: { xs: 2, sm: 2.5 },
+        borderRadius: { xs: 2.5 },
         overflow: "hidden",
         mb: { xs: 10, sm: 0 },
       }}
@@ -46,6 +45,4 @@ export const RelatedProducts = memo<RelatedProductsProps>(({ categoryId }) => {
       </Box>
     </Paper>
   );
-});
-
-RelatedProducts.displayName = "RelatedProducts";
+}

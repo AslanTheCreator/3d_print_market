@@ -129,16 +129,6 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
             >
               Вы просмотрели все товары
             </Typography>
-            <Typography
-              variant="caption"
-              color="text.disabled"
-              sx={{
-                fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                textAlign: "center",
-              }}
-            >
-              Заходите позже за новыми предложениями
-            </Typography>
           </Box>
         </Fade>
       )}

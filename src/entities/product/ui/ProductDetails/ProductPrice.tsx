@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  Box,
-  Typography,
-  Paper,
-  useTheme,
-  useMediaQuery,
-  Chip,
-  Stack,
-} from "@mui/material";
-import { memo } from "react";
+import { Box, Typography, Paper, useTheme, useMediaQuery } from "@mui/material";
 import { formatPrice } from "@/shared/lib/formatPrice";
 import { Availability } from "../../model/types";
 
@@ -17,96 +8,78 @@ interface ProductPriceProps {
   price: number;
   prepaymentAmount: number;
   availability: Availability;
-  variant?: "default" | "compact" | "mobile";
 }
 
-export const ProductPrice = memo<ProductPriceProps>(
-  ({
-    price,
-    prepaymentAmount,
-    availability = "PURCHASABLE",
-    variant = "default",
-  }) => {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+export function ProductPrice({
+  price,
+  prepaymentAmount,
+  availability = "PURCHASABLE",
+}: ProductPriceProps) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-    const isPreorder = availability === "PREORDER";
+  const isPreorder = availability === "PREORDER";
+  const displayPrice = isPreorder ? prepaymentAmount : price;
 
-    return (
-      <Paper
-        elevation={0}
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        width: { xs: "170px", sm: "auto" },
+        borderRadius: { xs: 2.5, md: 3 },
+        p: { xs: "8px 12px", sm: "16px 24px", md: "20px 28px" },
+        background: {
+          sm: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.grey[50]} 100%)`,
+        },
+        border: { xs: "none", sm: `1px solid ${theme.palette.divider}` },
+        transition: { xs: "none", sm: "all 0.3s ease" },
+        "&:hover": {
+          transform: { md: "translateY(-2px)" },
+          boxShadow: { md: theme.shadows[4] },
+          borderColor: { md: theme.palette.primary.light },
+        },
+      }}
+    >
+      <Box
         sx={{
-          borderRadius: { xs: 2, sm: 2.5, md: 3 },
-          p: { xs: "8px 12px", sm: "16px 24px", md: "20px 28px" },
-          background:
-            theme.palette.mode === "light"
-              ? `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.grey[50]} 100%)`
-              : theme.palette.background.paper,
-          border: `1px solid ${theme.palette.divider}`,
-          transition: "all 0.3s ease",
-          "&:hover": {
-            transform: { md: "translateY(-2px)" },
-            boxShadow: { md: theme.shadows[4] },
-            borderColor: { md: theme.palette.primary.light },
-          },
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          mb: { xs: 0, md: 0.5 },
         }}
       >
-        <Box
+        <Typography
+          component="span"
           sx={{
-            display: "flex",
-            alignItems: "baseline",
-            gap: 0.5,
-            mb: { xs: 0, md: 0.5 },
+            fontSize: {
+              xs: "1rem",
+              sm: "1.125rem",
+              md: "1.875rem",
+              lg: "2.125rem",
+            },
+            fontWeight: 700,
+            lineHeight: 1.1,
+            color: "primary.main",
           }}
         >
+          {formatPrice(displayPrice)} ₽
+        </Typography>
+      </Box>
+
+      {!isMobile && (
+        <Box sx={{ mt: 1 }}>
           <Typography
-            component="span"
+            variant="body2"
+            color="text.secondary"
             sx={{
-              fontSize: {
-                xs: "1rem",
-                sm: "1.125rem",
-                md: "1.875rem",
-                lg: "2.125rem",
-              },
-              fontWeight: 700,
-              lineHeight: 1.1,
-              color: "primary.main",
+              fontSize: { sm: "0.875rem", md: "1rem" },
+              fontWeight: 500,
             }}
           >
-            {isPreorder ? formatPrice(prepaymentAmount) : formatPrice(price)} ₽
+            Полная цена
           </Typography>
         </Box>
-
-        {!isMobile && (
-          <Box sx={{ mt: 1 }}>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                fontSize: { sm: "0.875rem", md: "1rem" },
-                fontWeight: 500,
-              }}
-            >
-              Полная цена
-            </Typography>
-
-            {/* <Typography
-              variant="caption"
-              color="success.main"
-              sx={{
-                fontSize: { sm: "0.75rem", md: "0.875rem" },
-                fontWeight: 600,
-                display: "block",
-                mt: 0.5,
-              }}
-            >
-              ✓ Лучшая цена
-            </Typography> */}
-          </Box>
-        )}
-      </Paper>
-    );
-  }
-);
-
-ProductPrice.displayName = "ProductPrice";
+      )}
+    </Paper>
+  );
+}
