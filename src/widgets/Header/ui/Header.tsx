@@ -89,7 +89,13 @@ export const Header = () => {
           {!isMobile ? (
             <>
               <HeaderLogo />
-              <Stack direction="row" flex={1} spacing={2.5} mr={2.5}>
+              <Stack
+                direction="row"
+                flex={1}
+                spacing={2.5}
+                mr={2.5}
+                marginLeft={1.5}
+              >
                 <HeaderSearch />
               </Stack>
               <HeaderActions />

@@ -122,7 +122,7 @@ export default function CategoryPage() {
   }
 
   return (
-    <Container sx={{ pt: 2.5 }}>
+    <Container sx={{ pt: "20px" }}>
       {/* Хлебные крошки */}
       <Breadcrumbs
         aria-label="breadcrumb"
@@ -149,21 +149,6 @@ export default function CategoryPage() {
         >
           <HomeIcon sx={{ mr: 0.5, fontSize: 20 }} />
           Главная
-        </Link>
-
-        {/* Каталог */}
-        <Link
-          component={NextLink}
-          href="/catalog"
-          underline="hover"
-          sx={{
-            color: "text.secondary",
-            "&:hover": {
-              color: "primary.main",
-            },
-          }}
-        >
-          Каталог
         </Link>
 
         {/* Категории */}
@@ -217,7 +202,6 @@ export default function CategoryPage() {
           <ProductCatalog
             products={products}
             isLoading={isLoading}
-            error={error}
             onRetry={refetch}
           />
         </InfiniteScroll>

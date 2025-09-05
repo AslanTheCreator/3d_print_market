@@ -45,7 +45,8 @@ export function MobileProductDetails({
       <Stack
         flexDirection="row"
         justifyContent="space-between"
-        mb={{ xs: 1.5, sm: 0 }}
+        mb={1.5}
+        mt={1.5}
       >
         <ProductPrice
           price={productCard.price}
@@ -56,16 +57,17 @@ export function MobileProductDetails({
         <ProductRating
           sellerName={sellerName}
           rating={averageRating}
-          reviewsCount={0}
+          reviewsCount={100}
         />
       </Stack>
 
       <ProductDescription description={productCard.description} />
-      <RelatedProducts categoryId={productCard.category.id} />
+      <RelatedProducts categoryId={productCard.categories.id} />
 
       <FixedBottomCart
         productId={productCard.id}
         availability={productCard.availability}
+        productName={productCard.name}
       />
     </Box>
   );

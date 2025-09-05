@@ -26,7 +26,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   id,
   name,
   price,
-  category,
+  categories,
   image,
   actions,
 }) => {
@@ -132,7 +132,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           }}
         >
           <Stack spacing={isMobile ? 0.5 : 1}>
-            {category?.name && (
+            {categories?.[0]?.name && (
               <Typography
                 variant="caption"
                 color="text.secondary"
@@ -145,7 +145,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   fontWeight: 500,
                 }}
               >
-                {category.name}
+                {categories[0].name}
               </Typography>
             )}
 
@@ -175,10 +175,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </Typography>
             </Box>
           </Stack>
-
-          {actions && <Box sx={{ mt: "auto", pt: 1 }}>{actions}</Box>}
         </CardContent>
       </Link>
+      {actions && (
+        <Box
+          sx={{
+            px: { xs: "8px", sm: "12px" },
+            pb: { xs: 1.5, sm: 2 },
+          }}
+        >
+          {actions}
+        </Box>
+      )}
     </Card>
   );
 };

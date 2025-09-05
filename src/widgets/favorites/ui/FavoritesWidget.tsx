@@ -1,7 +1,7 @@
 "use client";
 
 import { useFavoritesProducts } from "@/entities/favorites/hooks";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth";
 import { UnauthorizedState } from "@/shared/ui";
 import { ProductCatalog } from "@/widgets/product-catalog";
 import { Typography, Box } from "@mui/material";

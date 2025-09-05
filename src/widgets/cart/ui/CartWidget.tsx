@@ -9,7 +9,7 @@ import {
   useCartChecks,
   useCartProducts,
 } from "@/entities/cart";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth";
 import {
   EmptyCartState,
   ErrorState,

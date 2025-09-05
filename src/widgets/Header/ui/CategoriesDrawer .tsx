@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Drawer,
   Box,
   IconButton,
   useTheme,
   useMediaQuery,
+  ClickAwayListener,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { CategoriesMenu } from "./CategoriesMenu";
@@ -23,39 +24,50 @@ export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  return (
-    <Drawer
-      anchor="left"
-      open={open}
-      onClose={onClose}
-      variant={isMobile ? "temporary" : "persistent"}
-      sx={{
-        "& .MuiDrawer-paper": {
-          width: {
-            xs: "100%", // На мобильных устройствах занимает всю ширину
-            sm: "320px", // На планшетах фиксированная ширина
-            md: "350px", // На десктопе чуть шире
-          },
-          maxWidth: "100vw",
-          boxSizing: "border-box",
-          backgroundColor: theme.palette.background.paper,
-          borderRight: `1px solid ${theme.palette.divider}`,
-        },
-      }}
-      ModalProps={{
-        keepMounted: true, // Улучшает производительность на мобильных устройствах
-      }}
-    >
-      <Box
+  // Закрытие при нажатии Escape
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && open) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [open, onClose]);
+
+  // Для мобильных устройств используем стандартный Drawer
+  if (isMobile) {
+    return (
+      <Drawer
+        anchor="left"
+        open={open}
+        onClose={onClose}
+        variant="temporary"
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          height: "100%",
-          position: "relative",
+          "& .MuiDrawer-paper": {
+            width: "100%",
+            maxWidth: "100vw",
+            boxSizing: "border-box",
+            backgroundColor: theme.palette.background.paper,
+            borderRight: `1px solid ${theme.palette.divider}`,
+          },
+        }}
+        ModalProps={{
+          keepMounted: true,
         }}
       >
-        {/* Close button for mobile */}
-        {isMobile && (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            position: "relative",
+          }}
+        >
+          {/* Close button for mobile */}
           <Box
             sx={{
               position: "absolute",
@@ -68,20 +80,56 @@ export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
               onClick={onClose}
               size="small"
               sx={{
-                backgroundColor: (theme) => theme.palette.background.default,
+                backgroundColor: theme.palette.background.default,
                 "&:hover": {
-                  backgroundColor: (theme) => theme.palette.action.hover,
+                  backgroundColor: theme.palette.action.hover,
                 },
               }}
             >
               <CloseIcon />
             </IconButton>
           </Box>
-        )}
 
-        {/* Categories menu */}
-        <CategoriesMenu onClose={onClose} />
+          <CategoriesMenu onClose={onClose} />
+        </Box>
+      </Drawer>
+    );
+  }
+
+  // Для десктопа используем кастомное позиционирование
+  if (!open) return null;
+
+  return (
+    <ClickAwayListener onClickAway={onClose}>
+      <Box
+        sx={{
+          position: "fixed",
+          top: "122px", // Высота хедера
+          left: 0,
+          width: "320px",
+          height: "calc(100vh - 119px)",
+          backgroundColor: theme.palette.background.paper,
+          borderRight: `1px solid ${theme.palette.divider}`,
+          boxShadow: theme.shadows[8],
+          zIndex: theme.zIndex.drawer,
+          transform: open ? "translateX(0)" : "translateX(-100%)",
+          transition: theme.transitions.create("transform", {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            position: "relative",
+          }}
+        >
+          <CategoriesMenu onClose={onClose} />
+        </Box>
       </Box>
-    </Drawer>
+    </ClickAwayListener>
   );
 };

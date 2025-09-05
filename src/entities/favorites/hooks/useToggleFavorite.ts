@@ -16,7 +16,14 @@ export const useToggleFavorite = () => {
     if (isFavorite) {
       removeFromFavorites.mutate(productId);
     } else {
-      addToFavorites.mutate(productId);
+      addToFavorites.mutate(productId, {
+        onSuccess: () => {
+          console.log("Товар успешно добавлен в избранное");
+        },
+        onError: (error) => {
+          console.error("Ошибка добавления в избранное:", error);
+        },
+      });
     }
   };
 

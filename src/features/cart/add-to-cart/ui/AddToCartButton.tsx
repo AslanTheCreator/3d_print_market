@@ -3,8 +3,10 @@ import { alpha, Button, useMediaQuery, useTheme } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useAddToCart, useCartChecks, useCartProducts } from "@/entities/cart";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth";
 import { Availability } from "@/entities/product/model/types";
+import { useAuthRequired } from "@/shared/hooks";
+import { AuthRequiredDialog } from "@/shared/ui";
 
 interface AddToCartButtonProps {
   productId: number;
@@ -12,6 +14,7 @@ interface AddToCartButtonProps {
   variant?: "default" | "detailed";
   size?: "small" | "medium" | "large";
   fullWidth?: boolean;
+  productName?: string;
 }
 
 export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
@@ -20,12 +23,19 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   size = "medium",
   fullWidth = true,
   availability,
+  productName,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const router = useRouter();
   const { mutate: addToCart, isPending } = useAddToCart();
   const { isAuthenticated } = useAuth();
+  const {
+    isOpen,
+    productName: dialogProductName,
+    showDialog,
+    hideDialog,
+  } = useAuthRequired();
 
   const { data: cartItems } = useCartProducts({ enabled: isAuthenticated });
 
@@ -37,6 +47,11 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     e.preventDefault();
     e.stopPropagation();
 
+    if (!isAuthenticated) {
+      showDialog(productName);
+      return;
+    }
+
     if (isInCart) {
       router.push("/cart");
     } else {
@@ -46,7 +61,6 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
         },
         onError: (error) => {
           console.error("Ошибка добавления в корзину:", error);
-          alert("Не удалось добавить товар в корзину.");
         },
       });
     }
@@ -129,25 +143,33 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   };
 
   return (
-    <Button
-      onClick={handleClick}
-      variant="contained"
-      fullWidth={fullWidth}
-      disabled={isPending}
-      size={size}
-      startIcon={
-        !isInCart && variant === "default" ? (
-          <ShoppingCartOutlinedIcon
-            sx={{ fontSize: isMobile ? "0.875rem" : "1rem" }}
-          />
-        ) : undefined
-      }
-      sx={{
-        ...getButtonStyles(),
-        ...getColorStyles(),
-      }}
-    >
-      {getButtonText()}
-    </Button>
+    <>
+      <Button
+        onClick={handleClick}
+        variant="contained"
+        fullWidth={fullWidth}
+        disabled={isPending}
+        size={size}
+        startIcon={
+          !isInCart && variant === "default" ? (
+            <ShoppingCartOutlinedIcon
+              sx={{ fontSize: isMobile ? "0.875rem" : "1rem" }}
+            />
+          ) : undefined
+        }
+        sx={{
+          ...getButtonStyles(),
+          ...getColorStyles(),
+        }}
+      >
+        {getButtonText()}
+      </Button>
+
+      <AuthRequiredDialog
+        open={isOpen}
+        onClose={hideDialog}
+        productName={dialogProductName}
+      />
+    </>
   );
 };

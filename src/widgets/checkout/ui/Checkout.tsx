@@ -21,16 +21,8 @@ import { AddressSelector } from "@/features/address/address-selector/ui/AddressS
 import { AddressBaseModel } from "@/entities/address/model/types";
 import { useAddressDialog } from "@/features/address/create-address/hooks/useAddressDialog";
 import { AddressDialog } from "@/features/address/create-address/ui/AddressDialog";
-import {
-  ShoppingMethods,
-  TransferBaseModel,
-} from "@/entities/transfer/model/types";
+import { TransferBaseModel } from "@/entities/transfer/model/types";
 import { TransferSelector } from "@/features/transfer/transfer-selector/TransferSelector";
-import {
-  AccountsBaseModel,
-  TransferMoney,
-} from "@/entities/accounts/model/types";
-import { PaymentSelector } from "@/features/accounts/account-selector/ui/PaymentSelector";
 import { useCreateOrder, useOrderData } from "@/entities/order";
 import { useCartItemRemoval } from "@/features/cart";
 
@@ -75,9 +67,6 @@ const Checkout = () => {
   // Состояния для каждого продавца
   const [selectedTransfers, setSelectedTransfers] = useState<
     Record<number, TransferBaseModel | null>
-  >({});
-  const [selectedPayments, setSelectedPayments] = useState<
-    Record<number, AccountsBaseModel | null>
   >({});
   const [selectedAddress, setSelectedAddress] =
     useState<AddressBaseModel | null>(null);
@@ -220,16 +209,6 @@ const Checkout = () => {
     }));
   };
 
-  const handlePaymentSelect = (
-    sellerId: number,
-    payment: AccountsBaseModel | null
-  ) => {
-    setSelectedPayments((prev) => ({
-      ...prev,
-      [sellerId]: payment,
-    }));
-  };
-
   // Компонент для отображения результатов заказов удален - используются только уведомления
 
   if (isCartLoading) {
@@ -333,29 +312,6 @@ const Checkout = () => {
                   transfers={orderQuery?.data?.sellerTransfers || []}
                   isError={orderQuery?.isError || false}
                   isLoading={orderQuery?.isLoading || false}
-                />
-              </Paper>
-
-              {/* Способ оплаты для продавца */}
-              <Paper sx={{ mb: 3, p: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  Способ оплаты
-                </Typography>
-                <PaymentSelector
-                  control={control}
-                  paymentMethodName={`paymentMethod_${group.sellerId}`}
-                  accountIdName={`paymentAccountId_${group.sellerId}`}
-                  error={(() => {
-                    const err = errors[`paymentMethod_${group.sellerId}`];
-                    return err && typeof err === "object" && "type" in err
-                      ? (err as import("react-hook-form").FieldError)
-                      : undefined;
-                  })()}
-                  onPaymentSelect={(payment) =>
-                    handlePaymentSelect(group.sellerId, payment)
-                  }
-                  showDescriptions={true}
-                  hideUnavailable={true}
                 />
               </Paper>
 

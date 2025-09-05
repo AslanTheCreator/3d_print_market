@@ -11,7 +11,7 @@ interface BaseProduct {
   name: string;
   price: number;
   currency: Currency;
-  category: CategoryModel;
+  categories: CategoryModel[];
   availability: Availability;
 }
 

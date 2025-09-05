@@ -8,10 +8,10 @@ interface AuthState {
   isInitialized: boolean;
   user: {
     id?: string;
-    login?: string;
+    mail?: string;
   } | null;
   // Actions
-  login: (login: string, password: string) => Promise<boolean>;
+  login: (mail: string, password: string) => Promise<boolean>;
   logout: () => void;
   initializeAuth: () => Promise<void>;
   checkAuthStatus: () => boolean;
@@ -25,13 +25,13 @@ export const useAuthStore = create<AuthState>()(
       isInitialized: false,
       user: null,
 
-      login: async (login: string, password: string) => {
+      login: async (mail: string, password: string) => {
         try {
-          const success = await authApi.loginUser({ login, password });
+          const success = await authApi.loginUser({ mail, password });
           if (success) {
             set({
               isAuthenticated: true,
-              user: { login },
+              user: { mail },
             });
             return true;
           }

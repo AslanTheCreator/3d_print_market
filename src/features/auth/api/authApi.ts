@@ -8,11 +8,11 @@ const API_URL_REGISTER = `${config.apiBaseUrl}/participant`;
 const API_URL_AUTH = `${config.apiBaseUrl}/auth`;
 
 export const authApi = {
-  async registerUser({ login, password }: AuthFormModel) {
+  async registerUser({ mail, password }: AuthFormModel) {
     try {
       const { status, data } = await axios.post(
         API_URL_REGISTER,
-        { login, password },
+        { mail, password },
         {
           headers: { "Content-Type": "application/json" },
         }
@@ -25,13 +25,13 @@ export const authApi = {
       throw errorHandler.handleAxiosError(error, "Ошибка регистрации");
     }
   },
-  async loginUser({ login, password }: AuthFormModel) {
+  async loginUser({ mail, password }: AuthFormModel) {
     try {
       const { data } = await axios.post<{
         access_token: string;
         refresh_token: string;
       }>(`${API_URL_AUTH}/login`, {
-        login,
+        mail,
         password,
       });
       const tokens = {
@@ -43,6 +43,28 @@ export const authApi = {
       return true;
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка авторизации");
+    }
+  },
+  async verifyCode(userId: number, code: string) {
+    try {
+      const { data } = await axios.post<{
+        access_token: string;
+        refresh_token: string;
+      }>(`${API_URL_AUTH}/verify-code`, {
+        userId,
+        code,
+      });
+
+      const tokens = {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+      };
+
+      tokenStorage.saveTokens(tokens);
+      console.log("Код успешно верифицирован");
+      return true;
+    } catch (error) {
+      throw errorHandler.handleAxiosError(error, "Ошибка верификации кода");
     }
   },
   async refreshAccessToken() {

@@ -305,16 +305,6 @@ theme = createTheme(theme, {
         },
       },
     },
-    // Кастомный стиль для мобильных компонентов
-    MuiContainer: {
-      styleOverrides: {
-        root: ({ theme }: { theme: Theme }) => ({
-          [theme.breakpoints.down("sm")]: {
-            padding: "0px 16px",
-          },
-        }),
-      },
-    },
     MuiDrawer: {
       styleOverrides: {
         paper: {

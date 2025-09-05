@@ -7,11 +7,13 @@ import { Availability } from "@/entities/product/model/types";
 interface FixedBottomCartProps {
   productId: number;
   availability: Availability;
+  productName?: string;
 }
 
 export function FixedBottomCart({
   productId,
   availability,
+  productName,
 }: FixedBottomCartProps) {
   return (
     <Paper
@@ -31,6 +33,7 @@ export function FixedBottomCart({
         productId={productId}
         availability={availability}
         variant="detailed"
+        productName={productName}
       />
     </Paper>
   );

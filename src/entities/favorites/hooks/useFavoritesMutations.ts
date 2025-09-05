@@ -15,15 +15,10 @@ export const useAddToFavorites = () => {
         favoritesKeys.lists()
       );
 
-      // Оптимистичное добавление (пример)
-      // Это потребует доступа к данным продукта.
-      // Если productData не доступно здесь напрямую, эту часть оптимистичного обновления,
-      // возможно, придется упростить или вынести логику поиска productData.
-      // Для простоты предположим, что productData может быть не найдено и оптимизм будет частичным.
       const productData = queryClient
         .getQueryCache()
         .findAll({ queryKey: ["products"] }) // Assuming a general products key exists
-        .flatMap((query) => query.state.data as ProductCardModel[] || [])
+        .flatMap((query) => (query.state.data as ProductCardModel[]) || [])
         .find((product) => product.id === productId);
 
       if (productData && previousFavorites) {
@@ -32,11 +27,7 @@ export const useAddToFavorites = () => {
           (old) => (old ? [...old, productData] : [productData])
         );
       } else if (previousFavorites === undefined) {
-        // If cache was empty, and we have product data, we can still try to set it.
-        // This part of optimistic update might be too complex without full product context.
-        // For now, we'll rely on invalidation if productData is not found.
       }
-
 
       return { previousFavorites };
     },

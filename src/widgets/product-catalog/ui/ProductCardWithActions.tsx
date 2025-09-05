@@ -20,10 +20,15 @@ export const ProductCardWithActions: React.FC<{
           <AddToCartButton
             productId={product.id}
             availability={product.availability}
+            productName={product.name}
           />
         }
       />
-      <FavoriteButton productId={product.id} isFavorite={isFavorite} />
+      <FavoriteButton
+        productId={product.id}
+        isFavorite={isFavorite}
+        productName={product.name}
+      />
     </Box>
   );
 };

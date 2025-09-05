@@ -18,12 +18,6 @@ export const HeaderLogo: React.FC = () => {
     return { width: 69, height: 85 };
   };
 
-  // Адаптивные размеры логотипа site
-  const getSiteLogoSize = () => {
-    if (isMobile) return { width: 50, height: 50 };
-    return { width: 116, height: 58 };
-  };
-
   const logoSize = getLogoSize();
 
   if (!isMobile) {

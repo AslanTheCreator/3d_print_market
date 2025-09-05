@@ -27,7 +27,7 @@ export const CartItem = ({
   id,
   name,
   price,
-  category,
+  categories,
   image,
   onRemove,
   isRemoving = false,
@@ -125,7 +125,7 @@ export const CartItem = ({
             minWidth: 0,
           }}
         >
-          {category?.name && (
+          {categories?.[0]?.name && (
             <Typography
               variant="caption"
               color="text.secondary"
@@ -136,7 +136,7 @@ export const CartItem = ({
                 letterSpacing: 0.5,
               }}
             >
-              {category.name}
+              {categories[0].name}
             </Typography>
           )}
 

@@ -73,6 +73,7 @@ export function DesktopProductDetails({
                 productId={productCard.id}
                 availability={productCard.availability}
                 variant="detailed"
+                productName={productCard.name}
               />
             </Box>
 
@@ -82,7 +83,7 @@ export function DesktopProductDetails({
       </Grid>
 
       <Box sx={{ mt: { xs: 4, sm: 6, md: 8 } }}>
-        <RelatedProducts categoryId={productCard.category.id} />
+        <RelatedProducts categoryId={productCard.categories[0].id} />
       </Box>
     </Container>
   );

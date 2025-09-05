@@ -9,11 +9,11 @@ import { useRouter } from "next/navigation";
 export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const handleRegister = async (login: string, password: string) => {
+  const handleRegister = async (mail: string, password: string) => {
     try {
       setIsLoading(true);
       const userData: AuthFormModel = {
-        login,
+        mail,
         password,
       };
       const isRegistrationSuccessful = await authApi.registerUser(userData);

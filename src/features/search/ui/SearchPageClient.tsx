@@ -9,16 +9,10 @@ import { useProductsInfinite } from "@/entities/product";
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const query = searchParams.get("query") || "";
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error,
-  } = useProductsInfinite(10, {
-    name: query,
-  });
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useProductsInfinite(10, {
+      name: query,
+    });
 
   return (
     <Container sx={{ pt: "20px" }}>
