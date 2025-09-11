@@ -1,18 +1,22 @@
 import React from "react";
 import {
   List,
-  ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   Divider,
   Paper,
+  Box,
+  Badge,
+  useTheme,
 } from "@mui/material";
 import {
   Person as PersonIcon,
   ShoppingBag as ShoppingBagIcon,
   AccessTime as AccessTimeIcon,
-  Favorite as FavoriteIcon,
-  History as HistoryIcon,
+  Timeline as TimelineIcon,
+  Inventory as InventoryIcon,
+  TrendingUp as TrendingUpIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { LogoutButton } from "@/features/auth";
@@ -24,6 +28,8 @@ interface NavigationItem {
   icon: React.ReactNode;
   action: "navigate" | "link";
   target: DashboardSection | string;
+  badge?: number;
+  color?: string;
 }
 
 interface DashboardNavigationProps {
@@ -37,30 +43,35 @@ const navigationItems: NavigationItem[] = [
     icon: <PersonIcon />,
     action: "navigate",
     target: "profile",
+    color: "#2196f3",
   },
   {
     text: "Покупки",
     icon: <ShoppingBagIcon />,
     action: "link",
     target: "/dashboard/purchase",
+    color: "#4caf50",
   },
   {
     text: "Продажи",
-    icon: <ShoppingBagIcon />,
+    icon: <TrendingUpIcon />,
     action: "link",
     target: "/dashboard/sales",
+    color: "#ff9800",
   },
   {
     text: "Предзаказы",
     icon: <AccessTimeIcon />,
     action: "link",
     target: "/dashboard/pre-orders",
+    color: "#9c27b0",
   },
   {
     text: "Товары",
-    icon: <ShoppingBagIcon />,
+    icon: <InventoryIcon />,
     action: "link",
     target: "/dashboard/products",
+    color: "#f44336",
   },
 ];
 
@@ -68,41 +79,82 @@ export const DashboardNavigation: React.FC<DashboardNavigationProps> = ({
   onNavigate,
   activeSection,
 }) => {
-  //const router = useRouter();
+  const theme = useTheme();
 
   return (
-    <Paper elevation={3} sx={{ borderRadius: 2 }}>
-      <List component="nav" aria-label="dashboard navigation">
+    <Paper
+      elevation={0}
+      sx={{ borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}
+    >
+      <List component="nav" sx={{ p: 1 }}>
         {navigationItems.map((item, index) => (
           <React.Fragment key={item.text}>
             {item.action === "navigate" ? (
-              // Элементы, которые переключают секции без изменения URL
-              <ListItem
+              <ListItemButton
                 onClick={() => onNavigate(item.target as DashboardSection)}
                 selected={activeSection === item.target}
                 sx={{
-                  cursor: "pointer",
-                  bgcolor:
-                    activeSection === item.target
-                      ? "rgba(0, 0, 0, 0.04)"
-                      : "inherit",
-                  "&:hover": { bgcolor: "rgba(0, 0, 0, 0.08)" },
+                  borderRadius: 1,
+                  mb: 0.5,
+                  "&.Mui-selected": {
+                    backgroundColor: `${item.color}15`,
+                    color: item.color,
+                    "& .MuiListItemIcon-root": {
+                      color: item.color,
+                    },
+                    "&:hover": {
+                      backgroundColor: `${item.color}25`,
+                    },
+                  },
+                  "&:hover": {
+                    backgroundColor: `${item.color}10`,
+                  },
                 }}
               >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItem>
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  {item.badge ? (
+                    <Badge badgeContent={item.badge} color="error">
+                      {item.icon}
+                    </Badge>
+                  ) : (
+                    item.icon
+                  )}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.text}
+                  primaryTypographyProps={{
+                    fontWeight: activeSection === item.target ? 600 : 400,
+                  }}
+                />
+              </ListItemButton>
             ) : (
-              // Обычные ссылки для перехода на другие страницы
-              <ListItem component={Link as any} href={item.target}>
-                <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemButton
+                component={Link}
+                href={item.target}
+                sx={{
+                  borderRadius: 1,
+                  mb: 0.5,
+                  "&:hover": {
+                    backgroundColor: `${item.color}10`,
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  {item.badge ? (
+                    <Badge badgeContent={item.badge} color="error">
+                      {item.icon}
+                    </Badge>
+                  ) : (
+                    item.icon
+                  )}
+                </ListItemIcon>
                 <ListItemText primary={item.text} />
-              </ListItem>
+              </ListItemButton>
             )}
-            {index < navigationItems.length - 1 && <Divider />}
           </React.Fragment>
         ))}
-        <Divider />
+
+        <Divider sx={{ my: 1 }} />
         <LogoutButton />
       </List>
     </Paper>

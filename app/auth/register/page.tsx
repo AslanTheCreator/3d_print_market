@@ -6,6 +6,7 @@ import { authApi } from "@/features/auth/api/authApi";
 import { AuthFormModel } from "@/features/auth/model/types";
 import { useRouter } from "next/navigation";
 import { VerificationCodeDialog } from "@/features/auth/ui/VerificationCodeDialog";
+import { useAuthStore } from "@/app/store";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,6 +16,8 @@ export default function RegisterPage() {
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState<number | null>(null);
 
+  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
+
   const handleRegister = async (mail: string, password: string) => {
     try {
       setIsLoading(true);
@@ -22,7 +25,6 @@ export default function RegisterPage() {
         mail,
         password,
       };
-
       const { userId: registeredUserId, isSuccess: isRegistrationSuccessful } =
         await authApi.registerUser(userData);
 
@@ -47,15 +49,16 @@ export default function RegisterPage() {
 
     try {
       setIsVerifying(true);
+      console.log("Verifying code:", code);
       const isVerificationSuccessful = await authApi.verifyCode(userId, code);
 
       if (isVerificationSuccessful) {
+        setAuthenticated();
         setIsVerificationOpen(false);
         router.push("/");
       }
     } catch (error) {
       console.error("Verification failed:", error);
-      // Ошибка будет обработана в VerificationCodeDialog через throw
       throw error;
     } finally {
       setIsVerifying(false);
@@ -67,20 +70,6 @@ export default function RegisterPage() {
     // Опционально: можно очистить состояние
     setUserId(null);
     setUserEmail("");
-  };
-
-  // Опционально: функция для повторной отправки кода
-  const handleResendCode = async () => {
-    if (!userEmail || !userId) return;
-
-    try {
-      // Если у вас есть API для повторной отправки кода
-      // await authApi.resendVerificationCode(userId);
-      console.log("Код отправлен повторно");
-    } catch (error) {
-      console.error("Failed to resend code:", error);
-      throw error;
-    }
   };
 
   return (
@@ -101,8 +90,6 @@ export default function RegisterPage() {
         onVerify={handleVerifyCode}
         email={userEmail}
         isLoading={isVerifying}
-        onResendCode={handleResendCode} // Если не нужно, можно убрать
-        isResending={false} // Если нужно, добавьте состояние для этого
       />
     </>
   );

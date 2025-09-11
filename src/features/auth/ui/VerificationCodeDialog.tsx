@@ -23,8 +23,6 @@ interface VerificationCodeDialogProps {
   onVerify: (code: string) => Promise<void>;
   email: string;
   isLoading?: boolean;
-  onResendCode?: () => Promise<void>;
-  isResending?: boolean;
 }
 
 export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
@@ -33,13 +31,11 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
   onVerify,
   email,
   isLoading = false,
-  onResendCode,
-  isResending = false,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [code, setCode] = useState(["", "", "", "", ""]);
   const [error, setError] = useState("");
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -52,7 +48,7 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
     setError("");
 
     // Автоматический переход к следующему полю
-    if (value && index < 5) {
+    if (value && index < 4) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -68,21 +64,21 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
     const pastedData = e.clipboardData
       .getData("text")
       .replace(/\D/g, "")
-      .slice(0, 6);
+      .slice(0, 5);
 
-    if (pastedData.length === 6) {
+    if (pastedData.length === 5) {
       const newCode = pastedData.split("");
       setCode(newCode);
       setError("");
-      inputRefs.current[5]?.focus();
+      inputRefs.current[4]?.focus();
     }
   };
 
   const handleVerify = async () => {
     const fullCode = code.join("");
 
-    if (fullCode.length !== 6) {
-      setError("Введите полный код из 6 цифр");
+    if (fullCode.length !== 5) {
+      setError("Введите полный код из 5 цифр");
       return;
     }
 
@@ -93,19 +89,6 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
       // Очищаем поля при ошибке
       setCode(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
-    }
-  };
-
-  const handleResendCode = async () => {
-    if (onResendCode) {
-      try {
-        await onResendCode();
-        setCode(["", "", "", "", "", ""]);
-        setError("");
-        inputRefs.current[0]?.focus();
-      } catch (error) {
-        setError("Ошибка при отправке кода");
-      }
     }
   };
 
@@ -298,38 +281,6 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
             }}
           >
             {error}
-          </Typography>
-        )}
-
-        {/* Resend code */}
-        {onResendCode && (
-          <Typography
-            variant="body2"
-            sx={{
-              color: theme.palette.text.secondary,
-              fontSize: isMobile ? "0.75rem" : "0.875rem",
-              mb: 2,
-            }}
-          >
-            Не получили код?{" "}
-            <Button
-              variant="text"
-              onClick={handleResendCode}
-              disabled={isResending}
-              sx={{
-                p: 0,
-                minWidth: "auto",
-                fontSize: "inherit",
-                fontWeight: 600,
-                textDecoration: "underline",
-                "&:hover": {
-                  backgroundColor: "transparent",
-                  textDecoration: "underline",
-                },
-              }}
-            >
-              {isResending ? "Отправляем..." : "Отправить повторно"}
-            </Button>
           </Typography>
         )}
       </DialogContent>

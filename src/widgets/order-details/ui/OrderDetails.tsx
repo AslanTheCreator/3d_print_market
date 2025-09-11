@@ -117,7 +117,7 @@ const ProductInfo = ({ product }: { product: ListOrdersModel["product"] }) => (
         {product.name}
       </Typography>
       <Typography variant="body2" color="text.secondary" gutterBottom>
-        Категория: {product.categories.name}
+        Категория: {product.categories[0].name}
       </Typography>
       <Stack
         direction={{ xs: "column", sm: "row" }}

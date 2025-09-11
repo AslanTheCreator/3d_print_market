@@ -16,6 +16,7 @@ interface AuthState {
   initializeAuth: () => Promise<void>;
   checkAuthStatus: () => boolean;
   refreshToken: () => Promise<boolean>;
+  setAuthenticated: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -47,6 +48,12 @@ export const useAuthStore = create<AuthState>()(
         set({
           isAuthenticated: false,
           user: null,
+        });
+      },
+
+      setAuthenticated: () => {
+        set({
+          isAuthenticated: true,
         });
       },
 

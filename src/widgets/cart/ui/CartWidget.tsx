@@ -21,7 +21,7 @@ import { useCartItemRemoval } from "@/features/cart";
 export const CartWidget = () => {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-
+  console.log(isAuthenticated);
   const {
     data: cartItems,
     isLoading,

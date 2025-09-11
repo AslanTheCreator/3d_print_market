@@ -58,14 +58,13 @@ export const authApi = {
         userId,
         code,
       });
-
       const tokens = {
         accessToken: data.access_token,
         refreshToken: data.refresh_token,
       };
-
+      console.log(tokens);
       tokenStorage.saveTokens(tokens);
-      console.log("Код успешно верифицирован");
+      console.log("Код успешно верифицирован: ", code);
       return true;
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка верификации кода");

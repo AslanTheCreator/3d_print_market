@@ -62,7 +62,7 @@ export function MobileProductDetails({
       </Stack>
 
       <ProductDescription description={productCard.description} />
-      <RelatedProducts categoryId={productCard.categories.id} />
+      <RelatedProducts categoryId={productCard.categories[0].id} />
 
       <FixedBottomCart
         productId={productCard.id}

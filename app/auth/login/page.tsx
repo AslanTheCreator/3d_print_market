@@ -1,6 +1,4 @@
 "use client";
-
-import { authApi } from "@/features/auth/api/authApi";
 import AuthForm from "@/widgets/auth-form";
 import { useState } from "react";
 import { Snackbar, Alert } from "@mui/material";
