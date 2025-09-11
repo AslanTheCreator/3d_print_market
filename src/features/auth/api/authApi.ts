@@ -8,7 +8,10 @@ const API_URL_REGISTER = `${config.apiBaseUrl}/participant`;
 const API_URL_AUTH = `${config.apiBaseUrl}/auth`;
 
 export const authApi = {
-  async registerUser({ mail, password }: AuthFormModel) {
+  async registerUser({
+    mail,
+    password,
+  }: AuthFormModel): Promise<{ userId: number | null; isSuccess: boolean }> {
     try {
       const { status, data } = await axios.post(
         API_URL_REGISTER,
@@ -19,8 +22,9 @@ export const authApi = {
       );
       if (status === 200) {
         console.log("Пользователь успешно зарегестрирован, его id: ", data);
+        return { userId: data, isSuccess: true };
       }
-      return true;
+      return { userId: null, isSuccess: false };
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка регистрации");
     }

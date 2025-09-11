@@ -51,35 +51,9 @@ const AuthForm: React.FC<IAuthForm> = ({
     setShowPassword((prev) => !prev);
   };
 
-  // const validateEmail = (email: string) => {
-  //   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  //   return re.test(email);
-  // };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Reset errors
-    // setEmailError("");
     setPasswordError("");
-
-    // Validate email
-    // if (!email) {
-    //   setEmailError("Email обязателен");
-    //   return;
-    // } else if (!validateEmail(email)) {
-    //   setEmailError("Введите корректный email");
-    //   return;
-    // }
-
-    // Validate password
-    // if (!password) {
-    //   setPasswordError("Пароль обязателен");
-    //   return;
-    // } else if (password.length < 6) {
-    //   setPasswordError("Пароль должен содержать минимум 6 символов");
-    //   return;
-    // }
 
     // Submit form if onSubmit is provided
     if (onSubmit) {
@@ -161,7 +135,6 @@ const AuthForm: React.FC<IAuthForm> = ({
               type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              // error={!!emailError}
               InputProps={{
                 sx: {
                   borderRadius: theme.shape.borderRadius,
@@ -169,18 +142,6 @@ const AuthForm: React.FC<IAuthForm> = ({
                 },
               }}
             />
-            {/* {emailError && (
-              <FormHelperText
-                error
-                sx={{
-                  ml: 1.5,
-                  mt: 0.5,
-                  fontSize: "0.75rem",
-                }}
-              >
-                {emailError}
-              </FormHelperText>
-            )} */}
           </Box>
 
           <Box>

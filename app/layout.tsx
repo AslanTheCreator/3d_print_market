@@ -7,6 +7,7 @@ import theme from "../src/app/styles/theme";
 import { Footer } from "@/widgets/footer";
 import { Header } from "@/widgets/header";
 import QueryProvider from "@/app";
+import { ConfigProvider } from "@/app/providers/ConfigProvider";
 
 export const metadata: Metadata = {
   title: "Figurzilla",
@@ -15,19 +16,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body>
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <QueryProvider>
-              <CssBaseline />
-              <Header />
-              <main className="main">{children}</main>
-              <Footer />
+              <ConfigProvider>
+                <CssBaseline />
+                <Header />
+                <main className="main">{children}</main>
+                <Footer />
+              </ConfigProvider>
             </QueryProvider>
           </ThemeProvider>
         </AppRouterCacheProvider>

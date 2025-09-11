@@ -1,14 +1,13 @@
+# Stage 1: Build
 FROM node:18-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install --frozen-lockfile
 COPY . .
 
-# Передача переменных окружения в Next.js на этапе сборки
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-
 RUN npm run build
+
+# Stage 2: Runner
 FROM node:18-alpine AS runner
 WORKDIR /app
 COPY --from=builder /app/package.json ./
@@ -20,5 +19,14 @@ COPY --from=builder /app/public ./public
 ENV NODE_ENV=production
 ENV PORT=3000
 
+# Подстановка API URL в config.json при старте контейнера
+ARG API_URL
+RUN if [ -n "$API_URL" ]; then \
+      sed "s|__API_URL__|$API_URL|g" public/config.template.json > public/config.json; \
+    else \
+      cp public/config.template.json public/config.json; \
+    fi
+
 EXPOSE 3000
 CMD ["npm", "run", "start"]
+
