@@ -15,7 +15,7 @@ export const HomeProductCatalog = () => {
     error,
     isError,
     refetch,
-  } = useProductsInfinite(20);
+  } = useProductsInfinite(18);
 
   const products = data?.pages.flat() ?? [];
 

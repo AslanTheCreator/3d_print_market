@@ -11,7 +11,7 @@ export async function loadConfig(): Promise<void> {
     const res = await fetch("/config.json");
     if (!res.ok) throw new Error("Не удалось загрузить config.json");
     const data = await res.json();
-    config = { ...config, ...data }; // мержим с дефолтом
+    config = { ...config, ...data };
   } catch (e) {
     console.warn("Используется дефолтный config:", e);
   }

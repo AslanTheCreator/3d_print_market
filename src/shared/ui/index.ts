@@ -5,3 +5,5 @@ export { UnauthorizedState } from "./states/UnauthorizedState";
 export { EmptyCartState } from "./states/EmptyCartState";
 export { ImageGallery } from "./ImageGallery/ui/ImageGallery";
 export { AuthRequiredDialog } from "./AuthRequiredDialog/AuthRequiredDialog";
+export { EmptyState } from "./states/EmptyOrderState";
+export { LoadingState } from "./states/LoadingOrderState";
