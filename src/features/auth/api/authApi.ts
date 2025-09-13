@@ -1,11 +1,12 @@
 import axios from "axios";
-import config from "@/shared/config/api";
 import { AuthFormModel } from "../model/types";
 import { errorHandler } from "@/shared/lib/errorHandler";
 import { tokenStorage } from "@/shared/lib/token/tokenStorage";
 
-const API_URL_REGISTER = `${config.apiBaseUrl}/participant`;
-const API_URL_AUTH = `${config.apiBaseUrl}/auth`;
+import "@/shared/config/axiosInterceptor";
+
+const API_URL_REGISTER = `/participant`;
+const API_URL_AUTH = `/auth`;
 
 export const authApi = {
   async registerUser({

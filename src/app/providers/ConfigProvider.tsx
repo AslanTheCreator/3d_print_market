@@ -13,8 +13,6 @@ export function ConfigProvider({ children }: Props) {
     loadConfig().finally(() => setLoaded(true));
   }, []);
 
-  //   if (!loaded) return <div>Загрузка конфигурации...</div>;
-
   return <>{children}</>;
 }
 

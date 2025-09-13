@@ -1,9 +1,10 @@
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
-import config from "@/shared/config/api";
 import { TransferBaseModel, TransferCreateModel } from "../model/types";
 import { errorHandler } from "@/shared/lib/errorHandler";
 
-const API_URL = `${config.apiBaseUrl}/transfer`;
+import "@/shared/config/axiosInterceptor";
+
+const API_URL = `/transfer`;
 const authenticatedAxios = createAuthenticatedAxiosInstance();
 
 export const transferApi = {

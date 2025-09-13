@@ -1,14 +1,13 @@
-import config from "@/shared/config/api";
 import { errorHandler } from "@/shared/lib/errorHandler";
 import axios from "axios";
 import { CategoryModel } from "../model/types";
 
+import "@/shared/config/axiosInterceptor";
+
 export const categoryApi = {
   async getCategories() {
     try {
-      const { data } = await axios.get<CategoryModel[]>(
-        `${config.apiBaseUrl}/categories`
-      );
+      const { data } = await axios.get<CategoryModel[]>(`/categories`);
       return data;
     } catch (error) {
       throw errorHandler.handleAxiosError(

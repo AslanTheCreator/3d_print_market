@@ -6,13 +6,14 @@ import {
   ProductFilter,
   SortBy,
 } from "../model/types";
-import config from "@/shared/config/api";
 import { imageApi } from "@/entities/image/api/imageApi";
 import { errorHandler } from "@/shared/lib/errorHandler";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
 import { fetchProductsWithImages } from "@/shared/api/common/productDataFetcher";
 
-const API_URL = `${config.apiBaseUrl}/products/find`;
+import "@/shared/config/axiosInterceptor";
+
+const API_URL = `/products/find`;
 
 export const productApi = {
   getProducts: async (
@@ -38,9 +39,7 @@ export const productApi = {
 
   getProductById: async (id: string): Promise<ProductDetailsModel> => {
     try {
-      const { data } = await axios.get<ProductDetailsModel>(
-        `${config.apiBaseUrl}/product/${id}`
-      );
+      const { data } = await axios.get<ProductDetailsModel>(`/product/${id}`);
 
       if (!data || !data.imageIds) {
         throw new Error("Некорректные данные товара");
@@ -59,7 +58,7 @@ export const productApi = {
   createProduct: async (data: ProductCreateModel) => {
     try {
       const authenticatedAxios = createAuthenticatedAxiosInstance();
-      await authenticatedAxios.post(`${config.apiBaseUrl}/products/`, data);
+      await authenticatedAxios.post(`/products/`, data);
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка при создании товара");
     }

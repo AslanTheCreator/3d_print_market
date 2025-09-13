@@ -1,4 +1,3 @@
-import config from "@/shared/config/api";
 import {
   UserBaseModel,
   UserFindModel,
@@ -10,8 +9,10 @@ import { authenticatedAxios } from "@/shared/api/axios/authenticatedInstance";
 import { imageApi } from "@/entities/image/api/imageApi";
 import axios from "axios";
 
-const API_URL = `${config.apiBaseUrl}/participant`;
-const API_URL_PROFILE = `${config.apiBaseUrl}/auth/profile`;
+import "@/shared/config/axiosInterceptor";
+
+const API_URL = `/participant`;
+const API_URL_PROFILE = `/auth/profile`;
 
 export const userApi = {
   async getUser(): Promise<UserBaseModel> {
@@ -30,12 +31,9 @@ export const userApi = {
   },
   async getUserByParams(id?: number): Promise<UserFindModel[]> {
     try {
-      const { data } = await axios.post<UserFindModel[]>(
-        `${config.apiBaseUrl}/participants/find`,
-        {
-          id,
-        }
-      );
+      const { data } = await axios.post<UserFindModel[]>(`/participants/find`, {
+        id,
+      });
       return data;
     } catch (error) {
       throw errorHandler.handleAxiosError(

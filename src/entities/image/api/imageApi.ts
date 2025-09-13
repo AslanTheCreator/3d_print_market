@@ -1,10 +1,11 @@
 import axios from "axios";
-import config from "@/shared/config/api";
 import { ImageResponse, ImageTag } from "../model/types";
 import { errorHandler } from "@/shared/lib/errorHandler";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
 
-const IMAGE_API_URL = `${config.apiBaseUrl}/images`;
+import "@/shared/config/axiosInterceptor";
+
+const IMAGE_API_URL = `/images`;
 
 export const imageApi = {
   async getImages(imageIds: number | number[]): Promise<ImageResponse[]> {

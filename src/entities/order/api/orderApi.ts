@@ -1,4 +1,3 @@
-import config from "@/shared/config/api";
 import { errorHandler } from "@/shared/lib/errorHandler";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
 import {
@@ -7,6 +6,8 @@ import {
   ListOrdersModel,
 } from "../model/types";
 
+import "@/shared/config/axiosInterceptor";
+
 const authenticatedAxios = createAuthenticatedAxiosInstance();
 
 export const orderApi = {
@@ -14,7 +15,7 @@ export const orderApi = {
   createOrder: async (orderData: OrderCreateModel) => {
     try {
       const { data } = await authenticatedAxios.post<number>(
-        `${config.apiBaseUrl}/order/BOOKED`,
+        `/order/BOOKED`,
         orderData
       );
     } catch (error) {
@@ -29,9 +30,7 @@ export const orderApi = {
   ) => {
     try {
       await authenticatedAxios.post(
-        `${
-          config.apiBaseUrl
-        }/order/${orderId}/AWAITING_PREPAYMENT?accountId=${accountId}&comment=${encodeURIComponent(
+        `/order/${orderId}/AWAITING_PREPAYMENT?accountId=${accountId}&comment=${encodeURIComponent(
           comment
         )}`
       );
@@ -46,9 +45,7 @@ export const orderApi = {
   confirmPreOrderBySeller: async (orderId: number, comment: string = "") => {
     try {
       await authenticatedAxios.post(
-        `${
-          config.apiBaseUrl
-        }/order/${orderId}/AWAITING_PAYMENT?comment=${encodeURIComponent(
+        `/order/${orderId}/AWAITING_PAYMENT?comment=${encodeURIComponent(
           comment
         )}`
       );
@@ -67,9 +64,7 @@ export const orderApi = {
   ) => {
     try {
       const { data } = await authenticatedAxios.post<number>(
-        `${
-          config.apiBaseUrl
-        }/order/${orderId}/AWAITING_PREPAYMENT_APPROVAL?imageId=${imageId}&comment=${encodeURIComponent(
+        `/order/${orderId}/AWAITING_PREPAYMENT_APPROVAL?imageId=${imageId}&comment=${encodeURIComponent(
           comment
         )}`
       );
@@ -89,9 +84,7 @@ export const orderApi = {
   ) => {
     try {
       const { data } = await authenticatedAxios.post<number>(
-        `${
-          config.apiBaseUrl
-        }/order/${orderId}/ASSEMBLING?imageId=${imageId}&comment=${encodeURIComponent(
+        `/order/${orderId}/ASSEMBLING?imageId=${imageId}&comment=${encodeURIComponent(
           comment
         )}`
       );
@@ -107,9 +100,7 @@ export const orderApi = {
   confirmReceiptByCustomer: async (orderId: number, comment: string = "") => {
     try {
       const { data } = await authenticatedAxios.post<number>(
-        `${
-          config.apiBaseUrl
-        }/order/${orderId}/COMPLETED?comment=${encodeURIComponent(comment)}`
+        `/order/${orderId}/COMPLETED?comment=${encodeURIComponent(comment)}`
       );
       console.log("Покупатель подтвердил получение заказа, его id: ", data);
     } catch (error) {
@@ -127,9 +118,7 @@ export const orderApi = {
   ) => {
     try {
       const { data } = await authenticatedAxios.post<number>(
-        `${
-          config.apiBaseUrl
-        }/order/${orderId}/ON_THE_WAY?deliveryUrl=${encodeURIComponent(
+        `/order/${orderId}/ON_THE_WAY?deliveryUrl=${encodeURIComponent(
           deliveryUrl
         )}&comment=${encodeURIComponent(comment)}`
       );
@@ -144,7 +133,7 @@ export const orderApi = {
   getOrderData: async (productId: number): Promise<OrderGetDataModel> => {
     try {
       const { data } = await authenticatedAxios.get<OrderGetDataModel>(
-        `${config.apiBaseUrl}/order?productId=${productId}`
+        `/order?productId=${productId}`
       );
       if (!data) {
         throw new Error("Пустой ответ от сервера");
@@ -161,7 +150,7 @@ export const orderApi = {
   getSellerOrders: async (): Promise<ListOrdersModel[]> => {
     try {
       const { data } = await authenticatedAxios.get<ListOrdersModel[]>(
-        `${config.apiBaseUrl}/order/seller`
+        `/order/seller`
       );
       if (!data) {
         throw new Error("Пустой ответ от сервера");
@@ -177,7 +166,7 @@ export const orderApi = {
   getCustomerOrders: async (): Promise<ListOrdersModel[]> => {
     try {
       const { data } = await authenticatedAxios.get<ListOrdersModel[]>(
-        `${config.apiBaseUrl}/order/customer`
+        `/order/customer`
       );
       if (!data) {
         throw new Error("Пустой ответ от сервера");

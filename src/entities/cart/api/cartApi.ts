@@ -1,9 +1,10 @@
-import config from "@/shared/config/api";
 import { CartProductModel } from "../model/types";
 import { errorHandler } from "@/shared/lib/errorHandler";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
 import { fetchProductsWithImages } from "@/shared/api/common/productDataFetcher";
 import { ProductFilter, SortBy } from "@/entities/product/model/types";
+
+import "@/shared/config/axiosInterceptor";
 
 const authenticatedAxios = createAuthenticatedAxiosInstance();
 
@@ -18,7 +19,7 @@ export const cartApi = {
   ): Promise<CartProductModel[]> => {
     return fetchProductsWithImages(
       authenticatedAxios,
-      `${config.apiBaseUrl}/basket/find`,
+      `/basket/find`,
       size,
       filters,
       lastCreatedAt,
@@ -30,9 +31,7 @@ export const cartApi = {
   },
   addToCart: async (productId: number) => {
     try {
-      await authenticatedAxios.post(
-        `${config.apiBaseUrl}/basket?productId=${productId}`
-      );
+      await authenticatedAxios.post(`/basket?productId=${productId}`);
     } catch (error) {
       throw errorHandler.handleAxiosError(
         error,
@@ -43,9 +42,7 @@ export const cartApi = {
 
   removeFromCart: async (productId: number) => {
     try {
-      await authenticatedAxios.delete(
-        `${config.apiBaseUrl}/basket?productId=${productId}`
-      );
+      await authenticatedAxios.delete(`/basket?productId=${productId}`);
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка при удалении товара");
     }

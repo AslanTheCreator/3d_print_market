@@ -2,10 +2,11 @@ import { ProductCardModel } from "@/entities/product";
 import { ProductFilter, SortBy } from "@/entities/product/model/types";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
 import { fetchProductsWithImages } from "@/shared/api/common/productDataFetcher";
-import config from "@/shared/config/api";
 import { errorHandler } from "@/shared/lib/errorHandler";
 
-const API_URL = `${config.apiBaseUrl}/favorites`;
+import "@/shared/config/axiosInterceptor";
+
+const API_URL = `/favorites`;
 const authenticatedAxios = createAuthenticatedAxiosInstance();
 
 export const favoritesApi = {

@@ -1,9 +1,10 @@
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
-import config from "@/shared/config/api";
 import { errorHandler } from "@/shared/lib/errorHandler";
 import { AccountsBaseModel, AccountsCreateModel } from "../model/types";
 
-const API_URL = `${config.apiBaseUrl}/accounts`;
+import "@/shared/config/axiosInterceptor";
+
+const API_URL = `/accounts`;
 const authenticatedAxios = createAuthenticatedAxiosInstance();
 
 export const accountsApi = {
