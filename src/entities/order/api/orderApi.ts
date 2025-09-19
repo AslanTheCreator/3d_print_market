@@ -1,4 +1,4 @@
-import { errorHandler } from "@/shared/lib/errorHandler";
+import { errorHandler } from "@/shared/lib/error-handler";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
 import {
   OrderCreateModel,

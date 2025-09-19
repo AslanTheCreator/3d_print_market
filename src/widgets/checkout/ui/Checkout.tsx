@@ -20,7 +20,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { formatPrice } from "@/shared/lib/formatPrice";
+import { formatPrice } from "@/shared/lib/format-price";
 import { useForm, Controller } from "react-hook-form";
 import { AddressSelector } from "@/features/address/address-selector/ui/AddressSelector";
 import { AddressBaseModel } from "@/entities/address/model/types";

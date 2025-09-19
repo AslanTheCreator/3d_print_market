@@ -1,4 +1,4 @@
-import { errorHandler } from "@/shared/lib/errorHandler";
+import { errorHandler } from "@/shared/lib/error-handler";
 import axios from "axios";
 import { CategoryModel } from "../model/types";
 

@@ -29,7 +29,7 @@ import {
   SortByAlpha,
   Refresh,
 } from "@mui/icons-material";
-import { formatPrice } from "@/shared/lib/formatPrice";
+import { formatPrice } from "@/shared/lib/format-price";
 import {
   ProductCardModel,
   ProductFilter,

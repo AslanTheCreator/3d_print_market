@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography, Paper, useTheme, useMediaQuery } from "@mui/material";
-import { formatPrice } from "@/shared/lib/formatPrice";
+import { formatPrice } from "@/shared/lib/format-price";
 import { Availability } from "../../model/types";
 
 interface ProductPriceProps {

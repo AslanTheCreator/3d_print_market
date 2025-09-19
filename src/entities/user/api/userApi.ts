@@ -4,9 +4,9 @@ import {
   UserProfileModel,
   UserUpdateModel,
 } from "../model/types";
-import { errorHandler } from "@/shared/lib/errorHandler";
+import { errorHandler } from "@/shared/lib/error-handler";
 import { authenticatedAxios } from "@/shared/api/axios/authenticatedInstance";
-import { imageApi } from "@/entities/image/api/imageApi";
+import { imageApi } from "@/entities/image/api/image-api";
 import axios from "axios";
 
 import "@/shared/config/axiosInterceptor";

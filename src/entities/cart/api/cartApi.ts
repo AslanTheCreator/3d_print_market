@@ -1,7 +1,7 @@
 import { CartProductModel } from "../model/types";
-import { errorHandler } from "@/shared/lib/errorHandler";
+import { errorHandler } from "@/shared/lib/error-handler";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
-import { fetchProductsWithImages } from "@/shared/api/common/productDataFetcher";
+import { fetchProductsWithImages } from "@/shared/api";
 import { ProductFilter, SortBy } from "@/entities/product/model/types";
 
 import "@/shared/config/axiosInterceptor";

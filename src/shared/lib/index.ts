@@ -1,1 +1,1 @@
-export { formatPrice } from "./formatPrice";
+export { formatPrice } from "./format-price";

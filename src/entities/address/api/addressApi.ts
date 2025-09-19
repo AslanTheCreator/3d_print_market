@@ -1,6 +1,6 @@
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
 import { AddressBaseModel, AddressCreateModel } from "../model/types";
-import { errorHandler } from "@/shared/lib/errorHandler";
+import { errorHandler } from "@/shared/lib/error-handler";
 
 import "@/shared/config/axiosInterceptor";
 

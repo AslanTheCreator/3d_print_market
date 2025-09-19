@@ -1,6 +1,6 @@
 import axios from "axios";
 import { DictionaryItem } from "./types";
-import { errorHandler } from "@/shared/lib/errorHandler";
+import { errorHandler } from "@/shared/lib/error-handler";
 
 import "@/shared/config/axiosInterceptor";
 

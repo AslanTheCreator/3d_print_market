@@ -6,10 +6,10 @@ import {
   ProductFilter,
   SortBy,
 } from "../model/types";
-import { imageApi } from "@/entities/image/api/imageApi";
-import { errorHandler } from "@/shared/lib/errorHandler";
+import { imageApi } from "@/entities/image/api/image-api";
+import { errorHandler } from "@/shared/lib/error-handler";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
-import { fetchProductsWithImages } from "@/shared/api/common/productDataFetcher";
+import { fetchProductsWithImages } from "@/shared/api";
 
 import "@/shared/config/axiosInterceptor";
 

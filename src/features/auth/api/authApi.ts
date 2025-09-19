@@ -1,6 +1,6 @@
 import axios from "axios";
 import { AuthFormModel } from "../model/types";
-import { errorHandler } from "@/shared/lib/errorHandler";
+import { errorHandler } from "@/shared/lib/error-handler";
 import { tokenStorage } from "@/shared/lib/token/tokenStorage";
 
 import "@/shared/config/axiosInterceptor";

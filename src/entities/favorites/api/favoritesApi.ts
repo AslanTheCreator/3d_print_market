@@ -1,8 +1,8 @@
 import { ProductCardModel } from "@/entities/product";
 import { ProductFilter, SortBy } from "@/entities/product/model/types";
 import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
-import { fetchProductsWithImages } from "@/shared/api/common/productDataFetcher";
-import { errorHandler } from "@/shared/lib/errorHandler";
+import { fetchProductsWithImages } from "@/shared/api";
+import { errorHandler } from "@/shared/lib/error-handler";
 
 import "@/shared/config/axiosInterceptor";
 

@@ -12,7 +12,6 @@ import {
   Checkbox,
   InputAdornment,
   Grid,
-  Typography,
 } from "@mui/material";
 import { CategoryModel } from "@/shared/model/types/category";
 import { Currency } from "@/shared/model/types";
