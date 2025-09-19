@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { imageApi } from "@/entities/image/api/image-api";
+import { imageApi } from "@/entities/image/api/imageApi";
 import { validateImage } from "@/shared/lib/validation/image-validation";
 import {
   createImagePreview,

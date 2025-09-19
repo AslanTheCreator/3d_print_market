@@ -5,19 +5,17 @@ import {
   UserUpdateModel,
 } from "../model/types";
 import { errorHandler } from "@/shared/lib/error-handler";
-import { authenticatedAxios } from "@/shared/api/axios/authenticatedInstance";
-import { imageApi } from "@/entities/image/api/image-api";
-import axios from "axios";
-
-import "@/shared/config/axiosInterceptor";
+import { imageApi } from "@/entities/image/api/imageApi";
+import { authApi, publicApi } from "@/shared/api";
 
 const API_URL = `/participant`;
+const API_URL_FIND = `/participants/find`;
 const API_URL_PROFILE = `/auth/profile`;
 
 export const userApi = {
   async getUser(): Promise<UserBaseModel> {
     try {
-      const { data } = await authenticatedAxios.get<UserBaseModel>(API_URL);
+      const { data } = await authApi.get<UserBaseModel>(API_URL);
       if (!data) {
         throw new Error("Пустой ответ от сервера");
       }
@@ -31,7 +29,7 @@ export const userApi = {
   },
   async getUserByParams(id?: number): Promise<UserFindModel[]> {
     try {
-      const { data } = await axios.post<UserFindModel[]>(`/participants/find`, {
+      const { data } = await publicApi.post<UserFindModel[]>(API_URL_FIND, {
         id,
       });
       return data;
@@ -44,9 +42,7 @@ export const userApi = {
   },
   async getProfileUser() {
     try {
-      const { data } = await authenticatedAxios.get<UserProfileModel>(
-        API_URL_PROFILE
-      );
+      const { data } = await authApi.get<UserProfileModel>(API_URL_PROFILE);
 
       const image = await imageApi.getImages(data.imageId);
       return { ...data, image: image };
@@ -59,7 +55,7 @@ export const userApi = {
   },
   async updateUser(userData: UserUpdateModel) {
     try {
-      const { data } = await authenticatedAxios.put<number>(
+      const { data } = await authApi.put<number>(
         API_URL,
         {
           userData,

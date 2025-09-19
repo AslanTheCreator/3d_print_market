@@ -6,6 +6,9 @@ node_modules
 out
 dist
 
+# Тестовые файлы и папки
+src/features/product-creation/test/
+
 # Исключаем локальные настройки и файлы конфигурации редакторов
 .env
 .env.local

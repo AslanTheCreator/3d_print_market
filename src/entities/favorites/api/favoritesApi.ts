@@ -1,13 +1,10 @@
 import { ProductCardModel } from "@/entities/product";
 import { ProductFilter, SortBy } from "@/entities/product/model/types";
-import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
 import { fetchProductsWithImages } from "@/shared/api";
 import { errorHandler } from "@/shared/lib/error-handler";
-
-import "@/shared/config/axiosInterceptor";
+import { authApi } from "@/shared/api";
 
 const API_URL = `/favorites`;
-const authenticatedAxios = createAuthenticatedAxiosInstance();
 
 export const favoritesApi = {
   getFavorites: async (
@@ -19,7 +16,7 @@ export const favoritesApi = {
     sortBy: SortBy = "DATE_DESC"
   ): Promise<ProductCardModel[]> => {
     return fetchProductsWithImages(
-      authenticatedAxios,
+      authApi,
       `${API_URL}/find`,
       size,
       filters,
@@ -32,7 +29,7 @@ export const favoritesApi = {
   },
   addToFavorites: async (productId: number) => {
     try {
-      await authenticatedAxios.post(`${API_URL}?productId=${productId}`);
+      await authApi.post(`${API_URL}?productId=${productId}`);
     } catch (error) {
       throw errorHandler.handleAxiosError(
         error,
@@ -42,7 +39,7 @@ export const favoritesApi = {
   },
   removeFromFavorites: async (productId: number) => {
     try {
-      await authenticatedAxios.delete(`${API_URL}?productId=${productId}`);
+      await authApi.delete(`${API_URL}?productId=${productId}`);
     } catch (error) {
       throw errorHandler.handleAxiosError(
         error,

@@ -1,11 +1,8 @@
-import axios from "axios";
 import { ImageResponse, ImageTag } from "../model/types";
 import { errorHandler } from "@/shared/lib/error-handler";
-import { createAuthenticatedAxiosInstance } from "@/shared/api/axios/authenticatedInstance";
+import { publicApi, authApi } from "@/shared/api";
 
-import "@/shared/config/axiosInterceptor";
-
-const IMAGE_API_URL = `/images`;
+const API_URL = `/images`;
 
 export const imageApi = {
   async getImages(imageIds: number | number[]): Promise<ImageResponse[]> {
@@ -18,8 +15,8 @@ export const imageApi = {
       const ids = Array.isArray(imageIds) ? imageIds : [imageIds];
       const queryString = ids.map((id) => `ids=${id}`).join("&");
 
-      const { data } = await axios.get<ImageResponse[]>(
-        `${IMAGE_API_URL}?${queryString}`
+      const { data } = await publicApi.get<ImageResponse[]>(
+        `${API_URL}?${queryString}`
       );
 
       return data;
@@ -31,14 +28,12 @@ export const imageApi = {
     }
   },
   async saveImage(file: File, tag: ImageTag): Promise<number[]> {
-    const authenticatedAxios = createAuthenticatedAxiosInstance();
-
     const formData = new FormData();
     formData.append("files", file);
 
     try {
-      const { data } = await authenticatedAxios.post<number[]>(
-        `${IMAGE_API_URL}?tag=${tag}`,
+      const { data } = await authApi.post<number[]>(
+        `${API_URL}?tag=${tag}`,
         formData
       );
       return data;

@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import { Close, CloudUpload, Payment, CheckCircle } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order/model/types";
-import { imageApi } from "@/entities/image/api/image-api";
+import { imageApi } from "@/entities/image/api/imageApi";
 import { UseMutationResult } from "@tanstack/react-query";
 
 // Типы для различных видов оплаты

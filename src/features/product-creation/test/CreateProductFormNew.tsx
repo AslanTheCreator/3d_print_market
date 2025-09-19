@@ -48,7 +48,7 @@ import {
 } from "@/entities/product/lib/productFormHelpers";
 import { useNotification } from "@/shared/hooks/useNotification";
 import { useCreateProduct } from "@/entities/product";
-import { useImageUpload } from "../../lib/useImageUpload";
+import { useImageUpload } from "@/features/image-upload";
 
 const steps = [
   {
@@ -87,7 +87,7 @@ export const CreateProductForm = () => {
     isUploading: isUploadingImage,
     handleImageChange,
     resetImageState,
-  } = useImageUpload();
+  } = useImageUpload("PRODUCT");
 
   const {
     control,

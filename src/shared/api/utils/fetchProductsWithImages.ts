@@ -4,7 +4,7 @@ import {
   ProductRequestModel,
   SortBy,
 } from "@/entities/product/model/types";
-import { imageApi } from "@/entities/image/api/image-api";
+import { imageApi } from "@/entities/image/api/imageApi";
 import { errorHandler } from "@/shared/lib/error-handler";
 import { AxiosInstance } from "axios";
 
