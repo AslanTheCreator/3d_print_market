@@ -5,7 +5,7 @@ import {
   SortBy,
 } from "@/entities/product/model/types";
 import { imageApi } from "@/entities/image/api/imageApi";
-import { errorHandler } from "@/shared/lib/error-handler";
+import { errorHandler } from "@/shared/lib";
 import { AxiosInstance } from "axios";
 
 export const fetchProductsWithImages = async (

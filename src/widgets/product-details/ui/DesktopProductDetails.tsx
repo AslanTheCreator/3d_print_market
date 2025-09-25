@@ -8,8 +8,8 @@ import {
   ProductDescription,
   ProductDetailsModel,
 } from "@/entities/product";
-import { AddToCartButton } from "@/features/cart";
 import { RelatedProducts } from "./RelatedProducts";
+import { AddToCartButton } from "@/features/add-to-cart";
 
 interface DesktopProductDetailsProps {
   productCard: ProductDetailsModel;

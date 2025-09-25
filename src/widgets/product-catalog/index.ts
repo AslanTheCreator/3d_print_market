@@ -1,1 +1,2 @@
-export { ProductCatalog } from "./ui/ProductCatalog";
+export { ProductCatalog } from "./ui";
+export { ProductGrid, ProductGridItem } from "./ui";

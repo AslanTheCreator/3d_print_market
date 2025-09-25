@@ -1,5 +1,5 @@
 import { CartProductModel } from "../model/types";
-import { errorHandler } from "@/shared/lib/error-handler";
+import { errorHandler } from "@/shared/lib";
 import { authApi } from "@/shared/api";
 import { fetchProductsWithImages } from "@/shared/api";
 import { ProductFilter, SortBy } from "@/entities/product/model/types";

@@ -1,4 +1,4 @@
-export { InfiniteScroll } from "./InfiniteScroll";
+export { InfiniteScroll } from "./infinite-scroll/InfiniteScroll";
 export { LoadingCartState } from "./states/LoadingCartState";
 export { ErrorState } from "./states/ErrorState";
 export { UnauthorizedState } from "./states/UnauthorizedState";

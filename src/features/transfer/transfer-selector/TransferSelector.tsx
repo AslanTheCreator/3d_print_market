@@ -16,8 +16,8 @@ import {
   ShoppingMethods,
   TransferBaseModel,
 } from "@/entities/transfer/model/types";
-import { useShoppingMethods } from "@/shared/model/dictionary/useDictionaryHooks";
-import { DictionaryItem } from "@/shared/api/dictionary/types";
+import { useShoppingMethods } from "@/entities/dictionary/hooks/useDictionaryVariants";
+import { DictionaryItem } from "@/entities/dictionary/model/types";
 import { formatPrice } from "@/shared/lib/format-price";
 
 interface TransferSelectorProps {

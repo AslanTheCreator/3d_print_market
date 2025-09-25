@@ -4,7 +4,7 @@ import {
   UserProfileModel,
   UserUpdateModel,
 } from "../model/types";
-import { errorHandler } from "@/shared/lib/error-handler";
+import { errorHandler } from "@/shared/lib";
 import { imageApi } from "@/entities/image/api/imageApi";
 import { authApi, publicApi } from "@/shared/api";
 

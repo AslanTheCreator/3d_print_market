@@ -1,15 +1,13 @@
-import axios from "axios";
-import { DictionaryItem } from "./types";
-import { errorHandler } from "@/shared/lib/error-handler";
-
-import "@/shared/config/axiosInterceptor";
+import { publicApi } from "@/shared/api";
+import { DictionaryItem } from "../model/types";
+import { errorHandler } from "@/shared/lib";
 
 const API_URL = `/dictionary`;
 
 export const dictionaryApi = {
   getDictionary: async (type: string): Promise<DictionaryItem[]> => {
     try {
-      const { data } = await axios.get<DictionaryItem[]>(
+      const { data } = await publicApi.get<DictionaryItem[]>(
         `${API_URL}?type=${type}`
       );
       return data;

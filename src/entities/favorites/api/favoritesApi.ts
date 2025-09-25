@@ -1,7 +1,7 @@
 import { ProductCardModel } from "@/entities/product";
 import { ProductFilter, SortBy } from "@/entities/product/model/types";
 import { fetchProductsWithImages } from "@/shared/api";
-import { errorHandler } from "@/shared/lib/error-handler";
+import { errorHandler } from "@/shared/lib";
 import { authApi } from "@/shared/api";
 
 const API_URL = `/favorites`;

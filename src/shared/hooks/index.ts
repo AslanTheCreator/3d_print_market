@@ -1,1 +1,1 @@
-export { useAuthRequired } from "./useAuthRequired/useAuthRequired";
+export { useAuthRequired } from "./useAuthRequired";

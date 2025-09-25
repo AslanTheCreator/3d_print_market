@@ -1,5 +1,5 @@
 import { TransferBaseModel, TransferCreateModel } from "../model/types";
-import { errorHandler } from "@/shared/lib/error-handler";
+import { errorHandler } from "@/shared/lib";
 import { authApi } from "@/shared/api";
 
 const API_URL = `/transfer`;

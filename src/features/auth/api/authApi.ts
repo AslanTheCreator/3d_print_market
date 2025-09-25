@@ -1,9 +1,7 @@
-import axios from "axios";
+import { publicApi } from "@/shared/api";
 import { AuthFormModel } from "../model/types";
-import { errorHandler } from "@/shared/lib/error-handler";
+import { errorHandler } from "@/shared/lib";
 import { tokenStorage } from "@/shared/lib/token/tokenStorage";
-
-import "@/shared/config/axiosInterceptor";
 
 const API_URL_REGISTER = `/participant`;
 const API_URL_AUTH = `/auth`;
@@ -14,7 +12,7 @@ export const authApi = {
     password,
   }: AuthFormModel): Promise<{ userId: number | null; isSuccess: boolean }> {
     try {
-      const { status, data } = await axios.post(
+      const { status, data } = await publicApi.post(
         API_URL_REGISTER,
         { mail, password },
         {
@@ -32,7 +30,7 @@ export const authApi = {
   },
   async loginUser({ mail, password }: AuthFormModel) {
     try {
-      const { data } = await axios.post<{
+      const { data } = await publicApi.post<{
         access_token: string;
         refresh_token: string;
       }>(`${API_URL_AUTH}/login`, {
@@ -52,7 +50,7 @@ export const authApi = {
   },
   async verifyCode(userId: number, code: string) {
     try {
-      const { data } = await axios.post<{
+      const { data } = await publicApi.post<{
         access_token: string;
         refresh_token: string;
       }>(`${API_URL_AUTH}/verify-code`, {
@@ -81,7 +79,7 @@ export const authApi = {
     console.log("Обновление токена доступа...");
 
     try {
-      const { data: accessToken } = await axios.post<string>(
+      const { data: accessToken } = await publicApi.post<string>(
         `${API_URL_AUTH}/refresh`,
         {},
         {

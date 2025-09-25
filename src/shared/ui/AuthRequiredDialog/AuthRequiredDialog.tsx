@@ -11,12 +11,7 @@ import {
   useTheme,
   alpha,
 } from "@mui/material";
-import {
-  Close as CloseIcon,
-  ShoppingCart,
-  Login,
-  LockOutlined,
-} from "@mui/icons-material";
+import { Close as CloseIcon, Login, LockOutlined } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 
 interface AuthRequiredDialogProps {

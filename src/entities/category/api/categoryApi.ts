@@ -1,4 +1,4 @@
-import { errorHandler } from "@/shared/lib/error-handler";
+import { errorHandler } from "@/shared/lib";
 import { CategoryModel } from "../model/types";
 import { publicApi } from "@/shared/api";
 

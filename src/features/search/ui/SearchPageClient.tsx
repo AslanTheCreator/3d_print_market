@@ -3,8 +3,8 @@
 import { Container, Typography, Box } from "@mui/material";
 import { InfiniteScroll } from "@/shared/ui";
 import { useSearchParams } from "next/navigation";
-import { ProductCatalog } from "@/widgets/product-catalog";
 import { useProductsInfinite } from "@/entities/product";
+import { ProductCatalog } from "@/widgets/product-catalog";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();

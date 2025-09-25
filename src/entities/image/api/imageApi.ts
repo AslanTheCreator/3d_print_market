@@ -1,5 +1,5 @@
 import { ImageResponse, ImageTag } from "../model/types";
-import { errorHandler } from "@/shared/lib/error-handler";
+import { errorHandler } from "@/shared/lib";
 import { publicApi, authApi } from "@/shared/api";
 
 const API_URL = `/images`;

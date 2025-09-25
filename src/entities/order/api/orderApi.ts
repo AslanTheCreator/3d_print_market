@@ -1,4 +1,4 @@
-import { errorHandler } from "@/shared/lib/error-handler";
+import { errorHandler } from "@/shared/lib";
 import {
   OrderCreateModel,
   OrderGetDataModel,

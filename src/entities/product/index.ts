@@ -1,5 +1,4 @@
-export { ProductCard } from "./ui/ProductCard";
-export { ProductCardSkeleton } from "./ui/ProductCardSkeleton";
+export { ProductCard, ProductCardWithActions, ProductCardSkeleton } from "./ui";
 export { ProductDescription } from "./ui/ProductDetails/ProductDescription";
 export { ProductPrice } from "./ui/ProductDetails/ProductPrice";
 export { ProductRating } from "./ui/ProductDetails/ProductRating";

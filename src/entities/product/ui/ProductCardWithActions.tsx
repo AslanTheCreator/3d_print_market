@@ -1,9 +1,9 @@
 import { useIsFavorite } from "@/entities/favorites/hooks";
 import { ProductCard, ProductCardModel } from "@/entities/product";
-import { FavoriteButton } from "@/features/toggle-favorite/ui/FavoriteButton";
+import { FavoriteButton } from "@/features/toggle-favorite";
 import { useRouter } from "next/navigation";
 import { Box } from "@mui/material";
-import { AddToCartButton } from "@/features/cart/add-to-cart/ui/AddToCartButton";
+import { AddToCartButton } from "@/features/add-to-cart";
 
 export const ProductCardWithActions: React.FC<{
   product: ProductCardModel;

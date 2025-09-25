@@ -19,8 +19,8 @@ import {
   AccountsBaseModel,
   TransferMoney,
 } from "@/entities/accounts/model/types";
-import { useTransferMoney } from "@/shared/model/dictionary/useDictionaryHooks";
-import { DictionaryItem } from "@/shared/api/dictionary/types";
+import { useTransferMoney } from "@/entities/dictionary/hooks/useDictionaryVariants";
+import { DictionaryItem } from "@/entities/dictionary/model/types";
 import { useUserAccounts } from "@/entities/accounts/hooks";
 
 interface PaymentSelectorProps {

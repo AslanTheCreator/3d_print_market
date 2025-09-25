@@ -6,7 +6,7 @@ import {
   SortBy,
 } from "../model/types";
 import { imageApi } from "@/entities/image/api/imageApi";
-import { errorHandler } from "@/shared/lib/error-handler";
+import { errorHandler } from "@/shared/lib";
 import { fetchProductsWithImages } from "@/shared/api";
 import { publicApi, authApi } from "@/shared/api";
 

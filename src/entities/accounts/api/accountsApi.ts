@@ -1,4 +1,4 @@
-import { errorHandler } from "@/shared/lib/error-handler";
+import { errorHandler } from "@/shared/lib";
 import { AccountsBaseModel, AccountsCreateModel } from "../model/types";
 import { authApi } from "@/shared/api";
 

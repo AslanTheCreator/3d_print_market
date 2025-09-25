@@ -1,10 +1,13 @@
 import React from "react";
-import { Box, Grid, useMediaQuery, useTheme } from "@mui/material";
-import { ProductCardModel } from "@/entities/product/model/types";
-import { ProductCardSkeleton } from "@/entities/product";
-import { ProductCardWithActions } from "./ProductCardWithActions";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
+import {
+  ProductCardModel,
+  ProductCardWithActions,
+  ProductCardSkeleton,
+} from "@/entities/product";
 import { EmptyCatalogState } from "@/shared/ui/states/EmptyCatalogState";
-import { ErrorState } from "@/shared/ui";
+import { ErrorState } from "@/shared/ui/states/ErrorState";
+import { ProductGrid, ProductGridItem } from "./ProductGrid";
 
 interface ProductCatalogProps {
   products: ProductCardModel[];
@@ -71,45 +74,3 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
     </Box>
   );
 };
-
-// Вспомогательные компоненты для сетки
-interface GridProps {
-  children: React.ReactNode;
-  isMobile: boolean;
-}
-
-export const ProductGrid: React.FC<GridProps> = ({ children, isMobile }) => (
-  <Grid
-    container
-    spacing={{ xs: 1, sm: 1.5, md: 2.5 }}
-    sx={{
-      margin: isMobile ? "-4px" : undefined,
-      width: isMobile ? "calc(100% + 8px)" : "100%",
-    }}
-  >
-    {children}
-  </Grid>
-);
-
-interface GridItemProps {
-  children: React.ReactNode;
-  isMobile: boolean;
-}
-
-export const ProductGridItem: React.FC<GridItemProps> = ({
-  children,
-  isMobile,
-}) => (
-  <Grid
-    item
-    xs={6}
-    sm={3}
-    md={3}
-    lg={2}
-    sx={{
-      padding: isMobile ? "4px" : undefined,
-    }}
-  >
-    {children}
-  </Grid>
-);

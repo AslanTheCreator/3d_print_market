@@ -6,8 +6,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import theme from "../src/app/styles/theme";
 import { Footer } from "@/widgets/footer";
 import { Header } from "@/widgets/header";
-import QueryProvider from "@/app";
-import { ConfigProvider } from "@/app/providers/ConfigProvider";
+import { ConfigProvider, QueryProvider } from "@/app/providers";
 
 export const metadata: Metadata = {
   title: "Figurzilla",
