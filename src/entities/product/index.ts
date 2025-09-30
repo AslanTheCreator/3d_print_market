@@ -1,4 +1,11 @@
-export { ProductCard, ProductCardWithActions, ProductCardSkeleton } from "./ui";
+export {
+  ProductCard,
+  ProductCardWithActions,
+  ProductCardSkeleton,
+  ProductGrid,
+  ProductGridItem,
+  ProductCatalog,
+} from "./ui";
 export { ProductDescription } from "./ui/ProductDetails/ProductDescription";
 export { ProductPrice } from "./ui/ProductDetails/ProductPrice";
 export { ProductRating } from "./ui/ProductDetails/ProductRating";

@@ -3,7 +3,7 @@ import { ProductCard, ProductCardModel } from "@/entities/product";
 import { FavoriteButton } from "@/features/toggle-favorite";
 import { useRouter } from "next/navigation";
 import { Box } from "@mui/material";
-import { AddToCartButton } from "@/features/add-to-cart";
+import { AddToCartButton } from "@/features/cart";
 
 export const ProductCardWithActions: React.FC<{
   product: ProductCardModel;

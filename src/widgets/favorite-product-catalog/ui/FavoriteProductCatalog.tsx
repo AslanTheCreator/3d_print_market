@@ -1,12 +1,12 @@
 "use client";
 
+import { Typography, Box } from "@mui/material";
 import { useFavoritesProducts } from "@/entities/favorites/hooks";
 import { useAuth } from "@/features/auth";
 import { UnauthorizedState } from "@/shared/ui";
-import { Typography, Box } from "@mui/material";
-import { ProductCatalog } from "@/widgets/product-catalog";
+import { ProductCatalog } from "@/entities/product";
 
-export const FavoritesWidget = () => {
+export const FavoriteProductCatalog = () => {
   const { isAuthenticated } = useAuth();
 
   const {
@@ -37,7 +37,7 @@ export const FavoritesWidget = () => {
           products={products}
           isLoading={isLoading}
           isError={isError}
-          onRetry={refetch}
+          onRetry={() => refetch()}
         />
       </Box>
     </>

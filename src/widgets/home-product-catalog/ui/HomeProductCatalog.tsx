@@ -2,8 +2,7 @@
 
 import { Typography, Box } from "@mui/material";
 import { InfiniteScroll } from "@/shared/ui";
-import { useProductsInfinite } from "@/entities/product";
-import { ProductCatalog } from "@/widgets/product-catalog";
+import { useProductsInfinite, ProductCatalog } from "@/entities/product";
 
 export const HomeProductCatalog = () => {
   const {
@@ -33,7 +32,7 @@ export const HomeProductCatalog = () => {
           Свежие предзаказы
         </Typography>
       )}
-      <Box pt={error || products.length === 0 ? 0 : "20px"}>
+      <Box>
         <InfiniteScroll
           onLoadMore={fetchNextPage}
           hasNextPage={!!hasNextPage}

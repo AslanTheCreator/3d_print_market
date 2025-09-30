@@ -7,7 +7,7 @@ import NextLink from "next/link";
 import HomeIcon from "@mui/icons-material/Home";
 import { InfiniteScroll } from "@/shared/ui";
 import { useProductsInfinite } from "@/entities/product";
-import { ProductCatalog } from "@/widgets/product-catalog";
+import { ProductCatalog } from "@/entities/product";
 
 /**
  * Извлекает ID категории из массива slug'ов
@@ -79,7 +79,7 @@ const generatePageTitle = (slugs: string[] | string): string => {
 
 export default function CategoryPage() {
   const params = useParams();
-  const slugs = params.slug as string[] | string;
+  const slugs = params?.slug as string[] | string;
 
   // Мемоизируем вычисления для оптимизации
   const { categoryId, breadcrumbs, pageTitle } = useMemo(

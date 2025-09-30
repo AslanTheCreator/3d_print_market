@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Box,
   IconButton,
@@ -18,12 +16,12 @@ import { useState } from "react";
 import { CartProductModel } from "../model/types";
 import { formatPrice } from "@/shared/lib";
 
-interface CartItemProps extends CartProductModel {
+interface CartItemCardProps extends CartProductModel {
   onRemove: (id: number) => void;
   isRemoving?: boolean;
 }
 
-export const CartItem = ({
+export const CartItemCard = ({
   id,
   name,
   price,
@@ -31,7 +29,7 @@ export const CartItem = ({
   image,
   onRemove,
   isRemoving = false,
-}: CartItemProps) => {
+}: CartItemCardProps) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));

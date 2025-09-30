@@ -2,7 +2,7 @@
 
 import { Paper } from "@mui/material";
 import { Availability } from "@/entities/product/model/types";
-import { AddToCartButton } from "@/features/add-to-cart";
+import { AddToCartButton } from "@/features/cart";
 
 interface FixedBottomCartProps {
   productId: number;

@@ -1,5 +1,5 @@
-import { HomeProductCatalog } from "@/widgets/home-product-catalog";
 import { Container } from "@mui/material";
+import { HomeProductCatalog } from "@/widgets/home-product-catalog";
 
 export default function HomePage() {
   return (

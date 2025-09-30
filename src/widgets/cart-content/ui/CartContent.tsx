@@ -4,24 +4,24 @@ import { Container, Typography, Box } from "@mui/material";
 import { useRouter } from "next/navigation";
 
 import {
-  CartList,
+  CartItemsList,
   CartSummary,
   useCartChecks,
   useCartProducts,
 } from "@/entities/cart";
 import { useAuth } from "@/features/auth";
+import { useRemoveFromCartFeature } from "@/features/cart";
 import {
   EmptyCartState,
   ErrorState,
   LoadingCartState,
   UnauthorizedState,
 } from "@/shared/ui";
-import { useCartItemRemoval } from "@/features/cart";
 
-export const CartWidget = () => {
+export const CartContent = () => {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  console.log(isAuthenticated);
+
   const {
     data: cartItems,
     isLoading,
@@ -30,10 +30,11 @@ export const CartWidget = () => {
   } = useCartProducts({ enabled: isAuthenticated });
 
   const { getCartTotal, getCartItemsCount } = useCartChecks(cartItems);
-  const { handleRemoveItem, removingItemIds } = useCartItemRemoval();
+  const { handleRemoveItem, removingItemIds } = useRemoveFromCartFeature();
 
   const handleCheckout = () => router.push("/checkout");
 
+  // States
   if (!isAuthenticated) {
     return <UnauthorizedState type="cart" />;
   }
@@ -79,7 +80,7 @@ export const CartWidget = () => {
       >
         {/* Cart Items */}
         <Box sx={{ mb: { xs: 3, lg: 0 } }}>
-          <CartList
+          <CartItemsList
             items={cartItems}
             onRemoveItem={handleRemoveItem}
             removingItemIds={removingItemIds}

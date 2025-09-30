@@ -1,22 +1,22 @@
 import { Stack } from "@mui/material";
-import { CartItem } from "./CartItem";
+import { CartItemCard } from "./CartItemCard";
 import { CartProductModel } from "../model/types";
 
-interface CartListProps {
+interface CartItemsListProps {
   items: CartProductModel[];
   onRemoveItem: (id: number) => void;
   removingItemIds: number[];
 }
 
-export const CartList = ({
+export const CartItemsList = ({
   items,
   onRemoveItem,
   removingItemIds,
-}: CartListProps) => {
+}: CartItemsListProps) => {
   return (
     <Stack spacing={0}>
       {items.map((item) => (
-        <CartItem
+        <CartItemCard
           key={item.id}
           {...item}
           onRemove={onRemoveItem}

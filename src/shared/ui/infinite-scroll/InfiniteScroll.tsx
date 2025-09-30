@@ -10,8 +10,11 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { ProductCardSkeleton } from "@/entities/product";
-import { ProductGrid, ProductGridItem } from "@/widgets/product-catalog";
+import {
+  ProductCardSkeleton,
+  ProductGrid,
+  ProductGridItem,
+} from "@/entities/product";
 
 interface InfiniteScrollProps {
   onLoadMore: () => void;

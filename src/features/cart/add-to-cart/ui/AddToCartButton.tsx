@@ -1,12 +1,10 @@
 import React from "react";
 import { alpha, Button, useMediaQuery, useTheme } from "@mui/material";
-import { useRouter } from "next/navigation";
-import { useAddToCart, useCartChecks, useCartProducts } from "@/entities/cart";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
-import { useAuth } from "@/features/auth";
 import { Availability } from "@/entities/product/model/types";
 import { useAuthRequired } from "@/shared/hooks";
 import { AuthRequiredDialog } from "@/shared/ui";
+import { useAddToCartFeature } from "../model/useAddToCartFeature";
 
 interface AddToCartButtonProps {
   productId: number;
@@ -27,9 +25,6 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const router = useRouter();
-  const { mutate: addToCart, isPending } = useAddToCart();
-  const { isAuthenticated } = useAuth();
   const {
     isOpen,
     productName: dialogProductName,
@@ -37,33 +32,17 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     hideDialog,
   } = useAuthRequired();
 
-  const { data: cartItems } = useCartProducts({ enabled: isAuthenticated });
+  const { handleAddToCart, isPending, isProductInCart } = useAddToCartFeature({
+    onAuthRequired: (name) => showDialog(name),
+  });
 
-  const { isProductInCart } = useCartChecks(cartItems);
   const isInCart = isProductInCart(productId);
   const isPreorder = availability === "PREORDER";
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (!isAuthenticated) {
-      showDialog(productName);
-      return;
-    }
-
-    if (isInCart) {
-      router.push("/cart");
-    } else {
-      addToCart(productId, {
-        onSuccess: () => {
-          console.log("Товар успешно добавлен в корзину");
-        },
-        onError: (error) => {
-          console.error("Ошибка добавления в корзину:", error);
-        },
-      });
-    }
+    handleAddToCart(productId, productName);
   };
 
   const getButtonStyles = () => {
@@ -92,7 +71,6 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   const getColorStyles = () => {
     if (isPreorder) {
       if (isInCart) {
-        // Товар предзаказа в корзине - светло-зеленый фон
         return {
           bgcolor: alpha(theme.palette.preorder.light, 0.3),
           color: theme.palette.preorder.dark,
@@ -101,7 +79,6 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
           },
         };
       } else {
-        // Товар предзаказа не в корзине - полный зеленый фон
         return {
           bgcolor: theme.palette.preorder.main,
           color: theme.palette.preorder.contrastText,
@@ -111,7 +88,6 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
         };
       }
     } else {
-      // Обычный товар
       if (isInCart) {
         return {
           bgcolor: alpha(theme.palette.primary.light, 0.2),
@@ -132,7 +108,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
 
   const getButtonText = () => {
     if (isInCart) {
-      return variant === "detailed" ? "Перейти в корзину" : "В корзине";
+      return variant === "detailed" ? "Перейти в корзину" : "В корзине";
     }
 
     if (isPreorder) {

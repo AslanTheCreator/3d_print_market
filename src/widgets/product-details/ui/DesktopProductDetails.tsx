@@ -9,7 +9,7 @@ import {
   ProductDetailsModel,
 } from "@/entities/product";
 import { RelatedProducts } from "./RelatedProducts";
-import { AddToCartButton } from "@/features/add-to-cart";
+import { AddToCartButton } from "@/features/cart";
 
 interface DesktopProductDetailsProps {
   productCard: ProductDetailsModel;

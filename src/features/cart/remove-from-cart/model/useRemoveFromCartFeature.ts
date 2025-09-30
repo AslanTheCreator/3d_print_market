@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { useRemoveFromCart } from "@/entities/cart";
 
-export function useCartItemRemoval() {
+export function useRemoveFromCartFeature() {
   const { mutate: removeFromCart } = useRemoveFromCart();
   const [removingItemIds, setRemovingItemIds] = useState<number[]>([]);
 

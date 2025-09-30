@@ -1,10 +1,10 @@
-import { FavoritesWidget } from "@/widgets/favorites/ui/FavoritesWidget";
+import { FavoriteProductCatalog } from "@/widgets/favorite-product-catalog";
 import { Container } from "@mui/material";
 
 export default function FavoritesPage() {
   return (
     <Container sx={{ pt: "20px" }}>
-      <FavoritesWidget />
+      <FavoriteProductCatalog />
     </Container>
   );
 }

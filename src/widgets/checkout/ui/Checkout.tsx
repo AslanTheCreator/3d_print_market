@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { CartList, CartProductModel, useCartProducts } from "@/entities/cart";
+import {
+  CartItemsList,
+  CartProductModel,
+  useCartProducts,
+} from "@/entities/cart";
 import {
   Container,
   Typography,
@@ -29,7 +33,7 @@ import { AddressDialog } from "@/features/address/create-address/ui/AddressDialo
 import { TransferBaseModel } from "@/entities/transfer/model/types";
 import { TransferSelector } from "@/features/transfer/transfer-selector/TransferSelector";
 import { useCreateOrder, useOrderData } from "@/entities/order";
-import { useCartItemRemoval } from "@/features/cart";
+import { useRemoveFromCartFeature } from "@/features/cart";
 
 // Типы для групп товаров по продавцам
 type SellerGroup = {
@@ -49,7 +53,7 @@ const Checkout = () => {
   const router = useRouter();
   const { data: cartItems, isLoading: isCartLoading } = useCartProducts();
   const { mutate: createOrder, isPending } = useCreateOrder();
-  const { handleRemoveItem, removingItemIds } = useCartItemRemoval();
+  const { handleRemoveItem, removingItemIds } = useRemoveFromCartFeature();
 
   // Состояние для Snackbar
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -291,7 +295,7 @@ const Checkout = () => {
                   <Typography variant="h6" gutterBottom>
                     Товары
                   </Typography>
-                  <CartList
+                  <CartItemsList
                     items={group.items}
                     onRemoveItem={handleRemoveItem}
                     removingItemIds={removingItemIds}
@@ -481,7 +485,7 @@ const Checkout = () => {
                         >
                           Товары
                         </Typography>
-                        <CartList
+                        <CartItemsList
                           items={group.items}
                           onRemoveItem={handleRemoveItem}
                           removingItemIds={removingItemIds}
