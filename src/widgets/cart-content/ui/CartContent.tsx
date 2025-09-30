@@ -22,14 +22,9 @@ export const CartContent = () => {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
 
-  const {
-    data: cartItems,
-    isLoading,
-    isError,
-    refetch,
-  } = useCartProducts({ enabled: isAuthenticated });
+  const { data: cartItems, isLoading, isError, refetch } = useCartProducts();
 
-  const { getCartTotal, getCartItemsCount } = useCartChecks(cartItems);
+  const { getCartTotal, getCartItemsCount } = useCartChecks();
   const { handleRemoveItem, removingItemIds } = useRemoveFromCartFeature();
 
   const handleCheckout = () => router.push("/checkout");

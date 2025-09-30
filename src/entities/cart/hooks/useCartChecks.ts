@@ -1,23 +1,15 @@
-import { useMemo } from "react";
-import { CartProductModel } from "../model/types";
+import { useCartProducts } from "./useCartQueries";
 
-export const useCartChecks = (cartItems?: CartProductModel[]) => {
-  const isProductInCart = useMemo(() => {
-    return (productId: number) => {
-      return Boolean(cartItems?.some((item) => item.id === productId));
-    };
-  }, [cartItems]);
+export const useCartChecks = () => {
+  const { data: cartItems } = useCartProducts();
 
-  const getCartTotal = useMemo(() => {
-    return (
-      cartItems?.reduce((total, item) => total + item.price * item.count, 0) ||
-      0
-    );
-  }, [cartItems]);
+  const isProductInCart = (productId: number) =>
+    cartItems?.some((item) => item.id === productId) ?? false;
 
-  const getCartItemsCount = useMemo(() => {
-    return cartItems?.reduce((total, item) => total + item.count, 0) || 0;
-  }, [cartItems]);
+  const getCartItemsCount = cartItems?.length ?? 0;
+
+  const getCartTotal =
+    cartItems?.reduce((total, item) => total + item.price * item.count, 0) ?? 0;
 
   return { isProductInCart, getCartItemsCount, getCartTotal };
 };

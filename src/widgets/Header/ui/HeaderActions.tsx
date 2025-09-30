@@ -6,6 +6,7 @@ import {
   useMediaQuery,
   Typography,
   Box,
+  Badge,
   alpha,
 } from "@mui/material";
 import Link from "next/link";
@@ -14,12 +15,17 @@ import Image from "next/image";
 import PersonCustomIcon from "@/shared/assets/icons/userAccount.svg";
 import ShoppingCartCustomIcon from "@/shared/assets/icons/backet.svg";
 import { FavoriteBorderOutlined } from "@mui/icons-material";
+import { useCartChecks } from "@/entities/cart";
+import { useFavoritesChecks } from "@/entities/favorites/hooks";
 
 export const HeaderActions = () => {
   const theme = useTheme();
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const { getCartItemsCount } = useCartChecks();
+  const { getFavoritesItemsCount } = useFavoritesChecks();
 
   const handleProfileClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -37,12 +43,14 @@ export const HeaderActions = () => {
     {
       url: "/favorites",
       icon: (
-        <FavoriteBorderOutlined
-          sx={{
-            fontSize: iconSize,
-            color: theme.palette.common.white,
-          }}
-        />
+        <Badge badgeContent={getFavoritesItemsCount} color="primary">
+          <FavoriteBorderOutlined
+            sx={{
+              fontSize: iconSize,
+              color: theme.palette.common.white,
+            }}
+          />
+        </Badge>
       ),
       label: "Избранное",
       oncClick: undefined,
@@ -66,15 +74,17 @@ export const HeaderActions = () => {
     {
       url: "/cart",
       icon: (
-        <Image
-          src={ShoppingCartCustomIcon}
-          alt="Корзина"
-          width={iconSize}
-          height={iconSize}
-          style={{
-            objectFit: "contain",
-          }}
-        />
+        <Badge badgeContent={getCartItemsCount} color="primary">
+          <Image
+            src={ShoppingCartCustomIcon}
+            alt="Корзина"
+            width={iconSize}
+            height={iconSize}
+            style={{
+              objectFit: "contain",
+            }}
+          />
+        </Badge>
       ),
       label: "Корзина",
       onClick: undefined,

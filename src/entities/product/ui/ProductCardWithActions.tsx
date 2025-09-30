@@ -1,15 +1,15 @@
-import { useIsFavorite } from "@/entities/favorites/hooks";
 import { ProductCard, ProductCardModel } from "@/entities/product";
 import { FavoriteButton } from "@/features/toggle-favorite";
 import { useRouter } from "next/navigation";
 import { Box } from "@mui/material";
 import { AddToCartButton } from "@/features/cart";
+import { useFavoritesChecks } from "@/entities/favorites/hooks";
 
 export const ProductCardWithActions: React.FC<{
   product: ProductCardModel;
 }> = ({ product }) => {
   const router = useRouter();
-  const isFavorite = useIsFavorite(product.id);
+  const { isProductInFavorites: isFavorite } = useFavoritesChecks();
 
   return (
     <Box sx={{ position: "relative" }}>
@@ -26,7 +26,7 @@ export const ProductCardWithActions: React.FC<{
       />
       <FavoriteButton
         productId={product.id}
-        isFavorite={isFavorite}
+        isFavorite={isFavorite(product.id)}
         productName={product.name}
       />
     </Box>
