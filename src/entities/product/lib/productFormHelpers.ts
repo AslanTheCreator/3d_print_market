@@ -2,7 +2,7 @@ import { Availability } from "@/entities/product/model/types";
 import { Currency } from "@/shared/model/types";
 
 export interface ProductFormData {
-  categoryId: string;
+  categoryIds: number[];
   name: string;
   price: string;
   currency: Currency;
@@ -12,7 +12,7 @@ export interface ProductFormData {
 }
 
 export interface CreateProductData {
-  categoryId: number;
+  categoryIds: number[];
   name: string;
   imageIds: number[];
   price: number;
@@ -29,7 +29,7 @@ export const createProductData = (
   formData: ProductFormData,
   imageIds: number[]
 ): CreateProductData => ({
-  categoryId: parseInt(formData.categoryId),
+  categoryIds: parseInt(formData.categoryId),
   name: formData.name,
   imageIds,
   price: parseFloat(formData.price),

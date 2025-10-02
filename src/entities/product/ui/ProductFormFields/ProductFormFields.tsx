@@ -1,6 +1,6 @@
 "use client";
 
-import { Controller, Control } from "react-hook-form";
+import { Controller, Control, FieldErrors } from "react-hook-form";
 import {
   TextField,
   FormControl,
@@ -12,13 +12,17 @@ import {
   Checkbox,
   InputAdornment,
   Grid,
+  Chip,
+  Box,
+  OutlinedInput,
 } from "@mui/material";
 import { CategoryModel } from "@/shared/model/types/category";
 import { Currency } from "@/shared/model/types";
+import { ProductFormData } from "@/entities/product/model/form";
 
 interface ProductFormFieldsProps {
-  control: Control<any>;
-  errors: any;
+  control: Control<ProductFormData>;
+  errors: FieldErrors<ProductFormData>;
   categories: CategoryModel[];
   isPreorder: boolean;
   currentCurrency: Currency;
@@ -45,29 +49,53 @@ export const ProductFormFields = ({
 
   return (
     <>
-      {/* Category */}
+      {/* Multiple Category Selection */}
       <Grid item xs={12}>
         <Controller
-          name="categoryId"
+          name="categoryIds"
           control={control}
-          rules={{ required: "Выберите категорию товара" }}
+          rules={{
+            required: "Выберите хотя бы одну категорию",
+            validate: (value) =>
+              value.length > 0 || "Необходимо выбрать хотя бы одну категорию",
+          }}
           render={({ field }) => (
-            <FormControl fullWidth error={!!errors.categoryId}>
-              <InputLabel id="category-label">Категория</InputLabel>
+            <FormControl fullWidth error={!!errors.categoryIds}>
+              <InputLabel id="category-label">Категории</InputLabel>
               <Select
                 labelId="category-label"
-                id="categoryId"
-                label="Категория"
-                {...field}
+                id="categoryIds"
+                multiple
+                label="Категории"
+                value={field.value}
+                onChange={field.onChange}
+                input={<OutlinedInput label="Категории" />}
+                renderValue={(selected) => (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                    {selected.map((categoryId) => {
+                      const category = categories.find(
+                        (cat) => cat.id === categoryId
+                      );
+                      return (
+                        <Chip
+                          key={categoryId}
+                          label={category?.name || categoryId}
+                          size="small"
+                        />
+                      );
+                    })}
+                  </Box>
+                )}
               >
                 {categories.map((category) => (
                   <MenuItem key={category.id} value={category.id}>
+                    <Checkbox checked={field.value.indexOf(category.id) > -1} />
                     {category.name}
                   </MenuItem>
                 ))}
               </Select>
-              {errors.categoryId && (
-                <FormHelperText>{errors.categoryId.message}</FormHelperText>
+              {errors.categoryIds && (
+                <FormHelperText>{errors.categoryIds.message}</FormHelperText>
               )}
             </FormControl>
           )}

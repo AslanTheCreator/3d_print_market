@@ -9,8 +9,6 @@ import {
   Grid,
   Button,
   CircularProgress,
-  Snackbar,
-  Alert,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 
@@ -22,11 +20,13 @@ import { ProductFormFields } from "@/entities/product/ui/ProductFormFields/Produ
 
 import {
   ProductFormData,
-  createProductData,
-} from "@/entities/product/lib/productFormHelpers";
-import { useNotification } from "@/shared/hooks/useNotification";
+  mapFormDataToCreateModel,
+  defaultProductFormValues,
+} from "@/entities/product/model/form";
+import { useNotification } from "@/shared/hooks";
 import { useCreateProduct } from "@/entities/product";
 import { useImageUpload } from "@/features/image-upload";
+import { Notification } from "@/shared/ui/notification";
 
 export const CreateProductForm = () => {
   const [categories, setCategories] = useState<CategoryModel[]>([]);
@@ -51,15 +51,7 @@ export const CreateProductForm = () => {
     watch,
     formState: { errors },
   } = useForm<ProductFormData>({
-    defaultValues: {
-      categoryId: "",
-      name: "",
-      price: "",
-      currency: "RUB",
-      description: "",
-      isPreorder: false,
-      prepaymentAmount: "",
-    },
+    defaultValues: defaultProductFormValues,
   });
 
   const isPreorder = watch("isPreorder");
@@ -72,6 +64,7 @@ export const CreateProductForm = () => {
         setCategories(data);
       } catch (error) {
         console.error("Ошибка при загрузке категорий:", error);
+        showNotification("Не удалось загрузить категории", "error");
       }
     };
     fetchCategories();
@@ -83,21 +76,27 @@ export const CreateProductForm = () => {
       return;
     }
 
-    const productData = createProductData(data, imageIds);
+    if (!data.categoryIds.length) {
+      showNotification("Пожалуйста, выберите хотя бы одну категорию", "error");
+      return;
+    }
+
+    const productData = mapFormDataToCreateModel(data, imageIds);
 
     createProduct(productData, {
       onSuccess: () => {
         showNotification("Товар успешно создан!", "success");
         resetForm();
       },
-      onError: () => {
+      onError: (error) => {
+        console.error("Ошибка создания товара:", error);
         showNotification("Произошла ошибка при создании товара", "error");
       },
     });
   };
 
   const resetForm = () => {
-    reset();
+    reset(defaultProductFormValues);
     resetImageState();
   };
 
@@ -178,19 +177,12 @@ export const CreateProductForm = () => {
         </Box>
       </Paper>
 
-      <Snackbar
+      <Notification
         open={notification.open}
-        autoHideDuration={6000}
+        message={notification.message}
+        severity={notification.severity}
         onClose={hideNotification}
-      >
-        <Alert
-          onClose={hideNotification}
-          severity={notification.severity}
-          sx={{ width: "100%" }}
-        >
-          {notification.message}
-        </Alert>
-      </Snackbar>
+      />
     </Container>
   );
 };
