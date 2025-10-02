@@ -55,17 +55,11 @@ export const userApi = {
   },
   async updateUser(userData: UserUpdateModel) {
     try {
-      const { data } = await authApi.put<number>(
-        API_URL,
-        {
-          userData,
+      const { data } = await authApi.put<number>(API_URL, userData, {
+        headers: {
+          "Content-Type": "application/json",
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      });
       if (!data) {
         throw new Error("Пустой ответ от сервера");
       }

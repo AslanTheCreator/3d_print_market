@@ -27,7 +27,6 @@ interface ProfileWidgetProps {
 interface ProfileFormValues {
   fullName: string;
   phoneNumber: string;
-  imageIds: number[];
 }
 
 // Стилизованные компоненты для загрузки аватара
