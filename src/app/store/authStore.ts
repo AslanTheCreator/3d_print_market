@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authApi } from "@/features/auth/api/authApi";
-import { tokenStorage } from "@/shared/lib/token/tokenStorage";
+import { tokenStorage } from "@/shared/lib";
 
 interface AuthState {
   isAuthenticated: boolean;

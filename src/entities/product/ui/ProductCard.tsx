@@ -14,7 +14,7 @@ import {
   alpha,
   useMediaQuery,
 } from "@mui/material";
-import { formatPrice } from "@/shared/lib/format-price";
+import { formatPrice } from "@/shared/lib/utils/formatPrice";
 import { ProductCardModel } from "../model/types";
 
 interface ProductCardProps extends ProductCardModel {

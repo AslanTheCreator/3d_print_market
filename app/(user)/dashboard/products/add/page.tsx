@@ -1,5 +1,5 @@
-import { ProductCreationWidget } from "@/widgets/ProductCreation/ui/ProductCreationWidget";
+import { CreateProductForm } from "@/widgets/create-product-form";
 
 export default function AddProductPage() {
-  return <ProductCreationWidget />;
+  return <CreateProductForm />;
 }

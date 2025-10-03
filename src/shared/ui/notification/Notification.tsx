@@ -15,6 +15,7 @@ export const Notification: React.FC<NotificationProps> = ({
   onClose,
   autoHideDuration = 6000,
 }) => {
+  console.log(message);
   return (
     <Snackbar open={open} autoHideDuration={autoHideDuration} onClose={onClose}>
       <Alert onClose={onClose} severity={severity} sx={{ width: "100%" }}>

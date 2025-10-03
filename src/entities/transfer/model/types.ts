@@ -1,4 +1,4 @@
-import { Currency } from "@/shared/model/types";
+import { Currency } from "@/shared/types";
 
 export type ShoppingMethods =
   | "PRODUCT_PICKUP"

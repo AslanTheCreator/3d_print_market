@@ -5,6 +5,7 @@ import { useAuth } from "@/features/auth";
 
 interface UseAddToCartFeatureParams {
   onAuthRequired?: (productName?: string) => void;
+  onNotification?: (message: string, type: "success" | "error") => void;
   onSuccess?: () => void;
   onError?: (error: unknown) => void;
 }
@@ -33,6 +34,10 @@ export function useAddToCartFeature(params?: UseAddToCartFeatureParams) {
         onSuccess: () => {
           console.log("Товар успешно добавлен в корзину");
           params?.onSuccess?.();
+          params?.onNotification?.(
+            "Товар успешно добавлен в корзину",
+            "success"
+          );
         },
         onError: (error) => {
           console.error("Ошибка добавления в корзину:", error);

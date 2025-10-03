@@ -1,7 +1,7 @@
-import { ImageResponse } from "@/entities/image/model/types";
+import { ImageResponse } from "@/entities/image";
 import { ReviewModel } from "@/entities/reviews/model/types";
-import { Currency } from "@/shared/model/types";
-import { CategoryModel } from "@/shared/model/types/category";
+import { Currency } from "@/shared/types";
+import { CategoryModel } from "@/entities/category/model/types";
 
 export type Availability = "PURCHASABLE" | "PREORDER" | "EXTERNAL_ONLY";
 type Status = "ACTIVE" | "DELETED";

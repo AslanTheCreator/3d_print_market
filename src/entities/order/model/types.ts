@@ -1,7 +1,7 @@
 import { AddressBaseModel } from "@/entities/address/model/types";
 import { ProductCardModel } from "@/entities/product";
 import { TransferBaseModel } from "@/entities/transfer/model/types";
-import { Currency } from "@/shared/model/types";
+import { Currency } from "@/shared/types";
 
 type OrderStatus =
   | "BOOKED"

@@ -1,4 +1,4 @@
-import { Currency } from "@/shared/model/types";
+import { Currency } from "@/shared/types";
 import { Availability, ProductCreateModel } from "./types";
 
 /**

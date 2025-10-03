@@ -20,8 +20,7 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CategoryIcon from "@mui/icons-material/Category";
 import { alpha } from "@mui/material/styles";
-import { CategoryModel } from "@/entities/category/model/types";
-import { useCategories } from "@/entities/category/hooks/useCategories";
+import { CategoryModel, useCategories } from "@/entities/category";
 
 interface CategoriesMenuProps {
   onClose: () => void;

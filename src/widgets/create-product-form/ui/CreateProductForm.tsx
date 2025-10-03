@@ -10,11 +10,8 @@ import {
   Button,
   CircularProgress,
 } from "@mui/material";
-import { useEffect, useState } from "react";
 
-import { categoryApi } from "@/entities/category/api/categoryApi";
-import { CategoryModel } from "@/shared/model/types/category";
-import { ImageUploader } from "@/shared/ui/ImageUploader/ImageUploader";
+import { ImageUpload } from "@/shared/ui/image-upload";
 import { CurrencyField } from "@/shared/ui/CurrencyField/CurrencyField";
 import { ProductFormFields } from "@/entities/product/ui/ProductFormFields/ProductFormFields";
 
@@ -27,9 +24,10 @@ import { useNotification } from "@/shared/hooks";
 import { useCreateProduct } from "@/entities/product";
 import { useImageUpload } from "@/features/image-upload";
 import { Notification } from "@/shared/ui/notification";
+import { useCategories } from "@/entities/category";
 
 export const CreateProductForm = () => {
-  const [categories, setCategories] = useState<CategoryModel[]>([]);
+  const { categories } = useCategories();
   const { notification, showNotification, hideNotification } =
     useNotification();
   const { mutate: createProduct, isPending } = useCreateProduct();
@@ -56,19 +54,6 @@ export const CreateProductForm = () => {
 
   const isPreorder = watch("isPreorder");
   const currentCurrency = watch("currency");
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const data = await categoryApi.getCategories();
-        setCategories(data);
-      } catch (error) {
-        console.error("Ошибка при загрузке категорий:", error);
-        showNotification("Не удалось загрузить категории", "error");
-      }
-    };
-    fetchCategories();
-  }, []);
 
   const onSubmit = (data: ProductFormData) => {
     if (!image || !imageIds.length) {
@@ -127,12 +112,12 @@ export const CreateProductForm = () => {
               <Typography variant="subtitle1" gutterBottom>
                 Изображение товара*
               </Typography>
-              <ImageUploader
+              <ImageUpload
                 onImageChange={handleImageChange}
                 imagePreview={imagePreview}
-                error={imageError}
+                imageError={imageError}
                 isUploading={isUploadingImage}
-                hasImage={!!image}
+                onDeleteImage={resetImageState}
               />
             </Grid>
 

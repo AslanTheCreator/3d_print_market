@@ -29,7 +29,7 @@ import {
   SortByAlpha,
   Refresh,
 } from "@mui/icons-material";
-import { formatPrice } from "@/shared/lib/format-price";
+import { formatPrice } from "@/shared/lib/utils/formatPrice";
 import {
   ProductCardModel,
   ProductFilter,
@@ -113,12 +113,11 @@ export default function UserProductsPage() {
   const [sortBy, setSortBy] = useState<SortBy>("DATE_DESC");
 
   const { data: user } = useProfileUser();
-  // Фильтр для товаров пользователя
+
   const filters: ProductFilter = {
     participantId: user?.id,
   };
 
-  // React Query для загрузки товаров
   const {
     data,
     fetchNextPage,
@@ -131,7 +130,6 @@ export default function UserProductsPage() {
     isRefetching,
   } = useProductsInfinite(12, filters, sortBy);
 
-  // Плоский массив всех товаров
   const products = data?.pages.flat() ?? [];
 
   const handleLoadMore = useCallback(() => {

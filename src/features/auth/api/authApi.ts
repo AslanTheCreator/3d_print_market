@@ -1,7 +1,6 @@
 import { publicApi } from "@/shared/api";
 import { AuthFormModel } from "../model/types";
-import { errorHandler } from "@/shared/lib";
-import { tokenStorage } from "@/shared/lib/token/tokenStorage";
+import { errorHandler, tokenStorage } from "@/shared/lib";
 
 const API_URL_REGISTER = `/participant`;
 const API_URL_AUTH = `/auth`;

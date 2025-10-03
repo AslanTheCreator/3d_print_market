@@ -2,7 +2,7 @@ import React from "react";
 import { alpha, Button, useMediaQuery, useTheme } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { Availability } from "@/entities/product/model/types";
-import { useAuthRequired } from "@/shared/hooks";
+import { useAuthRequired, useNotification } from "@/shared/hooks";
 import { AuthRequiredDialog } from "@/shared/ui";
 import { useAddToCartFeature } from "../model/useAddToCartFeature";
 
@@ -31,9 +31,11 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     showDialog,
     hideDialog,
   } = useAuthRequired();
+  const { showNotification } = useNotification();
 
   const { handleAddToCart, isPending, isProductInCart } = useAddToCartFeature({
     onAuthRequired: (name) => showDialog(name),
+    onNotification: (message, severity) => showNotification(message, severity),
   });
 
   const isInCart = isProductInCart(productId);

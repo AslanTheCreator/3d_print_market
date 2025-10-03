@@ -15,7 +15,7 @@ import { SellerOrderSection } from "./SellerOrderSection";
 import { groupCartItemsBySeller } from "../lib/groupCartItems";
 import { useOrderDataQueries } from "../hooks/useOrderDataQueries";
 import { useCheckoutTotals } from "../hooks/useCheckoutTotals";
-import { formatPrice } from "@/shared/lib/format-price";
+import { formatPrice } from "@/shared/lib/utils/formatPrice";
 
 type CheckoutMobileViewProps = {
   cartItems: CartProductModel[];

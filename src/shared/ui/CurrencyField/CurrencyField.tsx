@@ -11,7 +11,7 @@ import {
   InputAdornment,
   Grid,
 } from "@mui/material";
-import { Currency } from "@/shared/model/types";
+import { Currency } from "@/shared/types";
 
 const currencies: { code: Currency; symbol: string }[] = [
   { code: "RUB", symbol: "₽" },

@@ -1,6 +1,6 @@
 import { AccountsBaseModel } from "@/entities/accounts/model/types";
 import { AddressBaseModel } from "@/entities/address/model/types";
-import { ImageResponse } from "@/entities/image/model/types";
+import { ImageResponse } from "@/entities/image";
 import { TransferBaseModel } from "@/entities/transfer/model/types";
 
 type UserStatus = "ACTIVE" | "BLOCKED" | "DELETED";

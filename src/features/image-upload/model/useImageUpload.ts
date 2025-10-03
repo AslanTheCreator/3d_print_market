@@ -1,11 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
-import { imageApi } from "@/entities/image/api/imageApi";
-import { validateImage } from "@/shared/lib/validation/image-validation";
+import { ImageTag, imageApi } from "@/entities/image";
 import {
-  createImagePreview,
   revokeImagePreview,
-} from "@/shared/lib/utils/file-utils";
-import { ImageTag } from "@/entities/image/model/types";
+  createImagePreview,
+  validateImage,
+} from "@/shared/lib";
 
 export interface UseImageUploadReturn {
   image: File | null;

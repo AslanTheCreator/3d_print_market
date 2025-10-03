@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from "axios";
-import { tokenStorage } from "@/shared/lib/token/tokenStorage";
+import { tokenStorage } from "@/shared/lib";
 import { useAuthStore } from "@/app/store";
 import { getConfig, isLoaded, loadConfig } from "@/shared/config/index";
 

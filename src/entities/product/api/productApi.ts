@@ -5,7 +5,7 @@ import {
   ProductFilter,
   SortBy,
 } from "../model/types";
-import { imageApi } from "@/entities/image/api/imageApi";
+import { imageApi } from "@/entities/image";
 import { errorHandler } from "@/shared/lib";
 import { fetchProductsWithImages } from "@/shared/api";
 import { publicApi, authApi } from "@/shared/api";
@@ -53,6 +53,27 @@ export const productApi = {
         `Ошибка при получении данных о товаре с ID: ${id}`
       );
     }
+  },
+
+  getUserProducts: async (
+    size: number,
+    filters?: ProductFilter,
+    lastCreatedAt?: string,
+    lastPrice?: number,
+    lastId?: number,
+    sortBy: SortBy = "DATE_DESC"
+  ): Promise<ProductCardModel[]> => {
+    return fetchProductsWithImages(
+      authApi,
+      `${API_URL}/my`,
+      size,
+      filters,
+      lastCreatedAt,
+      lastPrice,
+      lastId,
+      sortBy,
+      "Ошибка при загрузке карточек товаров"
+    );
   },
 
   createProduct: async (data: ProductCreateModel) => {

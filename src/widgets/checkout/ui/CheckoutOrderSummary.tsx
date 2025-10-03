@@ -9,7 +9,7 @@ import {
   Button,
   Alert,
 } from "@mui/material";
-import { formatPrice } from "@/shared/lib/format-price";
+import { formatPrice } from "@/shared/lib/utils/formatPrice";
 
 type CheckoutOrderSummaryProps = {
   subtotal: number;

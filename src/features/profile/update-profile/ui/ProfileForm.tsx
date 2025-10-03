@@ -2,7 +2,7 @@ import { useForm, Controller } from "react-hook-form";
 import { Grid, TextField, Button, CircularProgress, Box } from "@mui/material";
 import { useState } from "react";
 import { useUpdateUser } from "@/entities/user";
-import { AvatarUpload } from "@/features/avatar/upload-avatar";
+import { AvatarUpload } from "@/shared/ui/avatar-upload";
 import { useImageUpload } from "@/features/image-upload";
 import { Notification } from "@/shared/ui/notification";
 import { useNotification } from "@/shared/hooks";

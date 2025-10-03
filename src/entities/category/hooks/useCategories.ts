@@ -1,11 +1,8 @@
-// @/entities/category/model/useCategories.ts
-"use client";
-
 import { useState, useEffect, useCallback } from "react";
 import {
   CategoryModel,
   UseCategoriesReturn,
-} from "@/shared/model/types/category";
+} from "@/entities/category/model/types";
 import { categoryApi } from "../api/categoryApi";
 
 export const useCategories = (): UseCategoriesReturn => {

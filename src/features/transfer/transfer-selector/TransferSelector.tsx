@@ -18,7 +18,7 @@ import {
 } from "@/entities/transfer/model/types";
 import { useShoppingMethods } from "@/entities/dictionary/hooks/useDictionaryVariants";
 import { DictionaryItem } from "@/entities/dictionary/model/types";
-import { formatPrice } from "@/shared/lib/format-price";
+import { formatPrice } from "@/shared/lib/utils/formatPrice";
 
 interface TransferSelectorProps {
   control: Control<any>;

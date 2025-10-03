@@ -12,6 +12,7 @@ export const useNotification = () => {
     message: "",
     severity: "success",
   });
+  console.log(notification.message);
 
   const showNotification = (
     message: string,
