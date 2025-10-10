@@ -5,7 +5,7 @@ import { useUpdateUser } from "@/entities/user";
 import { AvatarUpload } from "@/shared/ui/avatar-upload";
 import { useImageUpload } from "@/features/image-upload";
 import { Notification } from "@/shared/ui/notification";
-import { useNotification } from "@/shared/hooks";
+import { useNotification } from "@/app/providers";
 
 interface ProfileFormValues {
   fullName: string;
@@ -14,8 +14,7 @@ interface ProfileFormValues {
 
 export const ProfileForm: React.FC = () => {
   const [isPending, setIsPending] = useState(false);
-  const { notification, showNotification, hideNotification } =
-    useNotification();
+  const { showNotification } = useNotification();
 
   const { mutateAsync } = useUpdateUser();
   const {
@@ -148,13 +147,6 @@ export const ProfileForm: React.FC = () => {
           </Grid>
         </Grid>
       </Box>
-
-      <Notification
-        open={notification.open}
-        message={notification.message}
-        severity={notification.severity}
-        onClose={hideNotification}
-      />
     </>
   );
 };

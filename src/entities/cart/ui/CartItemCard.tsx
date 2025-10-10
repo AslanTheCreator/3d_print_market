@@ -11,6 +11,7 @@ import {
   Skeleton,
 } from "@mui/material";
 import Image from "next/image";
+import Link from "next/link";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useState } from "react";
 import { CartProductModel } from "../model/types";
@@ -60,58 +61,66 @@ export const CartItemCard = ({
         sx={{ minHeight: { md: "100px" } }}
       >
         {/* Product Image */}
-        <Box
-          position="relative"
-          sx={{
-            width: { xs: 80, sm: 100, md: 90 },
-            height: { xs: 80, sm: 100, md: 90 },
-            borderRadius: 1.5,
-            overflow: "hidden",
-            flexShrink: 0,
-            backgroundColor: alpha(theme.palette.primary.main, 0.05),
-          }}
-        >
-          {image?.[0]?.imageData ? (
-            <>
-              {!isImageLoaded && (
-                <Skeleton
-                  variant="rectangular"
-                  width="100%"
-                  height="100%"
-                  animation="wave"
-                  sx={{ position: "absolute" }}
+        <Link href={`/catalog/${id}/detail`} passHref legacyBehavior>
+          <Box
+            component="a"
+            position="relative"
+            sx={{
+              width: { xs: 80, sm: 100, md: 90 },
+              height: { xs: 80, sm: 100, md: 90 },
+              borderRadius: 1.5,
+              overflow: "hidden",
+              flexShrink: 0,
+              backgroundColor: alpha(theme.palette.primary.main, 0.05),
+              cursor: "pointer",
+              transition: "opacity 0.2s ease",
+              "&:hover": {
+                opacity: 0.85,
+              },
+            }}
+          >
+            {image?.[0]?.imageData ? (
+              <>
+                {!isImageLoaded && (
+                  <Skeleton
+                    variant="rectangular"
+                    width="100%"
+                    height="100%"
+                    animation="wave"
+                    sx={{ position: "absolute" }}
+                  />
+                )}
+                <Image
+                  src={`data:${image[0].contentType};base64,${image[0].imageData}`}
+                  alt={name}
+                  fill
+                  sizes="(max-width: 600px) 80px, (max-width: 900px) 100px, 90px"
+                  style={{
+                    objectFit: "cover",
+                    opacity: isImageLoaded ? 1 : 0,
+                    transition: "opacity 0.3s ease",
+                  }}
+                  onLoad={() => setIsImageLoaded(true)}
                 />
-              )}
-              <Image
-                src={`data:${image[0].contentType};base64,${image[0].imageData}`}
-                alt={name}
-                fill
-                sizes="(max-width: 600px) 80px, (max-width: 900px) 100px, 90px"
-                style={{
-                  objectFit: "cover",
-                  opacity: isImageLoaded ? 1 : 0,
-                  transition: "opacity 0.3s ease",
+              </>
+            ) : (
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "text.secondary",
+                  fontSize: "0.75rem",
+                  textAlign: "center",
                 }}
-                onLoad={() => setIsImageLoaded(true)}
-              />
-            </>
-          ) : (
-            <Box
-              sx={{
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "text.secondary",
-                fontSize: "0.75rem",
-                textAlign: "center",
-              }}
-            >
-              Изображение недоступно
-            </Box>
-          )}
-        </Box>
+              >
+                Изображение недоступно
+              </Box>
+            )}
+          </Box>
+        </Link>
 
         {/* Product Info */}
         <Stack
@@ -138,20 +147,30 @@ export const CartItemCard = ({
             </Typography>
           )}
 
-          <Typography
-            variant={isMobile ? "subtitle2" : isTablet ? "subtitle1" : "h6"}
-            fontWeight={600}
-            sx={{
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              lineHeight: 1.3,
-            }}
-          >
-            {name}
-          </Typography>
+          <Link href={`/catalog/${id}/detail`} passHref legacyBehavior>
+            <Typography
+              component="a"
+              variant={isMobile ? "subtitle2" : isTablet ? "subtitle1" : "h6"}
+              fontWeight={600}
+              sx={{
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                lineHeight: 1.3,
+                textDecoration: "none",
+                color: "inherit",
+                cursor: "pointer",
+                transition: "color 0.2s ease",
+                "&:hover": {
+                  color: theme.palette.primary.main,
+                },
+              }}
+            >
+              {name}
+            </Typography>
+          </Link>
 
           <Typography
             variant={isMobile ? "body2" : "body1"}

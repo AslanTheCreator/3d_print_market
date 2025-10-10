@@ -20,7 +20,7 @@ import {
   mapFormDataToCreateModel,
   defaultProductFormValues,
 } from "@/entities/product/model/form";
-import { useNotification } from "@/shared/hooks";
+import { useNotification } from "@/app/providers";
 import { useCreateProduct } from "@/entities/product";
 import { useImageUpload } from "@/features/image-upload";
 import { Notification } from "@/shared/ui/notification";
@@ -28,8 +28,7 @@ import { useCategories } from "@/entities/category";
 
 export const CreateProductForm = () => {
   const { categories } = useCategories();
-  const { notification, showNotification, hideNotification } =
-    useNotification();
+  const { showNotification } = useNotification();
   const { mutate: createProduct, isPending } = useCreateProduct();
 
   const {
@@ -161,13 +160,6 @@ export const CreateProductForm = () => {
           </Grid>
         </Box>
       </Paper>
-
-      <Notification
-        open={notification.open}
-        message={notification.message}
-        severity={notification.severity}
-        onClose={hideNotification}
-      />
     </Container>
   );
 };

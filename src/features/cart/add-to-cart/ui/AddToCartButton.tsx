@@ -2,9 +2,10 @@ import React from "react";
 import { alpha, Button, useMediaQuery, useTheme } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { Availability } from "@/entities/product/model/types";
-import { useAuthRequired, useNotification } from "@/shared/hooks";
-import { AuthRequiredDialog } from "@/shared/ui";
+import { useAuthRequired } from "@/shared/hooks";
+import { AuthRequiredDialog } from "@/shared/ui/auth-required-dialog";
 import { useAddToCartFeature } from "../model/useAddToCartFeature";
+import { useNotification } from "@/app/providers";
 
 interface AddToCartButtonProps {
   productId: number;

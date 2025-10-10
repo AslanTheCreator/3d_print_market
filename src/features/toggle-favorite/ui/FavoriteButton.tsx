@@ -11,7 +11,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import { useToggleFavorite } from "@/entities/favorites/hooks";
 import { useAuth } from "@/features/auth";
 import { useAuthRequired } from "@/shared/hooks";
-import { AuthRequiredDialog } from "@/shared/ui";
+import { AuthRequiredDialog } from "@/shared/ui/auth-required-dialog";
 
 interface FavoriteButtonProps {
   productId: number;

@@ -6,8 +6,6 @@ import { ProductCardSkeleton } from "./ProductCardSkeleton";
 import { EmptyCatalogState } from "@/shared/ui/states/EmptyCatalogState";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { ProductGrid, ProductGridItem } from "./ProductGrid";
-import { Notification } from "@/shared/ui/notification";
-import { useNotification } from "@/shared/hooks";
 
 interface ProductCatalogProps {
   products: ProductCardModel[];
@@ -25,8 +23,6 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
-
-  const { notification, hideNotification } = useNotification();
 
   const getSkeletonCount = () => {
     if (isMobile) return 6;
@@ -65,22 +61,14 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   }
 
   return (
-    <>
-      <Box>
-        <ProductGrid isMobile={isMobile}>
-          {products.map((product) => (
-            <ProductGridItem key={product.id} isMobile={isMobile}>
-              <ProductCardWithActions product={product} />
-            </ProductGridItem>
-          ))}
-        </ProductGrid>
-      </Box>
-      {/* <Notification
-        open={notification.open}
-        message={notification.message}
-        severity={notification.severity}
-        onClose={hideNotification}
-      /> */}
-    </>
+    <Box>
+      <ProductGrid isMobile={isMobile}>
+        {products.map((product) => (
+          <ProductGridItem key={product.id} isMobile={isMobile}>
+            <ProductCardWithActions product={product} />
+          </ProductGridItem>
+        ))}
+      </ProductGrid>
+    </Box>
   );
 };
