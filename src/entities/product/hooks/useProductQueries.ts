@@ -14,6 +14,7 @@ export const useProductById = (id: string) => {
   });
 };
 
+// Специализированный хук для получения продуктов с бесконечной прокруткой
 export const useProductsInfinite = (
   size: number,
   filters?: ProductFilter,

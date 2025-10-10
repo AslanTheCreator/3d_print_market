@@ -14,10 +14,10 @@ import { useCheckoutForm } from "../hooks/useCheckoutForm";
 import { useCheckoutSubmit } from "../hooks/useCheckoutSubmit";
 import { CheckoutMobileView } from "./CheckoutMobileView";
 import { CheckoutDesktopView } from "./CheckoutDesktopView";
-import { CheckoutNotifications } from "./CheckoutNotifications";
 import { AddressDialog } from "@/features/address/create-address/ui/AddressDialog";
 import { useAddressDialog } from "@/features/address/create-address/hooks/useAddressDialog";
 import { useCheckoutState } from "../hooks/useCheckoutState";
+import { useNotification } from "@/app/providers";
 
 const Checkout = () => {
   const router = useRouter();
@@ -27,31 +27,29 @@ const Checkout = () => {
 
   const checkoutState = useCheckoutState();
   const form = useCheckoutForm();
+  const { showNotification } = useNotification();
   const { handleSubmit, isSubmitting } = useCheckoutSubmit({
     cartItems,
     selectedAddress: checkoutState.selectedAddress,
     selectedTransfers: checkoutState.selectedTransfers,
     onSuccess: () => {
-      checkoutState.showNotification("Все заказы успешно созданы!", "success");
+      showNotification("Все заказы успешно созданы!", "success");
       form.reset();
       setTimeout(() => router.push("/checkout/success"), 2000);
     },
     onPartialSuccess: (successCount, totalCount) => {
-      checkoutState.showNotification(
+      showNotification(
         `Создано ${successCount} из ${totalCount} заказов`,
         "warning"
       );
     },
     onError: () => {
-      checkoutState.showNotification(
-        "Не удалось создать ни одного заказа",
-        "error"
-      );
+      showNotification("Не удалось создать ни одного заказа", "error");
     },
   });
 
   const addressDialog = useAddressDialog(() => {
-    checkoutState.showNotification("Адрес успешно добавлен!", "success");
+    showNotification("Адрес успешно добавлен!", "success");
   });
 
   if (isCartLoading) {
@@ -98,13 +96,6 @@ const Checkout = () => {
         open={addressDialog.isOpen}
         onClose={addressDialog.closeDialog}
         onSuccess={addressDialog.handleSuccess}
-      />
-
-      <CheckoutNotifications
-        open={checkoutState.notification.open}
-        message={checkoutState.notification.message}
-        severity={checkoutState.notification.severity}
-        onClose={checkoutState.hideNotification}
       />
     </>
   );

@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { ProductCardModel } from "../model/types";
-import { ProductCardWithActions } from "./ProductCardWithActions";
+import { ProductCardWithActions } from "../../../widgets/product-card-with-actions/ui/ProductCardWithActions";
 import { ProductCardSkeleton } from "./ProductCardSkeleton";
 import { EmptyCatalogState } from "@/shared/ui/states/EmptyCatalogState";
 import { ErrorState } from "@/shared/ui/states/ErrorState";

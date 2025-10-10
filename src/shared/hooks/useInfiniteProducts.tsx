@@ -32,6 +32,8 @@ export interface UseInfiniteProductsOptions {
   retry?: number;
 }
 
+// Универсальный хук для бесконечной прокрутки продуктов с курсорной пагинацией
+// Можно использовать например для избранных товаров
 export const useInfiniteProducts = ({
   size,
   filters,
