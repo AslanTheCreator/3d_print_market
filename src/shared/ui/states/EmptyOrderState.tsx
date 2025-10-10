@@ -3,7 +3,7 @@ import React from "react";
 import { Box, Typography, Button, Paper, Stack, useTheme } from "@mui/material";
 import { ShoppingCart } from "@mui/icons-material";
 
-interface EmptyStateProps {
+interface EmptyOrderStateProps {
   icon?: React.ReactNode;
   title: string;
   description: string;
@@ -15,7 +15,7 @@ interface EmptyStateProps {
   illustration?: React.ReactNode;
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({
+export const EmptyOrderState: React.FC<EmptyOrderStateProps> = ({
   icon,
   title,
   description,

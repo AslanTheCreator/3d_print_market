@@ -1,10 +1,10 @@
 "use client";
 
 import { Container, Typography, Box } from "@mui/material";
-import { InfiniteScroll } from "@/shared/ui";
+import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { useSearchParams } from "next/navigation";
 import { useProductsInfinite } from "@/entities/product";
-import { ProductCatalog } from "@/entities/product";
+import { ProductCatalog } from "@/widgets/product-catalog";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();

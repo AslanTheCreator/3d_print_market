@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography, Stack } from "@mui/material";
-import { ImageGallery } from "@/shared/ui";
+import { ImageGallery } from "@/shared/ui/ImageGallery";
 import {
   ProductPrice,
   ProductRating,

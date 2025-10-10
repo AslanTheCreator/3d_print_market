@@ -1,9 +1,9 @@
 "use client";
 
 import { Box, Typography, Paper } from "@mui/material";
-import { InfiniteScroll } from "@/shared/ui";
+import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { useProductsInfinite } from "@/entities/product";
-import { ProductCatalog } from "@/entities/product";
+import { ProductCatalog } from "@/widgets/product-catalog";
 
 interface RelatedProductsProps {
   categoryId: number;

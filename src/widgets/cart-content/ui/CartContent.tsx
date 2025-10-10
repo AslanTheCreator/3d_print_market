@@ -1,38 +1,27 @@
 "use client";
 
-import { Container, Typography, Box } from "@mui/material";
+import { Container, Box } from "@mui/material";
 import { useRouter } from "next/navigation";
-
 import {
   CartItemsList,
   CartSummary,
   useCartChecks,
   useCartProducts,
 } from "@/entities/cart";
-import { useAuth } from "@/features/auth";
 import { useRemoveFromCartFeature } from "@/features/cart";
 import {
   EmptyCartState,
   ErrorState,
   LoadingCartState,
-  UnauthorizedState,
-} from "@/shared/ui";
+} from "@/shared/ui/states";
 
 export const CartContent = () => {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
-
   const { data: cartItems, isLoading, isError, refetch } = useCartProducts();
-
   const { getCartTotal, getCartItemsCount } = useCartChecks();
   const { handleRemoveItem, removingItemIds } = useRemoveFromCartFeature();
 
   const handleCheckout = () => router.push("/checkout");
-
-  // States
-  if (!isAuthenticated) {
-    return <UnauthorizedState type="cart" />;
-  }
 
   if (isLoading) {
     return <LoadingCartState />;
@@ -55,16 +44,6 @@ export const CartContent = () => {
         px: { xs: 2, sm: 3, md: 4 },
       }}
     >
-      <Typography
-        variant="h5"
-        component="h1"
-        gutterBottom
-        fontWeight={700}
-        sx={{ mb: { xs: 2, md: 3 } }}
-      >
-        Корзина
-      </Typography>
-
       <Box
         sx={{
           display: { xs: "block", lg: "grid" },
@@ -73,7 +52,6 @@ export const CartContent = () => {
           alignItems: "start",
         }}
       >
-        {/* Cart Items */}
         <Box sx={{ mb: { xs: 3, lg: 0 } }}>
           <CartItemsList
             items={cartItems}
@@ -82,7 +60,6 @@ export const CartContent = () => {
           />
         </Box>
 
-        {/* Summary Panel */}
         <Box sx={{ position: { lg: "sticky" }, top: { lg: 24 } }}>
           <CartSummary
             itemsCount={getCartItemsCount}

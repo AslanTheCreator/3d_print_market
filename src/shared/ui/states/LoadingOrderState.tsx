@@ -2,7 +2,7 @@
 import React from "react";
 import { Box, Container, Typography, Skeleton, Stack } from "@mui/material";
 
-interface LoadingStateProps {
+interface LoadingOrderStateProps {
   title: string;
   itemsCount?: number;
 }
@@ -58,7 +58,7 @@ const OrderCardSkeleton = () => (
   </Box>
 );
 
-export const LoadingState: React.FC<LoadingStateProps> = ({
+export const LoadingOrderState: React.FC<LoadingOrderStateProps> = ({
   title,
   itemsCount = 3,
 }) => {
