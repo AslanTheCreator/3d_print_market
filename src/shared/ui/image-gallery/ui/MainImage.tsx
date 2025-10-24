@@ -29,7 +29,7 @@ export function MainImage({ src, alt, priority = false }: MainImageProps) {
           priority={priority}
           sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
           style={{
-            objectFit: "cover",
+            objectFit: "contain",
             transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           }}
         />

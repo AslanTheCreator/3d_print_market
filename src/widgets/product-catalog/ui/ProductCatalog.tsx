@@ -1,13 +1,17 @@
 import React from "react";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import {
+  ProductCard,
   ProductCardModel,
   ProductCardSkeleton,
   ProductGrid,
   ProductGridItem,
 } from "@/entities/product";
-import { ProductCardWithActions } from "@/widgets/product-card-with-actions";
+import { FavoriteButton } from "@/features/toggle-favorite";
+import { AddToCartButton } from "@/features/cart";
+import { useFavoritesChecks } from "@/entities/favorites/hooks";
 import { ErrorState, EmptyCatalogState } from "@/shared/ui/states";
+import { useRouter } from "next/navigation";
 
 interface ProductCatalogProps {
   products: ProductCardModel[];
@@ -23,13 +27,19 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   onRetry,
 }) => {
   const theme = useTheme();
+  const router = useRouter();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+  const { isProductInFavorites } = useFavoritesChecks();
 
   const getSkeletonCount = () => {
     if (isMobile) return 6;
     if (isTablet) return 8;
     return 12;
+  };
+
+  const handleCardClick = (productId: number) => {
+    router.push(`/catalog/${productId}/detail`);
   };
 
   if (isLoading) {
@@ -67,7 +77,24 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
       <ProductGrid isMobile={isMobile}>
         {products.map((product) => (
           <ProductGridItem key={product.id} isMobile={isMobile}>
-            <ProductCardWithActions product={product} />
+            <Box sx={{ position: "relative" }}>
+              <ProductCard
+                {...product}
+                onCardClick={() => handleCardClick(product.id)}
+                actions={
+                  <AddToCartButton
+                    productId={product.id}
+                    availability={product.availability}
+                    productName={product.name}
+                  />
+                }
+              />
+              <FavoriteButton
+                productId={product.id}
+                isFavorite={isProductInFavorites(product.id)}
+                productName={product.name}
+              />
+            </Box>
           </ProductGridItem>
         ))}
       </ProductGrid>

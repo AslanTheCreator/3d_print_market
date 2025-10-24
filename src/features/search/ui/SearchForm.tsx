@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   InputBase,
   Paper,
@@ -8,30 +8,32 @@ import {
   useTheme,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { useRouter } from "next/navigation";
+import { useSearch } from "../model/useSearch";
 
-export const HeaderSearch = ({ isMobile }: { isMobile?: boolean }) => {
+interface SearchFormProps {
+  isMobile?: boolean;
+  placeholder?: string;
+}
+
+export const SearchForm = ({
+  isMobile = false,
+  placeholder = "Поиск",
+}: SearchFormProps) => {
   const theme = useTheme();
-  const router = useRouter();
-
-  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    searchQuery,
+    handleSearchChange,
+    handleSearchSubmit,
+    handleClearSearch,
+  } = useSearch();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (searchQuery.trim()) {
-      const encodedQuery = encodeURIComponent(searchQuery.trim());
-      router.push(`/catalog/search?query=${encodedQuery}`);
-      setSearchQuery("");
-    }
+    handleSearchSubmit();
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery("");
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleSearchChange(e.target.value);
   };
 
   return (
@@ -60,17 +62,20 @@ export const HeaderSearch = ({ isMobile }: { isMobile?: boolean }) => {
       }}
     >
       <InputBase
-        placeholder="Поиск"
+        placeholder={placeholder}
         value={searchQuery}
-        onChange={handleSearchChange}
+        onChange={handleInputChange}
         fullWidth
+        inputProps={{
+          "aria-label": "поиск по сайту",
+        }}
         sx={{
           ml: 2,
           flex: 1,
           color: theme.palette.text.primary,
           "& .MuiInputBase-input": {
             padding: isMobile ? "8px 0" : "10px 0",
-            fontSize: isMobile ? "16px" : "18px",
+            fontSize: isMobile ? "0.875rem" : "1rem", // Используем rem вместо px
             "&::placeholder": {
               color: theme.palette.text.secondary,
               opacity: 1,
@@ -78,7 +83,7 @@ export const HeaderSearch = ({ isMobile }: { isMobile?: boolean }) => {
           },
         }}
         endAdornment={
-          searchQuery ? (
+          searchQuery && (
             <InputAdornment position="end">
               <IconButton
                 aria-label="очистить поиск"
@@ -103,7 +108,7 @@ export const HeaderSearch = ({ isMobile }: { isMobile?: boolean }) => {
                 <CloseIcon fontSize="small" />
               </IconButton>
             </InputAdornment>
-          ) : null
+          )
         }
       />
     </Paper>

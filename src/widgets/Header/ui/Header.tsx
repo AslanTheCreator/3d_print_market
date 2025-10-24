@@ -4,11 +4,15 @@ import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Box, Stack, Container, useMediaQuery, useTheme } from "@mui/material";
 import { HeaderActions } from "./HeaderActions";
-import { HeaderSearch } from "./HeaderSearch";
+import { SearchForm } from "@/features/search";
 import Link from "next/link";
 import throttle from "lodash.throttle";
 import site from "@/shared/assets/logo/site.png";
 import { HeaderLogo } from "./HeaderLogo";
+
+const HEADER_HEIGHT = "119px";
+const SCROLL_THRESHOLD = 50;
+const THROTTLE_DELAY = 50;
 
 export const Header = () => {
   const theme = useTheme();
@@ -21,14 +25,14 @@ export const Header = () => {
     throttle(() => {
       const currentScrollY = window.scrollY;
 
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+      if (currentScrollY > lastScrollY && currentScrollY > SCROLL_THRESHOLD) {
         setIsVisible(false);
       } else {
         setIsVisible(true);
       }
 
       setLastScrollY(currentScrollY);
-    }, 50),
+    }, THROTTLE_DELAY),
     [lastScrollY]
   );
 
@@ -46,12 +50,9 @@ export const Header = () => {
     };
   }, [isMobile, handleScroll]);
 
-  const headerHeight = "119px";
-
-  // Адаптивные размеры логотипа site
   const getSiteLogoSize = () => {
     if (isMobile) return { width: 50, height: 50 };
-    return { width: 116, height: 58 }; // Увеличили название сайта
+    return { width: 116, height: 58 };
   };
 
   const siteLogoSize = getSiteLogoSize();
@@ -62,7 +63,7 @@ export const Header = () => {
       sx={{
         position: "fixed",
         width: "100%",
-        top: isMobile ? (isVisible ? 0 : `-${headerHeight}`) : 0,
+        top: isMobile ? (isVisible ? 0 : `-${HEADER_HEIGHT}`) : 0,
         transition: isMobile
           ? theme.transitions.create(["top"], {
               duration: theme.transitions.duration.standard,
@@ -79,24 +80,18 @@ export const Header = () => {
         <Stack
           pb={2}
           pt={1.5}
-          direction={"row"}
-          alignItems={"center"}
-          justifyContent={"space-between"}
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
           sx={{
-            minHeight: headerHeight,
+            minHeight: HEADER_HEIGHT,
           }}
         >
           {!isMobile ? (
             <>
               <HeaderLogo />
-              <Stack
-                direction="row"
-                flex={1}
-                spacing={2.5}
-                mr={2.5}
-                marginLeft={1.5}
-              >
-                <HeaderSearch />
+              <Stack direction="row" flex={1} spacing={2.5} mr={2.5} ml={1.5}>
+                <SearchForm />
               </Stack>
               <HeaderActions />
             </>
@@ -109,7 +104,7 @@ export const Header = () => {
                   alignItems="center"
                   justifyContent="space-between"
                 >
-                  <Link href="/" aria-label="Home">
+                  <Link href="/" aria-label="Главная страница">
                     <Box
                       sx={{
                         display: "flex",
@@ -118,7 +113,7 @@ export const Header = () => {
                     >
                       <Image
                         src={site}
-                        alt="Site Logo"
+                        alt="Логотип сайта"
                         width={siteLogoSize.width}
                         height={siteLogoSize.height}
                         priority
@@ -132,7 +127,7 @@ export const Header = () => {
                   </Link>
                   <HeaderActions />
                 </Stack>
-                <HeaderSearch isMobile />
+                <SearchForm isMobile />
               </Stack>
             </>
           )}
