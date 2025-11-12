@@ -2,7 +2,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { ShoppingBag, Store } from "@mui/icons-material";
-import { EmptyState } from "@/shared/ui";
+import { EmptyOrderState } from "@/shared/ui/states";
 
 type UserRole = "seller" | "customer";
 
@@ -39,5 +39,5 @@ export const OrdersEmptyState = ({ userRole }: OrdersEmptyStateProps) => {
 
   const config = userRole === "seller" ? sellerConfig : customerConfig;
 
-  return <EmptyState {...config} />;
+  return <EmptyOrderState {...config} />;
 };

@@ -3,7 +3,7 @@ import React from "react";
 import { Container, Typography, Alert, Box, Stack, Chip } from "@mui/material";
 import { UseQueryResult } from "@tanstack/react-query";
 import { ListOrdersModel } from "@/entities/order/model/types";
-import { LoadingState } from "@/shared/ui";
+import { LoadingOrderState } from "@/shared/ui/states";
 import { OrderCard, OrdersEmptyState } from "@/entities/order";
 
 type UserRole = "seller" | "customer";
@@ -19,7 +19,7 @@ export const OrdersList = ({ title, query, userRole }: OrdersListProps) => {
 
   // Состояние загрузки
   if (isLoading) {
-    return <LoadingState title={title} itemsCount={3} />;
+    return <LoadingOrderState title={title} itemsCount={3} />;
   }
 
   // Состояние ошибки

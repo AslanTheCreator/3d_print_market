@@ -19,6 +19,7 @@ import { ProfileWidget } from "@/widgets/profile";
 import { DashboardContent } from "@/widgets/dashboard";
 import { DashboardNavigation } from "@/widgets/dashboard";
 import { motion } from "framer-motion";
+import { ErrorState } from "@/shared/ui/states";
 
 // Перечисление для секций дашборда
 type DashboardSection = "main" | "profile" | "payment-methods";
@@ -50,12 +51,12 @@ const DashboardSkeleton = ({ isMobile }: { isMobile: boolean }) => (
           <Grid item xs={12} md={4}>
             <Skeleton
               variant="rectangular"
-              height={200}
+              height={150}
               sx={{ borderRadius: 2, mb: 3 }}
             />
             <Skeleton
               variant="rectangular"
-              height={500}
+              height={350}
               sx={{ borderRadius: 2 }}
             />
           </Grid>
@@ -72,28 +73,6 @@ const DashboardSkeleton = ({ isMobile }: { isMobile: boolean }) => (
   </Container>
 );
 
-// Компонент ошибки
-const DashboardError = ({ isMobile }: { isMobile: boolean }) => (
-  <Container maxWidth={isMobile ? "sm" : "xl"} sx={{ py: 4 }}>
-    <Alert
-      severity="error"
-      sx={{
-        borderRadius: 2,
-        "& .MuiAlert-message": {
-          fontSize: "1rem",
-        },
-      }}
-    >
-      <Typography variant="h6" gutterBottom>
-        Ошибка загрузки профиля
-      </Typography>
-      <Typography>
-        Не удалось загрузить данные профиля. Попробуйте обновить страницу.
-      </Typography>
-    </Alert>
-  </Container>
-);
-
 export default function DashboardView() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -107,7 +86,7 @@ export default function DashboardView() {
   }
 
   if (error || !userData) {
-    return <DashboardError isMobile={isMobile} />;
+    return <ErrorState type="profile" />;
   }
 
   const navigateTo = (section: DashboardSection) => {
@@ -137,12 +116,12 @@ export default function DashboardView() {
               mb: 2,
             }}
           >
-            <UserInfo user={userData} />
+            <UserInfo
+              user={userData}
+              onEditProfile={() => navigateTo("profile")}
+            />
           </Paper>
         )}
-
-        {/* Main Content */}
-        <Box sx={{ mb: 3 }}>{renderContent()}</Box>
 
         {/* Navigation Menu */}
         {activeSection === "main" && (
@@ -175,7 +154,10 @@ export default function DashboardView() {
                   color: "white",
                 }}
               >
-                <UserInfo user={userData} />
+                <UserInfo
+                  user={userData}
+                  onEditProfile={() => navigateTo("profile")}
+                />
               </Card>
 
               {/* Навигация */}

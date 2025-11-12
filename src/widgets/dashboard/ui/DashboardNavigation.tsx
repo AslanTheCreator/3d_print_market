@@ -6,17 +6,17 @@ import {
   ListItemText,
   Divider,
   Paper,
-  Box,
   Badge,
   useTheme,
+  alpha,
 } from "@mui/material";
 import {
   Person as PersonIcon,
   ShoppingBag as ShoppingBagIcon,
   AccessTime as AccessTimeIcon,
-  Timeline as TimelineIcon,
   Inventory as InventoryIcon,
   TrendingUp as TrendingUpIcon,
+  Settings as SettingsIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { LogoutButton } from "@/features/auth";
@@ -39,11 +39,11 @@ interface DashboardNavigationProps {
 
 const navigationItems: NavigationItem[] = [
   {
-    text: "Профиль",
-    icon: <PersonIcon />,
-    action: "navigate",
-    target: "profile",
-    color: "#2196f3",
+    text: "Товары",
+    icon: <InventoryIcon />,
+    action: "link",
+    target: "/dashboard/products",
+    color: "#f44336",
   },
   {
     text: "Покупки",
@@ -67,11 +67,11 @@ const navigationItems: NavigationItem[] = [
     color: "#9c27b0",
   },
   {
-    text: "Товары",
-    icon: <InventoryIcon />,
+    text: "Настройки",
+    icon: <SettingsIcon />,
     action: "link",
-    target: "/dashboard/products",
-    color: "#f44336",
+    target: "/dashboard/settings",
+    color: "#607d8b",
   },
 ];
 
@@ -84,9 +84,13 @@ export const DashboardNavigation: React.FC<DashboardNavigationProps> = ({
   return (
     <Paper
       elevation={0}
-      sx={{ borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}
+      sx={{
+        borderRadius: 2,
+        border: `1px solid ${theme.palette.divider}`,
+        overflow: "hidden",
+      }}
     >
-      <List component="nav" sx={{ p: 1 }}>
+      <List component="nav" sx={{ px: 1, pb: 1 }}>
         {navigationItems.map((item, index) => (
           <React.Fragment key={item.text}>
             {item.action === "navigate" ? (
@@ -94,24 +98,38 @@ export const DashboardNavigation: React.FC<DashboardNavigationProps> = ({
                 onClick={() => onNavigate(item.target as DashboardSection)}
                 selected={activeSection === item.target}
                 sx={{
-                  borderRadius: 1,
+                  borderRadius: 1.5,
                   mb: 0.5,
+                  py: 1.25,
+                  transition: "all 0.2s ease-in-out",
                   "&.Mui-selected": {
-                    backgroundColor: `${item.color}15`,
+                    backgroundColor: alpha(item.color!, 0.12),
                     color: item.color,
                     "& .MuiListItemIcon-root": {
                       color: item.color,
                     },
                     "&:hover": {
-                      backgroundColor: `${item.color}25`,
+                      backgroundColor: alpha(item.color!, 0.2),
+                    },
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      left: 0,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      width: 4,
+                      height: "60%",
+                      backgroundColor: item.color,
+                      borderRadius: "0 4px 4px 0",
                     },
                   },
                   "&:hover": {
-                    backgroundColor: `${item.color}10`,
+                    backgroundColor: alpha(item.color!, 0.08),
+                    transform: "translateX(4px)",
                   },
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 40 }}>
+                <ListItemIcon sx={{ minWidth: 44 }}>
                   {item.badge ? (
                     <Badge badgeContent={item.badge} color="error">
                       {item.icon}
@@ -123,7 +141,8 @@ export const DashboardNavigation: React.FC<DashboardNavigationProps> = ({
                 <ListItemText
                   primary={item.text}
                   primaryTypographyProps={{
-                    fontWeight: activeSection === item.target ? 600 : 400,
+                    fontWeight: activeSection === item.target ? 600 : 500,
+                    fontSize: "0.9375rem",
                   }}
                 />
               </ListItemButton>
@@ -132,14 +151,20 @@ export const DashboardNavigation: React.FC<DashboardNavigationProps> = ({
                 component={Link}
                 href={item.target}
                 sx={{
-                  borderRadius: 1,
+                  borderRadius: 1.5,
                   mb: 0.5,
+                  py: 1.25,
+                  transition: "all 0.2s ease-in-out",
                   "&:hover": {
-                    backgroundColor: `${item.color}10`,
+                    backgroundColor: alpha(item.color!, 0.08),
+                    transform: "translateX(4px)",
+                    "& .MuiListItemIcon-root": {
+                      color: item.color,
+                    },
                   },
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 40 }}>
+                <ListItemIcon sx={{ minWidth: 44 }}>
                   {item.badge ? (
                     <Badge badgeContent={item.badge} color="error">
                       {item.icon}
@@ -148,13 +173,19 @@ export const DashboardNavigation: React.FC<DashboardNavigationProps> = ({
                     item.icon
                   )}
                 </ListItemIcon>
-                <ListItemText primary={item.text} />
+                <ListItemText
+                  primary={item.text}
+                  primaryTypographyProps={{
+                    fontWeight: 500,
+                    fontSize: "0.9375rem",
+                  }}
+                />
               </ListItemButton>
             )}
           </React.Fragment>
         ))}
 
-        <Divider sx={{ my: 1 }} />
+        <Divider sx={{ my: 1.5 }} />
         <LogoutButton />
       </List>
     </Paper>

@@ -5,17 +5,12 @@ import {
   Card,
   CardContent,
   Grid,
-  Button,
   Avatar,
-  Chip,
   Divider,
-  Stack,
-  IconButton,
 } from "@mui/material";
 import {
   ShoppingBag,
   TrendingUp,
-  Star,
   ArrowForward,
   Timeline,
   Receipt,
