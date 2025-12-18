@@ -1,6 +1,6 @@
+import { errorHandler } from "@/shared/lib";
 import { publicApi } from "@/shared/api";
 import { DictionaryItem } from "../model/types";
-import { errorHandler } from "@/shared/lib";
 
 const API_URL = `/dictionary`;
 
@@ -10,7 +10,7 @@ export const dictionaryApi = {
       const { data } = await publicApi.get<DictionaryItem[]>(
         `${API_URL}?type=${type}`
       );
-      return data;
+      return data ?? [];
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка при загрузке словаря");
     }

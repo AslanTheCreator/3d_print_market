@@ -7,7 +7,7 @@ import { useProductsInfinite } from "@/entities/product";
 import { ProductCatalog } from "@/widgets/product-catalog";
 import { Suspense } from "react";
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams?.get("query") || "";
 
@@ -15,25 +15,32 @@ export default function SearchPage() {
     useProductsInfinite(10, {
       name: query,
     });
+
+  return (
+    <Container sx={{ pt: "20px" }}>
+      <Typography component="h2" variant="h2">
+        {query ? `Результаты поиска: "${query}"` : "Свежие предзаказы"}
+      </Typography>
+      <Box pt="20px">
+        <InfiniteScroll
+          onLoadMore={fetchNextPage}
+          hasNextPage={!!hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+        >
+          <ProductCatalog
+            products={data?.pages.flat() ?? []}
+            isLoading={isLoading}
+          />
+        </InfiniteScroll>
+      </Box>
+    </Container>
+  );
+}
+
+export default function SearchPage() {
   return (
     <Suspense fallback={<div>Загрузка...</div>}>
-      <Container sx={{ pt: "20px" }}>
-        <Typography component="h2" variant="h2">
-          {query ? `Результаты поиска: "${query}"` : "Свежие предзаказы"}
-        </Typography>
-        <Box pt="20px">
-          <InfiniteScroll
-            onLoadMore={fetchNextPage}
-            hasNextPage={!!hasNextPage}
-            isFetchingNextPage={isFetchingNextPage}
-          >
-            <ProductCatalog
-              products={data?.pages.flat() ?? []}
-              isLoading={isLoading}
-            />
-          </InfiniteScroll>
-        </Box>
-      </Container>
+      <SearchContent />
     </Suspense>
   );
 }

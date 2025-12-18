@@ -19,9 +19,9 @@ import {
   AccountsBaseModel,
   TransferMoney,
 } from "@/entities/accounts/model/types";
-import { useTransferMoney } from "@/entities/dictionary/hooks/useDictionaryVariants";
+import { useDictionary } from "@/entities/dictionary";
 import { DictionaryItem } from "@/entities/dictionary/model/types";
-import { useUserAccounts } from "@/entities/accounts/hooks";
+import { useUserAccounts } from "@/entities/accounts";
 
 interface PaymentSelectorProps {
   control: Control<any>;
@@ -65,14 +65,10 @@ export const PaymentSelector: React.FC<PaymentSelectorProps> = ({
     error: queryError,
   } = useUserAccounts();
 
-  const {
-    data: transferMoney,
-    isLoading: transferMoneyLoading,
-    isError: transferMoneyError,
-  } = useTransferMoney();
+  const { data: transferMoney } = useDictionary("TRANSFER_MONEY");
 
-  const isLoading = methodsLoading || transferMoneyLoading;
-  const isError = methodsError || transferMoneyError;
+  const isLoading = methodsLoading;
+  const isError = methodsError;
 
   // Создаем маппинг методов для быстрого поиска
   const methodsMap = useMemo(() => {

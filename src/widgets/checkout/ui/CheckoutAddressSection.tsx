@@ -1,6 +1,6 @@
 import React from "react";
 import { Typography, Paper, Card, CardContent, Box } from "@mui/material";
-import { AddressSelector } from "@/features/address/address-selector/ui/AddressSelector";
+import { AddressSelector } from "@/entities/address";
 import { AddressBaseModel } from "@/entities/address/model/types";
 
 type CheckoutAddressSectionProps = {

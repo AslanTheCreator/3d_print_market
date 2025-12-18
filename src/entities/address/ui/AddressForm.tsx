@@ -9,15 +9,11 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
-
-interface AddressFormData {
-  country: string;
-  city: string;
-  street: string;
-  houseNumber: string;
-  apartmentNumber: string;
-  index: number;
-}
+import {
+  AddressFormData,
+  DEFAULT_COUNTRY,
+  ADDRESS_VALIDATION,
+} from "../model/types";
 
 interface AddressFormProps {
   onSubmit: (data: AddressFormData) => void | Promise<void>;
@@ -39,12 +35,12 @@ export const AddressForm: React.FC<AddressFormProps> = ({
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors, isValid, isDirty },
     reset,
   } = useForm<AddressFormData>({
     mode: "onChange",
     defaultValues: {
-      country: initialData?.country || "Россия",
+      country: initialData?.country || DEFAULT_COUNTRY,
       city: initialData?.city || "",
       street: initialData?.street || "",
       houseNumber: initialData?.houseNumber || "",
@@ -69,9 +65,11 @@ export const AddressForm: React.FC<AddressFormProps> = ({
 
   return (
     <Box component="form" onSubmit={handleSubmit(handleFormSubmit)}>
-      <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-        {title}
-      </Typography>
+      {title && (
+        <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+          {title}
+        </Typography>
+      )}
 
       <Grid container spacing={2}>
         {/* Страна */}
@@ -82,8 +80,8 @@ export const AddressForm: React.FC<AddressFormProps> = ({
             rules={{
               required: "Введите страну",
               minLength: {
-                value: 2,
-                message: "Страна должна содержать минимум 2 символа",
+                value: ADDRESS_VALIDATION.COUNTRY_MIN_LENGTH,
+                message: `Страна должна содержать минимум ${ADDRESS_VALIDATION.COUNTRY_MIN_LENGTH} символа`,
               },
             }}
             render={({ field }) => (
@@ -108,8 +106,8 @@ export const AddressForm: React.FC<AddressFormProps> = ({
             rules={{
               required: "Введите город",
               minLength: {
-                value: 2,
-                message: "Город должен содержать минимум 2 символа",
+                value: ADDRESS_VALIDATION.CITY_MIN_LENGTH,
+                message: `Город должен содержать минимум ${ADDRESS_VALIDATION.CITY_MIN_LENGTH} символа`,
               },
             }}
             render={({ field }) => (
@@ -134,8 +132,8 @@ export const AddressForm: React.FC<AddressFormProps> = ({
             rules={{
               required: "Введите улицу",
               minLength: {
-                value: 3,
-                message: "Улица должна содержать минимум 3 символа",
+                value: ADDRESS_VALIDATION.STREET_MIN_LENGTH,
+                message: `Улица должна содержать минимум ${ADDRESS_VALIDATION.STREET_MIN_LENGTH} символа`,
               },
             }}
             render={({ field }) => (
@@ -214,12 +212,12 @@ export const AddressForm: React.FC<AddressFormProps> = ({
             rules={{
               required: "Введите почтовый индекс",
               min: {
-                value: 100000,
-                message: "Индекс должен содержать 6 цифр",
+                value: ADDRESS_VALIDATION.INDEX_MIN,
+                message: `Индекс должен содержать ${ADDRESS_VALIDATION.INDEX_LENGTH} цифр`,
               },
               max: {
-                value: 999999,
-                message: "Индекс должен содержать 6 цифр",
+                value: ADDRESS_VALIDATION.INDEX_MAX,
+                message: `Индекс должен содержать ${ADDRESS_VALIDATION.INDEX_LENGTH} цифр`,
               },
             }}
             render={({ field: { onChange, value, ...field } }) => (
@@ -229,7 +227,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
                 onChange={(e) => {
                   const val = e.target.value;
                   if (val === "" || /^\d{0,6}$/.test(val)) {
-                    onChange(val === "" ? 0 : parseInt(val));
+                    onChange(val === "" ? 0 : parseInt(val, 10));
                   }
                 }}
                 fullWidth
@@ -240,7 +238,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
                 disabled={isLoading}
                 size="medium"
                 inputProps={{
-                  maxLength: 6,
+                  maxLength: ADDRESS_VALIDATION.INDEX_LENGTH,
                   pattern: "[0-9]*",
                   inputMode: "numeric",
                 }}
@@ -269,7 +267,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
         <Button
           type="submit"
           variant="contained"
-          disabled={isLoading || !isValid}
+          disabled={isLoading || !isValid || !isDirty}
           size="large"
           sx={{
             order: { xs: 1, sm: 2 },

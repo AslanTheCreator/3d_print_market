@@ -16,11 +16,11 @@ import {
   Receipt,
   Inventory,
 } from "@mui/icons-material";
-import { UserProfileModel } from "@/entities/user";
+import { UserBaseModel } from "@/entities/user";
 import Link from "next/link";
 
 interface DashboardContentProps {
-  user: UserProfileModel;
+  user: UserBaseModel;
 }
 
 // Статистические карточки
@@ -148,116 +148,123 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ user }) => {
   const displayName = user.fullName?.trim() ? user.fullName : user.login;
 
   return (
-    <Box>
-      {/* Заголовок */}
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h4"
-          component="h1"
-          gutterBottom
-          sx={{ fontWeight: 700 }}
-        >
-          Добро пожаловать, {displayName}!
-        </Typography>
-        <Typography variant="h6" color="text.secondary">
-          Управляйте вашими заказами и настройками через личный кабинет
-        </Typography>
-      </Box>
-
-      {/* Статистика */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Покупки"
-            value="0"
-            icon={<ShoppingBag />}
-            color="#2196f3"
-            link="/dashboard/purchase"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Продажи"
-            value="0"
-            icon={<TrendingUp />}
-            color="#4caf50"
-            link="/dashboard/sales"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Предзаказы"
-            value="0"
-            icon={<Timeline />}
-            color="#ff9800"
-            link="/dashboard/pre-orders"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Товары"
-            value="0"
-            icon={<Inventory />}
-            color="#9c27b0"
-            link="/dashboard/products"
-          />
-        </Grid>
-      </Grid>
-
-      {/* Быстрые действия */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
-        Быстрые действия
-      </Typography>
-
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <QuickAction
-            title="Мои покупки"
-            description="Просмотр истории заказов и их статусов"
-            icon={<Receipt />}
-            link="/dashboard/purchase"
-            color="primary"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <QuickAction
-            title="Мои продажи"
-            description="Управление продажами и заказами"
-            icon={<TrendingUp />}
-            link="/dashboard/sales"
-            color="success"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <QuickAction
-            title="Мои товары"
-            description="Добавление и редактирование товаров"
-            icon={<Inventory />}
-            link="/dashboard/products"
-            color="secondary"
-          />
-        </Grid>
-      </Grid>
-
-      {/* Последние активности */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-            Последние активности
-          </Typography>
-          <Divider sx={{ mb: 3 }} />
-
-          <Box sx={{ textAlign: "center", py: 6 }}>
-            <Timeline sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              Нет активности
+    <Card sx={{ minHeight: 600 }}>
+      {" "}
+      <CardContent sx={{ p: 4 }}>
+        <Box>
+          {/* Заголовок */}
+          <Box sx={{ mb: 4 }}>
+            <Typography
+              variant="h4"
+              component="h1"
+              gutterBottom
+              sx={{ fontWeight: 700 }}
+            >
+              Добро пожаловать, {displayName}!
             </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Ваши последние действия будут отображаться здесь
+            <Typography variant="h6" color="text.secondary">
+              Управляйте вашими заказами и настройками через личный кабинет
             </Typography>
           </Box>
-        </CardContent>
-      </Card>
-    </Box>
+
+          {/* Статистика */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Покупки"
+                value="0"
+                icon={<ShoppingBag />}
+                color="#2196f3"
+                link="/dashboard/purchase"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Продажи"
+                value="0"
+                icon={<TrendingUp />}
+                color="#4caf50"
+                link="/dashboard/sales"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Предзаказы"
+                value="0"
+                icon={<Timeline />}
+                color="#ff9800"
+                link="/dashboard/pre-orders"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Товары"
+                value="0"
+                icon={<Inventory />}
+                color="#9c27b0"
+                link="/dashboard/products"
+              />
+            </Grid>
+          </Grid>
+
+          {/* Быстрые действия */}
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
+            Быстрые действия
+          </Typography>
+
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} sm={6} md={4}>
+              <QuickAction
+                title="Мои покупки"
+                description="Просмотр истории заказов и их статусов"
+                icon={<Receipt />}
+                link="/dashboard/purchase"
+                color="primary"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <QuickAction
+                title="Мои продажи"
+                description="Управление продажами и заказами"
+                icon={<TrendingUp />}
+                link="/dashboard/sales"
+                color="success"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <QuickAction
+                title="Мои товары"
+                description="Добавление и редактирование товаров"
+                icon={<Inventory />}
+                link="/dashboard/products"
+                color="secondary"
+              />
+            </Grid>
+          </Grid>
+
+          {/* Последние активности */}
+          <Card sx={{ mb: 3 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                Последние активности
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+
+              <Box sx={{ textAlign: "center", py: 6 }}>
+                <Timeline
+                  sx={{ fontSize: 64, color: "text.disabled", mb: 2 }}
+                />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  Нет активности
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  Ваши последние действия будут отображаться здесь
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };

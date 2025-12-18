@@ -1,4 +1,3 @@
-// src/app/layouts/AppLayout.tsx
 import { ReactNode } from "react";
 import { Header } from "@/widgets/header";
 import { Footer } from "@/widgets/footer";

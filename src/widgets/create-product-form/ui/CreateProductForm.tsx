@@ -23,7 +23,6 @@ import {
 import { useNotification } from "@/app/providers";
 import { useCreateProduct } from "@/entities/product";
 import { useImageUpload } from "@/features/image-upload";
-import { Notification } from "@/shared/ui/notification";
 import { useCategories } from "@/entities/category";
 
 export const CreateProductForm = () => {
@@ -66,7 +65,7 @@ export const CreateProductForm = () => {
     }
 
     const productData = mapFormDataToCreateModel(data, imageIds);
-
+    console.log(productData);
     createProduct(productData, {
       onSuccess: () => {
         showNotification("Товар успешно создан!", "success");

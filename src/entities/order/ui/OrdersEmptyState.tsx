@@ -20,7 +20,7 @@ export const OrdersEmptyState = ({ userRole }: OrdersEmptyStateProps) => {
       "Когда кто-то купит ваш товар, заказ появится здесь. Добавьте больше товаров, чтобы увеличить продажи!",
     actionButton: {
       text: "Добавить товар",
-      onClick: () => router.push("/seller/products/create"),
+      onClick: () => router.push("/dashboard/products/add"),
       variant: "contained" as const,
     },
   };
@@ -32,7 +32,7 @@ export const OrdersEmptyState = ({ userRole }: OrdersEmptyStateProps) => {
       "Ваши заказы будут отображаться здесь. Начните покупки прямо сейчас!",
     actionButton: {
       text: "Перейти к покупкам",
-      onClick: () => router.push("/catalog"),
+      onClick: () => router.push("/"),
       variant: "contained" as const,
     },
   };

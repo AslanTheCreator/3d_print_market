@@ -78,7 +78,7 @@ export const productApi = {
 
   createProduct: async (data: ProductCreateModel) => {
     try {
-      await authApi.post(`${API_URL}/`, data);
+      await authApi.post(`${API_URL}`, data);
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка при создании товара");
     }

@@ -27,4 +27,15 @@ export const addressApi = {
       throw errorHandler.handleAxiosError(error, "Ошибка при удалении адреса");
     }
   },
+  getAllRegions: async () => {
+    try {
+      const { data } = await authApi.get<string[]>(`${API_URL}/regions`);
+      return data;
+    } catch (error) {
+      throw errorHandler.handleAxiosError(
+        error,
+        "Ошибка при загрузке регионов"
+      );
+    }
+  },
 };

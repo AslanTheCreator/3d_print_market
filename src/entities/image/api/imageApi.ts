@@ -6,26 +6,19 @@ const API_URL = `/images`;
 
 export const imageApi = {
   async getImages(imageIds: number | number[]): Promise<ImageResponse[]> {
-    if (!imageIds || (Array.isArray(imageIds) && imageIds.length === 0)) {
-      console.warn("Передан пустой массив или некорректный ID.");
+    const ids = Array.isArray(imageIds) ? imageIds : [imageIds];
+
+    // Если все ID равны 0, возвращаем пустой массив без запроса
+    if (ids.every((id) => id === 0)) {
       return [];
     }
 
-    try {
-      const ids = Array.isArray(imageIds) ? imageIds : [imageIds];
-      const queryString = ids.map((id) => `ids=${id}`).join("&");
+    const queryString = ids.map((id) => `ids=${id}`).join("&");
+    const { data } = await publicApi.get<ImageResponse[]>(
+      `${API_URL}?${queryString}`
+    );
 
-      const { data } = await publicApi.get<ImageResponse[]>(
-        `${API_URL}?${queryString}`
-      );
-
-      return data;
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при получении изображений"
-      );
-    }
+    return data;
   },
   async saveImage(file: File, tag: ImageTag): Promise<number[]> {
     const formData = new FormData();

@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import {
   List,
@@ -11,7 +13,6 @@ import {
   alpha,
 } from "@mui/material";
 import {
-  Person as PersonIcon,
   ShoppingBag as ShoppingBagIcon,
   AccessTime as AccessTimeIcon,
   Inventory as InventoryIcon,
@@ -19,67 +20,53 @@ import {
   Settings as SettingsIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/features/auth";
-
-type DashboardSection = "main" | "profile" | "payment-methods";
 
 interface NavigationItem {
   text: string;
   icon: React.ReactNode;
-  action: "navigate" | "link";
-  target: DashboardSection | string;
+  href: string;
   badge?: number;
-  color?: string;
-}
-
-interface DashboardNavigationProps {
-  onNavigate: (section: DashboardSection) => void;
-  activeSection: DashboardSection;
+  color: string;
 }
 
 const navigationItems: NavigationItem[] = [
   {
     text: "Товары",
     icon: <InventoryIcon />,
-    action: "link",
-    target: "/dashboard/products",
+    href: "/dashboard/products",
     color: "#f44336",
   },
   {
     text: "Покупки",
     icon: <ShoppingBagIcon />,
-    action: "link",
-    target: "/dashboard/purchase",
+    href: "/dashboard/purchase",
     color: "#4caf50",
   },
   {
     text: "Продажи",
     icon: <TrendingUpIcon />,
-    action: "link",
-    target: "/dashboard/sales",
+    href: "/dashboard/sales",
     color: "#ff9800",
   },
   {
-    text: "Предзаказы",
+    text: "Создать товар",
     icon: <AccessTimeIcon />,
-    action: "link",
-    target: "/dashboard/pre-orders",
+    href: "/dashboard/products/new",
     color: "#9c27b0",
   },
   {
     text: "Настройки",
     icon: <SettingsIcon />,
-    action: "link",
-    target: "/dashboard/settings",
+    href: "/dashboard/settings",
     color: "#607d8b",
   },
 ];
 
-export const DashboardNavigation: React.FC<DashboardNavigationProps> = ({
-  onNavigate,
-  activeSection,
-}) => {
+export const DashboardNavigation: React.FC = () => {
   const theme = useTheme();
+  const pathname = usePathname();
 
   return (
     <Paper
@@ -91,99 +78,69 @@ export const DashboardNavigation: React.FC<DashboardNavigationProps> = ({
       }}
     >
       <List component="nav" sx={{ px: 1, pb: 1 }}>
-        {navigationItems.map((item, index) => (
-          <React.Fragment key={item.text}>
-            {item.action === "navigate" ? (
-              <ListItemButton
-                onClick={() => onNavigate(item.target as DashboardSection)}
-                selected={activeSection === item.target}
-                sx={{
-                  borderRadius: 1.5,
-                  mb: 0.5,
-                  py: 1.25,
-                  transition: "all 0.2s ease-in-out",
-                  "&.Mui-selected": {
-                    backgroundColor: alpha(item.color!, 0.12),
+        {navigationItems.map((item) => {
+          const isActive = pathname === item.href;
+
+          return (
+            <ListItemButton
+              key={item.text}
+              component={Link}
+              href={item.href}
+              selected={isActive}
+              sx={{
+                borderRadius: 1.5,
+                mb: 0.5,
+                py: 1.25,
+                transition: "all 0.2s ease-in-out",
+                "&.Mui-selected": {
+                  backgroundColor: alpha(item.color, 0.12),
+                  color: item.color,
+                  "& .MuiListItemIcon-root": {
                     color: item.color,
-                    "& .MuiListItemIcon-root": {
-                      color: item.color,
-                    },
-                    "&:hover": {
-                      backgroundColor: alpha(item.color!, 0.2),
-                    },
-                    "&::before": {
-                      content: '""',
-                      position: "absolute",
-                      left: 0,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      width: 4,
-                      height: "60%",
-                      backgroundColor: item.color,
-                      borderRadius: "0 4px 4px 0",
-                    },
                   },
                   "&:hover": {
-                    backgroundColor: alpha(item.color!, 0.08),
-                    transform: "translateX(4px)",
+                    backgroundColor: alpha(item.color, 0.2),
                   },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 44 }}>
-                  {item.badge ? (
-                    <Badge badgeContent={item.badge} color="error">
-                      {item.icon}
-                    </Badge>
-                  ) : (
-                    item.icon
-                  )}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  primaryTypographyProps={{
-                    fontWeight: activeSection === item.target ? 600 : 500,
-                    fontSize: "0.9375rem",
-                  }}
-                />
-              </ListItemButton>
-            ) : (
-              <ListItemButton
-                component={Link}
-                href={item.target}
-                sx={{
-                  borderRadius: 1.5,
-                  mb: 0.5,
-                  py: 1.25,
-                  transition: "all 0.2s ease-in-out",
-                  "&:hover": {
-                    backgroundColor: alpha(item.color!, 0.08),
-                    transform: "translateX(4px)",
-                    "& .MuiListItemIcon-root": {
-                      color: item.color,
-                    },
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    left: 0,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: 4,
+                    height: "60%",
+                    backgroundColor: item.color,
+                    borderRadius: "0 4px 4px 0",
                   },
+                },
+                "&:hover": {
+                  backgroundColor: alpha(item.color, 0.08),
+                  transform: "translateX(4px)",
+                  "& .MuiListItemIcon-root": {
+                    color: item.color,
+                  },
+                },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 44 }}>
+                {item.badge ? (
+                  <Badge badgeContent={item.badge} color="error">
+                    {item.icon}
+                  </Badge>
+                ) : (
+                  item.icon
+                )}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.text}
+                primaryTypographyProps={{
+                  fontWeight: isActive ? 600 : 500,
+                  fontSize: "0.9375rem",
                 }}
-              >
-                <ListItemIcon sx={{ minWidth: 44 }}>
-                  {item.badge ? (
-                    <Badge badgeContent={item.badge} color="error">
-                      {item.icon}
-                    </Badge>
-                  ) : (
-                    item.icon
-                  )}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  primaryTypographyProps={{
-                    fontWeight: 500,
-                    fontSize: "0.9375rem",
-                  }}
-                />
-              </ListItemButton>
-            )}
-          </React.Fragment>
-        ))}
+              />
+            </ListItemButton>
+          );
+        })}
 
         <Divider sx={{ my: 1.5 }} />
         <LogoutButton />

@@ -16,7 +16,7 @@ import {
   ShoppingMethods,
   TransferBaseModel,
 } from "@/entities/transfer/model/types";
-import { useShoppingMethods } from "@/entities/dictionary/hooks/useDictionaryVariants";
+import { useDictionary } from "@/entities/dictionary";
 import { DictionaryItem } from "@/entities/dictionary/model/types";
 import { formatPrice } from "@/shared/lib/utils/formatPrice";
 
@@ -45,14 +45,10 @@ export const TransferSelector: React.FC<TransferSelectorProps> = ({
   isLoading: transfersLoading = false,
   isError: transfersError = false,
 }) => {
-  const {
-    data: shoppingMethods,
-    isLoading: methodsLoading,
-    isError: methodsError,
-  } = useShoppingMethods();
+  const { data: shoppingMethods } = useDictionary("SHOPPING_METHODS");
 
-  const isLoading = transfersLoading || methodsLoading;
-  const isError = transfersError || methodsError;
+  const isLoading = transfersLoading;
+  const isError = transfersError;
 
   // Создаем маппинг методов для быстрого поиска
   const methodsMap = useMemo(() => {

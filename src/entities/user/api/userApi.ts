@@ -5,7 +5,7 @@ import {
   UserUpdateModel,
 } from "../model/types";
 import { errorHandler } from "@/shared/lib";
-import { imageApi } from "@/entities/image";
+import { imageApi, ImageResponse } from "@/entities/image";
 import { authApi, publicApi } from "@/shared/api";
 
 const API_URL = `/participant`;
@@ -14,56 +14,31 @@ const API_URL_PROFILE = `/auth/profile`;
 
 export const userApi = {
   async getUser(): Promise<UserBaseModel> {
-    try {
-      const { data } = await authApi.get<UserBaseModel>(API_URL);
-      if (!data) {
-        throw new Error("Пустой ответ от сервера");
-      }
-      return data;
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        " Ошибка при загрузке пользователя"
-      );
-    }
+    const { data } = await authApi.get<UserBaseModel>(API_URL);
+    const images = await imageApi.getImages(data.imageIds);
+    return { ...data, image: images };
   },
   async getUserByParams(id?: number): Promise<UserFindModel[]> {
-    try {
-      const { data } = await publicApi.post<UserFindModel[]>(API_URL_FIND, {
-        id,
-      });
-      return data;
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        " Ошибка при загрузке пользователя по параметрам"
-      );
-    }
+    const { data } = await publicApi.post<UserFindModel[]>(API_URL_FIND, {
+      id,
+    });
+    return data ?? [];
   },
-  async getProfileUser() {
-    try {
-      const { data } = await authApi.get<UserProfileModel>(API_URL_PROFILE);
-
-      const image = await imageApi.getImages(data.imageId);
-      return { ...data, image: image };
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        " Ошибка при загрузке профиля пользователя"
-      );
-    }
+  async getProfileUser(): Promise<
+    UserProfileModel & { image: ImageResponse[] }
+  > {
+    const { data } = await authApi.get<UserProfileModel>(API_URL_PROFILE);
+    const image = await imageApi.getImages(data.imageId);
+    return { ...data, image: image };
   },
-  async updateUser(userData: UserUpdateModel) {
+  async updateUser(userData: UserUpdateModel): Promise<number> {
     try {
       const { data } = await authApi.put<number>(API_URL, userData, {
         headers: {
           "Content-Type": "application/json",
         },
       });
-      if (!data) {
-        throw new Error("Пустой ответ от сервера");
-      }
-      console.log("Пользователь успешно обновлен: ", data);
+      return data;
     } catch (error) {
       throw errorHandler.handleAxiosError(
         error,

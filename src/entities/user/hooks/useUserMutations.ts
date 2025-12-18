@@ -1,21 +1,72 @@
+// entities/user/hooks/useUserMutations.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { userApi } from "../api/userApi";
 import { userKeys } from "./queryKeys";
-import { UserUpdateModel } from "../model/types";
+import { useNotification } from "@/app/providers/NotificationProvider";
+import type { UserBaseModel, UserUpdateModel } from "../model/types";
 
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
+  const { showNotification } = useNotification();
+
   return useMutation({
-    mutationFn: (userData: UserUpdateModel) => userApi.updateUser(userData),
-    onSuccess: () => {
-      // Инвалидируем запросы, связанные с пользователем, чтобы обновить данные
-      queryClient.invalidateQueries({ queryKey: userKeys.profile() });
-      queryClient.invalidateQueries({ queryKey: userKeys.detail("current") });
-      // Можно добавить инвалидацию других ключей, если это необходимо
+    mutationFn: (data: UserUpdateModel) => userApi.updateUser(data),
+
+    onMutate: async (newData) => {
+      // Отменяем текущие запросы
+      await queryClient.cancelQueries({ queryKey: userKeys.current() });
+      await queryClient.cancelQueries({ queryKey: userKeys.profile() });
+
+      const previousCurrent = queryClient.getQueryData<UserBaseModel>(
+        userKeys.current()
+      );
+      const previousProfile = queryClient.getQueryData<any>(userKeys.profile());
+
+      // Оптимистическое обновление
+      if (previousCurrent) {
+        queryClient.setQueryData<UserBaseModel>(userKeys.current(), {
+          ...previousCurrent,
+          ...newData,
+          imageIds: newData.imageIds ?? previousCurrent.imageIds,
+        });
+      }
+
+      if (previousProfile) {
+        queryClient.setQueryData(userKeys.profile(), {
+          ...previousProfile,
+          user: {
+            ...previousProfile.user,
+            ...newData,
+          },
+        });
+      }
+
+      return { previousCurrent, previousProfile };
     },
-    onError: (error) => {
-      console.error("Error updating user:", error);
-      // Здесь можно добавить обработку ошибок, например, показ уведомления
+
+    onError: (error, _vars, context) => {
+      // Откат
+      if (context?.previousCurrent) {
+        queryClient.setQueryData(userKeys.current(), context.previousCurrent);
+      }
+      if (context?.previousProfile) {
+        queryClient.setQueryData(userKeys.profile(), context.previousProfile);
+      }
+
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Ошибка при обновлении профиля";
+      showNotification(msg, "error");
+    },
+
+    onSuccess: () => {
+      showNotification("Профиль успешно обновлён", "success");
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.current() });
+      queryClient.invalidateQueries({ queryKey: userKeys.profile() });
     },
   });
 };

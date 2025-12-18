@@ -18,13 +18,14 @@ export const LogoutButton: React.FC = () => {
   const theme = useTheme();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     try {
       setIsLoading(true);
-      await authApi.logout();
+      authApi.logout();
       router.push("/auth/login");
     } catch (error) {
       console.error("Logout error:", error);
+    } finally {
       setIsLoading(false);
     }
   };

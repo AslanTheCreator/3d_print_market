@@ -1,6 +1,7 @@
 import { AccountsBaseModel } from "@/entities/accounts/model/types";
 import { AddressBaseModel } from "@/entities/address/model/types";
 import { ImageResponse } from "@/entities/image";
+import { SocialNetworksModel } from "@/entities/social-networks";
 import { TransferBaseModel } from "@/entities/transfer/model/types";
 
 type UserStatus = "ACTIVE" | "BLOCKED" | "DELETED";
@@ -13,6 +14,8 @@ export interface UserProfileModel
   email: string;
   imageId: number;
   image: ImageResponse[];
+  exp: number;
+  type: string;
 }
 
 export interface UserBaseModel {
@@ -26,9 +29,11 @@ export interface UserBaseModel {
   averageRating: number;
   totalReviews: number;
   imageIds: number[];
+  image: ImageResponse[];
   addresses: AddressBaseModel[];
   accounts: AccountsBaseModel[];
   transfers: TransferBaseModel[];
+  socialNetworks: SocialNetworksModel[];
 }
 
 export interface UserFindModel {

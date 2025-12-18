@@ -1,3 +1,9 @@
-export * from "./api/transferApi";
-export * from "./hooks"; // Будет экспортировать все из src/entities/transfer/hooks/index.ts
+export { transferApi } from "./api/transferApi";
+export { transferKeys } from "./hooks/queryKeys";
+export { useUserTransfers } from "./hooks/useTransferQueries";
+export {
+  useCreateTransfer,
+  useDeleteTransfer,
+  useSaveTransfersBatch,
+} from "./hooks/useTransferMutations";
 export * from "./model/types";
