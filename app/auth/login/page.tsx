@@ -1,20 +1,19 @@
 "use client";
 import AuthForm from "@/widgets/auth-form";
 import { useState } from "react";
-import { Snackbar, Alert } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/app/store";
+import { useNotification } from "@/app/providers";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const login = useAuthStore((state) => state.login);
+  const { showNotification } = useNotification();
 
   const handleLogin = async (userLogin: string, password: string) => {
     try {
       setIsLoading(true);
-      setError(null);
 
       const isLoginSuccessful = await login(userLogin, password);
 
@@ -23,37 +22,24 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error("Login failed:", error);
-      setError("Ошибка авторизации. Проверьте логин и пароль.");
+      showNotification(
+        "Ошибка авторизации. Проверьте логин и пароль.",
+        "error"
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <>
-      <AuthForm
-        title="Вход в аккаунт"
-        subtitle="Войдите или "
-        url="/auth/register"
-        linkText="зарегистрируйтесь"
-        buttonTitle="Войти"
-        onSubmit={handleLogin}
-        isLoading={isLoading}
-      />
-      <Snackbar
-        open={!!error}
-        autoHideDuration={6000}
-        onClose={() => setError(null)}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <Alert
-          onClose={() => setError(null)}
-          severity="error"
-          sx={{ width: "100%" }}
-        >
-          {error}
-        </Alert>
-      </Snackbar>
-    </>
+    <AuthForm
+      title="Вход в аккаунт"
+      subtitle="Войдите или "
+      url="/auth/register"
+      linkText="зарегистрируйтесь"
+      buttonTitle="Войти"
+      onSubmit={handleLogin}
+      isLoading={isLoading}
+    />
   );
 }

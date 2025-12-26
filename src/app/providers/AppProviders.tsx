@@ -7,6 +7,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import theme from "@/app/styles/theme";
 import { QueryProvider } from "./QueryProvider";
 import { NotificationProvider } from "./NotificationProvider";
+import { AuthProvider } from "./AuthProvider";
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -17,11 +18,13 @@ export function AppProviders({ children }: AppProvidersProps) {
     <AppRouterCacheProvider options={{ enableCssLayer: true }}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <QueryProvider>
-          <NotificationProvider maxNotifications={3}>
-            {children}
-          </NotificationProvider>
-        </QueryProvider>
+        <AuthProvider>
+          <QueryProvider>
+            <NotificationProvider maxNotifications={3}>
+              {children}
+            </NotificationProvider>
+          </QueryProvider>
+        </AuthProvider>
       </ThemeProvider>
     </AppRouterCacheProvider>
   );

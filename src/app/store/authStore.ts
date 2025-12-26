@@ -63,23 +63,22 @@ export const useAuthStore = create<AuthState>()(
           const refreshToken = tokenStorage.getRefreshToken();
 
           if (accessToken) {
-            // Токен есть, пользователь аутентифицирован
             set({
               isAuthenticated: true,
               isInitialized: true,
             });
           } else if (refreshToken) {
-            // Access токена нет, но есть refresh - пробуем обновить
             const refreshSuccess = await get().refreshToken();
             set({
               isAuthenticated: refreshSuccess,
               isInitialized: true,
             });
+            if (!refreshSuccess) set({ user: null });
           } else {
-            // Токенов нет
             set({
               isAuthenticated: false,
               isInitialized: true,
+              user: null,
             });
           }
         } catch (error) {
@@ -87,6 +86,7 @@ export const useAuthStore = create<AuthState>()(
           set({
             isAuthenticated: false,
             isInitialized: true,
+            user: null,
           });
         }
       },

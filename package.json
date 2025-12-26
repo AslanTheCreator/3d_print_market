@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "user1": "start chrome http://localhost:3000 --user-data-dir=\"%TEMP%\\chrome_user_1\"",
+    "user2": "start chrome http://localhost:3000 --user-data-dir=\"%TEMP%\\chrome_user_2\"",
     "dev:3001": "cross-env PORT=3001 next dev",
     "build": "next build",
     "start": "next start",

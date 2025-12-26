@@ -11,17 +11,21 @@ import {
 } from "@mui/material";
 import { Logout as LogoutIcon } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import { authApi } from "../api/authApi";
+import { useAuthStore } from "@/app/store";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const LogoutButton: React.FC = () => {
   const router = useRouter();
   const theme = useTheme();
   const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const logout = useAuthStore((state) => state.logout);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
       setIsLoading(true);
-      authApi.logout();
+      logout();
+      queryClient.removeQueries();
       router.push("/auth/login");
     } catch (error) {
       console.error("Logout error:", error);
