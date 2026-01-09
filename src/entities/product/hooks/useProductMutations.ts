@@ -7,13 +7,7 @@ export const useCreateProduct = () => {
   return useMutation({
     mutationFn: productApi.createProduct,
     onSuccess: () => {
-      // Invalidate product lists or specific queries as needed
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
-      // Potentially redirect or show success message
-    },
-    onError: (error) => {
-      console.error("Error creating product:", error);
-      // Show error message
     },
   });
 };

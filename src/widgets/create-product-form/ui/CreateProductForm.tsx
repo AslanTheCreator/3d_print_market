@@ -24,6 +24,7 @@ import { useNotification } from "@/app/providers";
 import { useCreateProduct } from "@/entities/product";
 import { useImageUpload } from "@/features/image-upload";
 import { useCategories } from "@/entities/category";
+import { ApiError } from "@/shared/lib/errorHandler";
 
 export const CreateProductForm = () => {
   const { categories } = useCategories();
@@ -65,15 +66,18 @@ export const CreateProductForm = () => {
     }
 
     const productData = mapFormDataToCreateModel(data, imageIds);
-    console.log(productData);
     createProduct(productData, {
       onSuccess: () => {
         showNotification("Товар успешно создан!", "success");
         resetForm();
       },
       onError: (error) => {
-        console.error("Ошибка создания товара:", error);
-        showNotification("Произошла ошибка при создании товара", "error");
+        const errorMessage =
+          error instanceof ApiError
+            ? error.message
+            : "Произошла ошибка при создании товара";
+
+        showNotification(errorMessage, "error");
       },
     });
   };
@@ -108,7 +112,7 @@ export const CreateProductForm = () => {
             {/* Image Upload */}
             <Grid item xs={12}>
               <Typography variant="subtitle1" gutterBottom>
-                Изображение товара*
+                Изображение товара
               </Typography>
               <ImageUpload
                 onImageChange={handleImageChange}

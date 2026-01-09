@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, KeyboardEvent } from "react";
+import React, { useState, useRef, KeyboardEvent, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ interface VerificationCodeDialogProps {
   open: boolean;
   onClose: () => void;
   onVerify: (code: string) => Promise<void>;
+  onResendCode: () => Promise<{ success: boolean; retryAfterSec?: number }>;
   email: string;
   isLoading?: boolean;
 }
@@ -29,6 +30,7 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
   open,
   onClose,
   onVerify,
+  onResendCode,
   email,
   isLoading = false,
 }) => {
@@ -37,17 +39,26 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
 
   const [code, setCode] = useState(["", "", "", "", ""]);
   const [error, setError] = useState("");
+  const [countdown, setCountdown] = useState<number>(0);
+  const [isResending, setIsResending] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  // Countdown таймер
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
   const handleInputChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return; // Только цифры
+    if (!/^\d*$/.test(value)) return;
 
     const newCode = [...code];
-    newCode[index] = value.slice(-1); // Берем только последний символ
+    newCode[index] = value.slice(-1);
     setCode(newCode);
     setError("");
 
-    // Автоматический переход к следующему полю
     if (value && index < 4) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -86,19 +97,49 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
       await onVerify(fullCode);
     } catch (error) {
       setError("Неверный код. Попробуйте еще раз");
-      // Очищаем поля при ошибке
-      setCode(["", "", "", "", "", ""]);
+      setCode(["", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     }
   };
 
-  const handleClose = () => {
-    setCode(["", "", "", "", "", ""]);
+  const handleResend = async () => {
+    setIsResending(true);
     setError("");
+
+    try {
+      const result = await onResendCode();
+
+      if (result.success) {
+        setCode(["", "", "", "", ""]);
+        inputRefs.current[0]?.focus();
+      } else if (result.retryAfterSec) {
+        setCountdown(result.retryAfterSec);
+        setError(
+          `Слишком много запросов. Повторите попытку через ${result.retryAfterSec} секунд`
+        );
+      }
+    } catch (error) {
+      setError("Ошибка при отправке кода. Попробуйте позже");
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handleClose = () => {
+    setCode(["", "", "", "", ""]);
+    setError("");
+    setCountdown(0);
     onClose();
   };
 
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
   const isCodeComplete = code.every((digit) => digit !== "");
+  const isResendDisabled = countdown > 0 || isResending;
 
   return (
     <Dialog
@@ -116,7 +157,6 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
         },
       }}
     >
-      {/* Close button */}
       <IconButton
         onClick={handleClose}
         sx={{
@@ -140,7 +180,6 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
           textAlign: "center",
         }}
       >
-        {/* Icon */}
         <Box
           sx={{
             display: "flex",
@@ -191,7 +230,6 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
           </Box>
         </Box>
 
-        {/* Title */}
         <Typography
           variant="h5"
           sx={{
@@ -204,7 +242,6 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
           Подтверждение email
         </Typography>
 
-        {/* Description */}
         <Typography
           variant="body1"
           sx={{
@@ -219,7 +256,6 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
           <strong>{email}</strong>
         </Typography>
 
-        {/* Code Input */}
         <Box
           sx={{
             display: "flex",
@@ -269,7 +305,6 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
           ))}
         </Box>
 
-        {/* Error message */}
         {error && (
           <Typography
             variant="caption"
@@ -283,6 +318,20 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
             {error}
           </Typography>
         )}
+
+        {countdown > 0 && (
+          <Typography
+            variant="caption"
+            sx={{
+              color: theme.palette.text.secondary,
+              display: "block",
+              mb: 2,
+              fontSize: "0.75rem",
+            }}
+          >
+            Повторная отправка доступна через {formatTime(countdown)}
+          </Typography>
+        )}
       </DialogContent>
 
       <DialogActions
@@ -294,9 +343,10 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
         }}
       >
         <Button
-          onClick={handleClose}
+          onClick={handleResend}
           variant="outlined"
           fullWidth={isMobile}
+          disabled={isResendDisabled}
           sx={{
             borderRadius: "12px",
             py: 1.25,
@@ -305,9 +355,16 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
             fontWeight: 600,
             order: isMobile ? 2 : 1,
             minWidth: isMobile ? "auto" : 120,
+            position: "relative",
           }}
         >
-          Отмена
+          {isResending ? (
+            <CircularProgress size={20} color="inherit" />
+          ) : countdown > 0 ? (
+            `Повторно`
+          ) : (
+            "Отправить повторно"
+          )}
         </Button>
         <Button
           onClick={handleVerify}

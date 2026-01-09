@@ -4,7 +4,7 @@ import {
   OrderGetDataModel,
   ListOrdersModel,
 } from "../model/types";
-import { authApi } from "@/shared/api";
+import { authClient } from "@/shared/api";
 
 const API_URL = `/order`;
 
@@ -12,7 +12,7 @@ export const orderApi = {
   //1
   createOrder: async (orderData: OrderCreateModel) => {
     try {
-      const { data } = await authApi.post<number>(
+      const { data } = await authClient.post<number>(
         `${API_URL}/BOOKED`,
         orderData
       );
@@ -27,7 +27,7 @@ export const orderApi = {
     comment: string = ""
   ) => {
     try {
-      await authApi.post(
+      await authClient.post(
         `${API_URL}/${orderId}/AWAITING_PREPAYMENT?accountId=${accountId}&comment=${encodeURIComponent(
           comment
         )}`
@@ -42,7 +42,7 @@ export const orderApi = {
   //3.2
   confirmPreOrderBySeller: async (orderId: number, comment: string = "") => {
     try {
-      await authApi.post(
+      await authClient.post(
         `${API_URL}/${orderId}/AWAITING_PAYMENT?comment=${encodeURIComponent(
           comment
         )}`
@@ -61,7 +61,7 @@ export const orderApi = {
     comment: string = ""
   ) => {
     try {
-      const { data } = await authApi.post<number>(
+      const { data } = await authClient.post<number>(
         `${API_URL}/${orderId}/AWAITING_PREPAYMENT_APPROVAL?imageId=${imageId}&comment=${encodeURIComponent(
           comment
         )}`
@@ -81,7 +81,7 @@ export const orderApi = {
     comment: string = ""
   ) => {
     try {
-      const { data } = await authApi.post<number>(
+      const { data } = await authClient.post<number>(
         `${API_URL}/${orderId}/ASSEMBLING?imageId=${imageId}&comment=${encodeURIComponent(
           comment
         )}`
@@ -97,7 +97,7 @@ export const orderApi = {
   //5
   confirmReceiptByCustomer: async (orderId: number, comment: string = "") => {
     try {
-      const { data } = await authApi.post<number>(
+      const { data } = await authClient.post<number>(
         `${API_URL}/${orderId}/COMPLETED?comment=${encodeURIComponent(comment)}`
       );
       console.log("Покупатель подтвердил получение заказа, его id: ", data);
@@ -115,7 +115,7 @@ export const orderApi = {
     comment: string = ""
   ) => {
     try {
-      const { data } = await authApi.post<number>(
+      const { data } = await authClient.post<number>(
         `${API_URL}/${orderId}/ON_THE_WAY?deliveryUrl=${encodeURIComponent(
           deliveryUrl
         )}&comment=${encodeURIComponent(comment)}`
@@ -130,7 +130,7 @@ export const orderApi = {
   },
   getOrderData: async (productId: number): Promise<OrderGetDataModel> => {
     try {
-      const { data } = await authApi.get<OrderGetDataModel>(
+      const { data } = await authClient.get<OrderGetDataModel>(
         `${API_URL}?productId=${productId}`
       );
       if (!data) {
@@ -147,7 +147,7 @@ export const orderApi = {
   },
   getSellerOrders: async (): Promise<ListOrdersModel[]> => {
     try {
-      const { data } = await authApi.get<ListOrdersModel[]>(
+      const { data } = await authClient.get<ListOrdersModel[]>(
         `${API_URL}/seller`
       );
       if (!data) {
@@ -163,7 +163,7 @@ export const orderApi = {
   },
   getCustomerOrders: async (): Promise<ListOrdersModel[]> => {
     try {
-      const { data } = await authApi.get<ListOrdersModel[]>(
+      const { data } = await authClient.get<ListOrdersModel[]>(
         `${API_URL}/customer`
       );
       if (!data) {

@@ -10,4 +10,7 @@ export type DictionaryType =
   | "CURRENCY"
   | "TRANSFER_MONEY"
   | "DEADLINE_SENDING"
-  | "DEADLINE_PAYMENT";
+  | "DEADLINE_PAYMENT"
+  | "ORDER_STATUS"
+  | "PRODUCT_AVAILABILITY"
+  | "SORT_BY";

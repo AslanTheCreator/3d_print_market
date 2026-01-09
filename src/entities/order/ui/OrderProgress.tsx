@@ -1,7 +1,8 @@
 "use client";
-import React from "react";
-import { Box, Paper, Stack, Typography } from "@mui/material";
+import React, { useMemo } from "react";
+import { Box, Paper, Stack, Typography, Skeleton } from "@mui/material";
 import { CheckCircle } from "@mui/icons-material";
+import { useOrderStatusDictionary } from "@/entities/order/lib/useOrderStatusDictionary";
 
 type UserRole = "seller" | "customer";
 
@@ -10,26 +11,75 @@ interface OrderProgressProps {
   userRole: UserRole;
 }
 
+interface StepConfig {
+  key: string;
+  shortLabel: string; // Короткое название для UI
+  sellerAction?: boolean;
+  customerAction?: boolean;
+  info?: boolean;
+}
+
 export const OrderProgress = ({ status, userRole }: OrderProgressProps) => {
-  const steps = [
-    { key: "BOOKED", label: "Забронирован", sellerAction: true },
-    {
-      key: "AWAITING_PREPAYMENT",
-      label: "Предоплачен",
-      customerAction: true,
-    },
-    {
-      key: "AWAITING_PREPAYMENT_APPROVAL",
-      label: "Подтверждение предоплаты",
-      sellerAction: true,
-    },
-    { key: "AWAITING_PAYMENT", label: "Ожидает оплату", customerAction: true },
-    { key: "ASSEMBLING", label: "Собирается", sellerAction: true },
-    { key: "ON_THE_WAY", label: "В пути", customerAction: true },
-    { key: "COMPLETED", label: "Завершен", info: true },
-  ];
+  const { getStatusDescription, isLoading } = useOrderStatusDictionary();
+
+  const stepsConfig: StepConfig[] = useMemo(
+    () => [
+      { key: "BOOKED", shortLabel: "Забронирован", sellerAction: true },
+      {
+        key: "AWAITING_PREPAYMENT",
+        shortLabel: "Предоплата",
+        customerAction: true,
+      },
+      {
+        key: "AWAITING_PREPAYMENT_APPROVAL",
+        shortLabel: "Подтверждение",
+        sellerAction: true,
+      },
+      { key: "AWAITING_PAYMENT", shortLabel: "Оплата", customerAction: true },
+      { key: "ASSEMBLING", shortLabel: "Сборка", sellerAction: true },
+      { key: "ON_THE_WAY", shortLabel: "В пути", customerAction: true },
+      { key: "COMPLETED", shortLabel: "Завершен", info: true },
+    ],
+    []
+  );
+
+  const steps = useMemo(
+    () =>
+      stepsConfig.map((config) => ({
+        ...config,
+        label: config.shortLabel,
+        fullLabel: isLoading ? config.key : getStatusDescription(config.key),
+      })),
+    [stepsConfig, isLoading, getStatusDescription]
+  );
 
   const currentStepIndex = steps.findIndex((step) => step.key === status);
+
+  if (isLoading) {
+    return (
+      <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: "grey.50" }}>
+        <Skeleton variant="text" width={150} height={24} sx={{ mb: 2 }} />
+        <Stack direction="row" spacing={1}>
+          {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <Box key={i} sx={{ minWidth: 80, textAlign: "center" }}>
+              <Skeleton
+                variant="circular"
+                width={24}
+                height={24}
+                sx={{ mx: "auto", mb: 1 }}
+              />
+              <Skeleton
+                variant="text"
+                width={60}
+                height={20}
+                sx={{ mx: "auto" }}
+              />
+            </Box>
+          ))}
+        </Stack>
+      </Paper>
+    );
+  }
 
   return (
     <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: "grey.50" }}>
@@ -53,6 +103,7 @@ export const OrderProgress = ({ status, userRole }: OrderProgressProps) => {
                 textAlign: "center",
                 position: "relative",
               }}
+              title={step.fullLabel} // Полное описание в tooltip
             >
               <Box
                 sx={{

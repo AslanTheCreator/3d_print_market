@@ -1,5 +1,5 @@
 import { errorHandler } from "@/shared/lib";
-import { publicApi } from "@/shared/api";
+import { publicClient } from "@/shared/api";
 import { DictionaryItem } from "../model/types";
 
 const API_URL = `/dictionary`;
@@ -7,7 +7,7 @@ const API_URL = `/dictionary`;
 export const dictionaryApi = {
   getDictionary: async (type: string): Promise<DictionaryItem[]> => {
     try {
-      const { data } = await publicApi.get<DictionaryItem[]>(
+      const { data } = await publicClient.get<DictionaryItem[]>(
         `${API_URL}?type=${type}`
       );
       return data ?? [];

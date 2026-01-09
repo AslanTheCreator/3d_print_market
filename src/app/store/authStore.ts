@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { authApi } from "@/features/auth/api/authApi";
+import { authApi } from "@/features/auth";
 import { tokenStorage } from "@/shared/lib";
 
 interface AuthState {

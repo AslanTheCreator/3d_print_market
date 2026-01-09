@@ -167,8 +167,8 @@ const createAuthenticatedAxios = (): AxiosInstance => {
 };
 
 // Экспортируем готовые инстансы
-export const publicApi = createPublicAxios();
-export const authApi = createAuthenticatedAxios();
+export const publicClient = createPublicAxios();
+export const authClient = createAuthenticatedAxios();
 
 // Экспортируем функцию для предзагрузки конфига (опционально)
 export const preloadApiConfig = async () => {

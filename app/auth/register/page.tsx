@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import AuthForm from "@/widgets/auth-form";
-import { authApi } from "@/features/auth/api/authApi";
+import { authApi } from "@/features/auth";
 import { AuthFormModel } from "@/features/auth/model/types";
 import { useRouter } from "next/navigation";
 import { VerificationCodeDialog } from "@/features/auth/ui/VerificationCodeDialog";
@@ -41,6 +41,33 @@ export default function RegisterPage() {
     }
   };
 
+  const handleResendCode = async (): Promise<{
+    success: boolean;
+    retryAfterSec?: number;
+  }> => {
+    try {
+      const result = await authApi.sendVerificationCode(userEmail);
+
+      if (result.success && result.userId) {
+        // Обновляем userId если он изменился при повторной отправке
+        setUserId(result.userId);
+        console.log("Код повторно отправлен, userId:", result.userId);
+        return { success: true };
+      } else if (result.retryAfterSec) {
+        // Возвращаем информацию о cooldown для UI
+        return {
+          success: false,
+          retryAfterSec: result.retryAfterSec,
+        };
+      }
+
+      return { success: false };
+    } catch (error) {
+      console.error("Resend code failed:", error);
+      throw error;
+    }
+  };
+
   const handleVerifyCode = async (code: string) => {
     if (!userId) {
       console.error("User ID не найден");
@@ -67,7 +94,7 @@ export default function RegisterPage() {
 
   const handleCloseVerification = () => {
     setIsVerificationOpen(false);
-    // Опционально: можно очистить состояние
+    // Очищаем состояние
     setUserId(null);
     setUserEmail("");
   };
@@ -88,6 +115,7 @@ export default function RegisterPage() {
         open={isVerificationOpen}
         onClose={handleCloseVerification}
         onVerify={handleVerifyCode}
+        onResendCode={handleResendCode}
         email={userEmail}
         isLoading={isVerifying}
       />

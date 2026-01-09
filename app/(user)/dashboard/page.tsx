@@ -25,7 +25,8 @@ type DashboardTab = "main" | "profile";
 export default function DashboardView() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { data: userData, isLoading } = useCurrentUser();
+  const { data: userData, isLoading, error } = useCurrentUser();
+
   // Локальное состояние для переключения табов внутри страницы
   const [currentTab, setCurrentTab] = useState<DashboardTab>("main");
 
@@ -33,13 +34,9 @@ export default function DashboardView() {
     return <DashboardSkeleton isMobile={isMobile} />;
   }
 
-  if (!userData) {
+  if (error || !userData) {
     return <ErrorState type="profile" />;
   }
-
-  // if (error || !userData) {
-  //   return <ErrorState type="profile" />;
-  // }
 
   // Обработчики для внутренней навигации
   const handleEditProfile = () => setCurrentTab("profile");
@@ -49,7 +46,11 @@ export default function DashboardView() {
   const renderMainContent = () => {
     if (currentTab === "profile") {
       return (
-        <ProfileForm onBack={handleBackToDashboard} initialData={userData} />
+        <ProfileForm
+          onBack={handleBackToDashboard}
+          initialData={userData}
+          onSuccess={handleBackToDashboard}
+        />
       );
     }
     return <DashboardContent user={userData} />;
@@ -74,7 +75,11 @@ export default function DashboardView() {
             <DashboardNavigation />
           </>
         ) : (
-          <ProfileForm onBack={handleBackToDashboard} />
+          <ProfileForm
+            onBack={handleBackToDashboard}
+            initialData={userData}
+            onSuccess={handleBackToDashboard}
+          />
         )}
       </Container>
     );

@@ -36,7 +36,6 @@ export const mapFormDataToCreateModel = (
     prepaymentAmount: formData.isPreorder
       ? parseFloat(formData.prepaymentAmount)
       : 0,
-    count: 1,
     originality: "ORIGINAL",
     externalUrl: "", // Можно настроить позже, если потребуется
   };

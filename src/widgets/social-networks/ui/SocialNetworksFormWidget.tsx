@@ -345,7 +345,11 @@ export const SocialNetworksFormWidget = () => {
                                 <TextField
                                   {...field}
                                   fullWidth
-                                  label="Имя пользователя"
+                                  label={
+                                    network.value === "WHATSAPP"
+                                      ? "Номер телефона"
+                                      : "Имя пользователя"
+                                  }
                                   placeholder={
                                     network.value === "VK"
                                       ? "@username или id123456"

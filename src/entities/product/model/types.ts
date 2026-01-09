@@ -42,7 +42,7 @@ export interface ProductCreateModel {
   price: number;
   prepaymentAmount: number;
   categoryIds: number[];
-  count: number;
+  count?: number | null;
   currency: Currency;
   originality: string;
   availability: Availability;

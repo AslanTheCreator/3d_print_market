@@ -9,12 +9,12 @@ import {
   CardContent,
   Typography,
   Divider,
-  Button,
   Collapse,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Button,
 } from "@mui/material";
 import { InfoOutlined } from "@mui/icons-material";
 
@@ -168,6 +168,9 @@ export const AddressManagerWidget: React.FC<AddressManagerWidgetProps> = ({
               selectedAddressId={selectedAddress?.id}
               onAddressSelect={handleAddressSelect}
               onAddNewAddress={handleAddNewAddress}
+              onDeleteAddress={openDeleteDialog}
+              showRadio={false}
+              showDeleteButton={true}
             />
           </Collapse>
 
@@ -185,19 +188,30 @@ export const AddressManagerWidget: React.FC<AddressManagerWidgetProps> = ({
       </Card>
 
       {/* Диалог подтверждения удаления */}
-      <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog}>
-        <DialogTitle>Удалить адрес?</DialogTitle>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={closeDeleteDialog}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 600 }}>Удалить адрес?</DialogTitle>
         <DialogContent>
-          <Typography>
+          <Typography variant="body1" sx={{ mb: 1.5 }}>
             {addressToDelete &&
               `${addressToDelete.city}, ${addressToDelete.street} ${addressToDelete.houseNumber}`}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          <Typography variant="body2" color="text.secondary">
             Это действие нельзя отменить.
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteDialog}>Отмена</Button>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={closeDeleteDialog}
+            variant="outlined"
+            disabled={isDeleting}
+          >
+            Отмена
+          </Button>
           <Button
             onClick={confirmDelete}
             color="error"

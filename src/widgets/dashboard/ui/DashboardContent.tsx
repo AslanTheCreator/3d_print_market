@@ -187,7 +187,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ user }) => {
                 link="/dashboard/sales"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            {/* <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Предзаказы"
                 value="0"
@@ -195,7 +195,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ user }) => {
                 color="#ff9800"
                 link="/dashboard/pre-orders"
               />
-            </Grid>
+            </Grid> */}
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Товары"

@@ -26,6 +26,7 @@ interface IAuthForm {
   buttonTitle: string;
   onSubmit?: (email: string, password: string) => Promise<void>;
   isLoading?: boolean;
+  onForgotPassword?: () => void;
 }
 
 const AuthForm: React.FC<IAuthForm> = ({
@@ -36,6 +37,7 @@ const AuthForm: React.FC<IAuthForm> = ({
   buttonTitle,
   onSubmit,
   isLoading = false,
+  onForgotPassword,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -43,7 +45,6 @@ const AuthForm: React.FC<IAuthForm> = ({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  // const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -55,7 +56,6 @@ const AuthForm: React.FC<IAuthForm> = ({
     e.preventDefault();
     setPasswordError("");
 
-    // Submit form if onSubmit is provided
     if (onSubmit) {
       try {
         setIsSubmitting(true);
@@ -188,6 +188,34 @@ const AuthForm: React.FC<IAuthForm> = ({
               </FormHelperText>
             )}
           </Box>
+
+          {/* Кнопка "Забыли пароль?" */}
+          {onForgotPassword && (
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 0.5 }}>
+              <Typography
+                component="button"
+                type="button"
+                onClick={onForgotPassword}
+                sx={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  fontSize: isMobile ? "0.8rem" : "0.875rem",
+                  fontWeight: 500,
+                  color: "primary.main",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  transition: "color 0.2s ease",
+                  "&:hover": {
+                    textDecoration: "underline",
+                    color: theme.palette.primary.dark,
+                  },
+                }}
+              >
+                Забыли пароль?
+              </Typography>
+            </Box>
+          )}
 
           <Button
             variant="contained"

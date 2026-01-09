@@ -28,3 +28,17 @@ export const useProductsInfinite = (
     queryKey: ["products"],
   });
 };
+
+export const useUserProductsInfinite = (
+  size: number,
+  filters?: ProductFilter,
+  sortBy?: SortBy
+) => {
+  return useInfiniteProducts({
+    size,
+    filters,
+    sortBy,
+    fetchFunction: productApi.getUserProducts,
+    queryKey: ["userProducts"],
+  });
+};

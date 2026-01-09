@@ -1,2 +1,2 @@
 export { fetchProductsWithImages } from "./utils/fetchProductsWithImages";
-export { publicApi, authApi } from "./axios/instances";
+export { publicClient, authClient } from "./axios/instances";

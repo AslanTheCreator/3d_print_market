@@ -1,4 +1,3 @@
-// entities/user/hooks/useUserMutations.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { userApi } from "../api/userApi";
 import { userKeys } from "./queryKeys";
@@ -27,7 +26,7 @@ export const useUpdateUser = () => {
         queryClient.setQueryData<UserBaseModel>(userKeys.current(), {
           ...previousCurrent,
           ...newData,
-          imageIds: newData.imageIds ?? previousCurrent.imageIds,
+          imageId: newData.imageId ?? previousCurrent.imageId,
         });
       }
 

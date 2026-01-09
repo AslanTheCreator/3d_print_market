@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Box,
   TextField,
@@ -65,6 +65,9 @@ export const TransferFormWidget = () => {
     new Set()
   );
 
+  // Флаг для отслеживания первой инициализации
+  const isInitialized = useRef(false);
+
   const { data: shippingMethods, isLoading: methodsLoading } =
     useDictionary("SHOPPING_METHODS");
   const { data: currencies, isLoading: currenciesLoading } =
@@ -91,8 +94,14 @@ export const TransferFormWidget = () => {
     defaultValues: { methods: {} },
   });
 
+  // Инициализация формы только один раз при загрузке данных
   useEffect(() => {
-    if (availableMethods.length > 0 && userTransfers) {
+    if (
+      !isInitialized.current &&
+      availableMethods.length > 0 &&
+      userTransfers &&
+      !transfersLoading
+    ) {
       const methodsData: FormData["methods"] = {};
       const expanded = new Set<string>();
 
@@ -119,8 +128,9 @@ export const TransferFormWidget = () => {
 
       setValue("methods", methodsData, { shouldDirty: false });
       setExpandedMethods(expanded);
+      isInitialized.current = true;
     }
-  }, [availableMethods, userTransfers, setValue]);
+  }, [availableMethods.length, transfersLoading, userTransfers?.length]);
 
   const methodsData = watch("methods");
 
@@ -134,6 +144,24 @@ export const TransferFormWidget = () => {
       }
       return newSet;
     });
+  };
+
+  const handleCheckboxChange = (
+    fieldOnChange: (checked: boolean) => void,
+    checked: boolean,
+    methodValue: string
+  ) => {
+    fieldOnChange(checked);
+
+    if (checked) {
+      setExpandedMethods((prev) => new Set(prev).add(methodValue));
+    } else {
+      setExpandedMethods((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(methodValue);
+        return newSet;
+      });
+    }
   };
 
   const onSubmit = async (data: FormData) => {
@@ -268,20 +296,14 @@ export const TransferFormWidget = () => {
                             <FormControlLabel
                               control={
                                 <Checkbox
-                                  {...field}
                                   checked={field.value || false}
-                                  onChange={(e) => {
-                                    field.onChange(e.target.checked);
-                                    if (e.target.checked) {
-                                      handleMethodToggle(method.value);
-                                    } else {
-                                      setExpandedMethods((prev) => {
-                                        const newSet = new Set(prev);
-                                        newSet.delete(method.value);
-                                        return newSet;
-                                      });
-                                    }
-                                  }}
+                                  onChange={(e) =>
+                                    handleCheckboxChange(
+                                      field.onChange,
+                                      e.target.checked,
+                                      method.value
+                                    )
+                                  }
                                 />
                               }
                               label=""

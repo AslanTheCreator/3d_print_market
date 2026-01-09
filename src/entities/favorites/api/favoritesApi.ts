@@ -2,7 +2,7 @@ import { ProductCardModel } from "@/entities/product";
 import { ProductFilter, SortBy } from "@/entities/product/model/types";
 import { fetchProductsWithImages } from "@/shared/api";
 import { errorHandler } from "@/shared/lib";
-import { authApi } from "@/shared/api";
+import { authClient } from "@/shared/api";
 
 const API_URL = `/favorites`;
 
@@ -16,7 +16,7 @@ export const favoritesApi = {
     sortBy: SortBy = "DATE_DESC"
   ): Promise<ProductCardModel[]> => {
     return fetchProductsWithImages(
-      authApi,
+      authClient,
       `${API_URL}/find`,
       size,
       filters,
@@ -29,7 +29,7 @@ export const favoritesApi = {
   },
   addToFavorites: async (productId: number) => {
     try {
-      await authApi.post(`${API_URL}?productId=${productId}`);
+      await authClient.post(`${API_URL}?productId=${productId}`);
     } catch (error) {
       throw errorHandler.handleAxiosError(
         error,
@@ -39,7 +39,7 @@ export const favoritesApi = {
   },
   removeFromFavorites: async (productId: number) => {
     try {
-      await authApi.delete(`${API_URL}?productId=${productId}`);
+      await authClient.delete(`${API_URL}?productId=${productId}`);
     } catch (error) {
       throw errorHandler.handleAxiosError(
         error,

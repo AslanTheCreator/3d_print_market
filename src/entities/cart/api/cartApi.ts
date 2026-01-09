@@ -1,6 +1,6 @@
 import { CartProductModel } from "../model/types";
 import { errorHandler } from "@/shared/lib";
-import { authApi } from "@/shared/api";
+import { authClient } from "@/shared/api";
 import { fetchProductsWithImages } from "@/shared/api";
 import { ProductFilter, SortBy } from "@/entities/product/model/types";
 
@@ -16,7 +16,7 @@ export const cartApi = {
     sortBy: SortBy = "DATE_DESC"
   ): Promise<CartProductModel[]> => {
     return fetchProductsWithImages(
-      authApi,
+      authClient,
       `${API_URL}/find`,
       size,
       filters,
@@ -29,7 +29,7 @@ export const cartApi = {
   },
   addToCart: async (productId: number) => {
     try {
-      await authApi.post(`${API_URL}?productId=${productId}`);
+      await authClient.post(`${API_URL}?productId=${productId}`);
     } catch (error) {
       throw errorHandler.handleAxiosError(
         error,
@@ -40,7 +40,7 @@ export const cartApi = {
 
   removeFromCart: async (productId: number) => {
     try {
-      await authApi.delete(`${API_URL}?productId=${productId}`);
+      await authClient.delete(`${API_URL}?productId=${productId}`);
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка при удалении товара");
     }

@@ -12,28 +12,33 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
-
 import { AvatarUpload } from "@/shared/ui/avatar-upload";
 import { useImageUpload } from "@/features/image-upload";
-import { useUpdateUser } from "@/entities/user";
+import { useUpdateUser, UserBaseModel } from "@/entities/user";
+import { useState, useEffect } from "react";
 
 interface ProfileFormValues {
   fullName: string;
   phoneNumber: string;
+  login: string;
 }
 
 interface ProfileFormProps {
-  initialData?: Partial<ProfileFormValues>;
+  initialData?: UserBaseModel;
   onBack: () => void;
   onSuccess?: () => void;
 }
 
 export const ProfileForm: React.FC<ProfileFormProps> = ({
-  initialData = {},
+  initialData,
   onBack,
   onSuccess,
 }) => {
   const { mutateAsync, isPending } = useUpdateUser();
+  const [hasImageChanged, setHasImageChanged] = useState(false);
+  const [currentImageId, setCurrentImageId] = useState<number | null>(
+    initialData?.imageId ?? null
+  );
 
   const {
     imagePreview,
@@ -44,26 +49,54 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     resetImageState,
   } = useImageUpload("PARTICIPANT");
 
+  // Получаем текущее изображение пользователя для preview
+  const existingImage = initialData?.image?.[0];
+  const existingImagePreview = existingImage
+    ? `data:${existingImage.contentType};base64,${existingImage.imageData}`
+    : null;
+
   const {
     control,
     handleSubmit,
     formState: { errors, isDirty },
   } = useForm<ProfileFormValues>({
     defaultValues: {
-      fullName: initialData.fullName ?? "",
-      phoneNumber: initialData.phoneNumber ?? "",
+      fullName: initialData?.fullName ?? "",
+      phoneNumber: initialData?.phoneNumber ?? "",
+      login: initialData?.login ?? "",
     },
   });
 
+  // Обновляем ID изображения при загрузке нового
+  useEffect(() => {
+    if (imageIds.length > 0) {
+      setCurrentImageId(imageIds[0]);
+    }
+  }, [imageIds]);
+
+  const handleImageChangeWrapper = (file: File) => {
+    handleImageChange(file);
+    setHasImageChanged(true);
+  };
+
+  const handleResetImage = () => {
+    resetImageState();
+    setHasImageChanged(true);
+    setCurrentImageId(null);
+  };
+
+  const isFormChanged = isDirty || hasImageChanged;
   const isLoading = isPending || isUploading;
+
+  // Используем новое изображение если оно загружено, иначе существующее
+  const displayImagePreview = imagePreview || existingImagePreview;
 
   const onSubmit = async (data: ProfileFormValues) => {
     await mutateAsync({
       ...data,
-      imageIds: imageIds.length ? imageIds : [],
+      imageId: currentImageId,
       deadlineSending: 0,
       deadlinePayment: 0,
-      login: "", // ?
     });
     onSuccess?.();
   };
@@ -91,11 +124,38 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
         <Grid container spacing={{ xs: 2, md: 3 }}>
           <Grid item xs={12}>
             <AvatarUpload
-              imagePreview={imagePreview}
+              imagePreview={displayImagePreview}
               imageError={imageError}
               isUploading={isUploading}
-              onImageChange={handleImageChange}
-              onDeleteImage={resetImageState}
+              onImageChange={handleImageChangeWrapper}
+              onDeleteImage={handleResetImage}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Controller
+              name="login"
+              control={control}
+              rules={{
+                required: "Введите логин",
+                minLength: { value: 2, message: "Минимум 2 символа" },
+                maxLength: { value: 30, message: "Максимум 30 символов" },
+                pattern: {
+                  value: /^[a-zA-Z0-9_.-]+$/,
+                  message: "Только латинские буквы, цифры и символы _.-",
+                },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="Логин"
+                  placeholder="misterBob"
+                  error={!!errors.login}
+                  helperText={errors.login?.message}
+                  autoComplete="username"
+                />
+              )}
             />
           </Grid>
 
@@ -106,6 +166,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
               rules={{
                 required: "Введите имя",
                 minLength: { value: 2, message: "Минимум 2 символа" },
+                maxLength: { value: 100, message: "Максимум 100 символов" },
               }}
               render={({ field }) => (
                 <TextField
@@ -153,7 +214,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
               fullWidth
               variant="contained"
               size="large"
-              disabled={isLoading || !isDirty}
+              disabled={isLoading || !isFormChanged}
               sx={{ mt: 2, py: 1.75, fontWeight: 700 }}
             >
               {isLoading ? (

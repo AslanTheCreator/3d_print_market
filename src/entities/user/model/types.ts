@@ -12,7 +12,7 @@ export interface UserProfileModel
   extends Pick<UserBaseModel, "id" | "fullName" | "login"> {
   role: string;
   email: string;
-  imageId: number;
+  imageId: number | null;
   image: ImageResponse[];
   exp: number;
   type: string;
@@ -28,7 +28,7 @@ export interface UserBaseModel {
   sellerStatus: SellerStatus;
   averageRating: number;
   totalReviews: number;
-  imageIds: number[];
+  imageId: number | null;
   image: ImageResponse[];
   addresses: AddressBaseModel[];
   accounts: AccountsBaseModel[];
@@ -41,7 +41,7 @@ export interface UserFindModel {
   login: string;
   country: string;
   city: string;
-  imageId: number;
+  imageId: number | null;
   experience: string;
   orderCompletedCount: number;
   orderPurchaseCount: number;
@@ -58,5 +58,5 @@ export interface UserUpdateModel {
   phoneNumber: string;
   deadlineSending: number;
   deadlinePayment: number;
-  imageIds: number[];
+  imageId: number | null;
 }

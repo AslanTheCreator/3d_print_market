@@ -18,6 +18,7 @@ import {
   History,
 } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order/model/types";
+import { useOrderStatusDictionary } from "@/entities/order/lib/useOrderStatusDictionary";
 
 interface OrderHistoryProps {
   histories: ListOrdersModel["histories"];
@@ -25,6 +26,7 @@ interface OrderHistoryProps {
 
 export const OrderHistory = ({ histories }: OrderHistoryProps) => {
   const [expanded, setExpanded] = useState(false);
+  const { getStatusDescription, isLoading } = useOrderStatusDictionary();
 
   return (
     <Box>
@@ -45,7 +47,11 @@ export const OrderHistory = ({ histories }: OrderHistoryProps) => {
                 <CheckCircle sx={{ fontSize: 16 }} color="success" />
               </ListItemIcon>
               <ListItemText
-                primary={history.status}
+                primary={
+                  isLoading
+                    ? history.status
+                    : getStatusDescription(history.status)
+                }
                 secondary={
                   <Stack direction="column" spacing={0.5}>
                     {history.comment && (
@@ -54,7 +60,7 @@ export const OrderHistory = ({ histories }: OrderHistoryProps) => {
                       </Typography>
                     )}
                     <Typography variant="caption" color="text.secondary">
-                      {new Date(history.changedAt).toLocaleString("ru-RU")}
+                      {history.changedAt.replace(" ", ", ")}
                     </Typography>
                   </Stack>
                 }

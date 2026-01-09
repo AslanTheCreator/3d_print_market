@@ -8,7 +8,7 @@ import {
 import { imageApi } from "@/entities/image";
 import { errorHandler } from "@/shared/lib";
 import { fetchProductsWithImages } from "@/shared/api";
-import { publicApi, authApi } from "@/shared/api";
+import { publicClient, authClient } from "@/shared/api";
 
 const API_URL_PRODUCT = `/product`;
 const API_URL = `/products`;
@@ -23,7 +23,7 @@ export const productApi = {
     sortBy: SortBy = "DATE_DESC"
   ): Promise<ProductCardModel[]> => {
     return fetchProductsWithImages(
-      publicApi,
+      publicClient,
       `${API_URL}/find`,
       size,
       filters,
@@ -37,7 +37,7 @@ export const productApi = {
 
   getProductById: async (id: string): Promise<ProductDetailsModel> => {
     try {
-      const { data } = await publicApi.get<ProductDetailsModel>(
+      const { data } = await publicClient.get<ProductDetailsModel>(
         `${API_URL_PRODUCT}/${id}`
       );
 
@@ -64,7 +64,7 @@ export const productApi = {
     sortBy: SortBy = "DATE_DESC"
   ): Promise<ProductCardModel[]> => {
     return fetchProductsWithImages(
-      authApi,
+      authClient,
       `${API_URL}/my`,
       size,
       filters,
@@ -78,7 +78,7 @@ export const productApi = {
 
   createProduct: async (data: ProductCreateModel) => {
     try {
-      await authApi.post(`${API_URL}`, data);
+      await authClient.post(`${API_URL}`, data);
     } catch (error) {
       throw errorHandler.handleAxiosError(error, "Ошибка при создании товара");
     }

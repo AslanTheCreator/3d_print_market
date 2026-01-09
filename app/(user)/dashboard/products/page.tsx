@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import {
   Container,
   Typography,
@@ -39,6 +37,7 @@ import {
   ProductCard,
   ProductCardSkeleton,
   useProductsInfinite,
+  useUserProductsInfinite,
 } from "@/entities/product";
 import { useRouter } from "next/navigation";
 import { useProfileUser } from "@/entities/user";
@@ -128,7 +127,7 @@ export default function UserProductsPage() {
     error,
     refetch,
     isRefetching,
-  } = useProductsInfinite(12, filters, sortBy);
+  } = useUserProductsInfinite(12, filters, sortBy);
 
   const products = data?.pages.flat() ?? [];
 

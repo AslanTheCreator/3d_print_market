@@ -33,7 +33,7 @@ interface NavigationItem {
 
 const navigationItems: NavigationItem[] = [
   {
-    text: "Товары",
+    text: "Мои товары",
     icon: <InventoryIcon />,
     href: "/dashboard/products",
     color: "#f44336",
