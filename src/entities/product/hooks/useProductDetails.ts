@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useProductById } from "./useProductQueries";
 import { ProductDetailsModel } from "../model/types";
-import { useUserById } from "@/entities/user/hooks/useUserQueries"; // Corrected import path
 
 interface UseProductDetailsReturn {
   productCard: ProductDetailsModel | undefined;
@@ -10,8 +9,6 @@ interface UseProductDetailsReturn {
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
-  averageRating?: number;
-  sellerName?: string;
 }
 
 export const useProductDetails = (): UseProductDetailsReturn => {
@@ -19,7 +16,6 @@ export const useProductDetails = (): UseProductDetailsReturn => {
   const id = params.id as string;
 
   const { data: productCard, isLoading, error, isError } = useProductById(id);
-  const { data: user } = useUserById(productCard?.participantId);
 
   const mainImage = useMemo(() => {
     const firstImage = productCard?.image[0];
@@ -46,7 +42,5 @@ export const useProductDetails = (): UseProductDetailsReturn => {
     isLoading,
     error,
     isError,
-    averageRating: user?.averageRating,
-    sellerName: user?.login,
   };
 };

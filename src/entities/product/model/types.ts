@@ -34,6 +34,8 @@ export interface ProductDetailsModel extends BaseProduct {
   reviews: ReviewModel[];
   imageIds: number[];
   image: ImageResponse[];
+  sellerLogin: string;
+  sellerRating: number;
 }
 
 export interface ProductCreateModel {

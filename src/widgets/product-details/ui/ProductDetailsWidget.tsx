@@ -9,14 +9,7 @@ export function ProductDetailsWidget() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const {
-    productCard,
-    allImages,
-    isLoading,
-    isError,
-    averageRating,
-    sellerName,
-  } = useProductDetails();
+  const { productCard, allImages, isLoading, isError } = useProductDetails();
 
   if (isLoading) {
     return <ProductDetailsSkeleton />;
@@ -29,8 +22,6 @@ export function ProductDetailsWidget() {
   const commonProps = {
     productCard,
     allImages,
-    averageRating,
-    sellerName,
   };
 
   return isMobile ? (

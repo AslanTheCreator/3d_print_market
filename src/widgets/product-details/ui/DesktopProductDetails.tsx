@@ -1,89 +1,336 @@
 "use client";
 
-import { Container, Typography, Grid, Stack, Box } from "@mui/material";
-import { ImageGallery } from "@/shared/ui/image-gallery";
 import {
-  ProductPrice,
-  ProductRating,
-  ProductDescription,
-  ProductDetailsModel,
-} from "@/entities/product";
+  Container,
+  Typography,
+  Grid,
+  Stack,
+  Box,
+  Chip,
+  Paper,
+  Divider,
+  alpha,
+} from "@mui/material";
+import { ImageGallery } from "@/shared/ui/image-gallery";
+import { ProductDetailsModel } from "@/entities/product";
 import { RelatedProducts } from "./RelatedProducts";
 import { AddToCartButton } from "@/features/cart";
+import { FavoriteButton } from "@/features/toggle-favorite";
+import { Verified, LocalShipping, Schedule, Star } from "@mui/icons-material";
 
 interface DesktopProductDetailsProps {
   productCard: ProductDetailsModel;
   allImages: string[];
-  averageRating?: number;
-  sellerName?: string;
 }
+
+// Компонент информации о цене
+const PriceSection = ({
+  price,
+  prepaymentAmount,
+  availability,
+}: {
+  price: number;
+  prepaymentAmount: number;
+  availability: string;
+}) => {
+  const isPreorder = availability === "PREORDER";
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        p: 3,
+        borderRadius: 3,
+        background: (theme) =>
+          `linear-gradient(135deg, ${alpha(
+            theme.palette.primary.main,
+            0.05
+          )} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+        border: "2px solid",
+        borderColor: isPreorder ? "preorder.main" : "primary.main",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {isPreorder && (
+        <Chip
+          icon={<Schedule sx={{ fontSize: 18 }} />}
+          label="Предзаказ"
+          color="warning"
+          size="small"
+          sx={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            fontWeight: 700,
+            fontSize: "0.75rem",
+          }}
+        />
+      )}
+
+      <Stack spacing={2}>
+        {isPreorder ? (
+          <>
+            <Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontWeight: 600 }}
+              >
+                Предоплата сейчас
+              </Typography>
+              <Typography
+                variant="h3"
+                color="preorder.main"
+                sx={{ fontWeight: 800, lineHeight: 1 }}
+              >
+                {prepaymentAmount.toLocaleString("ru-RU")} ₽
+              </Typography>
+            </Box>
+
+            <Divider />
+
+            <Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontWeight: 600 }}
+              >
+                Полная стоимость
+              </Typography>
+              <Typography
+                variant="h5"
+                color="text.primary"
+                sx={{ fontWeight: 700 }}
+              >
+                {price.toLocaleString("ru-RU")} ₽
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Оплата при получении:{" "}
+                {(price - prepaymentAmount).toLocaleString("ru-RU")} ₽
+              </Typography>
+            </Box>
+          </>
+        ) : (
+          <Box>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontWeight: 600 }}
+            >
+              Цена
+            </Typography>
+            <Typography
+              variant="h3"
+              color="primary.main"
+              sx={{ fontWeight: 800, lineHeight: 1 }}
+            >
+              {price.toLocaleString("ru-RU")} ₽
+            </Typography>
+          </Box>
+        )}
+      </Stack>
+    </Paper>
+  );
+};
+
+// Компонент информационных бейджей
+const InfoBadges = ({ product }: { product: ProductDetailsModel }) => {
+  const isPreorder = product.availability === "PREORDER";
+
+  return (
+    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+      <Chip
+        icon={<Verified sx={{ fontSize: 18 }} />}
+        label={product.originality}
+        size="small"
+        variant="outlined"
+        color="success"
+        sx={{ fontWeight: 600 }}
+      />
+
+      {product.count > 0 && (
+        <Chip
+          label={`В наличии: ${product.count} шт`}
+          size="small"
+          variant="outlined"
+          color="primary"
+          sx={{ fontWeight: 600 }}
+        />
+      )}
+
+      <Chip
+        icon={<LocalShipping sx={{ fontSize: 18 }} />}
+        label="Доставка по РФ"
+        size="small"
+        variant="outlined"
+        sx={{ fontWeight: 600 }}
+      />
+    </Stack>
+  );
+};
 
 export function DesktopProductDetails({
   productCard,
   allImages,
-  averageRating,
-  sellerName,
 }: DesktopProductDetailsProps) {
   return (
-    <Container
-      maxWidth="lg"
-      sx={{
-        bgcolor: "background.default",
-        pt: { xs: 2, sm: 3, md: 4 },
-        pb: { xs: 4, sm: 6, md: 8 },
-      }}
-    >
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      {/* Хлебные крошки */}
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Главная / {productCard.categories[0]?.name} / {productCard.name}
+      </Typography>
+
+      {/* Заголовок */}
       <Typography
-        component="h1"
         variant="h3"
-        fontWeight={700}
-        mb={{ xs: 2, sm: 3, md: 4 }}
+        fontWeight={800}
         sx={{
-          fontSize: { sm: "1.75rem", md: "2.25rem", lg: "2.5rem" },
-          lineHeight: 1.2,
+          mb: 4,
+          background: (theme) =>
+            `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          backgroundClip: "text",
         }}
       >
         {productCard.name}
       </Typography>
 
-      <Grid container spacing={{ xs: 2, sm: 3, md: 4, lg: 6 }}>
-        <Grid item xs={12} md={6} lg={7}>
-          <Box sx={{ position: "sticky", top: 20 }}>
+      <Grid container spacing={4}>
+        {/* Левая колонка - Галерея */}
+        <Grid item xs={12} lg={7}>
+          <Box sx={{ position: "sticky", top: 24 }}>
             <ImageGallery images={allImages} alt={productCard.name} />
           </Box>
         </Grid>
 
-        <Grid item xs={12} md={6} lg={5}>
-          <Stack spacing={{ xs: 2, sm: 3 }}>
-            <Stack spacing={2}>
-              <ProductPrice
-                price={productCard.price}
-                prepaymentAmount={productCard.prepaymentAmount}
-                availability={productCard.availability}
-              />
-              <ProductRating
-                sellerName={sellerName}
-                rating={averageRating}
-                reviewsCount={127}
-              />
-            </Stack>
+        {/* Правая колонка - Информация */}
+        <Grid item xs={12} lg={5}>
+          <Stack spacing={3}>
+            {/* Информационные бейджи */}
+            <InfoBadges product={productCard} />
 
-            <Box sx={{ pt: { xs: 1, sm: 2 } }}>
+            {/* Цена */}
+            <PriceSection
+              price={productCard.price}
+              prepaymentAmount={productCard.prepaymentAmount}
+              availability={productCard.availability}
+            />
+
+            {/* Информация о продавце */}
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2.5,
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "50%",
+                    bgcolor: "primary.main",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontWeight: 700,
+                    fontSize: "1.25rem",
+                  }}
+                >
+                  {productCard.sellerLogin?.charAt(0) || "S"}
+                </Box>
+                <Box flex={1}>
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    {productCard.sellerLogin || "Продавец"}
+                  </Typography>
+                  {productCard.sellerRating && (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Star sx={{ fontSize: 16, color: "warning.main" }} />
+                      <Typography variant="body2" fontWeight={600}>
+                        {productCard.sellerRating.toFixed(1)}
+                      </Typography>
+                    </Stack>
+                  )}
+                </Box>
+              </Stack>
+            </Paper>
+
+            {/* Кнопки действий */}
+            <Stack spacing={2}>
               <AddToCartButton
                 productId={productCard.id}
                 availability={productCard.availability}
                 variant="detailed"
                 productName={productCard.name}
               />
-            </Box>
 
-            <ProductDescription description={productCard.description} />
+              <FavoriteButton
+                productId={productCard.id}
+                isFavorite={false}
+                productName={productCard.name}
+              />
+            </Stack>
+
+            {/* Описание */}
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: 2,
+                bgcolor: "background.paper",
+                border: "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <Typography variant="h6" fontWeight={700} gutterBottom>
+                Описание
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  lineHeight: 1.8,
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {productCard.description || "Описание отсутствует"}
+              </Typography>
+            </Paper>
+
+            {/* Преимущества */}
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: 2,
+                bgcolor: alpha("#4caf50", 0.05),
+                border: "1px solid",
+                borderColor: alpha("#4caf50", 0.2),
+              }}
+            >
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                ✓ Гарантия подлинности
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                ✓ Бесплатная доставка от 3000 ₽
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                ✓ Возврат в течение 14 дней
+              </Typography>
+            </Paper>
           </Stack>
         </Grid>
       </Grid>
 
-      <Box sx={{ mt: { xs: 4, sm: 6, md: 8 } }}>
-        <RelatedProducts categoryId={productCard.categories[0].id} />
+      {/* Похожие товары */}
+      <Box sx={{ mt: 6 }}>
+        <RelatedProducts categoryId={productCard.categories[0]?.id} />
       </Box>
     </Container>
   );
