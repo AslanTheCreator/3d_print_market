@@ -21,6 +21,7 @@ export interface ProductCardModel extends BaseProduct {
   imageId: number;
   sellerId: number;
   image: ImageResponse[];
+  expirationDate: string; // ISO date string
 }
 
 export interface ProductDetailsModel extends BaseProduct {

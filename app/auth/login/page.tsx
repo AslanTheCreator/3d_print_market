@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState<number | null>(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState<number | null>(null);
 
   const login = useAuthStore((state) => state.login);
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
@@ -42,26 +43,43 @@ export default function LoginPage() {
         // Сохраняем email
         setUserEmail(error.email);
 
-        // Показываем уведомление
-        showNotification(error.message, "warning");
+        // Показываем уведомление о необходимости верификации
+        showNotification(
+          "Необходимо подтвердить email. Открываем окно верификации...",
+          "warning"
+        );
 
-        // Автоматически отправляем код верификации
+        // Пытаемся отправить код верификации
         try {
           const result = await authApi.sendVerificationCode(error.email);
 
           if (result.success && result.userId) {
             setUserId(result.userId);
+            setCooldownSeconds(null); // Сбрасываем cooldown
             showNotification("Код верификации отправлен на почту", "info");
-          } else {
-            throw new Error("Не удалось получить userId");
+          } else if (result.retryAfterSec) {
+            // Если есть cooldown, сохраняем время и всё равно открываем диалог
+            setCooldownSeconds(result.retryAfterSec);
+            showNotification(
+              `Код уже был отправлен. Повторная отправка через ${result.retryAfterSec} сек.`,
+              "info"
+            );
+
+            // Важно: даже при cooldown мы не знаем userId, поэтому используем fallback
+            // В идеале бэкенд должен возвращать userId даже при cooldown
+            setUserId(null);
           }
         } catch (sendError) {
           console.error("Failed to send verification code:", sendError);
-          showNotification("Не удалось отправить код верификации", "error");
-          return;
+          // Даже если не удалось отправить код, открываем диалог
+          // Пользователь сможет повторить отправку через интерфейс
+          showNotification(
+            "Не удалось отправить код. Вы можете повторить попытку в окне верификации.",
+            "warning"
+          );
         }
 
-        // Открываем диалог верификации
+        // Всегда открываем диалог верификации
         setIsVerificationOpen(true);
       } else {
         showNotification(
@@ -75,10 +93,13 @@ export default function LoginPage() {
   };
 
   const handleVerifyCode = async (code: string) => {
+    // Если userId неизвестен, показываем ошибку
     if (!userId) {
-      console.error("User ID не найден");
-      showNotification("Ошибка: не найден ID пользователя", "error");
-      return;
+      showNotification(
+        "Не удалось определить ID пользователя. Попробуйте повторно отправить код.",
+        "error"
+      );
+      throw new Error("User ID не найден");
     }
 
     try {
@@ -95,7 +116,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error("Verification failed:", error);
-      throw error; // Пробрасываем ошибку в диалог
+      throw error; // Пробрасываем ошибку в диалог для отображения
     } finally {
       setIsVerifying(false);
     }
@@ -105,14 +126,21 @@ export default function LoginPage() {
     success: boolean;
     retryAfterSec?: number;
   }> => {
+    if (!userEmail) {
+      return { success: false };
+    }
+
     try {
       const result = await authApi.sendVerificationCode(userEmail);
 
       if (result.success && result.userId) {
         setUserId(result.userId);
+        setCooldownSeconds(null);
         console.log("Код повторно отправлен, userId:", result.userId);
         return { success: true };
       } else if (result.retryAfterSec) {
+        // Сохраняем время cooldown для отображения в UI
+        setCooldownSeconds(result.retryAfterSec);
         return {
           success: false,
           retryAfterSec: result.retryAfterSec,
@@ -130,6 +158,7 @@ export default function LoginPage() {
     setIsVerificationOpen(false);
     setUserEmail("");
     setUserId(null);
+    setCooldownSeconds(null);
   };
 
   const handlePasswordReset = async (email: string) => {

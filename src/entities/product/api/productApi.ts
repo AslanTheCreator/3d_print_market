@@ -83,4 +83,15 @@ export const productApi = {
       throw errorHandler.handleAxiosError(error, "Ошибка при создании товара");
     }
   },
+
+  extendProductExpiration: async (productId: number) => {
+    try {
+      await authClient.post(`${API_URL_PRODUCT}/extend/${productId}`);
+    } catch (error) {
+      throw errorHandler.handleAxiosError(
+        error,
+        "Ошибка при продлении срока действия товара"
+      );
+    }
+  },
 };
