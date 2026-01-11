@@ -1,19 +1,16 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Stack, Box, Typography, Skeleton } from "@mui/material";
-import { ShoppingCart } from "@mui/icons-material";
+import { Stack, Box, Typography, Skeleton, Chip } from "@mui/material";
 import { ListOrdersModel } from "@/entities/order";
-import { imageApi } from "@/entities/image";
-import { ImageResponse } from "@/entities/image";
+import { imageApi, ImageResponse } from "@/entities/image";
 
 interface ProductInfoProps {
   product: ListOrdersModel["product"];
 }
 
-export const ProductInfo = ({ product }: ProductInfoProps) => {
+export const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
   const [image, setImage] = useState<ImageResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     const loadImage = async () => {
@@ -23,16 +20,12 @@ export const ProductInfo = ({ product }: ProductInfoProps) => {
       }
 
       try {
-        setIsLoading(true);
-        setHasError(false);
         const images = await imageApi.getImages(product.imageId);
-
         if (images && images.length > 0) {
           setImage(images[0]);
         }
       } catch (error) {
-        console.error("Ошибка при загрузке изображения товара:", error);
-        setHasError(true);
+        console.error("Ошибка загрузки изображения:", error);
       } finally {
         setIsLoading(false);
       }
@@ -46,28 +39,21 @@ export const ProductInfo = ({ product }: ProductInfoProps) => {
     : null;
 
   return (
-    <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+    <Stack direction="row" spacing={1.5} alignItems="center">
+      {/* Изображение */}
       <Box
         sx={{
-          width: { xs: 60, sm: 80 },
-          height: { xs: 60, sm: 80 },
-          bgcolor: "grey.100",
-          borderRadius: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          width: { xs: 56, sm: 64 },
+          height: { xs: 56, sm: 64 },
+          borderRadius: 1.5,
           overflow: "hidden",
-          position: "relative",
+          bgcolor: "grey.100",
+          flexShrink: 0,
         }}
       >
         {isLoading ? (
-          <Skeleton
-            variant="rectangular"
-            width="100%"
-            height="100%"
-            animation="wave"
-          />
-        ) : imageSrc && !hasError ? (
+          <Skeleton variant="rectangular" width="100%" height="100%" />
+        ) : imageSrc ? (
           <Box
             component="img"
             src={imageSrc}
@@ -77,28 +63,70 @@ export const ProductInfo = ({ product }: ProductInfoProps) => {
               height: "100%",
               objectFit: "cover",
             }}
-            onError={() => setHasError(true)}
           />
         ) : (
-          <ShoppingCart color="action" />
+          <Box
+            sx={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "0.7rem",
+              color: "text.disabled",
+            }}
+          >
+            Нет фото
+          </Box>
         )}
       </Box>
-      <Box flex={1}>
-        <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+
+      {/* Информация */}
+      <Box flex={1} minWidth={0}>
+        <Typography
+          variant="subtitle2"
+          fontWeight={600}
+          sx={{
+            mb: 0.25,
+            fontSize: { xs: "0.85rem", sm: "0.9rem" },
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+          }}
+        >
           {product.name}
         </Typography>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Категория: {product.categories[0].name}
-        </Typography>
+
         <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={{ xs: 0.5, sm: 2 }}
-          alignItems={{ xs: "flex-start", sm: "center" }}
+          direction="row"
+          spacing={0.75}
+          alignItems="center"
+          flexWrap="wrap"
         >
-          <Typography variant="body2">
-            Количество: <strong>{product.count}</strong>
+          <Chip
+            label={product.categories[0]?.name || "Без категории"}
+            size="small"
+            sx={{
+              height: 18,
+              fontSize: "0.65rem",
+              fontWeight: 500,
+            }}
+          />
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ fontSize: { xs: "0.7rem", sm: "0.75rem" } }}
+          >
+            × {product.count}
           </Typography>
-          <Typography variant="body2" color="primary.main" fontWeight={600}>
+          <Typography
+            variant="caption"
+            fontWeight={600}
+            color="primary.main"
+            sx={{ fontSize: { xs: "0.75rem", sm: "0.8rem" } }}
+          >
             {product.price} {product.currency}
           </Typography>
         </Stack>

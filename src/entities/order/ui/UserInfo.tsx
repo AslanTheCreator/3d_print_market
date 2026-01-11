@@ -9,54 +9,84 @@ type UserRole = "seller" | "customer";
 interface UserInfoProps {
   userInfo: ListOrdersModel["userInfo"];
   userRole: UserRole;
-  isCurrentUser?: boolean;
 }
 
-export const UserInfo = ({
-  userInfo,
-  userRole,
-  isCurrentUser = false,
-}: UserInfoProps) => {
+export const UserInfo: React.FC<UserInfoProps> = ({ userInfo, userRole }) => {
   const roleIcon = userRole === "seller" ? <Store /> : <AccountCircle />;
   const roleLabel = userRole === "seller" ? "Продавец" : "Покупатель";
 
   return (
-    <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+    <Stack direction="row" spacing={1.5} alignItems="center">
+      {/* Аватар */}
       <Avatar
         sx={{
+          width: { xs: 36, sm: 40 },
+          height: { xs: 36, sm: 40 },
           bgcolor: userRole === "seller" ? "secondary.main" : "primary.main",
+          fontSize: { xs: "0.9rem", sm: "1rem" },
         }}
       >
         {roleIcon}
       </Avatar>
-      <Box flex={1}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Typography variant="subtitle2" fontWeight={600}>
+
+      {/* Информация */}
+      <Box flex={1} minWidth={0}>
+        <Stack
+          direction="row"
+          spacing={0.75}
+          alignItems="center"
+          sx={{ mb: 0.25 }}
+        >
+          <Typography
+            variant="subtitle2"
+            fontWeight={600}
+            sx={{
+              fontSize: { xs: "0.85rem", sm: "0.9rem" },
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {userInfo.login}
           </Typography>
-          {isCurrentUser && (
-            <Chip
-              label="Это вы"
-              size="small"
-              color="primary"
-              variant="outlined"
-            />
-          )}
+          <Chip
+            label={roleLabel}
+            size="small"
+            sx={{
+              height: 16,
+              fontSize: "0.6rem",
+              fontWeight: 500,
+            }}
+          />
         </Stack>
-        <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5 }}>
-          {roleLabel}
-        </Typography>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-          <Phone sx={{ fontSize: 14 }} />
-          <Typography variant="caption" color="text.secondary">
-            {userInfo.phoneNumber}
-          </Typography>
-        </Stack>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Email sx={{ fontSize: 14 }} />
-          <Typography variant="caption" color="text.secondary">
-            {userInfo.mail}
-          </Typography>
+
+        <Stack spacing={0.25}>
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            <Phone sx={{ fontSize: 12, color: "text.secondary" }} />
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontSize: { xs: "0.7rem", sm: "0.75rem" } }}
+            >
+              {userInfo.phoneNumber}
+            </Typography>
+          </Stack>
+
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            <Email sx={{ fontSize: 12, color: "text.secondary" }} />
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {userInfo.mail}
+            </Typography>
+          </Stack>
         </Stack>
       </Box>
     </Stack>

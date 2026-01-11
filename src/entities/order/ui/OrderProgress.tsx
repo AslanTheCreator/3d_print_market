@@ -1,7 +1,7 @@
 "use client";
 import React, { useMemo } from "react";
-import { Box, Paper, Stack, Typography, Skeleton } from "@mui/material";
-import { CheckCircle } from "@mui/icons-material";
+import { Box, Stack, Typography, Skeleton, Tooltip } from "@mui/material";
+import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
 import { useOrderStatusDictionary } from "@/entities/order/lib/useOrderStatusDictionary";
 
 type UserRole = "seller" | "customer";
@@ -9,84 +9,87 @@ type UserRole = "seller" | "customer";
 interface OrderProgressProps {
   status: string;
   userRole: UserRole;
+  isPreorder?: boolean;
 }
 
 interface StepConfig {
   key: string;
-  shortLabel: string; // Короткое название для UI
+  label: string;
   sellerAction?: boolean;
   customerAction?: boolean;
-  info?: boolean;
 }
 
-export const OrderProgress = ({ status, userRole }: OrderProgressProps) => {
+export const OrderProgress: React.FC<OrderProgressProps> = ({
+  status,
+  userRole,
+  isPreorder = false,
+}) => {
   const { getStatusDescription, isLoading } = useOrderStatusDictionary();
 
-  const stepsConfig: StepConfig[] = useMemo(
+  // Конфигурация шагов для обычных товаров
+  const regularSteps: StepConfig[] = useMemo(
     () => [
-      { key: "BOOKED", shortLabel: "Забронирован", sellerAction: true },
-      {
-        key: "AWAITING_PREPAYMENT",
-        shortLabel: "Предоплата",
-        customerAction: true,
-      },
-      {
-        key: "AWAITING_PREPAYMENT_APPROVAL",
-        shortLabel: "Подтверждение",
-        sellerAction: true,
-      },
-      { key: "AWAITING_PAYMENT", shortLabel: "Оплата", customerAction: true },
-      { key: "ASSEMBLING", shortLabel: "Сборка", sellerAction: true },
-      { key: "ON_THE_WAY", shortLabel: "В пути", customerAction: true },
-      { key: "COMPLETED", shortLabel: "Завершен", info: true },
+      { key: "BOOKED", label: "Забронирован", sellerAction: true },
+      { key: "AWAITING_PAYMENT", label: "Оплата", customerAction: true },
+      { key: "ASSEMBLING", label: "Сборка", sellerAction: true },
+      { key: "ON_THE_WAY", label: "В пути", customerAction: true },
+      { key: "COMPLETED", label: "Завершен" },
     ],
     []
   );
 
-  const steps = useMemo(
-    () =>
-      stepsConfig.map((config) => ({
-        ...config,
-        label: config.shortLabel,
-        fullLabel: isLoading ? config.key : getStatusDescription(config.key),
-      })),
-    [stepsConfig, isLoading, getStatusDescription]
+  // Конфигурация шагов для предзаказов
+  const preorderSteps: StepConfig[] = useMemo(
+    () => [
+      { key: "BOOKED", label: "Забронирован", sellerAction: true },
+      { key: "AWAITING_PREPAYMENT", label: "Предоплата", customerAction: true },
+      {
+        key: "AWAITING_PREPAYMENT_APPROVAL",
+        label: "Подтверждение",
+        sellerAction: true,
+      },
+      { key: "AWAITING_PAYMENT", label: "Оплата", customerAction: true },
+      { key: "ASSEMBLING", label: "Сборка", sellerAction: true },
+      { key: "ON_THE_WAY", label: "В пути", customerAction: true },
+      { key: "COMPLETED", label: "Завершен" },
+    ],
+    []
   );
+
+  const steps = isPreorder ? preorderSteps : regularSteps;
 
   const currentStepIndex = steps.findIndex((step) => step.key === status);
 
   if (isLoading) {
     return (
-      <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: "grey.50" }}>
-        <Skeleton variant="text" width={150} height={24} sx={{ mb: 2 }} />
-        <Stack direction="row" spacing={1}>
-          {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-            <Box key={i} sx={{ minWidth: 80, textAlign: "center" }}>
-              <Skeleton
-                variant="circular"
-                width={24}
-                height={24}
-                sx={{ mx: "auto", mb: 1 }}
-              />
-              <Skeleton
-                variant="text"
-                width={60}
-                height={20}
-                sx={{ mx: "auto" }}
-              />
-            </Box>
+      <Box sx={{ py: 1 }}>
+        <Skeleton variant="text" width={120} height={20} sx={{ mb: 1 }} />
+        <Stack direction="row" spacing={0.5}>
+          {steps.map((_, i) => (
+            <Skeleton
+              key={i}
+              variant="circular"
+              width={24}
+              height={24}
+              sx={{ flex: 1 }}
+            />
           ))}
         </Stack>
-      </Paper>
+      </Box>
     );
   }
 
   return (
-    <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: "grey.50" }}>
-      <Typography variant="subtitle2" gutterBottom sx={{ mb: 2 }}>
-        Прогресс заказа
+    <Box sx={{ py: 1 }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ mb: 1, display: "block", fontWeight: 600 }}
+      >
+        Статус заказа
       </Typography>
-      <Stack direction="row" spacing={1} sx={{ overflowX: "auto", pb: 1 }}>
+
+      <Stack direction="row" spacing={0.5} alignItems="center">
         {steps.map((step, index) => {
           const isActive = index === currentStepIndex;
           const isCompleted = index < currentStepIndex;
@@ -96,64 +99,110 @@ export const OrderProgress = ({ status, userRole }: OrderProgressProps) => {
               (step.customerAction && userRole === "customer"));
 
           return (
-            <Box
+            <Tooltip
               key={step.key}
-              sx={{
-                minWidth: 80,
-                textAlign: "center",
-                position: "relative",
-              }}
-              title={step.fullLabel} // Полное описание в tooltip
+              title={getStatusDescription(step.key)}
+              arrow
+              placement="top"
             >
               <Box
                 sx={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  bgcolor: isCompleted
-                    ? "success.main"
-                    : isActive
-                    ? needsAction
-                      ? "warning.main"
-                      : "primary.main"
-                    : "grey.300",
+                  flex: 1,
                   display: "flex",
+                  flexDirection: "column",
                   alignItems: "center",
-                  justifyContent: "center",
-                  mx: "auto",
-                  mb: 1,
+                  position: "relative",
                 }}
               >
-                {isCompleted ? (
-                  <CheckCircle sx={{ fontSize: 16, color: "white" }} />
-                ) : (
-                  <Typography variant="caption" color="white" fontWeight={600}>
-                    {index + 1}
-                  </Typography>
+                {/* Соединительная линия */}
+                {index < steps.length - 1 && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 12,
+                      left: "50%",
+                      right: "-50%",
+                      height: 2,
+                      bgcolor: isCompleted ? "success.main" : "divider",
+                      zIndex: 0,
+                    }}
+                  />
                 )}
-              </Box>
-              <Typography
-                variant="caption"
-                color={isActive ? "primary.main" : "text.secondary"}
-                fontWeight={isActive ? 600 : 400}
-                sx={{ display: "block", lineHeight: 1.2 }}
-              >
-                {step.label}
-              </Typography>
-              {needsAction && (
+
+                {/* Иконка статуса */}
+                <Box
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: "50%",
+                    bgcolor: isCompleted
+                      ? "success.main"
+                      : isActive
+                      ? needsAction
+                        ? "warning.main"
+                        : "primary.main"
+                      : "grey.300",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 1,
+                    position: "relative",
+                  }}
+                >
+                  {isCompleted ? (
+                    <CheckCircle sx={{ fontSize: 16, color: "white" }} />
+                  ) : isActive ? (
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        bgcolor: "white",
+                      }}
+                    />
+                  ) : (
+                    <RadioButtonUnchecked
+                      sx={{ fontSize: 16, color: "grey.500" }}
+                    />
+                  )}
+                </Box>
+
+                {/* Название шага */}
                 <Typography
                   variant="caption"
-                  color="warning.main"
-                  fontWeight={600}
-                  sx={{ display: "block", mt: 0.5 }}
+                  align="center"
+                  sx={{
+                    mt: 0.5,
+                    fontSize: "0.65rem",
+                    fontWeight: isActive ? 600 : 400,
+                    color: isActive
+                      ? needsAction
+                        ? "warning.main"
+                        : "primary.main"
+                      : "text.secondary",
+                    lineHeight: 1.2,
+                  }}
                 >
-                  Требует действия
+                  {step.label}
                 </Typography>
-              )}
-            </Box>
+
+                {/* Индикатор необходимости действия */}
+                {needsAction && (
+                  <Box
+                    sx={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      bgcolor: "warning.main",
+                      mt: 0.25,
+                    }}
+                  />
+                )}
+              </Box>
+            </Tooltip>
           );
         })}
       </Stack>
-    </Paper>
+    </Box>
   );
 };

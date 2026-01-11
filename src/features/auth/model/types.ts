@@ -24,3 +24,22 @@ export interface VerificationCodeResponse {
   userId?: number;
   retryAfterSec?: number;
 }
+
+export interface LoginVerificationRequiredError {
+  next: "VERIFY_EMAIL";
+  code: "WAITING_VERIFY";
+  message: string;
+}
+
+export interface LoginErrorResponse {
+  next?: string;
+  code?: string;
+  message?: string;
+}
+
+export class VerificationRequiredError extends Error {
+  constructor(message: string, public email: string) {
+    super(message);
+    this.name = "VerificationRequiredError";
+  }
+}

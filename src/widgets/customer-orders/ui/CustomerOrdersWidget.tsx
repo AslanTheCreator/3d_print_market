@@ -1,14 +1,9 @@
 "use client";
-
 import { useCustomerOrders } from "@/entities/order";
-import { OrderDetails } from "@/widgets/order-details/ui/OrderDetails";
+import { UnifiedOrdersWidget } from "@/widgets/unified-orders";
 
 export const CustomerOrdersWidget = () => {
   return (
-    <OrderDetails
-      title={"Заказы"}
-      query={useCustomerOrders()}
-      userRole="customer"
-    />
+    <UnifiedOrdersWidget query={useCustomerOrders()} userRole="customer" />
   );
 };

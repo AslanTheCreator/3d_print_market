@@ -5,6 +5,8 @@ import {
   TokensResponse,
   VerificationCodeResponse,
   VerificationCooldownError,
+  LoginErrorResponse,
+  VerificationRequiredError,
 } from "../model/types";
 import { errorHandler, tokenStorage } from "@/shared/lib";
 import { AxiosError } from "axios";
@@ -51,6 +53,21 @@ export const authApi = {
 
       return true;
     } catch (error) {
+      if (error instanceof AxiosError && error.response?.status === 403) {
+        const errorData = error.response.data as LoginErrorResponse;
+
+        if (
+          errorData.code === "WAITING_VERIFY" &&
+          errorData.next === "VERIFY_EMAIL"
+        ) {
+          // Бросаем кастомную ошибку с email
+          throw new VerificationRequiredError(
+            errorData.message || "Необходимо подтвердить почту",
+            mail
+          );
+        }
+      }
+
       throw errorHandler.handleAxiosError(error, "Ошибка авторизации");
     }
   },

@@ -1,4 +1,4 @@
-import { SellerOrdersWidget } from "@/widgets/seller-orders/ui/SellerOrdersWidget";
+import { SellerOrdersWidget } from "@/widgets/seller-orders";
 
 export default function SalesPage() {
   return <SellerOrdersWidget />;

@@ -1,13 +1,25 @@
 "use client";
 import React from "react";
-import { Card, CardContent, Stack, Typography, Divider } from "@mui/material";
 import {
-  ListOrdersModel,
-  UserInfo,
-  ProductInfo,
-  DeliveryInfo,
-} from "@/entities/order";
-import { OrderHistory, OrderProgress, OrderStatusChip } from "../";
+  Card,
+  CardContent,
+  Stack,
+  Typography,
+  Divider,
+  Box,
+  useTheme,
+  useMediaQuery,
+  Collapse,
+  IconButton,
+} from "@mui/material";
+import { ExpandMore } from "@mui/icons-material";
+import { ListOrdersModel } from "@/entities/order";
+import { OrderStatusChip } from "./OrderStatusChip";
+import { OrderProgress } from "./OrderProgress";
+import { UserInfo } from "./UserInfo";
+import { ProductInfo } from "./ProductInfo";
+import { DeliveryInfo } from "./DeliveryInfo";
+import { OrderHistory } from "./OrderHistory";
 import { CustomerActions, SellerActions } from "@/features/order";
 
 type UserRole = "seller" | "customer";
@@ -17,87 +29,151 @@ interface OrderCardProps {
   userRole: UserRole;
 }
 
-export const OrderCard = ({ order, userRole }: OrderCardProps) => {
+export const OrderCard: React.FC<OrderCardProps> = ({ order, userRole }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [expanded, setExpanded] = React.useState(false);
+
+  const isPreorder = order.product.availability === "PREORDER";
+
+  // Проверка на необходимость действия
   const needsAttention =
     (userRole === "seller" &&
-      ["BOOKED", "ASSEMBLING"].includes(order.actualStatus)) ||
+      ["BOOKED", "AWAITING_PREPAYMENT_APPROVAL", "ASSEMBLING"].includes(
+        order.actualStatus
+      )) ||
     (userRole === "customer" &&
-      ["AWAITING_PAYMENT", "ON_THE_WAY"].includes(order.actualStatus));
+      ["AWAITING_PREPAYMENT", "AWAITING_PAYMENT", "ON_THE_WAY"].includes(
+        order.actualStatus
+      ));
+
+  // Фильтрация статусов для не-предзаказов
+  const shouldShowProgress = () => {
+    if (isPreorder) return true;
+
+    // Для обычных товаров скрываем статусы предоплаты
+    return !["AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL"].includes(
+      order.actualStatus
+    );
+  };
 
   return (
     <Card
       sx={{
-        mb: 2,
+        borderRadius: 2,
         border: needsAttention ? 2 : 1,
         borderColor: needsAttention ? "warning.main" : "divider",
+        boxShadow: needsAttention ? 2 : 0,
+        transition: "all 0.2s ease",
+        "&:hover": {
+          boxShadow: 1,
+        },
       }}
     >
-      <CardContent>
-        {/* Заголовок с номером заказа и статусом */}
+      <CardContent
+        sx={{
+          p: { xs: 1.5, sm: 2 },
+          "&:last-child": { pb: { xs: 1.5, sm: 2 } },
+        }}
+      >
+        {/* Шапка */}
         <Stack
           direction="row"
           justifyContent="space-between"
           alignItems="center"
-          sx={{ mb: 2 }}
+          sx={{ mb: 1.5 }}
         >
-          <Typography variant="h6" fontWeight={600}>
+          <Typography
+            variant="subtitle1"
+            fontWeight={700}
+            sx={{ fontSize: { xs: "0.9rem", sm: "1rem" } }}
+          >
             Заказ #{order.orderId}
           </Typography>
           <OrderStatusChip status={order.actualStatus} />
         </Stack>
 
-        {/* Прогресс заказа */}
-        <OrderProgress status={order.actualStatus} userRole={userRole} />
-
-        {/* Информация о пользователе */}
-        <UserInfo
-          userInfo={order.userInfo}
-          userRole={userRole === "seller" ? "customer" : "seller"}
-        />
-
-        <Divider sx={{ my: 2 }} />
+        {/* Прогресс заказа - скрыт на мобильных */}
+        {!isMobile && shouldShowProgress() && (
+          <Box sx={{ mb: 2 }}>
+            <OrderProgress status={order.actualStatus} userRole={userRole} />
+          </Box>
+        )}
 
         {/* Информация о продукте */}
         <ProductInfo product={order.product} />
 
-        <Divider sx={{ my: 2 }} />
+        {/* Expandable секция */}
+        <Box>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ mt: 1.5, mb: expanded ? 1.5 : 0 }}
+          >
+            <Typography
+              variant="h6"
+              color="primary.main"
+              fontWeight={700}
+              sx={{ fontSize: { xs: "1rem", sm: "1.125rem" } }}
+            >
+              {order.totalPrice} {order.product.currency}
+            </Typography>
 
-        {/* Информация о доставке */}
-        <DeliveryInfo transfer={order.transfer} />
+            <IconButton
+              size="small"
+              onClick={() => setExpanded(!expanded)}
+              sx={{
+                transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 0.3s",
+              }}
+            >
+              <ExpandMore />
+            </IconButton>
+          </Stack>
 
-        <Divider sx={{ my: 2 }} />
+          <Collapse in={expanded} timeout="auto">
+            <Stack spacing={1.5}>
+              <Divider />
 
-        {/* История заказа */}
-        <OrderHistory histories={order.histories} />
+              {/* Информация о пользователе */}
+              <UserInfo
+                userInfo={order.userInfo}
+                userRole={userRole === "seller" ? "customer" : "seller"}
+              />
 
-        {/* Общая сумма */}
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "stretch", sm: "center" }}
-          spacing={2}
-          sx={{ mt: 2, mb: 2 }}
-        >
-          <Typography variant="h6" color="primary.main" fontWeight={700}>
-            Итого: {order.totalPrice} {order.product.currency}
-          </Typography>
-        </Stack>
+              <Divider />
 
-        {/* Действия в зависимости от роли */}
-        {userRole === "seller" ? (
-          <SellerActions order={order} />
-        ) : (
-          <CustomerActions order={order} />
-        )}
+              {/* Информация о доставке */}
+              <DeliveryInfo transfer={order.transfer} />
 
-        {/* Дата создания */}
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ mt: 2, display: "block" }}
-        >
-          Создан: {new Date(order.createdAt).toLocaleString("ru-RU")}
-        </Typography>
+              <Divider />
+
+              {/* История заказа */}
+              <OrderHistory histories={order.histories} />
+
+              <Divider />
+
+              {/* Дата создания */}
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontSize: { xs: "0.7rem", sm: "0.75rem" } }}
+              >
+                Создан: {new Date(order.createdAt).toLocaleString("ru-RU")}
+              </Typography>
+            </Stack>
+          </Collapse>
+        </Box>
+
+        {/* Действия */}
+        <Box sx={{ mt: 1.5 }}>
+          {userRole === "seller" ? (
+            <SellerActions order={order} />
+          ) : (
+            <CustomerActions order={order} />
+          )}
+        </Box>
       </CardContent>
     </Card>
   );
