@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import {
   Box,
   TextField,
@@ -65,7 +65,6 @@ export const TransferFormWidget = () => {
     new Set()
   );
 
-  // Флаг для отслеживания первой инициализации
   const isInitialized = useRef(false);
 
   const { data: shippingMethods, isLoading: methodsLoading } =
@@ -77,7 +76,7 @@ export const TransferFormWidget = () => {
   const { mutateAsync: saveBatch, isPending } = useSaveTransfersBatch();
   const { showNotification } = useNotification();
 
-  const availableMethods = React.useMemo(
+  const availableMethods = useMemo(
     () =>
       shippingMethods?.filter((method) => method.value !== "FREE_POST") || [],
     [shippingMethods]
@@ -94,12 +93,11 @@ export const TransferFormWidget = () => {
     defaultValues: { methods: {} },
   });
 
-  // Инициализация формы только один раз при загрузке данных
+  // Инициализация формы - происходит только один раз
   useEffect(() => {
     if (
       !isInitialized.current &&
       availableMethods.length > 0 &&
-      userTransfers &&
       !transfersLoading
     ) {
       const methodsData: FormData["methods"] = {};
@@ -130,7 +128,7 @@ export const TransferFormWidget = () => {
       setExpandedMethods(expanded);
       isInitialized.current = true;
     }
-  }, [availableMethods.length, transfersLoading, userTransfers?.length]);
+  }, [availableMethods, userTransfers, transfersLoading, setValue]);
 
   const methodsData = watch("methods");
 

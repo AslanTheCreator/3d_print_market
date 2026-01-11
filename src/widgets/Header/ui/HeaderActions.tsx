@@ -76,7 +76,7 @@ export const HeaderActions = () => {
       onClick: handleProfileClick,
     },
     {
-      url: "/cart",
+      url: "/checkout",
       icon: (
         <Image
           src={ShoppingCartCustomIcon}

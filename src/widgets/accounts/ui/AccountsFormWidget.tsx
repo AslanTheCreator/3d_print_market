@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import {
   Box,
   TextField,
@@ -82,14 +82,15 @@ export const AccountsFormWidget = () => {
     defaultValues: { methods: {} },
   });
 
-  const [isInitialized, setIsInitialized] = React.useState(false);
+  const isInitialized = useRef(false);
 
+  // Инициализация формы только один раз
   useEffect(() => {
     if (
       paymentMethods &&
       paymentMethods.length > 0 &&
-      userAccounts &&
-      !isInitialized
+      !accountsLoading &&
+      !isInitialized.current
     ) {
       const methodsData: FormData["methods"] = {};
       const expanded = new Set<string>();
@@ -119,9 +120,9 @@ export const AccountsFormWidget = () => {
 
       setValue("methods", methodsData, { shouldDirty: false });
       setExpandedMethods(expanded);
-      setIsInitialized(true);
+      isInitialized.current = true;
     }
-  }, [paymentMethods, userAccounts, isInitialized, setValue]);
+  }, [paymentMethods, userAccounts, accountsLoading, setValue]);
 
   const methodsData = watch("methods");
 

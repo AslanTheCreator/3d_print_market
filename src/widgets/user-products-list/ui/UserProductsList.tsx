@@ -16,15 +16,12 @@ import {
 import { Refresh, TrendingUp, Inventory } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import {
-  ProductCard,
   ProductCardSkeleton,
   useUserProductsInfinite,
 } from "@/entities/product";
 import { ProductFilter, SortBy } from "@/entities/product/model/types";
-import { FavoriteButton } from "@/features/toggle-favorite";
-import { AddToCartButton } from "@/features/cart";
-import { useFavoritesChecks } from "@/entities/favorites/hooks";
 import { EmptyCatalogState } from "@/shared/ui/states";
+import { UserProductCard } from "./UserProductCard";
 
 interface UserProductsListProps {
   participantId?: number;
@@ -35,8 +32,6 @@ export const UserProductsList: React.FC<UserProductsListProps> = ({
 }) => {
   const theme = useTheme();
   const router = useRouter();
-
-  const { isProductInFavorites } = useFavoritesChecks();
 
   const [sortBy] = React.useState<SortBy>("DATE_DESC");
 
@@ -189,52 +184,10 @@ export const UserProductsList: React.FC<UserProductsListProps> = ({
       <Grid container spacing={{ xs: 1, sm: 2, md: 2.5 }}>
         {products.map((product) => (
           <Grid item xs={6} sm={4} md={3} lg={2} key={product.id}>
-            <Box sx={{ position: "relative" }}>
-              <ProductCard
-                {...product}
-                onCardClick={() => handleCardClick(product.id)}
-                actions={
-                  <AddToCartButton
-                    productId={product.id}
-                    availability={product.availability}
-                    productName={product.name}
-                  />
-                }
-              />
-              <FavoriteButton
-                productId={product.id}
-                isFavorite={isProductInFavorites(product.id)}
-                productName={product.name}
-              />
-
-              {/* Status Badge */}
-              <Chip
-                label={
-                  product.availability === "PURCHASABLE"
-                    ? "В наличии"
-                    : product.availability === "PREORDER"
-                    ? "Предзаказ"
-                    : "Внешний"
-                }
-                color={
-                  product.availability === "PURCHASABLE"
-                    ? "success"
-                    : product.availability === "PREORDER"
-                    ? "warning"
-                    : "info"
-                }
-                size="small"
-                sx={{
-                  position: "absolute",
-                  top: 8,
-                  left: 8,
-                  fontSize: "0.625rem",
-                  height: "20px",
-                  fontWeight: 600,
-                  zIndex: 1,
-                }}
-              />
-            </Box>
+            <UserProductCard
+              {...product}
+              onCardClick={() => handleCardClick(product.id)}
+            />
           </Grid>
         ))}
       </Grid>

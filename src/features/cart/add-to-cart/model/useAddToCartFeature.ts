@@ -26,7 +26,7 @@ export function useAddToCartFeature(params?: UseAddToCartFeatureParams) {
       const isInCart = isProductInCart(productId);
 
       if (isInCart) {
-        router.push("/cart");
+        router.push("/checkout");
         return;
       }
 

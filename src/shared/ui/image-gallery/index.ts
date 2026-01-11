@@ -1,1 +1,2 @@
-export { ImageGallery } from "./ui/ImageGallery";
+export { ImageGallery } from "./ImageGallery";
+export { FullscreenImageViewer } from "./FullscreenImageViewer";

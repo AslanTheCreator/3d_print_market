@@ -1,3 +1,5 @@
+// Возможно убрать этот файл если не нужен
+
 "use client";
 
 import { Container, Box } from "@mui/material";

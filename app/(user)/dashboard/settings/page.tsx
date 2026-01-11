@@ -19,6 +19,13 @@ import { TransferFormWidget } from "@/widgets/transfer";
 import { AccountsFormWidget } from "@/widgets/accounts";
 import { SocialNetworksFormWidget } from "@/widgets/social-networks/ui/SocialNetworksFormWidget";
 
+import { useUserTransfers } from "@/entities/transfer";
+import { useUserAccounts } from "@/entities/accounts";
+import { useUserSocialNetworks } from "@/entities/social-networks";
+import { useUserAddresses } from "@/entities/address/hooks";
+import { useDictionary } from "@/entities/dictionary";
+import { CircularProgress } from "@mui/material";
+
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -44,9 +51,48 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState(0);
   const { showNotification } = useNotification();
 
+  const { isLoading: addressesLoading } = useUserAddresses();
+  const { isLoading: transfersLoading } = useUserTransfers();
+  const { isLoading: accountsLoading } = useUserAccounts();
+  const { isLoading: socialNetworksLoading } = useUserSocialNetworks();
+
+  const { isLoading: shoppingMethodsLoading } =
+    useDictionary("SHOPPING_METHODS");
+  const { isLoading: currencyLoading } = useDictionary("CURRENCY");
+  const { isLoading: transferMoneyLoading } = useDictionary("TRANSFER_MONEY");
+  const { isLoading: socialNetworkLoading } = useDictionary("SOCIAL_NETWORK");
+
+  const isLoading =
+    addressesLoading ||
+    transfersLoading ||
+    accountsLoading ||
+    socialNetworksLoading ||
+    shoppingMethodsLoading ||
+    currencyLoading ||
+    transferMoneyLoading ||
+    socialNetworkLoading;
+
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
+
+  if (isLoading) {
+    return (
+      <Container
+        maxWidth="md"
+        sx={{
+          py: { xs: 2, sm: 4 },
+          px: { xs: 2, sm: 3 },
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: 400,
+        }}
+      >
+        <CircularProgress />
+      </Container>
+    );
+  }
 
   return (
     <Container
