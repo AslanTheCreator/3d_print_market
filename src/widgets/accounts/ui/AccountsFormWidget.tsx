@@ -1,21 +1,14 @@
 "use client";
 
-import React, { useEffect, useRef, useMemo } from "react";
+import React from "react";
 import {
   Box,
   TextField,
   Button,
   Stack,
   Typography,
-  Card,
-  CardContent,
-  Checkbox,
-  FormControlLabel,
   FormControl,
   Grid,
-  Collapse,
-  useTheme,
-  useMediaQuery,
   CircularProgress,
   Alert,
 } from "@mui/material";
@@ -23,18 +16,22 @@ import {
   CreditCard,
   AccountBalance,
   Payments,
-  ExpandMore,
-  ExpandLess,
   InfoOutlined,
 } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
 import { useUserAccounts, useSaveAccountsBatch } from "@/entities/accounts";
-import type { AccountsCreateModel } from "@/entities/accounts/model/types";
+import type {
+  AccountsCreateModel,
+  AccountsBaseModel,
+} from "@/entities/accounts/model/types";
 import { useNotification } from "@/app/providers";
 import { useDictionary } from "@/entities/dictionary";
+import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card/CollapsibleFormCard";
+import { useBatchForm } from "@/shared/hooks/useBatchForm";
+import { useFormInitializer } from "@/shared/hooks/useFormInitializer";
 
 interface FormData {
-  methods: {
+  items: {
     [key: string]: {
       enabled: boolean;
       username: string;
@@ -57,13 +54,19 @@ const getPaymentIcon = (value: string) => {
   }
 };
 
-export const AccountsFormWidget = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [expandedMethods, setExpandedMethods] = React.useState<Set<string>>(
-    new Set()
+// Функция сравнения для определения изменений
+const compareAccountData = (
+  existing: AccountsBaseModel,
+  formData: any
+): boolean => {
+  return (
+    existing.username === formData.username &&
+    existing.entityValue === formData.entityValue &&
+    existing.comment === formData.comment
   );
+};
 
+export const AccountsFormWidget = () => {
   const { data: paymentMethods, isLoading: methodsLoading } =
     useDictionary("TRANSFER_MONEY");
   const { data: userAccounts = [], isLoading: accountsLoading } =
@@ -79,98 +82,60 @@ export const AccountsFormWidget = () => {
     formState: { errors },
   } = useForm<FormData>({
     mode: "onChange",
-    defaultValues: { methods: {} },
+    defaultValues: { items: {} },
   });
 
-  const isInitialized = useRef(false);
+  const { toggleExpanded, isExpanded, computeChanges } = useBatchForm({
+    existingItems: userAccounts,
+    getItemKey: (item) => item.transferMoney,
+    mapToCreateModel: (data, key) => ({
+      transferMoney: key as any,
+      username: data.username,
+      entityValue: data.entityValue,
+      comment: data.comment,
+    }),
+    getItemId: (item) => item.id,
+    compareItemData: compareAccountData,
+  });
 
-  // Инициализация формы только один раз
-  useEffect(() => {
-    if (
-      paymentMethods &&
-      paymentMethods.length > 0 &&
-      !accountsLoading &&
-      !isInitialized.current
-    ) {
-      const methodsData: FormData["methods"] = {};
-      const expanded = new Set<string>();
+  useFormInitializer({
+    dictionaryItems: paymentMethods,
+    existingItems: userAccounts,
+    isLoading: accountsLoading,
+    setValue,
+    getDictionaryKey: (item) => item.value,
+    getExistingKey: (item) => item.transferMoney,
+    mapExistingToFormData: (item) => ({
+      username: item.username,
+      entityValue: item.entityValue,
+      comment: item.comment,
+    }),
+    getDefaultFormData: () => ({ username: "", entityValue: "", comment: "" }),
+    onInitialized: (expanded) => {
+      expanded.forEach((key) => toggleExpanded(key));
+    },
+  });
 
-      paymentMethods.forEach((method) => {
-        const existingAccount = userAccounts.find(
-          (acc) => acc.transferMoney === method.value
-        );
-
-        if (existingAccount) {
-          methodsData[method.value] = {
-            enabled: true,
-            username: existingAccount.username,
-            entityValue: existingAccount.entityValue,
-            comment: existingAccount.comment,
-          };
-          expanded.add(method.value);
-        } else {
-          methodsData[method.value] = {
-            enabled: false,
-            username: "",
-            entityValue: "",
-            comment: "",
-          };
-        }
-      });
-
-      setValue("methods", methodsData, { shouldDirty: false });
-      setExpandedMethods(expanded);
-      isInitialized.current = true;
-    }
-  }, [paymentMethods, userAccounts, accountsLoading, setValue]);
-
-  const methodsData = watch("methods");
-
-  const handleMethodToggle = (methodValue: string) => {
-    setExpandedMethods((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(methodValue)) {
-        newSet.delete(methodValue);
-      } else {
-        newSet.add(methodValue);
-      }
-      return newSet;
-    });
-  };
+  const itemsData = watch("items");
 
   const onSubmit = async (data: FormData) => {
-    const toCreate: AccountsCreateModel[] = [];
-    const toDelete: number[] = [];
+    const { toCreate, toDelete, toUpdate } = computeChanges(data.items);
 
-    paymentMethods?.forEach((method) => {
-      const wasEnabled = userAccounts.some(
-        (acc) => acc.transferMoney === method.value
-      );
-      const nowEnabled = !!data.methods[method.value]?.enabled;
+    // Для accounts мы удаляем старые и создаем новые при изменениях
+    const itemsToDelete = [...toDelete];
+    const itemsToCreate = [...toCreate];
 
-      if (nowEnabled && !wasEnabled) {
-        toCreate.push({
-          transferMoney: method.value as any,
-          username: data.methods[method.value].username,
-          entityValue: data.methods[method.value].entityValue,
-          comment: data.methods[method.value].comment,
-        });
-      }
-
-      if (!nowEnabled && wasEnabled) {
-        const account = userAccounts.find(
-          (acc) => acc.transferMoney === method.value
-        );
-        if (account?.id) toDelete.push(account.id);
-      }
+    toUpdate.forEach(({ id, data }) => {
+      itemsToDelete.push(id);
+      itemsToCreate.push(data);
     });
 
-    if (toCreate.length === 0 && toDelete.length === 0) {
+    if (itemsToCreate.length === 0 && itemsToDelete.length === 0) {
       showNotification("Ничего не изменилось", "info");
       return;
     }
 
-    await saveBatch({ toCreate, toDelete });
+    await saveBatch({ toCreate: itemsToCreate, toDelete: itemsToDelete });
   };
 
   if (accountsLoading || methodsLoading) {
@@ -227,191 +192,107 @@ export const AccountsFormWidget = () => {
 
           <Stack spacing={2}>
             {paymentMethods.map((method) => {
-              const isExpanded = expandedMethods.has(method.value);
-              const isEnabled = methodsData?.[method.value]?.enabled || false;
+              const isEnabled = itemsData?.[method.value]?.enabled || false;
+              const isExpd = isExpanded(method.value);
 
               return (
-                <Card
+                <Controller
                   key={method.value}
-                  sx={{
-                    transition: "all 0.2s",
-                    border: `2px solid ${
-                      isEnabled
-                        ? theme.palette.primary.main
-                        : theme.palette.divider
-                    }`,
-                    boxShadow: isEnabled
-                      ? `0 0 0 1px ${theme.palette.primary.main}`
-                      : "none",
-                    "&:hover": {
-                      borderColor: theme.palette.primary.light,
-                      boxShadow: `0 2px 8px ${theme.palette.action.hover}`,
-                    },
-                  }}
-                >
-                  <CardContent
-                    sx={{
-                      p: { xs: 2, sm: 2.5 },
-                      "&:last-child": { pb: { xs: 2, sm: 2.5 } },
-                    }}
-                  >
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="space-between"
-                      sx={{ cursor: "pointer" }}
-                      onClick={() => {
-                        if (isEnabled) handleMethodToggle(method.value);
-                      }}
+                  name={`items.${method.value}.enabled`}
+                  control={control}
+                  render={({ field }) => (
+                    <CollapsibleFormCard
+                      value={method.value}
+                      label={method.description}
+                      icon={getPaymentIcon(method.value)}
+                      isEnabled={field.value || false}
+                      isExpanded={isExpd}
+                      onEnabledChange={field.onChange}
+                      onToggleExpand={() => toggleExpanded(method.value)}
                     >
-                      <Box display="flex" alignItems="center" gap={2} flex={1}>
-                        <Controller
-                          name={`methods.${method.value}.enabled`}
-                          control={control}
-                          render={({ field }) => (
-                            <FormControlLabel
-                              control={
-                                <Checkbox
-                                  {...field}
-                                  checked={field.value || false}
-                                  onChange={(e) => {
-                                    field.onChange(e.target.checked);
-                                    if (e.target.checked) {
-                                      handleMethodToggle(method.value);
-                                    } else {
-                                      setExpandedMethods((prev) => {
-                                        const newSet = new Set(prev);
-                                        newSet.delete(method.value);
-                                        return newSet;
-                                      });
-                                    }
-                                  }}
-                                />
-                              }
-                              label=""
-                              sx={{ m: 0 }}
-                            />
-                          )}
-                        />
-                        <Box
-                          sx={{
-                            color: isEnabled ? "primary.main" : "action.active",
-                            display: { xs: "none", sm: "flex" },
-                          }}
-                        >
-                          {getPaymentIcon(method.value)}
-                        </Box>
-                        <Box flex={1}>
-                          <Typography
-                            variant="body1"
-                            fontWeight={isEnabled ? 600 : 500}
-                            sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
-                          >
-                            {method.description}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      {isEnabled && (
-                        <Box sx={{ ml: 1 }}>
-                          {isExpanded ? <ExpandLess /> : <ExpandMore />}
-                        </Box>
-                      )}
-                    </Box>
-
-                    <Collapse in={isEnabled && isExpanded} timeout="auto">
-                      <Box sx={{ mt: 3, pl: { xs: 0, sm: 7 } }}>
-                        <Grid container spacing={2}>
-                          <Grid item xs={12}>
-                            <Controller
-                              name={`methods.${method.value}.username`}
-                              control={control}
-                              rules={{
-                                required: isEnabled
-                                  ? "Укажите имя получателя"
-                                  : false,
-                              }}
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  fullWidth
-                                  label="Имя получателя"
-                                  placeholder="Иван Иванов"
-                                  error={
-                                    !!errors.methods?.[method.value]?.username
-                                  }
-                                  helperText={
-                                    errors.methods?.[method.value]?.username
-                                      ?.message
-                                  }
-                                  size={isMobile ? "small" : "medium"}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          <Grid item xs={12}>
-                            <Controller
-                              name={`methods.${method.value}.entityValue`}
-                              control={control}
-                              rules={{
-                                required: isEnabled
-                                  ? "Укажите реквизиты"
-                                  : false,
-                              }}
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  fullWidth
-                                  label={
-                                    method.value === "BANK_CARD"
-                                      ? "Номер карты"
-                                      : method.value === "BANK_SBP"
-                                      ? "Номер телефона"
-                                      : "Способ передачи"
-                                  }
-                                  placeholder={
-                                    method.value === "BANK_CARD"
-                                      ? "0000 0000 0000 0000"
-                                      : method.value === "BANK_SBP"
-                                      ? "+7 (000) 000-00-00"
-                                      : "Укажите детали"
-                                  }
-                                  error={
-                                    !!errors.methods?.[method.value]
-                                      ?.entityValue
-                                  }
-                                  helperText={
-                                    errors.methods?.[method.value]?.entityValue
-                                      ?.message
-                                  }
-                                  size={isMobile ? "small" : "medium"}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          <Grid item xs={12}>
-                            <Controller
-                              name={`methods.${method.value}.comment`}
-                              control={control}
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  fullWidth
-                                  label="Комментарий (необязательно)"
-                                  placeholder="Дополнительная информация"
-                                  multiline
-                                  rows={2}
-                                  size={isMobile ? "small" : "medium"}
-                                />
-                              )}
-                            />
-                          </Grid>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12}>
+                          <Controller
+                            name={`items.${method.value}.username`}
+                            control={control}
+                            rules={{
+                              required: isEnabled
+                                ? "Укажите имя получателя"
+                                : false,
+                            }}
+                            render={({ field }) => (
+                              <TextField
+                                {...field}
+                                fullWidth
+                                label="Имя получателя"
+                                placeholder="Иван Иванов"
+                                error={!!errors.items?.[method.value]?.username}
+                                helperText={
+                                  errors.items?.[method.value]?.username
+                                    ?.message
+                                }
+                              />
+                            )}
+                          />
                         </Grid>
-                      </Box>
-                    </Collapse>
-                  </CardContent>
-                </Card>
+
+                        <Grid item xs={12}>
+                          <Controller
+                            name={`items.${method.value}.entityValue`}
+                            control={control}
+                            rules={{
+                              required: isEnabled ? "Укажите реквизиты" : false,
+                            }}
+                            render={({ field }) => (
+                              <TextField
+                                {...field}
+                                fullWidth
+                                label={
+                                  method.value === "BANK_CARD"
+                                    ? "Номер карты"
+                                    : method.value === "BANK_SBP"
+                                    ? "Номер телефона"
+                                    : "Способ передачи"
+                                }
+                                placeholder={
+                                  method.value === "BANK_CARD"
+                                    ? "0000 0000 0000 0000"
+                                    : method.value === "BANK_SBP"
+                                    ? "+7 (000) 000-00-00"
+                                    : "Укажите детали"
+                                }
+                                error={
+                                  !!errors.items?.[method.value]?.entityValue
+                                }
+                                helperText={
+                                  errors.items?.[method.value]?.entityValue
+                                    ?.message
+                                }
+                              />
+                            )}
+                          />
+                        </Grid>
+
+                        <Grid item xs={12}>
+                          <Controller
+                            name={`items.${method.value}.comment`}
+                            control={control}
+                            render={({ field }) => (
+                              <TextField
+                                {...field}
+                                fullWidth
+                                label="Комментарий (необязательно)"
+                                placeholder="Дополнительная информация"
+                                multiline
+                                rows={2}
+                              />
+                            )}
+                          />
+                        </Grid>
+                      </Grid>
+                    </CollapsibleFormCard>
+                  )}
+                />
               );
             })}
           </Stack>
@@ -424,7 +305,7 @@ export const AccountsFormWidget = () => {
             size="large"
             disabled={
               isPending ||
-              !Object.values(methodsData || {}).some((m) => m.enabled)
+              !Object.values(itemsData || {}).some((m) => m.enabled)
             }
             sx={{ minWidth: { xs: "100%", sm: 180 } }}
             startIcon={isPending ? <CircularProgress size={16} /> : undefined}

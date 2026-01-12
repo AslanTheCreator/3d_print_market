@@ -19,6 +19,7 @@ import {
   useUserTransfers,
   useSaveTransfersBatch,
   ShoppingMethods,
+  TransferBaseModel,
 } from "@/entities/transfer";
 import { useNotification } from "@/app/providers";
 import { useDictionary } from "@/entities/dictionary";
@@ -49,6 +50,16 @@ const getShippingIcon = (value: string) => {
   }
 };
 
+// Функция сравнения для определения изменений
+const compareTransferData = (
+  existing: TransferBaseModel,
+  formData: any
+): boolean => {
+  return (
+    existing.price === formData.price && existing.currency === formData.currency
+  );
+};
+
 export const TransferFormWidget = () => {
   const { data: shippingMethods, isLoading: methodsLoading } =
     useDictionary("SHOPPING_METHODS");
@@ -59,7 +70,6 @@ export const TransferFormWidget = () => {
   const { mutateAsync: saveBatch, isPending } = useSaveTransfersBatch();
   const { showNotification } = useNotification();
 
-  // Фильтруем методы (убираем FREE_POST)
   const availableMethods = React.useMemo(
     () => shippingMethods?.filter((m) => m.value !== "FREE_POST") || [],
     [shippingMethods]
@@ -86,6 +96,7 @@ export const TransferFormWidget = () => {
       imageId: 1,
     }),
     getItemId: (item) => item.id,
+    compareItemData: compareTransferData,
   });
 
   useFormInitializer({
@@ -108,14 +119,23 @@ export const TransferFormWidget = () => {
   const itemsData = watch("items");
 
   const onSubmit = async (data: FormData) => {
-    const { toCreate, toDelete } = computeChanges(data.items);
+    const { toCreate, toDelete, toUpdate } = computeChanges(data.items);
 
-    if (toCreate.length === 0 && toDelete.length === 0) {
+    // Для transfers мы удаляем старые и создаем новые при изменениях
+    const itemsToDelete = [...toDelete];
+    const itemsToCreate = [...toCreate];
+
+    toUpdate.forEach(({ id, data }) => {
+      itemsToDelete.push(id);
+      itemsToCreate.push(data);
+    });
+
+    if (itemsToCreate.length === 0 && itemsToDelete.length === 0) {
       showNotification("Ничего не изменилось", "info");
       return;
     }
 
-    await saveBatch({ toCreate, toDelete });
+    await saveBatch({ toCreate: itemsToCreate, toDelete: itemsToDelete });
   };
 
   if (transfersLoading || methodsLoading || currenciesLoading) {
