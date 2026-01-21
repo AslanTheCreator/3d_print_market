@@ -24,8 +24,8 @@ import {
   useUserSocialNetworks,
   useSaveSocialNetworksBatch,
   SocialNetworkType,
+  SocialNetworksModel,
 } from "@/entities/social-networks";
-import type { SocialNetworksCreateModel } from "@/entities/social-networks/model/types";
 import { useNotification } from "@/app/providers";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card/CollapsibleFormCard";
 import { useBatchForm } from "@/shared/hooks/useBatchForm";
@@ -71,6 +71,14 @@ const getSocialIcon = (value: string) => {
   }
 };
 
+// Функция сравнения для определения изменений
+const compareSocialNetworkData = (
+  existing: SocialNetworksModel,
+  formData: any
+): boolean => {
+  return existing.login === formData.login;
+};
+
 export const SocialNetworksFormWidget = () => {
   const { data: socialNetworkTypes, isLoading: typesLoading } =
     useDictionary("SOCIAL_NETWORK");
@@ -90,19 +98,17 @@ export const SocialNetworksFormWidget = () => {
     defaultValues: { items: {} },
   });
 
-  // Используем переиспользуемый хук для batch операций
-  const { toggleExpanded, isExpanded, computeChanges, initialExpandedKeys } =
-    useBatchForm({
-      existingItems: userSocialNetworks,
-      getItemKey: (item) => item.type,
-      mapToCreateModel: (data, key) => ({
-        type: key as SocialNetworkType,
-        login: data.login,
-      }),
-      getItemId: (item) => item.id,
-    });
+  const { toggleExpanded, isExpanded, computeChanges } = useBatchForm({
+    existingItems: userSocialNetworks,
+    getItemKey: (item) => item.type,
+    mapToCreateModel: (data, key) => ({
+      type: key as SocialNetworkType,
+      login: data.login,
+    }),
+    getItemId: (item) => item.id,
+    compareItemData: compareSocialNetworkData,
+  });
 
-  // Инициализация формы
   useFormInitializer({
     dictionaryItems: socialNetworkTypes,
     existingItems: userSocialNetworks,
@@ -120,14 +126,24 @@ export const SocialNetworksFormWidget = () => {
   const itemsData = watch("items");
 
   const onSubmit = async (data: FormData) => {
-    const { toCreate, toDelete } = computeChanges(data.items);
+    const { toCreate, toDelete, toUpdate } = computeChanges(data.items);
 
-    if (toCreate.length === 0 && toDelete.length === 0) {
+    // Для социальных сетей мы удаляем старые и создаем новые при изменениях
+    const itemsToDelete = [...toDelete];
+    const itemsToCreate = [...toCreate];
+
+    // Добавляем обновленные элементы: удаляем старые, создаем новые
+    toUpdate.forEach(({ id, data }) => {
+      itemsToDelete.push(id);
+      itemsToCreate.push(data);
+    });
+
+    if (itemsToCreate.length === 0 && itemsToDelete.length === 0) {
       showNotification("Ничего не изменилось", "info");
       return;
     }
 
-    await saveBatch({ toCreate, toDelete });
+    await saveBatch({ toCreate: itemsToCreate, toDelete: itemsToDelete });
   };
 
   if (networksLoading || typesLoading) {
@@ -201,7 +217,6 @@ export const SocialNetworksFormWidget = () => {
                       onEnabledChange={field.onChange}
                       onToggleExpand={() => toggleExpanded(network.value)}
                     >
-                      {/* Поля внутри карточки */}
                       <Grid container spacing={2}>
                         <Grid item xs={12}>
                           <Controller

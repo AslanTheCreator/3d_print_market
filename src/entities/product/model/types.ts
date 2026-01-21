@@ -10,6 +10,7 @@ interface BaseProduct {
   id: number;
   name: string;
   price: number;
+  prepaymentAmount: number;
   currency: Currency;
   categories: CategoryModel[];
   availability: Availability;
@@ -26,7 +27,6 @@ export interface ProductCardModel extends BaseProduct {
 
 export interface ProductDetailsModel extends BaseProduct {
   description: string;
-  prepaymentAmount: number;
   count: number;
   originality: string;
   participantId: number;

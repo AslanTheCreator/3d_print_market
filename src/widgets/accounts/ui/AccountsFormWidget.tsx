@@ -20,10 +20,7 @@ import {
 } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
 import { useUserAccounts, useSaveAccountsBatch } from "@/entities/accounts";
-import type {
-  AccountsCreateModel,
-  AccountsBaseModel,
-} from "@/entities/accounts/model/types";
+import type { AccountsBaseModel } from "@/entities/accounts/model/types";
 import { useNotification } from "@/app/providers";
 import { useDictionary } from "@/entities/dictionary";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card/CollapsibleFormCard";
@@ -62,7 +59,7 @@ const compareAccountData = (
   return (
     existing.username === formData.username &&
     existing.entityValue === formData.entityValue &&
-    existing.comment === formData.comment
+    existing.comment === (formData.comment || "")
   );
 };
 
@@ -92,7 +89,7 @@ export const AccountsFormWidget = () => {
       transferMoney: key as any,
       username: data.username,
       entityValue: data.entityValue,
-      comment: data.comment,
+      comment: data.comment || "",
     }),
     getItemId: (item) => item.id,
     compareItemData: compareAccountData,
@@ -108,7 +105,7 @@ export const AccountsFormWidget = () => {
     mapExistingToFormData: (item) => ({
       username: item.username,
       entityValue: item.entityValue,
-      comment: item.comment,
+      comment: item.comment || "",
     }),
     getDefaultFormData: () => ({ username: "", entityValue: "", comment: "" }),
     onInitialized: (expanded) => {
@@ -125,6 +122,7 @@ export const AccountsFormWidget = () => {
     const itemsToDelete = [...toDelete];
     const itemsToCreate = [...toCreate];
 
+    // Добавляем обновленные элементы: удаляем старые, создаем новые
     toUpdate.forEach(({ id, data }) => {
       itemsToDelete.push(id);
       itemsToCreate.push(data);

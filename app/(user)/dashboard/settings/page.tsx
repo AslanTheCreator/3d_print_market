@@ -9,12 +9,12 @@ import {
   Box,
   useTheme,
   useMediaQuery,
+  CircularProgress,
 } from "@mui/material";
-import { LocationOn, LocalShipping } from "@mui/icons-material";
+import { LocationOn, LocalShipping, Payment, Share } from "@mui/icons-material";
 
 import { useNotification } from "@/app/providers";
 import { AddressManagerWidget } from "@/widgets/address-manager-widget";
-
 import { TransferFormWidget } from "@/widgets/transfer";
 import { AccountsFormWidget } from "@/widgets/accounts";
 import { SocialNetworksFormWidget } from "@/widgets/social-networks/ui/SocialNetworksFormWidget";
@@ -24,7 +24,6 @@ import { useUserAccounts } from "@/entities/accounts";
 import { useUserSocialNetworks } from "@/entities/social-networks";
 import { useUserAddresses } from "@/entities/address/hooks";
 import { useDictionary } from "@/entities/dictionary";
-import { CircularProgress } from "@mui/material";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -144,7 +143,7 @@ export default function SettingsPage() {
             }}
           />
           <Tab
-            icon={<LocalShipping />}
+            icon={<Payment />}
             iconPosition="start"
             label="Способ оплаты"
             id="transfer-tab-2"
@@ -155,7 +154,7 @@ export default function SettingsPage() {
             }}
           />
           <Tab
-            icon={<LocalShipping />}
+            icon={<Share />}
             iconPosition="start"
             label="Способы связи"
             id="transfer-tab-3"
