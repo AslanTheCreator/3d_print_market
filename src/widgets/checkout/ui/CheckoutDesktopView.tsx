@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Box,
-  Paper,
-} from "@mui/material";
+import { Container, Typography, Grid, Card, CardContent } from "@mui/material";
 import { UseFormReturn } from "react-hook-form";
 import { CartProductModel } from "@/entities/cart";
 import { CheckoutFormValues } from "../hooks/useCheckoutForm";
@@ -16,7 +8,7 @@ import { CheckoutOrderSummary } from "./CheckoutOrderSummary";
 import { groupCartItemsBySeller } from "../lib/groupCartItems";
 import { useOrderDataQueries } from "../hooks/useOrderDataQueries";
 import { useCheckoutTotals } from "../hooks/useCheckoutTotals";
-import { AddressSelector } from "@/entities/address";
+import { AddressCheckoutSelector } from "@/features/address/select-address";
 
 type CheckoutDesktopViewProps = {
   cartItems: CartProductModel[];
@@ -46,19 +38,11 @@ export const CheckoutDesktopView: React.FC<CheckoutDesktopViewProps> = ({
       <form onSubmit={onSubmit}>
         <Grid container spacing={4}>
           <Grid item xs={12} md={8}>
-            <Paper sx={{ mb: 3, p: 2 }}>
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  Адрес доставки
-                </Typography>
-                <AddressSelector
-                  selectedAddressId={checkoutState.selectedAddress?.id}
-                  onAddressSelect={checkoutState.setSelectedAddress}
-                  addresses={orderDataQueries[0]?.data?.addresses || []}
-                  isLoading={orderDataQueries[0]?.isLoading || false}
-                />
-              </Box>
-            </Paper>
+            {/* Упрощённый селектор адресов для checkout */}
+            <AddressCheckoutSelector
+              selectedAddressId={checkoutState.selectedAddress?.id}
+              onAddressSelect={checkoutState.setSelectedAddress}
+            />
 
             {sellerGroups.map((group) => {
               const orderQuery = orderDataQueries.find(

@@ -168,17 +168,7 @@ export default function SettingsPage() {
 
         <Box sx={{ p: { xs: 2, sm: 3 } }}>
           <TabPanel value={activeTab} index={0}>
-            <AddressManagerWidget
-              onSuccess={() =>
-                showNotification("Адрес успешно добавлен!", "success")
-              }
-              onError={() =>
-                showNotification(
-                  "Не удалось добавить адрес. Попробуйте снова.",
-                  "error"
-                )
-              }
-            />
+            <AddressManagerWidget />
           </TabPanel>
 
           <TabPanel value={activeTab} index={1}>

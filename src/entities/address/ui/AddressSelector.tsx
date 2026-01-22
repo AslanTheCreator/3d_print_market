@@ -31,6 +31,7 @@ interface AddressSelectorProps {
   onDeleteAddress?: (address: AddressBaseModel) => void;
   showRadio?: boolean;
   showDeleteButton?: boolean;
+  showAddButton?: boolean;
 }
 
 export const AddressSelector = ({
@@ -42,6 +43,7 @@ export const AddressSelector = ({
   isLoading,
   showRadio = true,
   showDeleteButton = false,
+  showAddButton = false,
 }: AddressSelectorProps) => {
   const theme = useTheme();
 
@@ -253,20 +255,22 @@ export const AddressSelector = ({
         })}
       </Stack>
 
-      <Button
-        variant="outlined"
-        startIcon={<Add />}
-        onClick={onAddNewAddress}
-        size="large"
-        sx={{
-          mt: 3,
-          alignSelf: "flex-start",
-          minWidth: { xs: "100%", sm: 200 },
-          fontWeight: 600,
-        }}
-      >
-        Добавить новый адрес
-      </Button>
+      {showAddButton && onAddNewAddress && (
+        <Button
+          variant="outlined"
+          startIcon={<Add />}
+          onClick={onAddNewAddress}
+          size="large"
+          sx={{
+            mt: 3,
+            alignSelf: "flex-start",
+            minWidth: { xs: "100%", sm: 200 },
+            fontWeight: 600,
+          }}
+        >
+          Добавить новый адрес
+        </Button>
+      )}
     </FormControl>
   );
 };
