@@ -1,20 +1,27 @@
 import React from "react";
-import { Container, Typography, Grid, Card, CardContent } from "@mui/material";
+import {
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Box,
+  Paper,
+} from "@mui/material";
 import { UseFormReturn } from "react-hook-form";
 import { CartProductModel } from "@/entities/cart";
 import { CheckoutFormValues } from "../hooks/useCheckoutForm";
-import { CheckoutAddressSection } from "./CheckoutAddressSection";
 import { SellerOrderSection } from "./SellerOrderSection";
 import { CheckoutOrderSummary } from "./CheckoutOrderSummary";
 import { groupCartItemsBySeller } from "../lib/groupCartItems";
 import { useOrderDataQueries } from "../hooks/useOrderDataQueries";
 import { useCheckoutTotals } from "../hooks/useCheckoutTotals";
+import { AddressSelector } from "@/entities/address";
 
 type CheckoutDesktopViewProps = {
   cartItems: CartProductModel[];
   form: UseFormReturn<CheckoutFormValues>;
   checkoutState: any;
-  addressDialog: any;
   isSubmitting: boolean;
   onSubmit: () => void;
 };
@@ -23,7 +30,6 @@ export const CheckoutDesktopView: React.FC<CheckoutDesktopViewProps> = ({
   cartItems,
   form,
   checkoutState,
-  addressDialog,
   isSubmitting,
   onSubmit,
 }) => {
@@ -40,17 +46,23 @@ export const CheckoutDesktopView: React.FC<CheckoutDesktopViewProps> = ({
       <form onSubmit={onSubmit}>
         <Grid container spacing={4}>
           <Grid item xs={12} md={8}>
-            <CheckoutAddressSection
-              selectedAddressId={checkoutState.selectedAddress?.id}
-              onAddressSelect={checkoutState.setSelectedAddress}
-              onAddNewAddress={addressDialog.openDialog}
-              addresses={orderDataQueries[0]?.data?.addresses || []}
-              isLoading={orderDataQueries[0]?.isLoading || false}
-            />
+            <Paper sx={{ mb: 3, p: 2 }}>
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  Адрес доставки
+                </Typography>
+                <AddressSelector
+                  selectedAddressId={checkoutState.selectedAddress?.id}
+                  onAddressSelect={checkoutState.setSelectedAddress}
+                  addresses={orderDataQueries[0]?.data?.addresses || []}
+                  isLoading={orderDataQueries[0]?.isLoading || false}
+                />
+              </Box>
+            </Paper>
 
             {sellerGroups.map((group) => {
               const orderQuery = orderDataQueries.find(
-                (q) => q.sellerId === group.sellerId
+                (q) => q.sellerId === group.sellerId,
               );
 
               return (
@@ -63,7 +75,7 @@ export const CheckoutDesktopView: React.FC<CheckoutDesktopViewProps> = ({
                       onTransferSelect={(transfer) =>
                         checkoutState.handleTransferSelect(
                           group.sellerId,
-                          transfer
+                          transfer,
                         )
                       }
                       transfers={orderQuery?.data?.sellerTransfers || []}

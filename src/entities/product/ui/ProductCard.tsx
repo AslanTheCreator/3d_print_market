@@ -13,9 +13,11 @@ import {
   useTheme,
   alpha,
   useMediaQuery,
+  Chip,
 } from "@mui/material";
-import { formatPrice } from "@/shared/lib/utils/formatPrice";
+import { Schedule } from "@mui/icons-material";
 import { ProductCardModel } from "../model/types";
+import { ProductPriceDisplay } from "./ProductPriceDisplay";
 
 interface ProductCardProps extends ProductCardModel {
   actions?: React.ReactNode;
@@ -26,13 +28,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   id,
   name,
   price,
+  prepaymentAmount,
   categories,
   image,
+  availability,
   actions,
 }) => {
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const isPreorder = availability === "PREORDER";
 
   return (
     <Card
@@ -48,7 +54,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         height: "100%",
         transition: "transform 0.2s, box-shadow 0.2s",
         "&:hover": {
-          transform: { xs: "none", sm: "translateY(-4px)" }, // Отключаем эффект поднятия на мобильных устройствах
+          transform: { xs: "none", sm: "translateY(-4px)" },
           boxShadow: {
             xs: "0 2px 8px rgba(0, 0, 0, 0.06)",
             sm: "0 8px 16px rgba(0, 0, 0, 0.1)",
@@ -92,7 +98,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 alt={name}
                 src={`data:${image[0].contentType};base64,${image[0].imageData}`}
                 fill
-                sizes="(max-width: 600px) 50vw, 33vw" // Оптимизация загрузки для разных размеров экрана
+                sizes="(max-width: 600px) 50vw, 33vw"
                 loading="lazy"
                 style={{
                   objectFit: "cover",
@@ -117,6 +123,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               Изображение недоступно
             </Box>
           )}
+
+          {/* Бейдж предзаказа */}
+          {isPreorder && (
+            <Chip
+              icon={<Schedule sx={{ fontSize: 14 }} />}
+              label="Предзаказ"
+              size="small"
+              sx={{
+                position: "absolute",
+                top: 8,
+                left: 8,
+                bgcolor: alpha(theme.palette.preorder.main, 0.95),
+                color: theme.palette.preorder.contrastText,
+                fontWeight: 700,
+                fontSize: isMobile ? "0.65rem" : "0.7rem",
+                height: isMobile ? 22 : 24,
+                backdropFilter: "blur(4px)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              }}
+            />
+          )}
         </Box>
 
         {/* Контент карточки */}
@@ -126,12 +153,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             "&:last-child": { pb: { xs: 1.5, sm: 2 } },
             flexGrow: 1,
             display: "flex",
-            gap: 1,
+            gap: 0.5,
             flexDirection: "column",
             justifyContent: "space-between",
           }}
         >
-          <Stack spacing={isMobile ? 0.5 : 1}>
+          <Stack spacing={0.5}>
             {categories?.[0]?.name && (
               <Typography
                 variant="caption"
@@ -151,29 +178,26 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
             <Typography
               fontSize={isMobile ? "0.75rem" : "0.875rem"}
+              fontWeight={600}
+              color="#212121"
               sx={{
                 display: "-webkit-box",
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: "vertical",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                minHeight: isMobile ? "32px" : "40px",
                 lineHeight: 1.3,
-                mb: isMobile ? 0.5 : 1,
               }}
             >
               {name}
             </Typography>
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography
-                fontWeight={700}
-                fontSize={isMobile ? "0.875rem" : "1rem"}
-                color="text.primary"
-              >
-                {formatPrice(price) + " ₽"}
-              </Typography>
-            </Box>
+            {/* Цена */}
+            <ProductPriceDisplay
+              price={price}
+              prepaymentAmount={prepaymentAmount}
+              availability={availability}
+            />
           </Stack>
         </CardContent>
       </Link>

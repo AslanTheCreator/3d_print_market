@@ -27,7 +27,7 @@ interface AddressSelectorProps {
   isLoading: boolean;
   selectedAddressId?: number;
   onAddressSelect: (address: AddressBaseModel) => void;
-  onAddNewAddress: () => void;
+  onAddNewAddress?: () => void;
   onDeleteAddress?: (address: AddressBaseModel) => void;
   showRadio?: boolean;
   showDeleteButton?: boolean;
@@ -140,7 +140,7 @@ export const AddressSelector = ({
                     : theme.palette.primary.light,
                   boxShadow: `0 2px 8px ${alpha(
                     theme.palette.primary.main,
-                    0.1
+                    0.1,
                   )}`,
                   transform: "translateY(-2px)",
                 },

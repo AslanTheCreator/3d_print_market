@@ -1,4 +1,4 @@
 export { ProductCard } from "./ProductCard";
 export { ProductCardSkeleton } from "./ProductCardSkeleton";
-export { ProductGrid } from "./ProductGrid";
-export { ProductGridItem } from "./ProductGrid";
+export { ProductGrid, ProductGridItem } from "./ProductGrid";
+export { ProductPriceDisplay } from "./ProductPriceDisplay";

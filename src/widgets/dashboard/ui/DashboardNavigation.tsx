@@ -57,7 +57,7 @@ const navigationItems: NavigationItem[] = [
     color: "#9c27b0",
   },
   {
-    text: "Настройки",
+    text: "Доставка и оплата",
     icon: <SettingsIcon />,
     href: "/dashboard/settings",
     color: "#607d8b",

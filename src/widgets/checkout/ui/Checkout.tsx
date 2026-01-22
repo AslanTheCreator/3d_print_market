@@ -40,16 +40,12 @@ const Checkout = () => {
     onPartialSuccess: (successCount, totalCount) => {
       showNotification(
         `Создано ${successCount} из ${totalCount} заказов`,
-        "warning"
+        "warning",
       );
     },
     onError: () => {
       showNotification("Не удалось создать ни одного заказа", "error");
     },
-  });
-
-  const addressDialog = useAddressDialog(() => {
-    showNotification("Адрес успешно добавлен!", "success");
   });
 
   if (isCartLoading) {
@@ -79,7 +75,6 @@ const Checkout = () => {
     cartItems,
     form,
     checkoutState,
-    addressDialog,
     isSubmitting,
     onSubmit: form.handleSubmit(handleSubmit),
   };
@@ -91,12 +86,6 @@ const Checkout = () => {
       ) : (
         <CheckoutDesktopView {...commonProps} />
       )}
-
-      <AddressDialog
-        open={addressDialog.isOpen}
-        onClose={addressDialog.closeDialog}
-        onSuccess={addressDialog.handleSuccess}
-      />
     </>
   );
 };

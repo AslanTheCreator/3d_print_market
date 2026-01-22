@@ -30,13 +30,13 @@ import {
   TrendingUp,
   Info,
 } from "@mui/icons-material";
-import { formatPrice } from "@/shared/lib/utils/formatPrice";
 import { ProductCardModel } from "@/entities/product/model/types";
 import { ExtendProductButton } from "@/features/product/extend-product/ui/ExtendProductButton";
 import {
   getExpirationStatus,
   formatExpirationDate,
 } from "@/entities/product/lib/productExpirationUtils";
+import { ProductPriceDisplay } from "@/entities/product/ui/ProductPriceDisplay";
 
 interface UserProductCardProps extends ProductCardModel {
   onCardClick?: (id: string) => void;
@@ -46,6 +46,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
   id,
   name,
   price,
+  prepaymentAmount,
   categories,
   image,
   availability,
@@ -258,27 +259,26 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
               {name}
             </Typography>
 
-            {/* Цена и количество */}
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography
-                fontWeight={700}
-                fontSize="0.875rem"
-                color="text.primary"
-              >
-                {formatPrice(price)} ₽
-              </Typography>
-              {count > 0 && (
-                <Chip
-                  label={`${count} шт`}
-                  size="small"
-                  sx={{
-                    height: 18,
-                    fontSize: "0.625rem",
-                    fontWeight: 600,
-                  }}
-                />
-              )}
-            </Stack>
+            {/* Цена - используем общий компонент */}
+            <ProductPriceDisplay
+              price={price}
+              prepaymentAmount={prepaymentAmount}
+              availability={availability}
+            />
+
+            {/* Количество */}
+            {count > 0 && (
+              <Chip
+                label={`${count} шт`}
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: "0.625rem",
+                  fontWeight: 600,
+                  width: "fit-content",
+                }}
+              />
+            )}
 
             {/* Статус истечения */}
             <Tooltip

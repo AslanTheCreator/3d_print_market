@@ -10,18 +10,17 @@ import {
 import { UseFormReturn } from "react-hook-form";
 import { CartProductModel } from "@/entities/cart";
 import { CheckoutFormValues } from "../hooks/useCheckoutForm";
-import { CheckoutAddressSection } from "./CheckoutAddressSection";
 import { SellerOrderSection } from "./SellerOrderSection";
 import { groupCartItemsBySeller } from "../lib/groupCartItems";
 import { useOrderDataQueries } from "../hooks/useOrderDataQueries";
 import { useCheckoutTotals } from "../hooks/useCheckoutTotals";
 import { formatPrice } from "@/shared/lib/utils/formatPrice";
+import { AddressSelector } from "@/entities/address";
 
 type CheckoutMobileViewProps = {
   cartItems: CartProductModel[];
   form: UseFormReturn<CheckoutFormValues>;
   checkoutState: any;
-  addressDialog: any;
   isSubmitting: boolean;
   onSubmit: () => void;
 };
@@ -30,7 +29,6 @@ export const CheckoutMobileView: React.FC<CheckoutMobileViewProps> = ({
   cartItems,
   form,
   checkoutState,
-  addressDialog,
   isSubmitting,
   onSubmit,
 }) => {
@@ -45,18 +43,16 @@ export const CheckoutMobileView: React.FC<CheckoutMobileViewProps> = ({
       </Typography>
 
       <form onSubmit={onSubmit}>
-        <CheckoutAddressSection
+        <AddressSelector
           selectedAddressId={checkoutState.selectedAddress?.id}
           onAddressSelect={checkoutState.setSelectedAddress}
-          onAddNewAddress={addressDialog.openDialog}
           addresses={orderDataQueries[0]?.data?.addresses || []}
           isLoading={orderDataQueries[0]?.isLoading || false}
-          isMobile
         />
 
         {sellerGroups.map((group, index) => {
           const orderQuery = orderDataQueries.find(
-            (q) => q.sellerId === group.sellerId
+            (q) => q.sellerId === group.sellerId,
           );
 
           return (
