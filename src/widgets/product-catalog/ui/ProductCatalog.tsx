@@ -86,6 +86,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                     productId={product.id}
                     availability={product.availability}
                     productName={product.name}
+                    stockCount={product.count}
                   />
                 }
               />

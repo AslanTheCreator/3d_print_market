@@ -153,7 +153,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             "&:last-child": { pb: { xs: 1.5, sm: 2 } },
             flexGrow: 1,
             display: "flex",
-            gap: 0.5,
             flexDirection: "column",
             justifyContent: "space-between",
           }}
@@ -177,36 +176,41 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )}
 
             <Typography
-              fontSize={isMobile ? "0.75rem" : "0.875rem"}
+              fontSize={isMobile ? "0.8rem" : "0.9rem"}
               fontWeight={600}
-              color="#212121"
+              color="text.primary"
               sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
                 display: "-webkit-box",
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
                 lineHeight: 1.3,
               }}
             >
               {name}
             </Typography>
+          </Stack>
 
-            {/* Цена */}
+          {/* Цена и рейтинг */}
+          <Box sx={{ mt: 0.5 }}>
             <ProductPriceDisplay
               price={price}
               prepaymentAmount={prepaymentAmount}
               availability={availability}
             />
-          </Stack>
+          </Box>
         </CardContent>
       </Link>
+
+      {/* Кнопка добавления в корзину */}
       {actions && (
         <Box
           sx={{
-            px: { xs: "8px", sm: "12px" },
+            px: { xs: 1, sm: 1.5 },
             pb: { xs: 1.5, sm: 2 },
           }}
+          onClick={(e) => e.preventDefault()}
         >
           {actions}
         </Box>

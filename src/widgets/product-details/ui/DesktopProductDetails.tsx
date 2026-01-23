@@ -16,7 +16,13 @@ import { ProductDetailsModel } from "@/entities/product";
 import { RelatedProducts } from "./RelatedProducts";
 import { AddToCartButton } from "@/features/cart";
 import { FavoriteButton } from "@/features/toggle-favorite";
-import { Verified, LocalShipping, Schedule, Star } from "@mui/icons-material";
+import {
+  Verified,
+  LocalShipping,
+  Schedule,
+  Star,
+  Inventory2Outlined,
+} from "@mui/icons-material";
 
 interface DesktopProductDetailsProps {
   productCard: ProductDetailsModel;
@@ -28,12 +34,32 @@ const PriceSection = ({
   price,
   prepaymentAmount,
   availability,
+  stockCount,
 }: {
   price: number;
   prepaymentAmount: number;
   availability: string;
+  stockCount: number | null;
 }) => {
   const isPreorder = availability === "PREORDER";
+
+  // Форматирование остатка товара
+  const formatStockCount = (count: number | null): string => {
+    if (count === null) return "∞ в наличии";
+    if (count === 0) return "Нет в наличии";
+    if (count === 1) return "1 шт. в наличии";
+    return `${count} шт. в наличии`;
+  };
+
+  // Определяем цвет для остатка
+  const getStockColor = (
+    count: number | null,
+  ): "success" | "warning" | "error" => {
+    if (count === null) return "success";
+    if (count === 0) return "error";
+    if (count <= 3) return "warning";
+    return "success";
+  };
 
   return (
     <Paper
@@ -44,7 +70,7 @@ const PriceSection = ({
         background: (theme) =>
           `linear-gradient(135deg, ${alpha(
             theme.palette.primary.main,
-            0.05
+            0.05,
           )} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
         border: "2px solid",
         borderColor: isPreorder ? "preorder.main" : "primary.main",
@@ -129,6 +155,22 @@ const PriceSection = ({
             </Typography>
           </Box>
         )}
+
+        {/* Остаток товара */}
+        <Divider />
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Inventory2Outlined
+            sx={{ fontSize: 20 }}
+            color={getStockColor(stockCount)}
+          />
+          <Typography
+            variant="body2"
+            fontWeight={600}
+            color={`${getStockColor(stockCount)}.main`}
+          >
+            {formatStockCount(stockCount)}
+          </Typography>
+        </Stack>
       </Stack>
     </Paper>
   );
@@ -149,16 +191,6 @@ const InfoBadges = ({ product }: { product: ProductDetailsModel }) => {
         sx={{ fontWeight: 600 }}
       />
 
-      {product.count > 0 && (
-        <Chip
-          label={`В наличии: ${product.count} шт`}
-          size="small"
-          variant="outlined"
-          color="primary"
-          sx={{ fontWeight: 600 }}
-        />
-      )}
-
       <Chip
         icon={<LocalShipping sx={{ fontSize: 18 }} />}
         label="Доставка по РФ"
@@ -174,6 +206,8 @@ export function DesktopProductDetails({
   productCard,
   allImages,
 }: DesktopProductDetailsProps) {
+  const isOutOfStock = productCard.count !== null && productCard.count <= 0;
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Хлебные крошки */}
@@ -211,11 +245,12 @@ export function DesktopProductDetails({
             {/* Информационные бейджи */}
             <InfoBadges product={productCard} />
 
-            {/* Цена */}
+            {/* Цена и остаток */}
             <PriceSection
               price={productCard.price}
               prepaymentAmount={productCard.prepaymentAmount}
               availability={productCard.availability}
+              stockCount={productCard.count}
             />
 
             {/* Информация о продавце */}
@@ -268,6 +303,7 @@ export function DesktopProductDetails({
                 availability={productCard.availability}
                 variant="detailed"
                 productName={productCard.name}
+                stockCount={productCard.count}
               />
 
               <FavoriteButton

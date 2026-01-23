@@ -1,10 +1,10 @@
-import React from "react";
-import { Button, useMediaQuery, useTheme, Box } from "@mui/material";
+import React, { useEffect } from "react";
+import { Button, useMediaQuery, useTheme, Box, Tooltip } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { Availability } from "@/entities/product/model/types";
 import { useAuthRequired } from "@/shared/hooks";
 import { AuthRequiredDialog } from "@/shared/ui/auth-required-dialog";
-import { Counter } from "@/shared/ui/counter";
+import { CartCounter } from "@/shared/ui/cart-counter";
 import { useAddToCartFeature } from "../model/useAddToCartFeature";
 import { useNotification } from "@/app/providers";
 import { useCartQuantity } from "@/entities/cart/hooks/useCartQuantity";
@@ -17,6 +17,7 @@ interface AddToCartButtonProps {
   size?: "small" | "medium" | "large";
   fullWidth?: boolean;
   productName?: string;
+  stockCount?: number | null; // null означает неограниченное количество
 }
 
 export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
@@ -26,6 +27,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   fullWidth = true,
   availability,
   productName,
+  stockCount,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -50,22 +52,42 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   const {
     inCart,
     quantity,
+    maxQuantity,
+    canIncrement,
+    isAtMaxQuantity,
     handleIncrement,
     handleDecrement,
     handleSetQuantity,
-  } = useCartQuantity(productId);
+    adjustQuantityToMax,
+  } = useCartQuantity(productId, { maxQuantity: stockCount });
 
   const isPreorder = availability === "PREORDER";
   const isRemoving = removingItemIds.includes(productId);
+  const isOutOfStock =
+    stockCount !== null && stockCount !== undefined && stockCount <= 0;
+
+  // Автоматически корректируем количество при изменении stockCount
+  useEffect(() => {
+    if (inCart) {
+      adjustQuantityToMax();
+    }
+  }, [stockCount, inCart, adjustQuantityToMax]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (isOutOfStock) {
+      showNotification("Товар закончился", "warning");
+      return;
+    }
+
     handleAddToCart(productId, productName);
   };
 
   const handleDecrementWithRemove = () => {
     if (quantity <= 1) {
+      // Удаляем товар из корзины при нажатии минус когда quantity = 1
       handleRemoveItem(productId);
       handleSetQuantity(0);
     } else {
@@ -74,6 +96,13 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   };
 
   const handleIncrementClick = () => {
+    if (!canIncrement) {
+      showNotification(
+        `Максимальное количество: ${maxQuantity} шт.`,
+        "warning",
+      );
+      return;
+    }
     handleIncrement();
   };
 
@@ -101,6 +130,16 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   };
 
   const getColorStyles = () => {
+    if (isOutOfStock) {
+      return {
+        bgcolor: theme.palette.grey[400],
+        color: theme.palette.grey[600],
+        "&:hover": {
+          bgcolor: theme.palette.grey[400],
+        },
+      };
+    }
+
     if (isPreorder) {
       return {
         bgcolor: theme.palette.preorder.main,
@@ -119,36 +158,47 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   };
 
   const getButtonText = () => {
+    if (isOutOfStock) {
+      return "Нет в наличии";
+    }
     if (isPreorder) {
       return "Предзаказ";
     }
     return variant === "detailed" ? "В корзину" : "Купить";
   };
 
-  if (inCart) {
-    return (
+  // Показываем CartCounter если товар в корзине (только для варианта default в каталоге)
+  if (inCart && !isOutOfStock && variant === "default") {
+    const counterContent = (
       <Box
         sx={{
           width: fullWidth ? "100%" : "auto",
-          display: "flex",
-          justifyContent: "center",
         }}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
         }}
       >
-        <Counter
+        <CartCounter
           value={quantity}
           onIncrement={handleIncrementClick}
           onDecrement={handleDecrementWithRemove}
-          min={1}
-          max={99}
-          size={isMobile ? "small" : "medium"}
           disabled={isPending || isRemoving}
+          isAtMax={isAtMaxQuantity}
         />
       </Box>
     );
+
+    // Показываем tooltip если достигнут лимит
+    if (isAtMaxQuantity && maxQuantity !== null && maxQuantity !== undefined) {
+      return (
+        <Tooltip title={`Максимум ${maxQuantity} шт.`} arrow placement="top">
+          {counterContent}
+        </Tooltip>
+      );
+    }
+
+    return counterContent;
   }
 
   return (
@@ -157,10 +207,10 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
         onClick={handleClick}
         variant="contained"
         fullWidth={fullWidth}
-        disabled={isPending}
+        disabled={isPending || isOutOfStock}
         size={size}
         startIcon={
-          variant === "default" ? (
+          variant === "default" && !isOutOfStock ? (
             <ShoppingCartOutlinedIcon
               sx={{ fontSize: isMobile ? "0.875rem" : "1rem" }}
             />

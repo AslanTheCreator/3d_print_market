@@ -22,6 +22,7 @@ import {
   Star,
   Favorite,
   FavoriteBorder,
+  Inventory2Outlined,
 } from "@mui/icons-material";
 
 interface MobileProductDetailsProps {
@@ -34,12 +35,32 @@ const MobilePriceCard = ({
   price,
   prepaymentAmount,
   availability,
+  stockCount,
 }: {
   price: number;
   prepaymentAmount: number;
   availability: string;
+  stockCount: number | null;
 }) => {
   const isPreorder = availability === "PREORDER";
+
+  // Форматирование остатка товара
+  const formatStockCount = (count: number | null): string => {
+    if (count === null) return "∞ в наличии";
+    if (count === 0) return "Нет в наличии";
+    if (count === 1) return "1 шт.";
+    return `${count} шт.`;
+  };
+
+  // Определяем цвет для остатка
+  const getStockColor = (
+    count: number | null,
+  ): "success" | "warning" | "error" => {
+    if (count === null) return "success";
+    if (count === 0) return "error";
+    if (count <= 3) return "warning";
+    return "success";
+  };
 
   return (
     <Paper
@@ -50,7 +71,7 @@ const MobilePriceCard = ({
         background: (theme) =>
           `linear-gradient(135deg, ${alpha(
             theme.palette.primary.main,
-            0.08
+            0.08,
           )} 0%, ${alpha(theme.palette.secondary.main, 0.08)} 100%)`,
         border: "2px solid",
         borderColor: isPreorder ? "preorder.main" : "primary.main",
@@ -93,9 +114,24 @@ const MobilePriceCard = ({
               Полная цена: <strong>{price.toLocaleString("ru-RU")} ₽</strong>
             </Typography>
           </Box>
+
+          {/* Остаток товара */}
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            <Inventory2Outlined
+              sx={{ fontSize: 16 }}
+              color={getStockColor(stockCount)}
+            />
+            <Typography
+              variant="caption"
+              fontWeight={600}
+              color={`${getStockColor(stockCount)}.main`}
+            >
+              {formatStockCount(stockCount)}
+            </Typography>
+          </Stack>
         </Stack>
       ) : (
-        <Stack>
+        <Stack spacing={1}>
           <Typography
             variant="caption"
             color="text.secondary"
@@ -110,6 +146,21 @@ const MobilePriceCard = ({
           >
             {price.toLocaleString("ru-RU")} ₽
           </Typography>
+
+          {/* Остаток товара */}
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            <Inventory2Outlined
+              sx={{ fontSize: 16 }}
+              color={getStockColor(stockCount)}
+            />
+            <Typography
+              variant="caption"
+              fontWeight={600}
+              color={`${getStockColor(stockCount)}.main`}
+            >
+              {formatStockCount(stockCount)}
+            </Typography>
+          </Stack>
         </Stack>
       )}
     </Paper>
@@ -163,22 +214,14 @@ export function MobileProductDetails({
             color="success"
             sx={{ fontWeight: 600 }}
           />
-          {productCard.count > 0 && (
-            <Chip
-              label={`${productCard.count} шт`}
-              size="small"
-              variant="outlined"
-              color="primary"
-              sx={{ fontWeight: 600 }}
-            />
-          )}
         </Stack>
 
-        {/* Цена */}
+        {/* Цена и остаток */}
         <MobilePriceCard
           price={productCard.price}
           prepaymentAmount={productCard.prepaymentAmount}
           availability={productCard.availability}
+          stockCount={productCard.count}
         />
 
         {/* Продавец */}
@@ -313,6 +356,7 @@ export function MobileProductDetails({
               availability={productCard.availability}
               variant="detailed"
               productName={productCard.name}
+              stockCount={productCard.count}
             />
           </Box>
         </Stack>

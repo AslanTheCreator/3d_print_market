@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Box, Typography, Stack, useMediaQuery, useTheme } from "@mui/material";
+import { Typography, Stack, useMediaQuery, useTheme } from "@mui/material";
 import { Star } from "@mui/icons-material";
 import { formatPrice } from "@/shared/lib/utils/formatPrice";
 import { Availability } from "../model/types";
@@ -36,7 +36,6 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
     <Stack
       spacing={0.5}
       sx={{
-        minHeight: isMobile ? 44 : 48,
         justifyContent: "flex-start",
       }}
     >
@@ -46,7 +45,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
           {/* Основная цена */}
           <Typography
             fontWeight={800}
-            fontSize={isMobile ? "1rem" : "1.125rem"}
+            fontSize={isMobile ? "1.125rem" : "1.25rem"}
             color="primary.main"
             sx={{ lineHeight: 1.2 }}
           >
