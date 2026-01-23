@@ -12,6 +12,7 @@ export interface ProductFormData {
   description: string;
   isPreorder: boolean;
   prepaymentAmount: string;
+  count: string;
 }
 
 /**
@@ -19,13 +20,14 @@ export interface ProductFormData {
  */
 export const mapFormDataToCreateModel = (
   formData: ProductFormData,
-  imageIds: number[]
+  imageIds: number[],
 ): ProductCreateModel => {
   const availability: Availability = formData.isPreorder
     ? "PREORDER"
     : "PURCHASABLE";
 
   return {
+    count: parseInt(formData.count, 10) || null,
     categoryIds: formData.categoryIds,
     name: formData.name.trim(),
     imageIds,
@@ -52,4 +54,5 @@ export const defaultProductFormValues: ProductFormData = {
   description: "",
   isPreorder: false,
   prepaymentAmount: "",
+  count: "",
 };

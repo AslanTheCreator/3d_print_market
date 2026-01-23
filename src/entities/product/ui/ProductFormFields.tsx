@@ -16,6 +16,7 @@ import {
   Box,
   OutlinedInput,
 } from "@mui/material";
+import { Inventory } from "@mui/icons-material";
 import { CategoryModel } from "@/entities/category/model/types";
 import { Currency } from "@/shared/types";
 import { ProductFormData } from "@/entities/product/model/form";
@@ -74,7 +75,7 @@ export const ProductFormFields = ({
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                     {selected.map((categoryId) => {
                       const category = categories.find(
-                        (cat) => cat.id === categoryId
+                        (cat) => cat.id === categoryId,
                       );
                       return (
                         <Chip
@@ -132,8 +133,63 @@ export const ProductFormFields = ({
         />
       </Grid>
 
+      {/* Product Count */}
+      <Grid item xs={12} sm={6}>
+        <Controller
+          name="count"
+          control={control}
+          rules={{
+            required: "Введите количество товара",
+            pattern: {
+              value: /^\d+$/,
+              message: "Количество должно быть целым числом",
+            },
+            validate: (value) => {
+              const numValue = parseInt(value, 10);
+              if (isNaN(numValue)) {
+                return "Введите корректное число";
+              }
+              if (numValue < 1) {
+                return "Количество должно быть больше 0";
+              }
+              if (numValue > 999999) {
+                return "Максимальное количество: 999999";
+              }
+              return true;
+            },
+          }}
+          render={({ field }) => (
+            <TextField
+              fullWidth
+              id="count"
+              label="Количество товара"
+              type="number"
+              placeholder="Введите количество"
+              error={!!errors.count}
+              helperText={
+                errors.count?.message ||
+                "Укажите количество доступных единиц товара"
+              }
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Inventory />
+                  </InputAdornment>
+                ),
+                inputProps: {
+                  min: 1,
+                  max: 999999,
+                  step: 1,
+                },
+              }}
+              {...field}
+            />
+          )}
+        />
+      </Grid>
+
       {/* Preorder Checkbox */}
-      <Grid item xs={12}>
+      <Grid item xs={12} sm={6} sx={{ display: "flex", alignItems: "center" }}>
         <Controller
           name="isPreorder"
           control={control}

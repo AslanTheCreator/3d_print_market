@@ -3,8 +3,9 @@ export {
   ProductCardSkeleton,
   ProductGrid,
   ProductGridItem,
+  ProductFormFields,
 } from "./ui";
-export { ProductDetailsSkeleton } from "./ui/ProductDetails/ProductDetailsSkeleton";
+export { ProductDetailsSkeleton } from "./ui/ProductDetailsSkeleton";
 
 export { productApi } from "./api/productApi";
 export * from "./hooks";

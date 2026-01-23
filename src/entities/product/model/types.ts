@@ -45,7 +45,7 @@ export interface ProductCreateModel {
   price: number;
   prepaymentAmount: number;
   categoryIds: number[];
-  count?: number | null;
+  count: number | null; // null - неограниченное количество
   currency: Currency;
   originality: string;
   availability: Availability;

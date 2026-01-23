@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import { ArrowBack, CheckCircle } from "@mui/icons-material";
 
-import { ProductFormFields } from "@/entities/product/ui/ProductFormFields/ProductFormFields";
+import { ProductFormFields } from "@/entities/product/ui";
 import { CurrencyField } from "./components/CurrencyField";
 import { MultiImageUpload } from "./components/MultiImageUpload";
 
@@ -58,7 +58,7 @@ export const CreateProductForm = () => {
     if (!imageUploadState.imageIds.length) {
       showNotification(
         "Пожалуйста, загрузите хотя бы одно изображение товара",
-        "error"
+        "error",
       );
       return;
     }
@@ -70,7 +70,7 @@ export const CreateProductForm = () => {
 
     const productData = mapFormDataToCreateModel(
       data,
-      imageUploadState.imageIds
+      imageUploadState.imageIds,
     );
 
     createProduct(productData, {
@@ -117,7 +117,7 @@ export const CreateProductForm = () => {
             p: { xs: 2, sm: 3 },
             background: `linear-gradient(135deg, ${alpha(
               theme.palette.primary.main,
-              0.05
+              0.05,
             )}, ${alpha(theme.palette.secondary.main, 0.05)})`,
             borderBottom: `1px solid ${theme.palette.divider}`,
           }}
@@ -219,8 +219,8 @@ export const CreateProductForm = () => {
                   {isPending
                     ? "Создание..."
                     : imageUploadState.isUploading
-                    ? "Загрузка изображений..."
-                    : "Разместить товар"}
+                      ? "Загрузка изображений..."
+                      : "Разместить товар"}
                 </Button>
 
                 <Button
