@@ -1,6 +1,5 @@
-export { CartItemCard } from "./ui/CartItemCard";
-export { CartItemsList } from "./ui/CartItemsList";
 export { CartSummary } from "./ui/CartSummary";
+export { CheckoutCartItemCard } from "./ui/CheckoutCartItemCard";
 
 export type { CartProductModel } from "./model/types";
 

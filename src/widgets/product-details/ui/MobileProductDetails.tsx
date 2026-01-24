@@ -296,7 +296,7 @@ export function MobileProductDetails({
         </Paper>
 
         {/* Преимущества */}
-        <Paper
+        {/* <Paper
           elevation={0}
           sx={{
             p: 2,
@@ -326,7 +326,7 @@ export function MobileProductDetails({
           <Typography variant="caption" color="text.secondary" display="block">
             ✓ Возврат в течение 14 дней
           </Typography>
-        </Paper>
+        </Paper> */}
 
         {/* Похожие товары */}
         <Box sx={{ mt: 3 }}>

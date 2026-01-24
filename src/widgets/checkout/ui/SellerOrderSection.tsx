@@ -1,13 +1,13 @@
 import React from "react";
 import { Box, Typography, Grid, Paper } from "@mui/material";
 import { Controller, Control, FieldErrors } from "react-hook-form";
-import { CartItemsList } from "@/entities/cart";
 import { TransferSelector } from "@/features/transfer/transfer-selector/TransferSelector";
 import { TextField } from "@mui/material";
 import { SellerGroup } from "../lib/groupCartItems";
 import { CheckoutFormValues } from "../hooks/useCheckoutForm";
 import { TransferBaseModel } from "@/entities/transfer/model/types";
 import { useRemoveFromCartFeature } from "@/features/cart";
+import { CheckoutCartSection } from "./CheckoutCartSection";
 
 type SellerOrderSectionProps = {
   group: SellerGroup;
@@ -38,11 +38,7 @@ export const SellerOrderSection: React.FC<SellerOrderSectionProps> = ({
         <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
           Товары
         </Typography>
-        <CartItemsList
-          items={group.items}
-          onRemoveItem={handleRemoveItem}
-          removingItemIds={removingItemIds}
-        />
+        <CheckoutCartSection items={group.items} />
       </Grid>
 
       <Grid item xs={12} sm={isMobile ? 12 : 6}>

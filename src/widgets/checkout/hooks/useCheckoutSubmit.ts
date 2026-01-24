@@ -1,89 +1,262 @@
-import { useCallback } from "react";
-import { CartProductModel } from "@/entities/cart";
-import { AddressBaseModel } from "@/entities/address/model/types";
-import { TransferBaseModel } from "@/entities/transfer/model/types";
-import { useCreateOrder } from "@/entities/order";
+"use client";
 
-import { groupCartItemsBySeller } from "../lib/groupCartItems";
-import { CheckoutFormValues } from "./useCheckoutForm";
+import { useState, useCallback } from "react";
+import { CartProductModel, useCartQuantityStore } from "@/entities/cart";
+import { orderApi } from "@/entities/order/api/orderApi";
+import { useQueryClient } from "@tanstack/react-query";
+import { cartKeys } from "@/entities/cart/hooks/queryKeys";
+import { orderQueryKeys } from "@/entities/order/hooks/queryKeys";
+import { CheckoutState } from "./useCheckoutState";
+import { OrderResult, CheckoutResult, OrderToCreate } from "../model/types";
 
-type UseCheckoutSubmitProps = {
+interface UseCheckoutSubmitProps {
   cartItems: CartProductModel[] | undefined;
-  selectedAddress: AddressBaseModel | null;
-  selectedTransfers: Record<number, TransferBaseModel | null>;
-  onSuccess: () => void;
-  onPartialSuccess: (successCount: number, totalCount: number) => void;
-  onError: () => void;
-};
+  checkoutState: CheckoutState;
+  onSuccess: (result: CheckoutResult) => void;
+  onPartialSuccess: (result: CheckoutResult) => void;
+  onError: (result: CheckoutResult) => void;
+}
 
 export const useCheckoutSubmit = ({
   cartItems,
-  selectedAddress,
-  selectedTransfers,
+  checkoutState,
   onSuccess,
   onPartialSuccess,
   onError,
 }: UseCheckoutSubmitProps) => {
-  const { mutate: createOrder, isPending } = useCreateOrder();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitResult, setSubmitResult] = useState<CheckoutResult | null>(null);
 
-  const handleSubmit = useCallback(
-    async (data: CheckoutFormValues) => {
-      if (!cartItems?.length) return;
+  const queryClient = useQueryClient();
+  const { getQuantity, removeItem: removeQuantityItem } =
+    useCartQuantityStore();
 
-      const sellerGroups = groupCartItemsBySeller(cartItems);
-      const orders = sellerGroups.map((group) => ({
-        data: {
-          productId: group.items[0]?.id,
-          count: group.items[0]?.count,
-          addressId: selectedAddress?.id || 0,
-          transferId: selectedTransfers[group.sellerId]?.id || 0,
-          comment: data.comment[group.sellerId] || "",
-        },
-        sellerId: group.sellerId,
-      }));
+  const handleSubmit = useCallback(async () => {
+    if (!cartItems?.length || !checkoutState.isReadyToSubmit) {
+      return;
+    }
 
-      let successCount = 0;
+    setIsSubmitting(true);
+    setSubmitResult(null);
 
-      for (const order of orders) {
+    // Формируем список заказов для создания
+    const ordersToCreate: OrderToCreate[] = cartItems.map((item) => {
+      const transferId = checkoutState.getTransferIdForSeller(item.sellerId);
+      const quantity = getQuantity(item.id);
+
+      return {
+        productId: item.id,
+        productName: item.name,
+        count: quantity,
+        addressId: checkoutState.selectedAddress?.id || 0,
+        transferId: transferId || 0,
+        sellerId: item.sellerId,
+        comment: checkoutState.comment,
+      };
+    });
+
+    // Создаём промисы для всех заказов
+    const orderPromises = ordersToCreate.map(
+      async (order): Promise<OrderResult> => {
         try {
-          await new Promise<void>((resolve, reject) => {
-            createOrder(order.data, {
-              onSuccess: () => {
-                successCount++;
-                resolve();
-              },
-              onError: reject,
-            });
+          await orderApi.createOrder({
+            productId: order.productId,
+            count: order.count,
+            addressId: order.addressId,
+            transferId: order.transferId,
+            comment: order.comment,
           });
+
+          return {
+            productId: order.productId,
+            productName: order.productName,
+            status: "success",
+          };
         } catch (error) {
-          console.error(
-            `Ошибка при создании заказа для продавца ${order.sellerId}:`,
-            error
+          const errorMessage =
+            error instanceof Error ? error.message : "Неизвестная ошибка";
+
+          return {
+            productId: order.productId,
+            productName: order.productName,
+            status: "error",
+            errorMessage,
+          };
+        }
+      },
+    );
+
+    // Выполняем все запросы параллельно
+    const results = await Promise.allSettled(orderPromises);
+
+    // Обрабатываем результаты
+    const successResults: OrderResult[] = [];
+    const failedResults: OrderResult[] = [];
+
+    results.forEach((result) => {
+      if (result.status === "fulfilled") {
+        const orderResult = result.value;
+        if (orderResult.status === "success") {
+          successResults.push(orderResult);
+        } else {
+          failedResults.push(orderResult);
+        }
+      } else {
+        // Promise rejected (не должно происходить т.к. мы ловим ошибки внутри)
+        failedResults.push({
+          productId: 0,
+          productName: "Неизвестный товар",
+          status: "error",
+          errorMessage: result.reason?.message || "Ошибка сети",
+        });
+      }
+    });
+
+    const checkoutResult: CheckoutResult = {
+      success: successResults,
+      failed: failedResults,
+      totalCount: ordersToCreate.length,
+      successCount: successResults.length,
+    };
+
+    setSubmitResult(checkoutResult);
+
+    // Очищаем успешные товары из корзины и quantity store
+    for (const successOrder of successResults) {
+      removeQuantityItem(successOrder.productId);
+    }
+
+    // Инвалидируем кэши
+    await queryClient.invalidateQueries({ queryKey: cartKeys.all });
+    await queryClient.invalidateQueries({
+      queryKey: orderQueryKeys.customerOrders(),
+    });
+
+    setIsSubmitting(false);
+
+    // Вызываем соответствующий колбэк
+    if (successResults.length === ordersToCreate.length) {
+      onSuccess(checkoutResult);
+    } else if (successResults.length > 0) {
+      onPartialSuccess(checkoutResult);
+    } else {
+      onError(checkoutResult);
+    }
+
+    return checkoutResult;
+  }, [
+    cartItems,
+    checkoutState,
+    getQuantity,
+    removeQuantityItem,
+    queryClient,
+    onSuccess,
+    onPartialSuccess,
+    onError,
+  ]);
+
+  // Функция для повторной отправки неудачных заказов
+  const retryFailed = useCallback(async () => {
+    if (!submitResult || submitResult.failed.length === 0) return;
+
+    const failedProductIds = submitResult.failed.map((f) => f.productId);
+    const failedItems = cartItems?.filter((item) =>
+      failedProductIds.includes(item.id),
+    );
+
+    if (!failedItems?.length) return;
+
+    setIsSubmitting(true);
+
+    const retryPromises = failedItems.map(
+      async (item): Promise<OrderResult> => {
+        try {
+          const transferId = checkoutState.getTransferIdForSeller(
+            item.sellerId,
           );
+          const quantity = getQuantity(item.id);
+
+          await orderApi.createOrder({
+            productId: item.id,
+            count: quantity,
+            addressId: checkoutState.selectedAddress?.id || 0,
+            transferId: transferId || 0,
+            comment: checkoutState.comment,
+          });
+
+          return {
+            productId: item.id,
+            productName: item.name,
+            status: "success",
+          };
+        } catch (error) {
+          return {
+            productId: item.id,
+            productName: item.name,
+            status: "error",
+            errorMessage:
+              error instanceof Error ? error.message : "Неизвестная ошибка",
+          };
+        }
+      },
+    );
+
+    const results = await Promise.allSettled(retryPromises);
+
+    const newSuccessResults: OrderResult[] = [];
+    const stillFailedResults: OrderResult[] = [];
+
+    results.forEach((result) => {
+      if (result.status === "fulfilled") {
+        const orderResult = result.value;
+        if (orderResult.status === "success") {
+          newSuccessResults.push(orderResult);
+          removeQuantityItem(orderResult.productId);
+        } else {
+          stillFailedResults.push(orderResult);
         }
       }
+    });
 
-      if (successCount === orders.length) {
-        onSuccess();
-      } else if (successCount > 0) {
-        onPartialSuccess(successCount, orders.length);
-      } else {
-        onError();
-      }
-    },
-    [
-      cartItems,
-      selectedAddress,
-      selectedTransfers,
-      createOrder,
-      onSuccess,
-      onPartialSuccess,
-      onError,
-    ]
-  );
+    // Обновляем результат
+    const updatedResult: CheckoutResult = {
+      success: [...submitResult.success, ...newSuccessResults],
+      failed: stillFailedResults,
+      totalCount: submitResult.totalCount,
+      successCount: submitResult.successCount + newSuccessResults.length,
+    };
+
+    setSubmitResult(updatedResult);
+
+    // Инвалидируем кэши
+    await queryClient.invalidateQueries({ queryKey: cartKeys.all });
+    await queryClient.invalidateQueries({
+      queryKey: orderQueryKeys.customerOrders(),
+    });
+
+    setIsSubmitting(false);
+
+    if (stillFailedResults.length === 0) {
+      onSuccess(updatedResult);
+    } else {
+      onPartialSuccess(updatedResult);
+    }
+  }, [
+    submitResult,
+    cartItems,
+    checkoutState,
+    getQuantity,
+    removeQuantityItem,
+    queryClient,
+    onSuccess,
+    onPartialSuccess,
+  ]);
 
   return {
     handleSubmit,
-    isSubmitting: isPending,
+    retryFailed,
+    isSubmitting,
+    submitResult,
+    clearResult: () => setSubmitResult(null),
   };
 };

@@ -340,7 +340,7 @@ export function DesktopProductDetails({
             </Paper>
 
             {/* Преимущества */}
-            <Paper
+            {/* <Paper
               elevation={0}
               sx={{
                 p: 3,
@@ -359,7 +359,7 @@ export function DesktopProductDetails({
               <Typography variant="body2" color="text.secondary">
                 ✓ Возврат в течение 14 дней
               </Typography>
-            </Paper>
+            </Paper> */}
           </Stack>
         </Grid>
       </Grid>

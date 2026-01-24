@@ -4,7 +4,7 @@ import { InfoOutlined } from "@mui/icons-material";
 import { AddressSelector } from "@/entities/address";
 import { useUserAddresses } from "@/entities/address/hooks";
 import { AddressBaseModel } from "@/entities/address/model/types";
-import { AppLink } from "@/shared/ui/AppLink/AppLink";
+import { AppLink } from "@/shared/ui/app-link/AppLink";
 
 interface AddressCheckoutSelectorProps {
   selectedAddressId?: number;
