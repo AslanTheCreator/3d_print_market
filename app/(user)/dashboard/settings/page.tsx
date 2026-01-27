@@ -19,7 +19,7 @@ import { TransferFormWidget } from "@/widgets/transfer";
 import { AccountsFormWidget } from "@/widgets/accounts";
 import { SocialNetworksFormWidget } from "@/widgets/social-networks/ui/SocialNetworksFormWidget";
 
-import { useUserTransfers } from "@/entities/transfer";
+import { useTransfers } from "@/entities/transfer";
 import { useUserAccounts } from "@/entities/accounts";
 import { useUserSocialNetworks } from "@/entities/social-networks";
 import { useUserAddresses } from "@/entities/address/hooks";
@@ -51,7 +51,7 @@ export default function SettingsPage() {
   const { showNotification } = useNotification();
 
   const { isLoading: addressesLoading } = useUserAddresses();
-  const { isLoading: transfersLoading } = useUserTransfers();
+  const { isLoading: transfersLoading } = useTransfers();
   const { isLoading: accountsLoading } = useUserAccounts();
   const { isLoading: socialNetworksLoading } = useUserSocialNetworks();
 

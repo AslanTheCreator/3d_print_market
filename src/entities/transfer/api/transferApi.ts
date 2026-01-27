@@ -1,19 +1,24 @@
-import { TransferBaseModel, TransferCreateModel } from "../model/types";
 import { authClient } from "@/shared/api";
+import type { Transfer, TransferInput } from "../model/types";
 
-const API_URL = `/transfer`;
+const API_URL = "/transfer";
 
 export const transferApi = {
-  createTransfer: async (data: TransferCreateModel): Promise<void> => {
-    await authClient.post(API_URL, data);
-  },
-
-  getUserTransfers: async (): Promise<TransferBaseModel[]> => {
-    const { data } = await authClient.get<TransferBaseModel[]>(API_URL);
+  getAll: async (): Promise<Transfer[]> => {
+    const { data } = await authClient.get<Transfer[]>(API_URL);
     return data;
   },
 
-  deleteTransfer: async (id: number): Promise<void> => {
+  create: async (input: TransferInput): Promise<void> => {
+    await authClient.post(API_URL, input);
+  },
+
+  update: async (id: number, input: TransferInput): Promise<Transfer> => {
+    const { data } = await authClient.put<Transfer>(`${API_URL}/${id}`, input);
+    return data;
+  },
+
+  delete: async (id: number): Promise<void> => {
     await authClient.delete(`${API_URL}/${id}`);
   },
 };

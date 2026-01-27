@@ -1,13 +1,13 @@
 export type SocialNetworkType = "VK" | "FACEBOOK" | "TELEGRAM" | "WHATSAPP";
 
-export interface SocialNetworksModel {
+export interface SocialNetworks {
   id: number;
   type: SocialNetworkType;
   login: string;
   participantId: number;
 }
 
-export interface SocialNetworksCreateModel {
+export interface SocialNetworksInput {
   type: SocialNetworkType;
   login: string;
 }

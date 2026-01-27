@@ -1,4 +1,4 @@
-export interface AddressBaseModel {
+export interface Address {
   id: number;
   country: string;
   city: string;
@@ -6,8 +6,19 @@ export interface AddressBaseModel {
   houseNumber: string;
   apartmentNumber: string;
   index: number;
+  status: "ACTIVE" | "DELETED";
   fullAddress: string;
 }
+
+export interface AddressInput {
+  country: string;
+  city: string;
+  street: string;
+  houseNumber: string;
+  apartmentNumber: string;
+  index: number;
+}
+
 export interface AddressFormData {
   country: string;
   city: string;
@@ -28,5 +39,4 @@ export const ADDRESS_VALIDATION = {
   INDEX_LENGTH: 6,
 } as const;
 
-export interface AddressCreateModel
-  extends Omit<AddressBaseModel, "id" | "fullAddress"> {}
+

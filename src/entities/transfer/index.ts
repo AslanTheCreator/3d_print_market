@@ -1,9 +1,28 @@
+// API
 export { transferApi } from "./api/transferApi";
+
+// Query keys
 export { transferKeys } from "./hooks/queryKeys";
-export { useUserTransfers } from "./hooks/useTransferQueries";
+
+// Queries
+export { useTransfers } from "./hooks/useTransfers";
+
+// Mutations
 export {
   useCreateTransfer,
+  useUpdateTransfer,
   useDeleteTransfer,
-  useSaveTransfersBatch,
 } from "./hooks/useTransferMutations";
-export * from "./model/types";
+
+// Composed hooks
+export { useSaveTransfer } from "./hooks/useSaveTransfer";
+
+// Types
+export type {
+  Transfer,
+  TransferInput,
+  TransferFormItem,
+  TransferFormData,
+  ShippingMethod,
+  TransferStatus,
+} from "./model/types";

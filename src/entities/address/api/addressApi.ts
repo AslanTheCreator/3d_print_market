@@ -1,41 +1,33 @@
-import { AddressBaseModel, AddressCreateModel } from "../model/types";
-import { errorHandler } from "@/shared/lib";
+import { Address, AddressInput } from "../model/types";
 import { authClient } from "@/shared/api";
 
 const API_URL = `/address`;
 
 export const addressApi = {
-  createAddress: async (data: AddressCreateModel) => {
-    try {
-      await authClient.post(API_URL, data);
-    } catch (error) {
-      throw errorHandler.handleAxiosError(error, "Ошибка при создании адреса");
-    }
+  createAddress: async (input: AddressInput): Promise<void> => {
+    await authClient.post(API_URL, input);
   },
-  getUserAddresses: async (): Promise<AddressBaseModel[]> => {
-    try {
-      const { data } = await authClient.get<AddressBaseModel[]>(API_URL);
-      return data;
-    } catch (error) {
-      throw errorHandler.handleAxiosError(error, "Ошибка при загрузке адресов");
-    }
+  update: async (id: number, input: AddressInput): Promise<Address> => {
+    const { data } = await authClient.put<Address>(`${API_URL}/${id}`, input);
+    return data;
   },
-  deleteAddress: async (id: number) => {
-    try {
-      await authClient.delete(`${API_URL}/${id}`);
-    } catch (error) {
-      throw errorHandler.handleAxiosError(error, "Ошибка при удалении адреса");
-    }
+  getUserAddresses: async (): Promise<Address[]> => {
+    const { data } = await authClient.get<Address[]>(API_URL);
+    return data;
   },
-  getAllRegions: async () => {
-    try {
-      const { data } = await authClient.get<string[]>(`${API_URL}/regions`);
-      return data;
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при загрузке регионов"
-      );
-    }
+  deleteAddress: async (id: number): Promise<void> => {
+    await authClient.delete(`${API_URL}/${id}`);
   },
+  // пока не нужно
+  // getAllRegions: async () => {
+  //   try {
+  //     const { data } = await authClient.get<string[]>(`${API_URL}/regions`);
+  //     return data;
+  //   } catch (error) {
+  //     throw errorHandler.handleAxiosError(
+  //       error,
+  //       "Ошибка при загрузке регионов",
+  //     );
+  //   }
+  // },
 };
