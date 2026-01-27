@@ -6,7 +6,8 @@ import { CartProductModel } from "../model/types"; // For optimistic updates if 
 export const useAddToCart = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: cartApi.addToCart,
+    mutationFn: ({ productId, count }: { productId: number; count: number }) =>
+      cartApi.addToCart(productId, count),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cartKeys.all });
     },

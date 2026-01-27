@@ -20,15 +20,15 @@ import {
   RadioButtonUnchecked,
   Add,
 } from "@mui/icons-material";
-import { AddressBaseModel } from "@/entities/address/model/types";
+import { Address } from "@/entities/address/model/types";
 
 interface AddressSelectorProps {
-  addresses: AddressBaseModel[];
+  addresses: Address[];
   isLoading: boolean;
   selectedAddressId?: number;
-  onAddressSelect: (address: AddressBaseModel) => void;
+  onAddressSelect: (address: Address) => void;
   onAddNewAddress?: () => void;
-  onDeleteAddress?: (address: AddressBaseModel) => void;
+  onDeleteAddress?: (address: Address) => void;
   showRadio?: boolean;
   showDeleteButton?: boolean;
   showAddButton?: boolean;

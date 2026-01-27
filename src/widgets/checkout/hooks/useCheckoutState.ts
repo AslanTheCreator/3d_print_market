@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { AddressBaseModel } from "@/entities/address/model/types";
-import { ShoppingMethods } from "@/entities/transfer/model/types";
+import { Address } from "@/entities/address/model/types";
+import { ShippingMethod } from "@/entities/transfer/model/types";
 import { CartProductModel } from "@/entities/cart";
 import { useOrderData } from "@/entities/order";
 import { useDeliveryResolver } from "./useDeliveryResolver";
@@ -12,10 +12,9 @@ interface UseCheckoutStateProps {
 }
 
 export const useCheckoutState = ({ cartItems = [] }: UseCheckoutStateProps) => {
-  const [selectedAddress, setSelectedAddress] =
-    useState<AddressBaseModel | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] =
-    useState<ShoppingMethods | null>(null);
+    useState<ShippingMethod | null>(null);
   const [comment, setComment] = useState<string>("");
 
   // Получаем уникальных продавцов

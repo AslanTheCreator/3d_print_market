@@ -1,8 +1,5 @@
 import { CartProductModel } from "@/entities/cart";
-import {
-  ShoppingMethods,
-  TransferBaseModel,
-} from "@/entities/transfer/model/types";
+import { ShippingMethod, Transfer } from "@/entities/transfer/model/types";
 
 // Результат создания одного заказа
 export interface OrderResult {
@@ -15,16 +12,16 @@ export interface OrderResult {
 // Информация о способе доставки для продавца
 export interface SellerDeliveryInfo {
   sellerId: number;
-  selectedTransfer: TransferBaseModel | null;
+  selectedTransfer: Transfer | null;
   isFallback: boolean;
   fallbackReason?: string;
-  originalMethod?: ShoppingMethods;
+  originalMethod?: ShippingMethod;
 }
 
 // Агрегированная информация о доставке
 export interface DeliveryResolution {
   // Доступные способы доставки (пересечение всех продавцов)
-  availableMethods: ShoppingMethods[];
+  availableMethods: ShippingMethod[];
   // Информация по каждому продавцу
   sellerDeliveryInfo: Map<number, SellerDeliveryInfo>;
   // Есть ли fallback'и

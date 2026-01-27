@@ -1,15 +1,12 @@
 import { useMemo, useCallback } from "react";
 import { CartProductModel } from "@/entities/cart";
-import {
-  ShoppingMethods,
-  TransferBaseModel,
-} from "@/entities/transfer/model/types";
+import { ShippingMethod, Transfer } from "@/entities/transfer/model/types";
 import { useDictionary } from "@/entities/dictionary";
 import { DeliveryResolution, SellerDeliveryInfo } from "../model/types";
 
 interface SellerTransfers {
   sellerId: number;
-  transfers: TransferBaseModel[];
+  transfers: Transfer[];
   isLoading: boolean;
   isError: boolean;
 }
@@ -17,11 +14,11 @@ interface SellerTransfers {
 interface UseDeliveryResolverProps {
   cartItems: CartProductModel[];
   sellerTransfersData: SellerTransfers[];
-  selectedMethod: ShoppingMethods | null;
+  selectedMethod: ShippingMethod | null;
 }
 
 // Приоритет fallback методов (от более предпочтительного к менее)
-const FALLBACK_PRIORITY: ShoppingMethods[] = [
+const FALLBACK_PRIORITY: ShippingMethod[] = [
   "TRANSPORT_COMPANY",
   "RUSSIAN_POST",
   "PRODUCT_PICKUP",
@@ -47,7 +44,7 @@ export const useDeliveryResolver = ({
   }, [cartItems]);
 
   // Находим доступные способы доставки (пересечение)
-  const availableMethods = useMemo((): ShoppingMethods[] => {
+  const availableMethods = useMemo((): ShippingMethod[] => {
     if (isLoading || sellerTransfersData.length === 0) return [];
 
     // Получаем методы для каждого продавца
@@ -105,7 +102,7 @@ export const useDeliveryResolver = ({
         hasFallbacks = true;
 
         // Ищем альтернативу по приоритету
-        let fallbackTransfer: TransferBaseModel | null = null;
+        let fallbackTransfer: Transfer | null = null;
         for (const fallbackMethod of FALLBACK_PRIORITY) {
           fallbackTransfer =
             transfers.find((t) => t.sending === fallbackMethod) || null;
@@ -171,7 +168,7 @@ export const useDeliveryResolver = ({
 
 // Вспомогательные функции
 function getMethodDisplayName(
-  method: ShoppingMethods,
+  method: ShippingMethod,
   shoppingMethods: any[] | undefined,
 ): string {
   const methodInfo = shoppingMethods?.find((m) => m.value === method);

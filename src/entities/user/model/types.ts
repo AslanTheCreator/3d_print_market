@@ -1,15 +1,17 @@
 import { AccountsBaseModel } from "@/entities/accounts/model/types";
-import { AddressBaseModel } from "@/entities/address/model/types";
+import { Address } from "@/entities/address/model/types";
 import { ImageResponse } from "@/entities/image";
-import { SocialNetworksModel } from "@/entities/social-networks";
-import { TransferBaseModel } from "@/entities/transfer/model/types";
+import { SocialNetwork } from "@/entities/social-networks";
+import { Transfer } from "@/entities/transfer/model/types";
 
 type UserStatus = "ACTIVE" | "BLOCKED" | "DELETED";
 type TransferMoney = "BANK_CARD" | "BANK_SBP" | "CASH";
 type SellerStatus = "DEFAULT" | "VIP" | "PRO";
 
-export interface UserProfileModel
-  extends Pick<UserBaseModel, "id" | "fullName" | "login"> {
+export interface UserProfileModel extends Pick<
+  UserBaseModel,
+  "id" | "fullName" | "login"
+> {
   role: string;
   email: string;
   imageId: number | null;
@@ -30,10 +32,10 @@ export interface UserBaseModel {
   totalReviews: number;
   imageId: number | null;
   image: ImageResponse[];
-  addresses: AddressBaseModel[];
+  addresses: Address[];
   accounts: AccountsBaseModel[];
-  transfers: TransferBaseModel[];
-  socialNetworks: SocialNetworksModel[];
+  transfers: Transfer[];
+  socialNetworks: SocialNetwork[];
 }
 
 export interface UserFindModel {

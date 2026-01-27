@@ -12,10 +12,7 @@ import {
   Chip,
 } from "@mui/material";
 import { Controller, Control, FieldError } from "react-hook-form";
-import {
-  ShoppingMethods,
-  TransferBaseModel,
-} from "@/entities/transfer/model/types";
+import { ShippingMethod, Transfer } from "@/entities/transfer/model/types";
 import { useDictionary } from "@/entities/dictionary";
 import { DictionaryItem } from "@/entities/dictionary/model/types";
 import { formatPrice } from "@/shared/lib/utils/formatPrice";
@@ -25,10 +22,10 @@ interface TransferSelectorProps {
   name: string;
   error?: FieldError;
   disabled?: boolean;
-  onTransferSelect?: (transfer: TransferBaseModel | null) => void;
+  onTransferSelect?: (transfer: Transfer | null) => void;
   showDescriptions?: boolean;
   hideUnavailable?: boolean;
-  transfers: TransferBaseModel[];
+  transfers: Transfer[];
   isLoading?: boolean;
   isError?: boolean;
 }
@@ -55,12 +52,12 @@ export const TransferSelector: React.FC<TransferSelectorProps> = ({
     if (!shoppingMethods) return new Map();
 
     return new Map(
-      shoppingMethods.map((method: DictionaryItem) => [method.value, method])
+      shoppingMethods.map((method: DictionaryItem) => [method.value, method]),
     );
   }, [shoppingMethods]);
 
   // Функция для получения информации о методе доставки
-  const getMethodInfo = (method: ShoppingMethods) => {
+  const getMethodInfo = (method: ShippingMethod) => {
     const methodInfo = methodsMap.get(method);
     return {
       label: methodInfo?.description || method,
@@ -84,7 +81,7 @@ export const TransferSelector: React.FC<TransferSelectorProps> = ({
   // Обработчик выбора способа доставки
   const handleTransferChange = (
     transferId: string,
-    onChange: (value: any) => void
+    onChange: (value: any) => void,
   ) => {
     const selectedTransfer =
       availableTransfers?.find((t) => t.id.toString() === transferId) || null;
@@ -216,7 +213,7 @@ export const TransferSelector: React.FC<TransferSelectorProps> = ({
                             <Chip
                               label={formatPrice(
                                 transfer.price,
-                                transfer.currency
+                                transfer.currency,
                               )}
                               size="small"
                               variant="outlined"

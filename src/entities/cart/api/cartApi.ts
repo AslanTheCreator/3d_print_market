@@ -1,5 +1,4 @@
 import { CartProductModel } from "../model/types";
-import { errorHandler } from "@/shared/lib";
 import { authClient } from "@/shared/api";
 import { fetchProductsWithImages } from "@/shared/api";
 import { ProductFilter, SortBy } from "@/entities/product/model/types";
@@ -13,7 +12,7 @@ export const cartApi = {
     lastCreatedAt?: string,
     lastPrice?: number,
     lastId?: number,
-    sortBy: SortBy = "DATE_DESC"
+    sortBy: SortBy = "DATE_DESC",
   ): Promise<CartProductModel[]> => {
     return fetchProductsWithImages(
       authClient,
@@ -24,25 +23,18 @@ export const cartApi = {
       lastPrice,
       lastId,
       sortBy,
-      "Ошибка при загрузке товаров из корзины"
+      "Ошибка при загрузке товаров из корзины",
     ) as Promise<CartProductModel[]>;
   },
-  addToCart: async (productId: number) => {
-    try {
-      await authClient.post(`${API_URL}?productId=${productId}`);
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при добавлении товара в корзину"
-      );
-    }
+  addToCart: async (productId: number, count: number) => {
+    await authClient.post(`${API_URL}?productId=${productId}&count=${count}`);
+  },
+
+  update: async (productId: number, count: number) => {
+    await authClient.put(`${API_URL}?productId=${productId}&count=${count}`);
   },
 
   removeFromCart: async (productId: number) => {
-    try {
-      await authClient.delete(`${API_URL}?productId=${productId}`);
-    } catch (error) {
-      throw errorHandler.handleAxiosError(error, "Ошибка при удалении товара");
-    }
+    await authClient.delete(`${API_URL}?productId=${productId}`);
   },
 };

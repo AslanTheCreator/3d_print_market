@@ -1,6 +1,6 @@
-import { AddressBaseModel } from "@/entities/address/model/types";
+import { Address } from "@/entities/address/model/types";
 import { ProductCardModel } from "@/entities/product";
-import { TransferBaseModel } from "@/entities/transfer/model/types";
+import { Transfer } from "@/entities/transfer/model/types";
 import { Currency } from "@/shared/types";
 
 type OrderStatus =
@@ -46,8 +46,8 @@ export interface OrderCreateModel {
 }
 
 export interface OrderGetDataModel {
-  addresses: AddressBaseModel[];
-  sellerTransfers: TransferBaseModel[];
+  addresses: Address[];
+  sellerTransfers: Transfer[];
 }
 
 export interface ListOrdersModel {

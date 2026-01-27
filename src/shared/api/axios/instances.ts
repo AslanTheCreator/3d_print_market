@@ -5,86 +5,125 @@ import axios, {
 } from "axios";
 import { tokenStorage } from "@/shared/lib";
 import { useAuthStore } from "@/app/store";
+import {
+  ApiError,
+  BackendErrorResponse,
+  transformToApiError,
+  logApiError,
+  ErrorCodes,
+} from "@/shared/lib/errorHandler";
 
-// Типы для ошибок от бэкенда
-interface ApiErrorResponse {
-  code?: string;
-  message?: string;
-  status?: number;
-  timestamp?: string;
-  details?: unknown;
-}
+// ============================================================================
+// ТИПЫ
+// ============================================================================
 
-// Расширяем конфиг для retry флага
+/**
+ * Расширяем конфиг для retry флага (используется при refresh token)
+ */
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
+  _skipErrorTransform?: boolean; // Флаг для пропуска трансформации (например, для refresh)
 }
+
+// ============================================================================
+// КОНФИГУРАЦИЯ
+// ============================================================================
 
 // Кеш для API URL
 let cachedApiUrl: string | null = null;
 
-// Состояние refresh процесса (mutex)
+// Состояние refresh процесса (mutex для предотвращения гонки)
 let isRefreshing = false;
 let refreshSubscribers: Array<(token: string) => void> = [];
+let refreshFailSubscribers: Array<(error: ApiError) => void> = [];
 
-// Подписка на завершение refresh
-const subscribeToRefresh = (callback: (token: string) => void) => {
-  refreshSubscribers.push(callback);
+// ============================================================================
+// УТИЛИТЫ ЛОГИРОВАНИЯ (только dev)
+// ============================================================================
+
+const log = (message: string, data?: unknown): void => {
+  if (process.env.NODE_ENV !== "development") return;
+
+  if (data !== undefined) {
+    console.log(`[Axios] ${message}`, data);
+  } else {
+    console.log(`[Axios] ${message}`);
+  }
 };
 
-// Уведомление подписчиков о новом токене
-const onRefreshSuccess = (newToken: string) => {
+const logError = (message: string, error?: unknown): void => {
+  if (process.env.NODE_ENV !== "development") return;
+  console.error(`[Axios] ${message}`, error);
+};
+
+// ============================================================================
+// REFRESH TOKEN МЕХАНИЗМ
+// ============================================================================
+
+/**
+ * Подписка на завершение refresh (для очереди запросов)
+ */
+const subscribeToRefresh = (
+  onSuccess: (token: string) => void,
+  onError: (error: ApiError) => void,
+): void => {
+  refreshSubscribers.push(onSuccess);
+  refreshFailSubscribers.push(onError);
+};
+
+/**
+ * Уведомление подписчиков об успешном refresh
+ */
+const onRefreshSuccess = (newToken: string): void => {
   refreshSubscribers.forEach((callback) => callback(newToken));
   refreshSubscribers = [];
+  refreshFailSubscribers = [];
 };
 
-// Очистка подписчиков при ошибке
-const onRefreshFailure = () => {
+/**
+ * Уведомление подписчиков об ошибке refresh
+ */
+const onRefreshFailure = (error: ApiError): void => {
+  refreshFailSubscribers.forEach((callback) => callback(error));
   refreshSubscribers = [];
+  refreshFailSubscribers = [];
 };
 
-// Проверка, является ли ошибка "токен истёк"
-const isTokenExpiredError = (error: AxiosError<ApiErrorResponse>): boolean => {
+/**
+ * Проверяет, является ли ошибка "токен истёк"
+ */
+const isTokenExpiredError = (
+  error: AxiosError<BackendErrorResponse>,
+): boolean => {
   return (
     error.response?.status === 401 &&
-    error.response?.data?.code === "TOKEN_INVALID_OR_EXPIRED"
+    error.response?.data?.code === ErrorCodes.TOKEN_INVALID_OR_EXPIRED
   );
 };
 
-// Логирование только в development
-const log = (message: string, data?: unknown) => {
-  if (process.env.NODE_ENV === "development") {
-    if (data) {
-      console.log(`[Auth] ${message}`, data);
-    } else {
-      console.log(`[Auth] ${message}`);
-    }
-  }
-};
+// ============================================================================
+// ПОЛУЧЕНИЕ API URL
+// ============================================================================
 
-const logError = (message: string, error?: unknown) => {
-  if (process.env.NODE_ENV === "development") {
-    console.error(`[Auth] ${message}`, error);
-  }
-};
-
-// Функция получения API URL из конфига
 const getApiBaseUrl = async (): Promise<string> => {
   if (cachedApiUrl) {
     return cachedApiUrl;
   }
 
+  // На сервере (SSR) — из переменной окружения
   if (typeof window === "undefined") {
     const apiUrl = process.env.API_BASE_URL || "http://localhost:8081";
     cachedApiUrl = apiUrl;
     return apiUrl;
   }
 
+  // На клиенте — через API endpoint
   try {
     const response = await fetch("/api/config");
     const config = await response.json();
     const apiUrl = config.apiUrl || "http://localhost:8081";
     cachedApiUrl = apiUrl;
+    log("API URL loaded", apiUrl);
     return apiUrl;
   } catch (error) {
     logError("Failed to load API config", error);
@@ -94,8 +133,14 @@ const getApiBaseUrl = async (): Promise<string> => {
   }
 };
 
-// Общий interceptor для обработки URL
-const setupUrlInterceptor = (instance: AxiosInstance) => {
+// ============================================================================
+// INTERCEPTORS
+// ============================================================================
+
+/**
+ * Interceptor для добавления базового URL к запросам
+ */
+const setupUrlInterceptor = (instance: AxiosInstance): void => {
   instance.interceptors.request.use(
     async (config) => {
       const apiBaseUrl = await getApiBaseUrl();
@@ -104,12 +149,10 @@ const setupUrlInterceptor = (instance: AxiosInstance) => {
         const isFullUrl =
           config.url.startsWith("http://") || config.url.startsWith("https://");
 
-        if (isFullUrl) {
-          return config;
+        if (!isFullUrl) {
+          const cleanUrl = config.url.replace(/^\/+/, "/");
+          config.url = `${apiBaseUrl}${cleanUrl}`;
         }
-
-        let cleanUrl = config.url.replace(/^\/+/, "/");
-        config.url = `${apiBaseUrl}${cleanUrl}`;
       }
 
       return config;
@@ -118,25 +161,46 @@ const setupUrlInterceptor = (instance: AxiosInstance) => {
   );
 };
 
-// Общий error interceptor (для publicClient)
-const setupErrorInterceptor = (instance: AxiosInstance) => {
+/**
+ * ГЛАВНЫЙ ERROR INTERCEPTOR
+ * Централизованная обработка всех ошибок:
+ * 1. Трансформирует AxiosError → ApiError
+ * 2. Логирует в dev режиме (один раз!)
+ * 3. Пробрасывает ApiError дальше
+ */
+const setupErrorInterceptor = (instance: AxiosInstance): void => {
   instance.interceptors.response.use(
+    // Success — просто пробрасываем
     (response) => response,
-    (error) => {
-      logError("Response error", {
-        url: error.config?.url,
-        status: error.response?.status,
-        code: error.response?.data?.code,
-        message: error.response?.data?.message,
-      });
-      return Promise.reject(error);
+
+    // Error — трансформируем и логируем
+    (error: AxiosError<BackendErrorResponse>) => {
+      const config = error.config as RetryableRequestConfig | undefined;
+
+      // Пропускаем трансформацию если флаг установлен (внутренние запросы)
+      if (config?._skipErrorTransform) {
+        return Promise.reject(error);
+      }
+
+      // Трансформируем в ApiError
+      const apiError = transformToApiError(error);
+
+      // Логируем один раз централизованно
+      logApiError(apiError, config?.url);
+
+      // Пробрасываем уже как ApiError
+      return Promise.reject(apiError);
     },
   );
 };
 
-// Auth interceptor для авторизованных запросов
-const setupAuthInterceptor = (instance: AxiosInstance) => {
-  // Request — добавляем токен
+/**
+ * Auth Interceptor для авторизованных запросов
+ * - Request: добавляет токен
+ * - Response: обрабатывает 401 и refresh token
+ */
+const setupAuthInterceptor = (instance: AxiosInstance): void => {
+  // REQUEST — добавляем токен
   instance.interceptors.request.use(
     (config) => {
       const token = tokenStorage.getAccessToken();
@@ -148,39 +212,56 @@ const setupAuthInterceptor = (instance: AxiosInstance) => {
     (error) => Promise.reject(error),
   );
 
-  // Response — обрабатываем 401 и refresh token
+  // RESPONSE — обрабатываем 401 и refresh
   instance.interceptors.response.use(
     (response) => response,
-    async (error: AxiosError<ApiErrorResponse>) => {
+    async (error: AxiosError<BackendErrorResponse>) => {
       const originalRequest = error.config as RetryableRequestConfig;
 
-      // Проверяем: это ошибка "токен истёк" и запрос ещё не повторялся
+      // Проверяем условия для refresh:
+      // 1. Есть конфиг запроса
+      // 2. Это ошибка "токен истёк"
+      // 3. Запрос ещё не повторялся
       if (
         !originalRequest ||
         !isTokenExpiredError(error) ||
         originalRequest._retry
       ) {
+        // Не наш случай — пробрасываем дальше (error interceptor обработает)
         return Promise.reject(error);
       }
 
       originalRequest._retry = true;
       log("Token expired, attempting refresh...");
 
-      // Если уже идёт refresh — ждём его завершения
+      // Если уже идёт refresh — становимся в очередь
       if (isRefreshing) {
-        log("Refresh already in progress, waiting...");
+        log("Refresh in progress, queuing request...");
+
         return new Promise((resolve, reject) => {
-          subscribeToRefresh((newToken: string) => {
-            originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
-            resolve(instance(originalRequest));
-          });
-          // Таймаут на случай если refresh зависнет
+          subscribeToRefresh(
+            (newToken: string) => {
+              originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
+              resolve(instance(originalRequest));
+            },
+            (refreshError: ApiError) => {
+              reject(refreshError);
+            },
+          );
+
+          // Таймаут на случай зависания
           setTimeout(() => {
-            reject(new Error("Refresh token timeout"));
+            reject(
+              new ApiError(
+                "Превышено время ожидания обновления токена",
+                "REFRESH_TIMEOUT",
+              ),
+            );
           }, 10000);
         });
       }
 
+      // Начинаем refresh
       isRefreshing = true;
 
       try {
@@ -200,7 +281,12 @@ const setupAuthInterceptor = (instance: AxiosInstance) => {
 
         // Refresh не удался — logout
         log("Token refresh failed, logging out");
-        onRefreshFailure();
+        const logoutError = new ApiError(
+          "Сессия истекла",
+          ErrorCodes.TOKEN_INVALID_OR_EXPIRED,
+          401,
+        );
+        onRefreshFailure(logoutError);
         authStore.logout();
 
         // Редирект на логин (только на клиенте)
@@ -208,17 +294,18 @@ const setupAuthInterceptor = (instance: AxiosInstance) => {
           window.location.href = "/auth/login";
         }
 
-        return Promise.reject(error);
+        return Promise.reject(logoutError);
       } catch (refreshError) {
         logError("Error during token refresh", refreshError);
-        onRefreshFailure();
+        const apiError = transformToApiError(refreshError);
+        onRefreshFailure(apiError);
         useAuthStore.getState().logout();
 
         if (typeof window !== "undefined") {
           window.location.href = "/auth/login";
         }
 
-        return Promise.reject(refreshError);
+        return Promise.reject(apiError);
       } finally {
         isRefreshing = false;
       }
@@ -226,27 +313,59 @@ const setupAuthInterceptor = (instance: AxiosInstance) => {
   );
 };
 
-// Создаем публичный axios инстанс
+// ============================================================================
+// СОЗДАНИЕ ИНСТАНСОВ
+// ============================================================================
+
+/**
+ * Создаёт публичный axios инстанс (без авторизации)
+ * Используется для: регистрация, логин, публичные данные
+ */
 const createPublicAxios = (): AxiosInstance => {
-  const instance = axios.create();
+  const instance = axios.create({
+    timeout: 30000, // 30 секунд
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  // Порядок важен!
   setupUrlInterceptor(instance);
-  setupErrorInterceptor(instance);
+  setupErrorInterceptor(instance); // Трансформация ошибок в ApiError
+
   return instance;
 };
 
-// Создаем приватный axios инстанс (с авторизацией)
+/**
+ * Создаёт приватный axios инстанс (с авторизацией)
+ * Используется для: все защищённые эндпоинты
+ */
 const createAuthenticatedAxios = (): AxiosInstance => {
-  const instance = axios.create();
+  const instance = axios.create({
+    timeout: 30000,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  // Порядок важен!
   setupUrlInterceptor(instance);
-  setupAuthInterceptor(instance);
+  setupAuthInterceptor(instance); // Добавление токена + refresh
+  setupErrorInterceptor(instance); // Трансформация ошибок в ApiError
+
   return instance;
 };
 
-// Экспортируем готовые инстансы
+// ============================================================================
+// ЭКСПОРТ
+// ============================================================================
+
 export const publicClient = createPublicAxios();
 export const authClient = createAuthenticatedAxios();
 
-// Экспортируем функцию для предзагрузки конфига
-export const preloadApiConfig = async () => {
+/**
+ * Предзагрузка конфига API (опционально, для ускорения первого запроса)
+ */
+export const preloadApiConfig = async (): Promise<void> => {
   await getApiBaseUrl();
 };

@@ -22,20 +22,20 @@ import {
   Warning,
   CheckCircle,
 } from "@mui/icons-material";
-import { ShoppingMethods } from "@/entities/transfer/model/types";
+import { ShippingMethod } from "@/entities/transfer/model/types";
 import { useDictionary } from "@/entities/dictionary";
 
 interface DeliveryMethodSelectorProps {
-  availableMethods: ShoppingMethods[];
-  selectedMethod: ShoppingMethods | null;
-  onMethodSelect: (method: ShoppingMethods) => void;
+  availableMethods: ShippingMethod[];
+  selectedMethod: ShippingMethod | null;
+  onMethodSelect: (method: ShippingMethod) => void;
   isLoading?: boolean;
   isError?: boolean;
   fallbackMessages?: string[];
   hasFallbacks?: boolean;
 }
 
-const getDeliveryIcon = (method: ShoppingMethods) => {
+const getDeliveryIcon = (method: ShippingMethod) => {
   switch (method) {
     case "PRODUCT_PICKUP":
       return <Store />;
@@ -62,7 +62,7 @@ export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
   const theme = useTheme();
   const { data: shoppingMethods } = useDictionary("SHOPPING_METHODS");
 
-  const getMethodLabel = (method: ShoppingMethods): string => {
+  const getMethodLabel = (method: ShippingMethod): string => {
     const methodInfo = shoppingMethods?.find((m) => m.value === method);
     return methodInfo?.description || method;
   };
@@ -162,7 +162,7 @@ export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
 
       <RadioGroup
         value={selectedMethod || ""}
-        onChange={(e) => onMethodSelect(e.target.value as ShoppingMethods)}
+        onChange={(e) => onMethodSelect(e.target.value as ShippingMethod)}
       >
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
           {availableMethods.map((method) => {
