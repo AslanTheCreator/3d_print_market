@@ -2,19 +2,19 @@ import React from "react";
 import { Typography, Paper, Alert } from "@mui/material";
 import { InfoOutlined } from "@mui/icons-material";
 import { AddressSelector } from "@/entities/address";
-import { useUserAddresses } from "@/entities/address/hooks";
-import { AddressBaseModel } from "@/entities/address/model/types";
+import { useAddresses } from "@/entities/address/hooks";
+import { Address } from "@/entities/address/model/types";
 import { AppLink } from "@/shared/ui/app-link/AppLink";
 
 interface AddressCheckoutSelectorProps {
   selectedAddressId?: number;
-  onAddressSelect: (address: AddressBaseModel) => void;
+  onAddressSelect: (address: Address) => void;
 }
 
 export const AddressCheckoutSelector: React.FC<
   AddressCheckoutSelectorProps
 > = ({ selectedAddressId, onAddressSelect }) => {
-  const { data: addresses = [], isLoading } = useUserAddresses();
+  const { data: addresses = [], isLoading } = useAddresses();
 
   return (
     <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>

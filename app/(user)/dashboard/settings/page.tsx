@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Container,
   Paper,
@@ -9,37 +9,53 @@ import {
   Box,
   useTheme,
   useMediaQuery,
-  CircularProgress,
 } from "@mui/material";
 import { LocationOn, LocalShipping, Payment, Share } from "@mui/icons-material";
+import { useSearchParams, useRouter } from "next/navigation";
 
-import { useNotification } from "@/app/providers";
 import { AddressManagerWidget } from "@/widgets/address-manager-widget";
 import { TransferFormWidget } from "@/widgets/transfer";
 import { AccountsFormWidget } from "@/widgets/accounts";
-import { SocialNetworksFormWidget } from "@/widgets/social-networks/ui/SocialNetworksFormWidget";
+import { SocialNetworksFormWidget } from "@/widgets/social-networks";
 
-import { useTransfers } from "@/entities/transfer";
-import { useUserAccounts } from "@/entities/accounts";
-import { useUserSocialNetworks } from "@/entities/social-networks";
-import { useUserAddresses } from "@/entities/address/hooks";
-import { useDictionary } from "@/entities/dictionary";
+// Маппинг табов
+const TAB_KEYS = ["address", "shipping", "payment", "contacts"] as const;
+type TabKey = (typeof TAB_KEYS)[number];
+
+const TAB_TO_INDEX: Record<TabKey, number> = {
+  address: 0,
+  shipping: 1,
+  payment: 2,
+  contacts: 3,
+};
+
+const INDEX_TO_TAB: Record<number, TabKey> = {
+  0: "address",
+  1: "shipping",
+  2: "payment",
+  3: "contacts",
+};
+
+const DEFAULT_TAB: TabKey = "address";
 
 interface TabPanelProps {
-  children?: React.ReactNode;
+  children: React.ReactNode;
   index: number;
   value: number;
 }
 
 const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
+  const isActive = value === index;
+
   return (
     <div
       role="tabpanel"
-      hidden={value !== index}
-      id={`transfer-tabpanel-${index}`}
-      aria-labelledby={`transfer-tab-${index}`}
+      hidden={!isActive}
+      id={`settings-tabpanel-${index}`}
+      aria-labelledby={`settings-tab-${index}`}
+      style={{ display: isActive ? "block" : "none" }}
     >
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+      <Box sx={{ pt: 3 }}>{children}</Box>
     </div>
   );
 };
@@ -47,51 +63,23 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
 export default function SettingsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [activeTab, setActiveTab] = useState(0);
-  const { showNotification } = useNotification();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const { isLoading: addressesLoading } = useUserAddresses();
-  const { isLoading: transfersLoading } = useTransfers();
-  const { isLoading: accountsLoading } = useUserAccounts();
-  const { isLoading: socialNetworksLoading } = useUserSocialNetworks();
+  // Получаем активный таб из URL
+  const tabParam = searchParams.get("tab") as TabKey | null;
+  const activeTab =
+    tabParam && TAB_KEYS.includes(tabParam)
+      ? TAB_TO_INDEX[tabParam]
+      : TAB_TO_INDEX[DEFAULT_TAB];
 
-  const { isLoading: shoppingMethodsLoading } =
-    useDictionary("SHOPPING_METHODS");
-  const { isLoading: currencyLoading } = useDictionary("CURRENCY");
-  const { isLoading: transferMoneyLoading } = useDictionary("TRANSFER_MONEY");
-  const { isLoading: socialNetworkLoading } = useDictionary("SOCIAL_NETWORK");
-
-  const isLoading =
-    addressesLoading ||
-    transfersLoading ||
-    accountsLoading ||
-    socialNetworksLoading ||
-    shoppingMethodsLoading ||
-    currencyLoading ||
-    transferMoneyLoading ||
-    socialNetworkLoading;
-
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
+  // Обработчик смены таба — обновляет URL
+  const handleTabChange = (_: React.SyntheticEvent, newIndex: number) => {
+    const newTab = INDEX_TO_TAB[newIndex];
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", newTab);
+    router.replace(`?${params.toString()}`, { scroll: false });
   };
-
-  if (isLoading) {
-    return (
-      <Container
-        maxWidth="md"
-        sx={{
-          py: { xs: 2, sm: 4 },
-          px: { xs: 2, sm: 3 },
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: 400,
-        }}
-      >
-        <CircularProgress />
-      </Container>
-    );
-  }
 
   return (
     <Container
@@ -124,8 +112,8 @@ export default function SettingsPage() {
             icon={<LocationOn />}
             iconPosition="start"
             label="Адрес доставки"
-            id="transfer-tab-0"
-            aria-controls="transfer-tabpanel-0"
+            id="settings-tab-0"
+            aria-controls="settings-tabpanel-0"
             sx={{
               minHeight: { xs: 56, sm: 64 },
               fontSize: { xs: "0.75rem", sm: "0.875rem" },
@@ -135,8 +123,8 @@ export default function SettingsPage() {
             icon={<LocalShipping />}
             iconPosition="start"
             label="Способ отправки"
-            id="transfer-tab-1"
-            aria-controls="transfer-tabpanel-1"
+            id="settings-tab-1"
+            aria-controls="settings-tabpanel-1"
             sx={{
               minHeight: { xs: 56, sm: 64 },
               fontSize: { xs: "0.75rem", sm: "0.875rem" },
@@ -146,8 +134,8 @@ export default function SettingsPage() {
             icon={<Payment />}
             iconPosition="start"
             label="Способ оплаты"
-            id="transfer-tab-2"
-            aria-controls="transfer-tabpanel-2"
+            id="settings-tab-2"
+            aria-controls="settings-tabpanel-2"
             sx={{
               minHeight: { xs: 56, sm: 64 },
               fontSize: { xs: "0.75rem", sm: "0.875rem" },
@@ -157,8 +145,8 @@ export default function SettingsPage() {
             icon={<Share />}
             iconPosition="start"
             label="Способы связи"
-            id="transfer-tab-3"
-            aria-controls="transfer-tabpanel-3"
+            id="settings-tab-3"
+            aria-controls="settings-tabpanel-3"
             sx={{
               minHeight: { xs: 56, sm: 64 },
               fontSize: { xs: "0.75rem", sm: "0.875rem" },
@@ -174,9 +162,11 @@ export default function SettingsPage() {
           <TabPanel value={activeTab} index={1}>
             <TransferFormWidget />
           </TabPanel>
+
           <TabPanel value={activeTab} index={2}>
             <AccountsFormWidget />
           </TabPanel>
+
           <TabPanel value={activeTab} index={3}>
             <SocialNetworksFormWidget />
           </TabPanel>

@@ -1,13 +1,15 @@
 export type SocialNetworkType = "VK" | "FACEBOOK" | "TELEGRAM" | "WHATSAPP";
 
-export interface SocialNetworks {
+// Базовая модель — то, что приходит с сервера
+export interface SocialNetwork {
   id: number;
   type: SocialNetworkType;
   login: string;
   participantId: number;
 }
 
-export interface SocialNetworksInput {
+// Модель для создания/обновления — отправляем на сервер
+export interface SocialNetworkInput {
   type: SocialNetworkType;
   login: string;
 }

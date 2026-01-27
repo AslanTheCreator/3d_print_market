@@ -1,50 +1,60 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addressApi } from "../api/addressApi";
 import { addressKeys } from "./queryKeys";
-import { AddressBaseModel } from "../model/types"; // Added for useDeleteAddress context
+import type { Address, AddressInput } from "../model/types";
 
+// Создание адреса
 export const useCreateAddress = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: addressApi.createAddress,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: addressKeys.lists() });
-    },
-    onError: (error) => {
-      console.error("Ошибка создания адреса:", error);
+    mutationFn: (input: AddressInput) => addressApi.create(input),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: addressKeys.list() });
     },
   });
 };
 
+// Обновление адреса
+export const useUpdateAddress = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: number; input: AddressInput }) =>
+      addressApi.update(id, input),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: addressKeys.list() });
+    },
+  });
+};
+
+// Удаление адреса
 export const useDeleteAddress = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: addressApi.deleteAddress,
-    onMutate: async (addressId: number) => {
-      await queryClient.cancelQueries({ queryKey: addressKeys.lists() });
-      const previousAddresses = queryClient.getQueryData<AddressBaseModel[]>(
-        addressKeys.lists()
+    mutationFn: (id: number) => addressApi.delete(id),
+
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: addressKeys.list() });
+      const previous = queryClient.getQueryData<Address[]>(addressKeys.list());
+
+      // Оптимистично удаляем из кэша
+      queryClient.setQueryData<Address[]>(addressKeys.list(), (old = []) =>
+        old.filter((a) => a.id !== id),
       );
-      if (previousAddresses) {
-        queryClient.setQueryData<AddressBaseModel[]>(
-          addressKeys.lists(),
-          previousAddresses.filter((address) => address.id !== addressId)
-        );
-      }
-      return { previousAddresses };
+
+      return { previous };
     },
-    onError: (err, addressId, context) => {
-      if (context?.previousAddresses) {
-        queryClient.setQueryData(
-          addressKeys.lists(),
-          context.previousAddresses
-        );
+
+    onError: (_error, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(addressKeys.list(), context.previous);
       }
     },
+
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: addressKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: addressKeys.list() });
     },
   });
 };

@@ -14,9 +14,6 @@ export {
   useDeleteTransfer,
 } from "./hooks/useTransferMutations";
 
-// Composed hooks
-export { useSaveTransfer } from "./hooks/useSaveTransfer";
-
 // Types
 export type {
   Transfer,

@@ -12,14 +12,11 @@ import {
 } from "@mui/material";
 import { AddressSelector, AddressForm } from "@/entities/address";
 import {
-  useUserAddresses,
+  useAddresses,
   useCreateAddress,
   useDeleteAddress,
 } from "@/entities/address/hooks";
-import {
-  AddressFormData,
-  AddressBaseModel,
-} from "@/entities/address/model/types";
+import { AddressFormData, Address } from "@/entities/address/model/types";
 import { useNotification } from "@/app/providers";
 
 type ViewMode = "list" | "add";
@@ -29,13 +26,12 @@ export const AddressManager: React.FC = () => {
     useCreateAddress();
   const { mutateAsync: deleteAddress, isPending: isDeleting } =
     useDeleteAddress();
-  const { data: addresses = [], isLoading, refetch } = useUserAddresses();
+  const { data: addresses = [], isLoading, refetch } = useAddresses();
   const { showNotification } = useNotification();
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [addressToDelete, setAddressToDelete] =
-    useState<AddressBaseModel | null>(null);
+  const [addressToDelete, setAddressToDelete] = useState<Address | null>(null);
 
   const handleSubmit = async (data: AddressFormData) => {
     try {
@@ -56,7 +52,7 @@ export const AddressManager: React.FC = () => {
     setViewMode("add");
   };
 
-  const openDeleteDialog = (address: AddressBaseModel) => {
+  const openDeleteDialog = (address: Address) => {
     setAddressToDelete(address);
     setDeleteDialogOpen(true);
   };

@@ -25,7 +25,7 @@ import {
 } from "@/entities/transfer";
 import { useDictionary } from "@/entities/dictionary";
 import { useNotification } from "@/app/providers";
-import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card/CollapsibleFormCard";
+import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
 import { Currency } from "@/shared/types";
 
 // Тип данных для одного метода доставки в форме

@@ -4,10 +4,10 @@ import React from "react";
 import { Box, Alert, AlertTitle, Card, CardContent } from "@mui/material";
 import { InfoOutlined } from "@mui/icons-material";
 import { AddressManager } from "@/features/address/manage-addresses";
-import { useUserAddresses } from "@/entities/address/hooks";
+import { useAddresses } from "@/entities/address/hooks";
 
 export const AddressManagerWidget: React.FC = () => {
-  const { data: addresses = [] } = useUserAddresses();
+  const { data: addresses = [] } = useAddresses();
   const hasAddresses = addresses.length > 0;
 
   return (

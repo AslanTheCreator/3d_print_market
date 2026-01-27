@@ -1,27 +1,30 @@
-import { SocialNetworks, SocialNetworksInput } from "../model/types";
 import { authClient } from "@/shared/api";
+import type { SocialNetwork, SocialNetworkInput } from "../model/types";
 
-const API_URL = `/social-networks`;
+const API_URL = "/social-networks";
 
 export const socialNetworksApi = {
-  getSocialNetworks: async (): Promise<SocialNetworks[]> => {
-    const { data } = await authClient.get<SocialNetworks[]>(API_URL);
+  getAll: async (): Promise<SocialNetwork[]> => {
+    const { data } = await authClient.get<SocialNetwork[]>(API_URL);
     return data;
   },
-  createSocialNetwork: async (data: SocialNetworksInput): Promise<void> => {
-    await authClient.post(API_URL, data);
+
+  create: async (input: SocialNetworkInput): Promise<void> => {
+    await authClient.post(API_URL, input);
   },
+
   update: async (
     id: number,
-    input: SocialNetworksInput,
-  ): Promise<SocialNetworks> => {
-    const { data } = await authClient.put<SocialNetworks>(
+    input: SocialNetworkInput,
+  ): Promise<SocialNetwork> => {
+    const { data } = await authClient.put<SocialNetwork>(
       `${API_URL}/${id}`,
       input,
     );
     return data;
   },
-  deleteSocialNetwork: async (id: number): Promise<void> => {
+
+  delete: async (id: number): Promise<void> => {
     await authClient.delete(`${API_URL}/${id}`);
   },
 };
