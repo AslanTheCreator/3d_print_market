@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { CartProductModel, useCartQuantityStore } from "@/entities/cart";
+import { ProductBasket, useCartQuantityStore } from "@/entities/cart";
 import { orderApi } from "@/entities/order/api/orderApi";
 import { useQueryClient } from "@tanstack/react-query";
 import { cartKeys } from "@/entities/cart/hooks/queryKeys";
@@ -10,7 +10,7 @@ import { CheckoutState } from "./useCheckoutState";
 import { OrderResult, CheckoutResult, OrderToCreate } from "../model/types";
 
 interface UseCheckoutSubmitProps {
-  cartItems: CartProductModel[] | undefined;
+  cartItems: ProductBasket[] | undefined;
   checkoutState: CheckoutState;
   onSuccess: (result: CheckoutResult) => void;
   onPartialSuccess: (result: CheckoutResult) => void;

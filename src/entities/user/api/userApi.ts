@@ -4,7 +4,6 @@ import {
   UserProfileModel,
   UserUpdateModel,
 } from "../model/types";
-import { errorHandler } from "@/shared/lib";
 import { imageApi, ImageResponse } from "@/entities/image";
 import { authClient, publicClient } from "@/shared/api";
 
@@ -32,18 +31,11 @@ export const userApi = {
     return { ...data, image: image };
   },
   async updateUser(userData: UserUpdateModel): Promise<number> {
-    try {
-      const { data } = await authClient.put<number>(API_URL, userData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      return data;
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        " Ошибка при обновлении пользователя"
-      );
-    }
+    const { data } = await authClient.put<number>(API_URL, userData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return data;
   },
 };

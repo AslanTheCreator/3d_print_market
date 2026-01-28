@@ -1,7 +1,7 @@
 // Экспорт типов
 export type {
-  ProductCardModel,
-  ProductDetailsModel,
+  Product,
+  ProductDetail,
   ProductCreateModel,
   ProductFilter,
   ProductRequestModel,

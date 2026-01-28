@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { productApi } from "../api/productApi";
 import { productKeys } from "./queryKeys";
-import { ProductDetailsModel, ProductFilter, SortBy } from "../model/types";
+import { ProductDetail, ProductFilter, SortBy } from "../model/types";
 import { useInfiniteProducts } from "@/shared/hooks/useInfiniteProducts";
 
 export const useProductById = (id: string) => {
-  return useQuery<ProductDetailsModel>({
+  return useQuery<ProductDetail>({
     queryKey: productKeys.detail(id),
     queryFn: () => productApi.getProductById(id!),
     enabled: Boolean(id),
@@ -18,7 +18,7 @@ export const useProductById = (id: string) => {
 export const useProductsInfinite = (
   size: number,
   filters?: ProductFilter,
-  sortBy?: SortBy
+  sortBy?: SortBy,
 ) => {
   return useInfiniteProducts({
     size,
@@ -32,7 +32,7 @@ export const useProductsInfinite = (
 export const useUserProductsInfinite = (
   size: number,
   filters?: ProductFilter,
-  sortBy?: SortBy
+  sortBy?: SortBy,
 ) => {
   return useInfiniteProducts({
     size,

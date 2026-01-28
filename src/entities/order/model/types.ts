@@ -1,5 +1,5 @@
 import { Address } from "@/entities/address/model/types";
-import { ProductCardModel } from "@/entities/product";
+import { Product } from "@/entities/product";
 import { Transfer } from "@/entities/transfer/model/types";
 import { Currency } from "@/shared/types";
 
@@ -56,7 +56,7 @@ export interface ListOrdersModel {
   totalPrice: number;
   createdAt: string;
   userInfo: OrderUserInfo;
-  product: ProductCardModel;
+  product: Product;
   transfer: OrderTransfer;
   images: number[];
   histories: OrderHistory[];

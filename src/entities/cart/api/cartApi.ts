@@ -1,4 +1,4 @@
-import { CartProductModel } from "../model/types";
+import { ProductBasket } from "../model/types";
 import { authClient } from "@/shared/api";
 import { fetchProductsWithImages } from "@/shared/api";
 import { ProductFilter, SortBy } from "@/entities/product/model/types";
@@ -13,7 +13,7 @@ export const cartApi = {
     lastPrice?: number,
     lastId?: number,
     sortBy: SortBy = "DATE_DESC",
-  ): Promise<CartProductModel[]> => {
+  ): Promise<ProductBasket[]> => {
     return fetchProductsWithImages(
       authClient,
       `${API_URL}/find`,
@@ -24,7 +24,7 @@ export const cartApi = {
       lastId,
       sortBy,
       "Ошибка при загрузке товаров из корзины",
-    ) as Promise<CartProductModel[]>;
+    ) as Promise<ProductBasket[]>;
   },
   addToCart: async (productId: number, count: number) => {
     await authClient.post(`${API_URL}?productId=${productId}&count=${count}`);

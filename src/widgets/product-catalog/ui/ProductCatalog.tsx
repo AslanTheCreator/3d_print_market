@@ -1,8 +1,8 @@
 import React from "react";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import {
+  Product,
   ProductCard,
-  ProductCardModel,
   ProductCardSkeleton,
   ProductGrid,
   ProductGridItem,
@@ -14,7 +14,7 @@ import { ErrorState, EmptyCatalogState } from "@/shared/ui/states";
 import { useRouter } from "next/navigation";
 
 interface ProductCatalogProps {
-  products: ProductCardModel[];
+  products: Product[];
   isLoading?: boolean;
   isError?: boolean;
   onRetry?: () => void;

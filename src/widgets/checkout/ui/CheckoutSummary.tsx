@@ -16,10 +16,10 @@ import {
 } from "@mui/material";
 import { ShoppingCart, Warning } from "@mui/icons-material";
 import { formatPrice } from "@/shared/lib";
-import { CartProductModel, useCartQuantityStore } from "@/entities/cart";
+import { ProductBasket, useCartQuantityStore } from "@/entities/cart";
 
 interface CheckoutSummaryProps {
-  cartItems: CartProductModel[];
+  cartItems: ProductBasket[];
   isReadyToSubmit: boolean;
   isSubmitting: boolean;
   onSubmit: () => void;

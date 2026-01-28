@@ -1,14 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { CartProductModel, useCartQuantityStore } from "@/entities/cart";
+import { ProductBasket, useCartQuantityStore } from "@/entities/cart";
 
 const DELIVERY_THRESHOLD = 3000;
 const DELIVERY_PRICE = 300;
 
-export const useCheckoutTotals = (
-  cartItems: CartProductModel[] | undefined,
-) => {
+export const useCheckoutTotals = (cartItems: ProductBasket[] | undefined) => {
   const { getQuantity } = useCartQuantityStore();
 
   return useMemo(() => {

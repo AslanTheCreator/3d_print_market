@@ -1,4 +1,4 @@
-import { CartProductModel } from "@/entities/cart";
+import { ProductBasket } from "@/entities/cart";
 import { ShippingMethod, Transfer } from "@/entities/transfer/model/types";
 
 // Результат создания одного заказа

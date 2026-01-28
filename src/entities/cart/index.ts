@@ -1,7 +1,7 @@
 export { CartSummary } from "./ui/CartSummary";
 export { CheckoutCartItemCard } from "./ui/CheckoutCartItemCard";
 
-export type { CartProductModel } from "./model/types";
+export type { ProductBasket } from "./model/types";
 
 export { useCartProducts } from "./hooks/useCartQueries";
 export { useCartChecks } from "./hooks/useCartChecks";

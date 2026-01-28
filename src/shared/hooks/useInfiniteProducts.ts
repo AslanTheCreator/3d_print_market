@@ -1,9 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import {
-  ProductCardModel,
-  ProductFilter,
-  SortBy,
-} from "@/entities/product/model/types";
+import { Product, ProductFilter, SortBy } from "@/entities/product/model/types";
 
 export interface CursorPageParam {
   lastCreatedAt?: string;
@@ -18,8 +14,8 @@ export interface ProductFetchFunction {
     lastCreatedAt?: string,
     lastPrice?: number,
     lastId?: number,
-    sortBy?: SortBy
-  ): Promise<ProductCardModel[]>;
+    sortBy?: SortBy,
+  ): Promise<Product[]>;
 }
 
 export interface UseInfiniteProductsOptions {
@@ -54,10 +50,10 @@ export const useInfiniteProducts = ({
         lastCreatedAt,
         lastPrice,
         lastId,
-        sortBy
+        sortBy,
       );
     },
-    getNextPageParam: (lastPage: ProductCardModel[]) => {
+    getNextPageParam: (lastPage: Product[]) => {
       // Если последняя страница пустая или меньше размера, больше страниц нет
       if (!lastPage || lastPage.length === 0 || lastPage.length < size) {
         return undefined;

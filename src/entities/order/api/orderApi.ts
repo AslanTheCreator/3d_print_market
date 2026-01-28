@@ -1,4 +1,3 @@
-import { errorHandler } from "@/shared/lib";
 import {
   OrderCreateModel,
   OrderGetDataModel,
@@ -10,171 +9,101 @@ const API_URL = `/order`;
 
 export const orderApi = {
   //1
-  createOrder: async (orderData: OrderCreateModel) => {
-    try {
-      const { data } = await authClient.post<number>(
-        `${API_URL}/BOOKED`,
-        orderData
-      );
-    } catch (error) {
-      throw errorHandler.handleAxiosError(error, "Ошибка при создании заказа");
-    }
+  createOrder: async (orderData: OrderCreateModel[]) => {
+    const { data } = await authClient.post<number[]>(
+      `${API_URL}/BOOKED`,
+      orderData,
+    );
+    return data;
   },
   //2
   confirmOrderBySeller: async (
     orderId: number,
     accountId: number,
-    comment: string = ""
+    comment: string = "",
   ) => {
-    try {
-      await authClient.post(
-        `${API_URL}/${orderId}/AWAITING_PREPAYMENT?accountId=${accountId}&comment=${encodeURIComponent(
-          comment
-        )}`
-      );
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при подтверждении заказа продавцом"
-      );
-    }
+    await authClient.post(
+      `${API_URL}/${orderId}/AWAITING_PREPAYMENT?accountId=${accountId}&comment=${encodeURIComponent(
+        comment,
+      )}`,
+    );
   },
   //3.2
   confirmPreOrderBySeller: async (orderId: number, comment: string = "") => {
-    try {
-      await authClient.post(
-        `${API_URL}/${orderId}/AWAITING_PAYMENT?comment=${encodeURIComponent(
-          comment
-        )}`
-      );
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при подтверждении предзаказа продавцом"
-      );
-    }
+    await authClient.post(
+      `${API_URL}/${orderId}/AWAITING_PAYMENT?comment=${encodeURIComponent(
+        comment,
+      )}`,
+    );
   },
   //3.1
   confirmPrepaymentByCustomer: async (
     orderId: number,
     imageId: number,
-    comment: string = ""
+    comment: string = "",
   ) => {
-    try {
-      const { data } = await authClient.post<number>(
-        `${API_URL}/${orderId}/AWAITING_PREPAYMENT_APPROVAL?imageId=${imageId}&comment=${encodeURIComponent(
-          comment
-        )}`
-      );
-      console.log("Покупатель подтвердил предоплату, его id: ", data);
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при подтверждении предоплаты покупателем"
-      );
-    }
+    const { data } = await authClient.post<number>(
+      `${API_URL}/${orderId}/AWAITING_PREPAYMENT_APPROVAL?imageId=${imageId}&comment=${encodeURIComponent(
+        comment,
+      )}`,
+    );
   },
   //3.3
   confirmPaymentByCustomer: async (
     orderId: number,
     imageId: number,
-    comment: string = ""
+    comment: string = "",
   ) => {
-    try {
-      const { data } = await authClient.post<number>(
-        `${API_URL}/${orderId}/ASSEMBLING?imageId=${imageId}&comment=${encodeURIComponent(
-          comment
-        )}`
-      );
-      console.log("Покупатель подтвердил оплату, его id: ", data);
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при подтверждении оплаты заказа покупателем"
-      );
-    }
+    const { data } = await authClient.post<number>(
+      `${API_URL}/${orderId}/ASSEMBLING?imageId=${imageId}&comment=${encodeURIComponent(
+        comment,
+      )}`,
+    );
   },
   //5
   confirmReceiptByCustomer: async (orderId: number, comment: string = "") => {
-    try {
-      const { data } = await authClient.post<number>(
-        `${API_URL}/${orderId}/COMPLETED?comment=${encodeURIComponent(comment)}`
-      );
-      console.log("Покупатель подтвердил получение заказа, его id: ", data);
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при подтверждении получения заказа покупателем"
-      );
-    }
+    const { data } = await authClient.post<number>(
+      `${API_URL}/${orderId}/COMPLETED?comment=${encodeURIComponent(comment)}`,
+    );
   },
   //4
   sendOrderBySeller: async (
     orderId: number,
     deliveryUrl: string,
-    comment: string = ""
+    comment: string = "",
   ) => {
-    try {
-      const { data } = await authClient.post<number>(
-        `${API_URL}/${orderId}/ON_THE_WAY?deliveryUrl=${encodeURIComponent(
-          deliveryUrl
-        )}&comment=${encodeURIComponent(comment)}`
-      );
-      console.log("Продавец отправил заказ, его id: ", data);
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при отправке заказа продавцом"
-      );
-    }
+    const { data } = await authClient.post<number>(
+      `${API_URL}/${orderId}/ON_THE_WAY?deliveryUrl=${encodeURIComponent(
+        deliveryUrl,
+      )}&comment=${encodeURIComponent(comment)}`,
+    );
   },
   getOrderData: async (productId: number): Promise<OrderGetDataModel> => {
-    try {
-      const { data } = await authClient.get<OrderGetDataModel>(
-        `${API_URL}?productId=${productId}`
-      );
-      if (!data) {
-        throw new Error("Пустой ответ от сервера");
-      }
-
-      return data;
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при получении данных заказа"
-      );
+    const { data } = await authClient.get<OrderGetDataModel>(
+      `${API_URL}?productId=${productId}`,
+    );
+    if (!data) {
+      throw new Error("Пустой ответ от сервера");
     }
+
+    return data;
   },
   getSellerOrders: async (): Promise<ListOrdersModel[]> => {
-    try {
-      const { data } = await authClient.get<ListOrdersModel[]>(
-        `${API_URL}/seller`
-      );
-      if (!data) {
-        throw new Error("Пустой ответ от сервера");
-      }
-      return data;
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при получении заказов продавца"
-      );
+    const { data } = await authClient.get<ListOrdersModel[]>(
+      `${API_URL}/seller`,
+    );
+    if (!data) {
+      throw new Error("Пустой ответ от сервера");
     }
+    return data;
   },
   getCustomerOrders: async (): Promise<ListOrdersModel[]> => {
-    try {
-      const { data } = await authClient.get<ListOrdersModel[]>(
-        `${API_URL}/customer`
-      );
-      if (!data) {
-        throw new Error("Пустой ответ от сервера");
-      }
-      return data;
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при получении заказов покупателя"
-      );
+    const { data } = await authClient.get<ListOrdersModel[]>(
+      `${API_URL}/customer`,
+    );
+    if (!data) {
+      throw new Error("Пустой ответ от сервера");
     }
+    return data;
   },
 };

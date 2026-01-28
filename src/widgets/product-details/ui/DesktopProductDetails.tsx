@@ -12,7 +12,7 @@ import {
   alpha,
 } from "@mui/material";
 import { ImageGallery } from "@/shared/ui/image-gallery";
-import { ProductDetailsModel } from "@/entities/product";
+import { ProductDetail } from "@/entities/product";
 import { RelatedProducts } from "./RelatedProducts";
 import { AddToCartButton } from "@/features/cart";
 import { FavoriteButton } from "@/features/toggle-favorite";
@@ -25,7 +25,7 @@ import {
 } from "@mui/icons-material";
 
 interface DesktopProductDetailsProps {
-  productCard: ProductDetailsModel;
+  productCard: ProductDetail;
   allImages: string[];
 }
 
@@ -177,7 +177,7 @@ const PriceSection = ({
 };
 
 // Компонент информационных бейджей
-const InfoBadges = ({ product }: { product: ProductDetailsModel }) => {
+const InfoBadges = ({ product }: { product: ProductDetail }) => {
   const isPreorder = product.availability === "PREORDER";
 
   return (

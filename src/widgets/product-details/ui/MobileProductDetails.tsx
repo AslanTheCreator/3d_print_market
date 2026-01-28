@@ -11,7 +11,7 @@ import {
   Fab,
 } from "@mui/material";
 import { ImageGallery } from "@/shared/ui/image-gallery";
-import { ProductDetailsModel } from "@/entities/product";
+import { ProductDetail } from "@/entities/product";
 import { RelatedProducts } from "./RelatedProducts";
 import { AddToCartButton } from "@/features/cart";
 import { FavoriteButton } from "@/features/toggle-favorite";
@@ -26,7 +26,7 @@ import {
 } from "@mui/icons-material";
 
 interface MobileProductDetailsProps {
-  productCard: ProductDetailsModel;
+  productCard: ProductDetail;
   allImages: string[];
 }
 

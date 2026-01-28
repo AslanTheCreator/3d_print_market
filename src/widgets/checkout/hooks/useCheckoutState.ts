@@ -3,12 +3,12 @@
 import { useState, useCallback, useMemo } from "react";
 import { Address } from "@/entities/address/model/types";
 import { ShippingMethod } from "@/entities/transfer/model/types";
-import { CartProductModel } from "@/entities/cart";
+import { ProductBasket } from "@/entities/cart";
 import { useOrderData } from "@/entities/order";
 import { useDeliveryResolver } from "./useDeliveryResolver";
 
 interface UseCheckoutStateProps {
-  cartItems: CartProductModel[] | undefined;
+  cartItems: ProductBasket[] | undefined;
 }
 
 export const useCheckoutState = ({ cartItems = [] }: UseCheckoutStateProps) => {

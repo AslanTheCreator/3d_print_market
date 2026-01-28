@@ -10,7 +10,7 @@ import {
   alpha,
   useTheme,
 } from "@mui/material";
-import { CartProductModel } from "@/entities/cart";
+import { ProductBasket } from "@/entities/cart";
 import { CheckoutState } from "../hooks/useCheckoutState";
 import { CheckoutCartSection } from "./CheckoutCartSection";
 import { DeliveryMethodSelector } from "./DeliveryMethodSelector";
@@ -18,7 +18,7 @@ import { CheckoutSummary } from "./CheckoutSummary";
 import { AddressCheckoutSelector } from "@/features/address/select-address";
 
 interface CheckoutContentProps {
-  cartItems: CartProductModel[];
+  cartItems: ProductBasket[];
   checkoutState: CheckoutState;
   isSubmitting: boolean;
   onSubmit: () => void;

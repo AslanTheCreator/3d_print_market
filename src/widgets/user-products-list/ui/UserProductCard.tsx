@@ -30,7 +30,7 @@ import {
   TrendingUp,
   Info,
 } from "@mui/icons-material";
-import { ProductCardModel } from "@/entities/product/model/types";
+import { Product } from "@/entities/product/model/types";
 import { ExtendProductButton } from "@/features/product/extend-product/ui/ExtendProductButton";
 import {
   getExpirationStatus,
@@ -38,7 +38,7 @@ import {
 } from "@/entities/product/lib/productExpirationUtils";
 import { ProductPriceDisplay } from "@/entities/product/ui/ProductPriceDisplay";
 
-interface UserProductCardProps extends ProductCardModel {
+interface UserProductCardProps extends Product {
   onCardClick?: (id: string) => void;
 }
 

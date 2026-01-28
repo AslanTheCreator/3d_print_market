@@ -1,12 +1,11 @@
 import { ImageResponse, ImageTag } from "../model/types";
-import { errorHandler } from "@/shared/lib";
 import { publicClient, authClient } from "@/shared/api";
 
 const API_URL = `/images`;
 
 export const imageApi = {
   async getImages(
-    imageIds: number | number[] | null
+    imageIds: number | number[] | null,
   ): Promise<ImageResponse[]> {
     if (!imageIds || imageIds === 0) {
       return [];
@@ -23,7 +22,7 @@ export const imageApi = {
     try {
       const queryString = validIds.map((id) => `ids=${id}`).join("&");
       const { data } = await publicClient.get<ImageResponse[]>(
-        `${API_URL}?${queryString}`
+        `${API_URL}?${queryString}`,
       );
 
       return data || [];
@@ -36,17 +35,10 @@ export const imageApi = {
     const formData = new FormData();
     formData.append("files", file);
 
-    try {
-      const { data } = await authClient.post<number[]>(
-        `${API_URL}?tag=${tag}`,
-        formData
-      );
-      return data;
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при загрузке изображений"
-      );
-    }
+    const { data } = await authClient.post<number[]>(
+      `${API_URL}?tag=${tag}`,
+      formData,
+    );
+    return data;
   },
 };

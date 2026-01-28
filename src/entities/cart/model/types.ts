@@ -1,3 +1,6 @@
-import { ProductCardModel } from "@/entities/product";
+import { Product } from "@/entities/product";
 
-export interface CartProductModel extends ProductCardModel {}
+export interface ProductBasket {
+  product: Product;
+  count: number;
+}

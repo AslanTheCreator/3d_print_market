@@ -9,12 +9,12 @@ import {
   alpha,
   Paper,
 } from "@mui/material";
-import { CartProductModel, useCartQuantity } from "@/entities/cart";
+import { ProductBasket, useCartQuantity } from "@/entities/cart";
 import { CheckoutCartItemCard } from "@/entities/cart/ui/CheckoutCartItemCard";
 import { useRemoveFromCartFeature } from "@/features/cart";
 
 interface CheckoutCartSectionProps {
-  items: CartProductModel[];
+  items: ProductBasket[];
 }
 
 // Компонент-обёртка для отдельного товара с хуком useCartQuantity
@@ -25,7 +25,7 @@ const CheckoutCartItemWrapper = ({
   onRemove,
   isRemoving,
 }: {
-  item: CartProductModel;
+  item: ProductBasket;
   isSelected: boolean;
   onSelectChange: (id: number, selected: boolean) => void;
   onRemove: (id: number) => void;

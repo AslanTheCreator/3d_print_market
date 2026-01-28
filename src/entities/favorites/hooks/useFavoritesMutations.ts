@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ProductCardModel } from "@/entities/product";
+import { Product } from "@/entities/product";
 import { favoritesApi } from "../api/favoritesApi";
 import { favoritesKeys } from "./queryKeys";
 
@@ -11,20 +11,19 @@ export const useAddToFavorites = () => {
     mutationFn: favoritesApi.addToFavorites,
     onMutate: async (productId: number) => {
       await queryClient.cancelQueries({ queryKey: favoritesKeys.lists() });
-      const previousFavorites = queryClient.getQueryData<ProductCardModel[]>(
-        favoritesKeys.lists()
+      const previousFavorites = queryClient.getQueryData<Product[]>(
+        favoritesKeys.lists(),
       );
 
       const productData = queryClient
         .getQueryCache()
         .findAll({ queryKey: ["products"] }) // Assuming a general products key exists
-        .flatMap((query) => (query.state.data as ProductCardModel[]) || [])
+        .flatMap((query) => (query.state.data as Product[]) || [])
         .find((product) => product.id === productId);
 
       if (productData && previousFavorites) {
-        queryClient.setQueryData<ProductCardModel[]>(
-          favoritesKeys.lists(),
-          (old) => (old ? [...old, productData] : [productData])
+        queryClient.setQueryData<Product[]>(favoritesKeys.lists(), (old) =>
+          old ? [...old, productData] : [productData],
         );
       } else if (previousFavorites === undefined) {
       }
@@ -35,7 +34,7 @@ export const useAddToFavorites = () => {
       if (context?.previousFavorites) {
         queryClient.setQueryData(
           favoritesKeys.lists(),
-          context.previousFavorites
+          context.previousFavorites,
         );
       }
       console.error("Ошибка добавления в избранное:", error);
@@ -54,13 +53,13 @@ export const useRemoveFromFavorites = () => {
     mutationFn: favoritesApi.removeFromFavorites,
     onMutate: async (productId: number) => {
       await queryClient.cancelQueries({ queryKey: favoritesKeys.lists() });
-      const previousFavorites = queryClient.getQueryData<ProductCardModel[]>(
-        favoritesKeys.lists()
+      const previousFavorites = queryClient.getQueryData<Product[]>(
+        favoritesKeys.lists(),
       );
       if (previousFavorites) {
-        queryClient.setQueryData<ProductCardModel[]>(
+        queryClient.setQueryData<Product[]>(
           favoritesKeys.lists(),
-          (old) => old?.filter((product) => product.id !== productId) || []
+          (old) => old?.filter((product) => product.id !== productId) || [],
         );
       }
       return { previousFavorites };
@@ -69,7 +68,7 @@ export const useRemoveFromFavorites = () => {
       if (context?.previousFavorites) {
         queryClient.setQueryData(
           favoritesKeys.lists(),
-          context.previousFavorites
+          context.previousFavorites,
         );
       }
       console.error("Ошибка удаления из избранного:", error);

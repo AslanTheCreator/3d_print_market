@@ -16,10 +16,10 @@ import {
   Chip,
 } from "@mui/material";
 import { Schedule } from "@mui/icons-material";
-import { ProductCardModel } from "../model/types";
+import { Product } from "../model/types";
 import { ProductPriceDisplay } from "./ProductPriceDisplay";
 
-interface ProductCardProps extends ProductCardModel {
+interface ProductCardProps extends Product {
   actions?: React.ReactNode;
   onCardClick?: (id: string) => void;
 }

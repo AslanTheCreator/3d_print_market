@@ -1,7 +1,6 @@
-import { ProductCardModel } from "@/entities/product";
+import { Product } from "@/entities/product";
 import { ProductFilter, SortBy } from "@/entities/product/model/types";
 import { fetchProductsWithImages } from "@/shared/api";
-import { errorHandler } from "@/shared/lib";
 import { authClient } from "@/shared/api";
 
 const API_URL = `/favorites`;
@@ -13,8 +12,8 @@ export const favoritesApi = {
     lastCreatedAt?: string,
     lastPrice?: number,
     lastId?: number,
-    sortBy: SortBy = "DATE_DESC"
-  ): Promise<ProductCardModel[]> => {
+    sortBy: SortBy = "DATE_DESC",
+  ): Promise<Product[]> => {
     return fetchProductsWithImages(
       authClient,
       `${API_URL}/find`,
@@ -24,27 +23,13 @@ export const favoritesApi = {
       lastPrice,
       lastId,
       sortBy,
-      "Ошибка при загрузке избранных товаров"
+      "Ошибка при загрузке избранных товаров",
     );
   },
   addToFavorites: async (productId: number) => {
-    try {
-      await authClient.post(`${API_URL}?productId=${productId}`);
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при добавлении товара в избранное"
-      );
-    }
+    await authClient.post(`${API_URL}?productId=${productId}`);
   },
   removeFromFavorites: async (productId: number) => {
-    try {
-      await authClient.delete(`${API_URL}?productId=${productId}`);
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при удалении товара из избранного"
-      );
-    }
+    await authClient.delete(`${API_URL}?productId=${productId}`);
   },
 };

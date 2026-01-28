@@ -1,12 +1,11 @@
 import {
-  ProductCardModel,
-  ProductDetailsModel,
+  Product,
+  ProductDetail,
   ProductCreateModel,
   ProductFilter,
   SortBy,
 } from "../model/types";
 import { imageApi } from "@/entities/image";
-import { errorHandler } from "@/shared/lib";
 import { fetchProductsWithImages } from "@/shared/api";
 import { publicClient, authClient } from "@/shared/api";
 
@@ -20,8 +19,8 @@ export const productApi = {
     lastCreatedAt?: string,
     lastPrice?: number,
     lastId?: number,
-    sortBy: SortBy = "DATE_DESC"
-  ): Promise<ProductCardModel[]> => {
+    sortBy: SortBy = "DATE_DESC",
+  ): Promise<Product[]> => {
     return fetchProductsWithImages(
       publicClient,
       `${API_URL}/find`,
@@ -31,28 +30,17 @@ export const productApi = {
       lastPrice,
       lastId,
       sortBy,
-      "Ошибка при загрузке карточек товаров"
+      "Ошибка при загрузке карточек товаров",
     );
   },
 
-  getProductById: async (id: string): Promise<ProductDetailsModel> => {
-    try {
-      const { data } = await publicClient.get<ProductDetailsModel>(
-        `${API_URL_PRODUCT}/${id}`
-      );
+  getProductById: async (id: number): Promise<ProductDetail> => {
+    const { data } = await publicClient.get<ProductDetail>(
+      `${API_URL_PRODUCT}/${id}`,
+    );
 
-      if (!data || !data.imageIds) {
-        throw new Error("Некорректные данные товара");
-      }
-
-      const images = await imageApi.getImages(data.imageIds);
-      return { ...data, image: images };
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        `Ошибка при получении данных о товаре с ID: ${id}`
-      );
-    }
+    const images = await imageApi.getImages(data.imageIds);
+    return { ...data, image: images };
   },
 
   getUserProducts: async (
@@ -61,8 +49,8 @@ export const productApi = {
     lastCreatedAt?: string,
     lastPrice?: number,
     lastId?: number,
-    sortBy: SortBy = "DATE_DESC"
-  ): Promise<ProductCardModel[]> => {
+    sortBy: SortBy = "DATE_DESC",
+  ): Promise<Product[]> => {
     return fetchProductsWithImages(
       authClient,
       `${API_URL}/my`,
@@ -72,26 +60,15 @@ export const productApi = {
       lastPrice,
       lastId,
       sortBy,
-      "Ошибка при загрузке карточек товаров"
+      "Ошибка при загрузке карточек товаров",
     );
   },
 
   createProduct: async (data: ProductCreateModel) => {
-    try {
-      await authClient.post(`${API_URL}`, data);
-    } catch (error) {
-      throw errorHandler.handleAxiosError(error, "Ошибка при создании товара");
-    }
+    await authClient.post(`${API_URL}`, data);
   },
 
   extendProductExpiration: async (productId: number) => {
-    try {
-      await authClient.post(`${API_URL_PRODUCT}/extend/${productId}`);
-    } catch (error) {
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при продлении срока действия товара"
-      );
-    }
+    await authClient.post(`${API_URL_PRODUCT}/extend/${productId}`);
   },
 };

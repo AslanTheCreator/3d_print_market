@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from "react";
-import { CartProductModel } from "@/entities/cart";
+import { ProductBasket } from "@/entities/cart";
 import { ShippingMethod, Transfer } from "@/entities/transfer/model/types";
 import { useDictionary } from "@/entities/dictionary";
 import { DeliveryResolution, SellerDeliveryInfo } from "../model/types";
@@ -12,7 +12,7 @@ interface SellerTransfers {
 }
 
 interface UseDeliveryResolverProps {
-  cartItems: CartProductModel[];
+  cartItems: ProductBasket[];
   sellerTransfersData: SellerTransfers[];
   selectedMethod: ShippingMethod | null;
 }

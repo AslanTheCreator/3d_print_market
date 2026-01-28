@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useProductById } from "./useProductQueries";
-import { ProductDetailsModel } from "../model/types";
+import { ProductDetail } from "../model/types";
 
 interface UseProductDetailsReturn {
-  productCard: ProductDetailsModel | undefined;
+  productCard: ProductDetail | undefined;
   allImages: string[];
   isLoading: boolean;
   isError: boolean;

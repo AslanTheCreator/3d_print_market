@@ -8,7 +8,7 @@ import {
   LoginErrorResponse,
   VerificationRequiredError,
 } from "../model/types";
-import { errorHandler, tokenStorage } from "@/shared/lib";
+import { tokenStorage } from "@/shared/lib";
 import { AxiosError } from "axios";
 
 const API_URL_REGISTER = `/participant`;
@@ -19,22 +19,18 @@ export const authApi = {
     mail,
     password,
   }: AuthFormModel): Promise<RegisterResponse> {
-    try {
-      const { status, data } = await publicClient.post<number>(
-        API_URL_REGISTER,
-        { mail, password },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-      if (status === 200) {
-        console.log("Пользователь успешно зарегестрирован, его id: ", data);
-        return { userId: data, isSuccess: true };
-      }
-      return { userId: 0, isSuccess: false };
-    } catch (error) {
-      throw errorHandler.handleAxiosError(error, "Ошибка регистрации");
+    const { status, data } = await publicClient.post<number>(
+      API_URL_REGISTER,
+      { mail, password },
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+    if (status === 200) {
+      console.log("Пользователь успешно зарегестрирован, его id: ", data);
+      return { userId: data, isSuccess: true };
     }
+    return { userId: 0, isSuccess: false };
   },
   async loginUser({ mail, password }: AuthFormModel): Promise<boolean> {
     try {
@@ -43,7 +39,7 @@ export const authApi = {
         {
           mail,
           password,
-        }
+        },
       );
 
       tokenStorage.saveTokens({
@@ -63,12 +59,12 @@ export const authApi = {
           // Бросаем кастомную ошибку с email
           throw new VerificationRequiredError(
             errorData.message || "Необходимо подтвердить почту",
-            mail
+            mail,
           );
         }
       }
 
-      throw errorHandler.handleAxiosError(error, "Ошибка авторизации");
+      throw error;
     }
   },
   async sendVerificationCode(email: string): Promise<VerificationCodeResponse> {
@@ -78,7 +74,7 @@ export const authApi = {
         {},
         {
           params: { email },
-        }
+        },
       );
       return {
         success: true,
@@ -96,31 +92,24 @@ export const authApi = {
         }
       }
 
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка при отправке кода верификации"
-      );
+      throw error;
     }
   },
   async verifyCode(userId: number, code: string): Promise<boolean> {
-    try {
-      const { data } = await publicClient.post<TokensResponse>(
-        `${API_URL_AUTH}/verify-code`,
-        {
-          userId,
-          code,
-        }
-      );
+    const { data } = await publicClient.post<TokensResponse>(
+      `${API_URL_AUTH}/verify-code`,
+      {
+        userId,
+        code,
+      },
+    );
 
-      tokenStorage.saveTokens({
-        accessToken: data.access_token,
-        refreshToken: data.refresh_token,
-      });
+    tokenStorage.saveTokens({
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+    });
 
-      return true;
-    } catch (error) {
-      throw errorHandler.handleAxiosError(error, "Ошибка верификации кода");
-    }
+    return true;
   },
   async refreshAccessToken(): Promise<void> {
     const refreshToken = tokenStorage.getRefreshToken();
@@ -139,17 +128,14 @@ export const authApi = {
           headers: {
             "X-Refresh-Token": refreshToken,
           },
-        }
+        },
       );
 
       console.log("Токен доступа успешно обновлен:", accessToken);
       tokenStorage.saveTokens({ accessToken, refreshToken });
     } catch (error) {
       tokenStorage.clearTokens();
-      throw errorHandler.handleAxiosError(
-        error,
-        "Ошибка обновления токена доступа"
-      );
+      throw error;
     }
   },
   async passwordReset(email: string): Promise<boolean> {
@@ -159,11 +145,11 @@ export const authApi = {
         {},
         {
           params: { email },
-        }
+        },
       );
       return true;
     } catch (error) {
-      throw errorHandler.handleAxiosError(error, "Ошибка сброса пароля");
+      throw error;
     }
   },
   logout() {

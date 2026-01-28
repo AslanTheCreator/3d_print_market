@@ -1,14 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { favoritesApi } from "../api/favoritesApi";
 import { favoritesKeys } from "./queryKeys";
-import { ProductCardModel } from "@/entities/product";
+import { Product } from "@/entities/product";
 import { useAuth } from "@/features/auth";
 
 // Хук для получения списка избранных товаров
 export const useFavoritesProducts = () => {
   const { isAuthenticated } = useAuth();
 
-  return useQuery<ProductCardModel[]>({
+  return useQuery<Product[]>({
     queryKey: favoritesKeys.lists(),
     queryFn: () => favoritesApi.getFavorites(50),
     enabled: isAuthenticated,

@@ -1,5 +1,5 @@
-'use client'; 
- 
+"use client";
+
 import {
   Box,
   Checkbox,
@@ -15,12 +15,12 @@ import Image from "next/image";
 import Link from "next/link";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useState } from "react";
-import { CartProductModel } from "../model/types";
+import { ProductBasket } from "../model/types";
 import { formatPrice } from "@/shared/lib";
 import { QuantityCounter } from "@/shared/ui/quantity-counter";
 
 interface CheckoutCartItemCardProps {
-  item: CartProductModel;
+  item: ProductBasket;
   isSelected: boolean;
   onSelectChange: (id: number, selected: boolean) => void;
   quantity: number;
