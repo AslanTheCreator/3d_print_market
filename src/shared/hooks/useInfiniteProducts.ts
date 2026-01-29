@@ -1,5 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Product, ProductFilter, SortBy } from "@/entities/product/model/types";
+import { Product } from "@/entities/product/model/types";
+import { FetchProductsParams, ProductFilter, SortBy } from "@/shared/types";
 
 export interface CursorPageParam {
   lastCreatedAt?: string;
@@ -8,14 +9,7 @@ export interface CursorPageParam {
 }
 
 export interface ProductFetchFunction {
-  (
-    size: number,
-    filters?: ProductFilter,
-    lastCreatedAt?: string,
-    lastPrice?: number,
-    lastId?: number,
-    sortBy?: SortBy,
-  ): Promise<Product[]>;
+  (params: FetchProductsParams): Promise<Product[]>;
 }
 
 export interface UseInfiniteProductsOptions {
@@ -28,8 +22,9 @@ export interface UseInfiniteProductsOptions {
   retry?: number;
 }
 
-// Универсальный хук для бесконечной прокрутки продуктов с курсорной пагинацией
-// Можно использовать например для избранных товаров
+/**
+ * Универсальный хук для бесконечной прокрутки продуктов с курсорной пагинацией
+ */
 export const useInfiniteProducts = ({
   size,
   filters,
@@ -44,22 +39,20 @@ export const useInfiniteProducts = ({
     queryFn: ({ pageParam }: { pageParam: CursorPageParam | null }) => {
       const { lastCreatedAt, lastPrice, lastId } = pageParam || {};
 
-      return fetchFunction(
+      return fetchFunction({
         size,
         filters,
         lastCreatedAt,
         lastPrice,
         lastId,
         sortBy,
-      );
+      });
     },
     getNextPageParam: (lastPage: Product[]) => {
-      // Если последняя страница пустая или меньше размера, больше страниц нет
       if (!lastPage || lastPage.length === 0 || lastPage.length < size) {
         return undefined;
       }
 
-      // Берем данные последнего элемента для следующего запроса
       const lastItem = lastPage[lastPage.length - 1];
 
       return {

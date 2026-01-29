@@ -4,15 +4,14 @@ import { favoritesKeys } from "./queryKeys";
 import { Product } from "@/entities/product";
 import { useAuth } from "@/features/auth";
 
-// Хук для получения списка избранных товаров
 export const useFavoritesProducts = () => {
   const { isAuthenticated } = useAuth();
 
   return useQuery<Product[]>({
     queryKey: favoritesKeys.lists(),
-    queryFn: () => favoritesApi.getFavorites(50),
+    queryFn: () => favoritesApi.getFavorites({ size: 50 }),
     enabled: isAuthenticated,
-    staleTime: 5 * 60 * 1000, // 5 минут
-    gcTime: 10 * 60 * 1000, // 10 минут
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };

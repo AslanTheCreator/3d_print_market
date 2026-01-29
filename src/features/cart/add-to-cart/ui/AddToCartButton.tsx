@@ -17,7 +17,7 @@ interface AddToCartButtonProps {
   size?: "small" | "medium" | "large";
   fullWidth?: boolean;
   productName?: string;
-  stockCount?: number | null; // null означает неограниченное количество
+  stockCount?: number | null; // Количество товара в наличии (null = неограниченно)
 }
 
 export const AddToCartButton: React.FC<AddToCartButtonProps> = ({

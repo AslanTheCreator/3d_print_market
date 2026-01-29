@@ -18,8 +18,8 @@ export const useCheckoutTotals = (cartItems: ProductBasket[] | undefined) => {
     let itemsCount = 0;
 
     for (const item of cartItems) {
-      const quantity = getQuantity(item.id);
-      subtotal += item.price * quantity;
+      const quantity = getQuantity(item.product.id);
+      subtotal += item.product.price * quantity;
       itemsCount += quantity;
     }
 

@@ -1,34 +1,43 @@
 import { Product } from "@/entities/product";
-import { ProductFilter, SortBy } from "@/entities/product/model/types";
-import { fetchProductsWithImages } from "@/shared/api";
-import { authClient } from "@/shared/api";
+import { ProductDto } from "@/entities/product/model/types";
+import { imageApi } from "@/entities/image";
+import { authClient, buildProductRequest } from "@/shared/api";
+import { FetchProductsParams } from "@/shared/types";
 
 const API_URL = `/favorites`;
 
+/**
+ * Загружает картинки для списка товаров
+ */
+const attachImagesToProducts = async (
+  products: ProductDto[],
+): Promise<Product[]> => {
+  return Promise.all(
+    products.map(async (product) => {
+      const images =
+        product.imageId !== undefined
+          ? await imageApi.getImages(product.imageId)
+          : [];
+      return { ...product, image: images };
+    }),
+  );
+};
+
 export const favoritesApi = {
-  getFavorites: async (
-    size: number = 100,
-    filters?: ProductFilter,
-    lastCreatedAt?: string,
-    lastPrice?: number,
-    lastId?: number,
-    sortBy: SortBy = "DATE_DESC",
-  ): Promise<Product[]> => {
-    return fetchProductsWithImages(
-      authClient,
+  getFavorites: async (params: FetchProductsParams): Promise<Product[]> => {
+    const requestData = buildProductRequest(params);
+    const { data } = await authClient.post<ProductDto[]>(
       `${API_URL}/find`,
-      size,
-      filters,
-      lastCreatedAt,
-      lastPrice,
-      lastId,
-      sortBy,
-      "Ошибка при загрузке избранных товаров",
+      requestData,
     );
+
+    return attachImagesToProducts(data);
   },
+
   addToFavorites: async (productId: number) => {
     await authClient.post(`${API_URL}?productId=${productId}`);
   },
+
   removeFromFavorites: async (productId: number) => {
     await authClient.delete(`${API_URL}?productId=${productId}`);
   },

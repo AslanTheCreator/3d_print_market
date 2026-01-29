@@ -30,22 +30,25 @@ export function useAddToCartFeature(params?: UseAddToCartFeatureParams) {
         return;
       }
 
-      addToCart(productId, {
-        onSuccess: () => {
-          console.log("Товар успешно добавлен в корзину");
-          params?.onSuccess?.();
-          params?.onNotification?.(
-            "Товар успешно добавлен в корзину",
-            "success"
-          );
+      // Добавляем товар с количеством 1
+      addToCart(
+        { productId, count: 1 },
+        {
+          onSuccess: () => {
+            params?.onSuccess?.();
+            params?.onNotification?.(
+              "Товар успешно добавлен в корзину",
+              "success",
+            );
+          },
+          onError: (error) => {
+            console.error("Ошибка добавления в корзину:", error);
+            params?.onError?.(error);
+          },
         },
-        onError: (error) => {
-          console.error("Ошибка добавления в корзину:", error);
-          params?.onError?.(error);
-        },
-      });
+      );
     },
-    [isAuthenticated, isProductInCart, addToCart, router, params]
+    [isAuthenticated, isProductInCart, addToCart, router, params],
   );
 
   return {

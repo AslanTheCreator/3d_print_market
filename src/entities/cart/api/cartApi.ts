@@ -1,31 +1,42 @@
-import { ProductBasket } from "../model/types";
-import { authClient } from "@/shared/api";
-import { fetchProductsWithImages } from "@/shared/api";
-import { ProductFilter, SortBy } from "@/entities/product/model/types";
+import { ProductBasket, ProductBasketDto } from "../model/types";
+import { imageApi } from "@/entities/image";
+import { authClient, buildProductRequest } from "@/shared/api";
+import { FetchProductsParams } from "@/shared/types";
 
 const API_URL = `/basket`;
 
+/**
+ * Загружает картинки для товаров в корзине
+ */
+const attachImagesToBasketItems = async (
+  items: ProductBasketDto[],
+): Promise<ProductBasket[]> => {
+  return Promise.all(
+    items.map(async (item) => {
+      const images =
+        item.product.imageId !== undefined
+          ? await imageApi.getImages(item.product.imageId)
+          : [];
+
+      return {
+        product: { ...item.product, image: images },
+        count: item.count,
+      };
+    }),
+  );
+};
+
 export const cartApi = {
-  getCart: async (
-    size: number = 100,
-    filters?: ProductFilter,
-    lastCreatedAt?: string,
-    lastPrice?: number,
-    lastId?: number,
-    sortBy: SortBy = "DATE_DESC",
-  ): Promise<ProductBasket[]> => {
-    return fetchProductsWithImages(
-      authClient,
+  getCart: async (params: FetchProductsParams): Promise<ProductBasket[]> => {
+    const requestData = buildProductRequest(params);
+    const { data } = await authClient.post<ProductBasketDto[]>(
       `${API_URL}/find`,
-      size,
-      filters,
-      lastCreatedAt,
-      lastPrice,
-      lastId,
-      sortBy,
-      "Ошибка при загрузке товаров из корзины",
-    ) as Promise<ProductBasket[]>;
+      requestData,
+    );
+
+    return attachImagesToBasketItems(data);
   },
+
   addToCart: async (productId: number, count: number) => {
     await authClient.post(`${API_URL}?productId=${productId}&count=${count}`);
   },

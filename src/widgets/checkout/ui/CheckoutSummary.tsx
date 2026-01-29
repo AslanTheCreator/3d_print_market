@@ -44,9 +44,9 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
     let total = 0;
 
     for (const item of cartItems) {
-      const quantity = getQuantity(item.id);
+      const quantity = getQuantity(item.count);
       count += quantity;
-      total += item.price * quantity;
+      total += item.product.price * item.product.count;
     }
 
     return { itemsCount: count, subtotal: total };

@@ -31,8 +31,10 @@ const CheckoutCartItemWrapper = ({
   onRemove: (id: number) => void;
   isRemoving: boolean;
 }) => {
+  // item.product.count — количество в наличии (максимум)
+  // item.count — количество в корзине (серверное)
   const { quantity, handleIncrement, handleDecrement, maxQuantity } =
-    useCartQuantity(item.id, { maxQuantity: item.count });
+    useCartQuantity(item.product.id, { maxQuantity: item.product.count });
 
   return (
     <CheckoutCartItemCard
@@ -55,21 +57,24 @@ export const CheckoutCartSection = ({ items }: CheckoutCartSectionProps) => {
 
   // Локальный стейт для выбранных товаров
   const [selectedIds, setSelectedIds] = useState<Set<number>>(() => {
-    return new Set(items.map((item) => item.id));
+    return new Set(items.map((item) => item.product.id));
   });
 
   const isAllSelected = useMemo(() => {
-    return items.length > 0 && items.every((item) => selectedIds.has(item.id));
+    return (
+      items.length > 0 &&
+      items.every((item) => selectedIds.has(item.product.id))
+    );
   }, [items, selectedIds]);
 
   const selectedCount = useMemo(() => {
-    return items.filter((item) => selectedIds.has(item.id)).length;
+    return items.filter((item) => selectedIds.has(item.product.id)).length;
   }, [items, selectedIds]);
 
   const handleSelectAll = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       if (event.target.checked) {
-        setSelectedIds(new Set(items.map((item) => item.id)));
+        setSelectedIds(new Set(items.map((item) => item.product.id)));
       } else {
         setSelectedIds(new Set());
       }
@@ -119,96 +124,49 @@ export const CheckoutCartSection = ({ items }: CheckoutCartSectionProps) => {
         backgroundColor: theme.palette.background.paper,
       }}
     >
-      {/* Header */}
+      {/* Заголовок с чекбоксом "Выбрать все" */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 2,
-          mb: 2,
+          gap: 1.5,
           pb: 2,
           borderBottom: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 700,
-              fontSize: { xs: "1.25rem", sm: "1.5rem" },
-            }}
-          >
-            Корзина
-          </Typography>
-          <Typography
-            sx={{
-              color: theme.palette.text.secondary,
-              fontSize: { xs: "0.875rem", sm: "1rem" },
-            }}
-          >
-            {items.length} {getItemsWord(items.length)}
-          </Typography>
-        </Box>
-
-        {/* Select All */}
-        <Box
+        <Checkbox
+          checked={isAllSelected}
+          indeterminate={selectedCount > 0 && !isAllSelected}
+          onChange={handleSelectAll}
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            cursor: "pointer",
+            p: 0,
+            color: theme.palette.grey[400],
+            "&.Mui-checked, &.MuiCheckbox-indeterminate": {
+              color: theme.palette.success.main,
+            },
           }}
-          onClick={() =>
-            handleSelectAll({
-              target: { checked: !isAllSelected },
-            } as React.ChangeEvent<HTMLInputElement>)
-          }
+        />
+        <Typography variant="h6" fontWeight={600}>
+          Корзина
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{ color: theme.palette.text.secondary }}
         >
-          <Checkbox
-            checked={isAllSelected}
-            onChange={handleSelectAll}
-            sx={{
-              p: 0,
-              color: theme.palette.grey[400],
-              "&.Mui-checked": {
-                color: theme.palette.success.main,
-              },
-            }}
-          />
-          <Typography
-            sx={{
-              fontSize: { xs: "0.875rem", sm: "1rem" },
-              color: theme.palette.text.secondary,
-              userSelect: "none",
-            }}
-          >
-            Выбрать все
-          </Typography>
-          {selectedCount > 0 && selectedCount < items.length && (
-            <Typography
-              sx={{
-                fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                color: theme.palette.text.disabled,
-              }}
-            >
-              (выбрано {selectedCount})
-            </Typography>
-          )}
-        </Box>
+          {selectedCount} {getItemsWord(selectedCount)} выбрано
+        </Typography>
       </Box>
 
-      {/* Items List */}
+      {/* Список товаров */}
       <Box>
         {items.map((item) => (
           <CheckoutCartItemWrapper
-            key={item.id}
+            key={item.product.id}
             item={item}
-            isSelected={selectedIds.has(item.id)}
+            isSelected={selectedIds.has(item.product.id)}
             onSelectChange={handleSelectItem}
             onRemove={handleRemoveItem}
-            isRemoving={removingItemIds.includes(item.id)}
+            isRemoving={removingItemIds.includes(item.product.id)}
           />
         ))}
       </Box>

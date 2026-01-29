@@ -15,6 +15,8 @@ interface CartQuantityState {
   removeItem: (productId: number) => void;
   clearQuantities: () => void;
   getAllItems: () => CartQuantityItem[];
+  // Синхронизация с сервером
+  syncWithServer: (serverItems: { productId: number; count: number }[]) => void;
 }
 
 export const useCartQuantityStore = create<CartQuantityState>()(
@@ -103,6 +105,45 @@ export const useCartQuantityStore = create<CartQuantityState>()(
 
       getAllItems: () => {
         return get().items;
+      },
+
+      /**
+       * Синхронизирует локальное состояние с данными сервера.
+       * Добавляет новые товары, обновляет существующие, удаляет отсутствующие.
+       */
+      syncWithServer: (serverItems) => {
+        set((state) => {
+          const serverProductIds = new Set(serverItems.map((i) => i.productId));
+
+          // Фильтруем локальные товары, оставляя только те, что есть на сервере
+          const existingItems = state.items.filter((item) =>
+            serverProductIds.has(item.productId),
+          );
+
+          // Создаём Map для быстрого доступа
+          const localMap = new Map(
+            existingItems.map((item) => [item.productId, item]),
+          );
+
+          // Обновляем или добавляем товары с сервера
+          const newItems: CartQuantityItem[] = serverItems.map((serverItem) => {
+            const localItem = localMap.get(serverItem.productId);
+
+            // Если товара нет локально — берём серверный count
+            if (!localItem) {
+              return {
+                productId: serverItem.productId,
+                quantity: serverItem.count,
+              };
+            }
+
+            // Если есть локально — оставляем локальное значение
+            // (оно может быть более актуальным из-за оптимистичных обновлений)
+            return localItem;
+          });
+
+          return { items: newItems };
+        });
       },
     }),
     {

@@ -2,66 +2,60 @@ import {
   Product,
   ProductDetail,
   ProductCreateModel,
-  ProductFilter,
-  SortBy,
+  ProductDto,
 } from "../model/types";
 import { imageApi } from "@/entities/image";
-import { fetchProductsWithImages } from "@/shared/api";
-import { publicClient, authClient } from "@/shared/api";
+import { publicClient, authClient, buildProductRequest } from "@/shared/api";
+import { FetchProductsParams } from "@/shared/types";
 
 const API_URL_PRODUCT = `/product`;
 const API_URL = `/products`;
 
+/**
+ * Загружает картинки для списка товаров
+ */
+const attachImagesToProducts = async (
+  products: ProductDto[],
+): Promise<Product[]> => {
+  return Promise.all(
+    products.map(async (product) => {
+      const images =
+        product.imageId !== undefined
+          ? await imageApi.getImages(product.imageId)
+          : [];
+      return { ...product, image: images };
+    }),
+  );
+};
+
 export const productApi = {
-  getProducts: async (
-    size: number,
-    filters?: ProductFilter,
-    lastCreatedAt?: string,
-    lastPrice?: number,
-    lastId?: number,
-    sortBy: SortBy = "DATE_DESC",
-  ): Promise<Product[]> => {
-    return fetchProductsWithImages(
-      publicClient,
+  getProducts: async (params: FetchProductsParams): Promise<Product[]> => {
+    const requestData = buildProductRequest(params);
+    const { data } = await publicClient.post<ProductDto[]>(
       `${API_URL}/find`,
-      size,
-      filters,
-      lastCreatedAt,
-      lastPrice,
-      lastId,
-      sortBy,
-      "Ошибка при загрузке карточек товаров",
+      requestData,
     );
+
+    return attachImagesToProducts(data);
+  },
+
+  getUserProducts: async (params: FetchProductsParams): Promise<Product[]> => {
+    const requestData = buildProductRequest(params);
+    const { data } = await authClient.post<ProductDto[]>(
+      `${API_URL}/my`,
+      requestData,
+    );
+
+    return attachImagesToProducts(data);
   },
 
   getProductById: async (id: number): Promise<ProductDetail> => {
     const { data } = await publicClient.get<ProductDetail>(
       `${API_URL_PRODUCT}/${id}`,
     );
-
     const images = await imageApi.getImages(data.imageIds);
-    return { ...data, image: images };
-  },
 
-  getUserProducts: async (
-    size: number,
-    filters?: ProductFilter,
-    lastCreatedAt?: string,
-    lastPrice?: number,
-    lastId?: number,
-    sortBy: SortBy = "DATE_DESC",
-  ): Promise<Product[]> => {
-    return fetchProductsWithImages(
-      authClient,
-      `${API_URL}/my`,
-      size,
-      filters,
-      lastCreatedAt,
-      lastPrice,
-      lastId,
-      sortBy,
-      "Ошибка при загрузке карточек товаров",
-    );
+    return { ...data, image: images };
   },
 
   createProduct: async (data: ProductCreateModel) => {

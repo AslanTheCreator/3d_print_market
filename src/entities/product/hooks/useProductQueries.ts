@@ -1,20 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { productApi } from "../api/productApi";
 import { productKeys } from "./queryKeys";
-import { ProductDetail, ProductFilter, SortBy } from "../model/types";
+import { ProductDetail } from "../model/types";
+import { ProductFilter, SortBy } from "@/shared/types";
 import { useInfiniteProducts } from "@/shared/hooks/useInfiniteProducts";
 
 export const useProductById = (id: string) => {
   return useQuery<ProductDetail>({
     queryKey: productKeys.detail(id),
-    queryFn: () => productApi.getProductById(id!),
+    queryFn: () => productApi.getProductById(Number(id)),
     enabled: Boolean(id),
     staleTime: 5 * 60 * 1000,
     retry: 2,
   });
 };
 
-// Специализированный хук для получения продуктов с бесконечной прокруткой
 export const useProductsInfinite = (
   size: number,
   filters?: ProductFilter,

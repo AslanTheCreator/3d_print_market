@@ -46,7 +46,9 @@ export const CheckoutCartItemCard = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const { id, name, price, categories, image } = item;
+  // Деструктурируем product из ProductBasket
+  const { product } = item;
+  const { id, name, price, categories, image } = product;
 
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onSelectChange(id, event.target.checked);
@@ -110,18 +112,17 @@ export const CheckoutCartItemCard = ({
                   width="100%"
                   height="100%"
                   animation="wave"
-                  sx={{ position: "absolute" }}
+                  sx={{ position: "absolute", top: 0, left: 0 }}
                 />
               )}
               <Image
                 src={`data:${image[0].contentType};base64,${image[0].imageData}`}
                 alt={name}
                 fill
-                sizes="(max-width: 600px) 80px, 100px"
                 style={{
                   objectFit: "cover",
                   opacity: isImageLoaded ? 1 : 0,
-                  transition: "opacity 0.3s",
+                  transition: "opacity 0.3s ease",
                 }}
                 onLoad={() => setIsImageLoaded(true)}
               />
@@ -134,8 +135,7 @@ export const CheckoutCartItemCard = ({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "text.secondary",
-                fontSize: "0.7rem",
+                color: theme.palette.grey[400],
               }}
             >
               Нет фото
@@ -146,93 +146,90 @@ export const CheckoutCartItemCard = ({
 
       {/* Product Info */}
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Link
-          href={`/catalog/${id}/detail`}
-          passHref
-          style={{ textDecoration: "none" }}
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="flex-start"
         >
-          <Typography
+          <Box sx={{ minWidth: 0, flex: 1, pr: 1 }}>
+            {categoryName && (
+              <Typography
+                variant="caption"
+                sx={{
+                  color: theme.palette.text.secondary,
+                  display: "block",
+                  mb: 0.5,
+                }}
+              >
+                {categoryName}
+              </Typography>
+            )}
+            <Link href={`/catalog/${id}/detail`} passHref legacyBehavior>
+              <Typography
+                component="a"
+                variant={isMobile ? "body2" : "body1"}
+                fontWeight={600}
+                sx={{
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  textDecoration: "none",
+                  color: "inherit",
+                  cursor: "pointer",
+                  "&:hover": {
+                    color: theme.palette.primary.main,
+                  },
+                }}
+              >
+                {name}
+              </Typography>
+            </Link>
+          </Box>
+
+          {/* Delete button */}
+          <IconButton
+            onClick={handleRemove}
+            disabled={isRemoving}
+            size="small"
             sx={{
-              fontSize: { xs: "0.875rem", sm: "1rem" },
-              fontWeight: 500,
-              color: theme.palette.text.primary,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              lineHeight: 1.3,
-              mb: 0.5,
-              cursor: "pointer",
+              color: theme.palette.grey[500],
               "&:hover": {
-                color: theme.palette.primary.main,
+                color: theme.palette.error.main,
+                backgroundColor: alpha(theme.palette.error.main, 0.08),
               },
             }}
           >
-            {name}
-          </Typography>
-        </Link>
+            <DeleteOutlineIcon fontSize="small" />
+          </IconButton>
+        </Stack>
 
-        {categoryName && (
+        {/* Price and Quantity */}
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ mt: { xs: 1.5, sm: 2 } }}
+        >
           <Typography
-            sx={{
-              fontSize: { xs: "0.75rem", sm: "0.8125rem" },
-              color: theme.palette.text.secondary,
-              mb: { xs: 1.5, sm: 2 },
-            }}
+            variant={isMobile ? "body1" : "h6"}
+            fontWeight={700}
+            color="primary"
           >
-            {categoryName}
+            {formatPrice(price * quantity)}
           </Typography>
-        )}
 
-        {/* Delete Button */}
-        <IconButton
-          onClick={handleRemove}
-          disabled={isRemoving}
-          size="small"
-          sx={{
-            p: 0.5,
-            color: theme.palette.text.secondary,
-            "&:hover": {
-              color: theme.palette.error.main,
-              backgroundColor: alpha(theme.palette.error.main, 0.08),
-            },
-          }}
-        >
-          <DeleteOutlineIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
-        </IconButton>
+          <QuantityCounter
+            value={quantity}
+            onIncrement={onQuantityIncrement}
+            onDecrement={onQuantityDecrement}
+            min={1}
+            max={maxQuantity}
+            size={isMobile ? "small" : "medium"}
+          />
+        </Stack>
       </Box>
-
-      {/* Quantity & Price Section */}
-      <Stack
-        direction={isMobile ? "column" : "row"}
-        alignItems={isMobile ? "flex-end" : "center"}
-        spacing={isMobile ? 1.5 : 3}
-        sx={{ flexShrink: 0 }}
-      >
-        {/* Quantity Counter */}
-        <QuantityCounter
-          value={quantity}
-          onIncrement={onQuantityIncrement}
-          onDecrement={onQuantityDecrement}
-          disabled={isRemoving}
-          max={maxQuantity}
-          size={isMobile ? "small" : "medium"}
-        />
-
-        {/* Price */}
-        <Typography
-          sx={{
-            fontSize: { xs: "1rem", sm: "1.125rem" },
-            fontWeight: 700,
-            color: theme.palette.primary.main,
-            minWidth: { xs: "auto", sm: 100 },
-            textAlign: "right",
-          }}
-        >
-          {formatPrice(price * quantity)} ₽
-        </Typography>
-      </Stack>
     </Box>
   );
 };

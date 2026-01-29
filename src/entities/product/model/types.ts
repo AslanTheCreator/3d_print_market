@@ -67,39 +67,3 @@ export interface ProductCreateModel {
   externalUrl?: string;
   imageIds: number[];
 }
-
-// Типы для параметров запроса
-
-interface PriceRange {
-  minPrice?: number;
-  maxPrice?: number;
-}
-
-interface DateRange {
-  start?: string;
-  end?: string;
-}
-
-export interface ProductFilter {
-  name?: string;
-  categoryId?: number;
-  originality?: string;
-  participantId?: number;
-  priceRange?: PriceRange;
-  imageId?: number;
-  dateRange?: DateRange;
-}
-
-export type SortBy = "DATE_DESC" | "PRICE_ASC" | "PRICE_DESC";
-
-interface Pageable {
-  size: number;
-  lastCreatedAt?: string;
-  lastPrice?: number;
-  lastId?: number;
-  sortBy?: SortBy;
-}
-
-export interface ProductRequestModel extends ProductFilter {
-  pageable: Pageable;
-}
