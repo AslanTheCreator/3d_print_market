@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import {
   Box,
   TextField,
   Button,
   Stack,
   Typography,
-  FormControl,
   MenuItem,
   Grid,
   CircularProgress,
@@ -27,20 +26,21 @@ import { useDictionary } from "@/entities/dictionary";
 import { useNotification } from "@/app/providers";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
 import { Currency } from "@/shared/types";
+import { useBatchForm } from "@/shared/hooks/useBatchForm";
+import { useFormInitializer } from "@/shared/hooks/useFormInitializer";
 
-// Тип данных для одного метода доставки в форме
+// Типы
 interface TransferFormItem {
   enabled: boolean;
   price: number;
   currency: string;
 }
 
-// Тип всей формы
-interface TransferFormData {
+interface FormData {
   items: Record<string, TransferFormItem>;
 }
 
-// Иконки для методов доставки
+// Константы
 const SHIPPING_ICONS: Record<string, React.ReactNode> = {
   PRODUCT_PICKUP: <Store />,
   TRANSPORT_COMPANY: <LocalShipping />,
@@ -48,8 +48,18 @@ const SHIPPING_ICONS: Record<string, React.ReactNode> = {
   FREE_POST: <LocalShipping />,
 };
 
-// Методы без настройки цены (бесплатные)
 const FREE_METHODS = new Set(["PRODUCT_PICKUP"]);
+const DEFAULT_CURRENCY = "RUB";
+
+// Функция сравнения для определения изменений
+const compareTransferData = (
+  existing: Transfer,
+  formData: TransferFormItem,
+): boolean => {
+  return (
+    existing.price === formData.price && existing.currency === formData.currency
+  );
+};
 
 export const TransferFormWidget: React.FC = () => {
   // Data fetching
@@ -77,114 +87,80 @@ export const TransferFormWidget: React.FC = () => {
     [shippingMethods],
   );
 
-  // Маппинг существующих трансферов по методу
-  const transfersByMethod = React.useMemo(() => {
-    return transfers.reduce<Record<string, Transfer>>((acc, t) => {
-      acc[t.sending] = t;
-      return acc;
-    }, {});
-  }, [transfers]);
-
   // Form setup
   const {
     control,
     handleSubmit,
     watch,
-    reset,
-    formState: { errors, isDirty },
-  } = useForm<TransferFormData>({
+    setValue,
+    formState: { errors },
+  } = useForm<FormData>({
     mode: "onChange",
     defaultValues: { items: {} },
   });
 
-  // Состояние раскрытых карточек
-  const [expandedItems, setExpandedItems] = React.useState<Set<string>>(
-    new Set(),
-  );
+  // Batch form helpers
+  const { toggleExpanded, isExpanded, computeChanges } = useBatchForm<
+    Transfer,
+    { sending: ShippingMethod; price: number; currency: Currency }
+  >({
+    existingItems: transfers,
+    getItemKey: (item) => item.sending,
+    mapToCreateModel: (data, key) => ({
+      sending: key as ShippingMethod,
+      price: FREE_METHODS.has(key) ? 0 : data.price,
+      currency: data.currency as Currency,
+    }),
+    getItemId: (item) => item.id,
+    compareItemData: compareTransferData,
+  });
 
-  const toggleExpanded = React.useCallback((key: string) => {
-    setExpandedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  }, []);
-
-  // Инициализация формы при загрузке данных
-  useEffect(() => {
-    if (!availableMethods.length || transfersLoading) return;
-
-    const formData: Record<string, TransferFormItem> = {};
-    const expanded = new Set<string>();
-
-    availableMethods.forEach((method) => {
-      const existing = transfersByMethod[method.value];
-
-      if (existing) {
-        formData[method.value] = {
-          enabled: true,
-          price: existing.price,
-          currency: existing.currency,
-        };
-        expanded.add(method.value);
-      } else {
-        formData[method.value] = {
-          enabled: false,
-          price: 0,
-          currency: "RUB",
-        };
-      }
-    });
-
-    reset({ items: formData }, { keepDirty: false });
-    setExpandedItems(expanded);
-  }, [availableMethods, transfersByMethod, transfersLoading, reset]);
+  // Form initializer
+  useFormInitializer({
+    dictionaryItems: availableMethods,
+    existingItems: transfers,
+    isLoading: transfersLoading,
+    setValue,
+    getDictionaryKey: (item) => item.value,
+    getExistingKey: (item) => item.sending,
+    mapExistingToFormData: (item) => ({
+      price: item.price,
+      currency: item.currency,
+    }),
+    getDefaultFormData: () => ({
+      price: 0,
+      currency: DEFAULT_CURRENCY,
+    }),
+    onInitialized: (expanded) => {
+      expanded.forEach((key) => toggleExpanded(key));
+    },
+  });
 
   const itemsData = watch("items");
 
   // Сохранение формы
-  const onSubmit = async (data: TransferFormData) => {
+  const onSubmit = async (data: FormData) => {
+    const { toCreate, toDelete, toUpdate } = computeChanges(data.items);
+
     const operations: Promise<void>[] = [];
 
-    for (const [method, formItem] of Object.entries(data.items)) {
-      const existing = transfersByMethod[method];
-      const isFreeMethod = FREE_METHODS.has(method);
+    // Создаём новые
+    toCreate.forEach((input) => {
+      operations.push(createMutation.mutateAsync(input).then(() => {}));
+    });
 
-      const input = {
-        sending: method as ShippingMethod,
-        price: isFreeMethod ? 0 : formItem.price,
-        currency: formItem.currency as Currency,
-      };
+    // Удаляем отключённые
+    toDelete.forEach((id) => {
+      operations.push(deleteMutation.mutateAsync(id));
+    });
 
-      if (formItem.enabled) {
-        if (existing) {
-          // Обновляем только если есть изменения
-          const hasChanges =
-            existing.price !== input.price ||
-            existing.currency !== input.currency;
-
-          if (hasChanges) {
-            operations.push(
-              updateMutation
-                .mutateAsync({ id: existing.id, input })
-                .then(() => {}),
-            );
-          }
-        } else {
-          // Создаём новый
-          operations.push(createMutation.mutateAsync(input).then(() => {}));
-        }
-      } else if (existing) {
-        // Удаляем выключенный
-        operations.push(deleteMutation.mutateAsync(existing.id));
-      }
-    }
+    // Обновляем изменённые
+    toUpdate.forEach(({ id, data: input }) => {
+      operations.push(updateMutation.mutateAsync({ id, input }).then(() => {}));
+    });
 
     if (operations.length === 0) {
+      showNotification("Ничего не изменилось", "info");
       return;
     }
 
@@ -223,6 +199,14 @@ export const TransferFormWidget: React.FC = () => {
     );
   }
 
+  if (!currencies?.length) {
+    return (
+      <Alert severity="error" sx={{ borderRadius: 2 }}>
+        Не удалось загрузить список валют. Попробуйте обновить страницу.
+      </Alert>
+    );
+  }
+
   return (
     <Box>
       <Alert
@@ -234,125 +218,119 @@ export const TransferFormWidget: React.FC = () => {
       </Alert>
 
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-        <FormControl component="fieldset" fullWidth>
-          <Typography
-            component="legend"
-            sx={{
-              mb: 2,
-              fontSize: { xs: "1rem", sm: "1.125rem" },
-              fontWeight: 600,
-            }}
-          >
-            Способы доставки
-          </Typography>
+        <Typography
+          sx={{
+            mb: 2,
+            fontSize: { xs: "1rem", sm: "1.125rem" },
+            fontWeight: 600,
+          }}
+        >
+          Способы доставки
+        </Typography>
 
-          <Stack spacing={2}>
-            {availableMethods.map((method) => {
-              const methodKey = method.value;
-              const isEnabled = itemsData?.[methodKey]?.enabled ?? false;
-              const isExpanded = expandedItems.has(methodKey);
-              const isFreeMethod = FREE_METHODS.has(methodKey);
+        <Stack spacing={2}>
+          {availableMethods.map((method) => {
+            const methodKey = method.value;
+            const isEnabled = itemsData?.[methodKey]?.enabled ?? false;
+            const isFreeMethod = FREE_METHODS.has(methodKey);
 
-              return (
-                <Controller
-                  key={methodKey}
-                  name={`items.${methodKey}.enabled`}
-                  control={control}
-                  render={({ field }) => (
-                    <CollapsibleFormCard
-                      value={methodKey}
-                      label={method.description}
-                      icon={SHIPPING_ICONS[methodKey]}
-                      isEnabled={field.value ?? false}
-                      isExpanded={isExpanded}
-                      onEnabledChange={field.onChange}
-                      onToggleExpand={() => toggleExpanded(methodKey)}
-                      showExpandIcon={!isFreeMethod}
-                    >
-                      {!isFreeMethod && (
-                        <Grid container spacing={2}>
-                          {/* Цена */}
-                          <Grid item xs={12} sm={6}>
-                            <Controller
-                              name={`items.${methodKey}.price`}
-                              control={control}
-                              rules={{
-                                required: isEnabled
-                                  ? "Укажите стоимость"
-                                  : false,
-                                min: { value: 0, message: "Минимум 0" },
-                              }}
-                              render={({
-                                field: { onChange, value, ...field },
-                              }) => (
-                                <TextField
-                                  {...field}
-                                  value={value ?? ""}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    if (val === "" || /^\d*\.?\d*$/.test(val)) {
-                                      onChange(
-                                        val === "" ? 0 : parseFloat(val),
-                                      );
-                                    }
-                                  }}
-                                  fullWidth
-                                  label="Стоимость доставки"
-                                  type="text"
-                                  inputMode="decimal"
-                                  error={!!errors.items?.[methodKey]?.price}
-                                  helperText={
-                                    errors.items?.[methodKey]?.price?.message
+            return (
+              <Controller
+                key={methodKey}
+                name={`items.${methodKey}.enabled`}
+                control={control}
+                render={({ field }) => (
+                  <CollapsibleFormCard
+                    value={methodKey}
+                    label={method.description}
+                    icon={SHIPPING_ICONS[methodKey]}
+                    isEnabled={field.value ?? false}
+                    isExpanded={isExpanded(methodKey)}
+                    onEnabledChange={field.onChange}
+                    onToggleExpand={() => toggleExpanded(methodKey)}
+                    showExpandIcon={!isFreeMethod}
+                  >
+                    {!isFreeMethod && (
+                      <Grid container spacing={2}>
+                        {/* Цена */}
+                        <Grid item xs={12} sm={6}>
+                          <Controller
+                            name={`items.${methodKey}.price`}
+                            control={control}
+                            rules={{
+                              required: isEnabled ? "Укажите стоимость" : false,
+                              min: { value: 0, message: "Минимум 0" },
+                            }}
+                            render={({ field: priceField }) => (
+                              <TextField
+                                fullWidth
+                                label="Стоимость доставки"
+                                type="text"
+                                inputMode="decimal"
+                                value={priceField.value ?? 0}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                                    priceField.onChange(
+                                      val === "" ? 0 : parseFloat(val),
+                                    );
                                   }
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Валюта */}
-                          <Grid item xs={12} sm={6}>
-                            <Controller
-                              name={`items.${methodKey}.currency`}
-                              control={control}
-                              rules={{
-                                required: isEnabled ? "Выберите валюту" : false,
-                              }}
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  select
-                                  fullWidth
-                                  label="Валюта"
-                                  error={!!errors.items?.[methodKey]?.currency}
-                                  helperText={
-                                    errors.items?.[methodKey]?.currency?.message
-                                  }
-                                >
-                                  {currencies?.map((c) => (
-                                    <MenuItem key={c.value} value={c.value}>
-                                      {c.description}
-                                    </MenuItem>
-                                  ))}
-                                </TextField>
-                              )}
-                            />
-                          </Grid>
+                                }}
+                                onBlur={priceField.onBlur}
+                                error={!!errors.items?.[methodKey]?.price}
+                                helperText={
+                                  errors.items?.[methodKey]?.price?.message
+                                }
+                              />
+                            )}
+                          />
                         </Grid>
-                      )}
-                    </CollapsibleFormCard>
-                  )}
-                />
-              );
-            })}
-          </Stack>
-        </FormControl>
+
+                        {/* Валюта */}
+                        <Grid item xs={12} sm={6}>
+                          <Controller
+                            name={`items.${methodKey}.currency`}
+                            control={control}
+                            rules={{
+                              required: isEnabled ? "Выберите валюту" : false,
+                            }}
+                            render={({ field: currencyField }) => (
+                              <TextField
+                                select
+                                fullWidth
+                                label="Валюта"
+                                value={currencyField.value || DEFAULT_CURRENCY}
+                                onChange={currencyField.onChange}
+                                onBlur={currencyField.onBlur}
+                                error={!!errors.items?.[methodKey]?.currency}
+                                helperText={
+                                  errors.items?.[methodKey]?.currency?.message
+                                }
+                              >
+                                {currencies.map((c) => (
+                                  <MenuItem key={c.value} value={c.value}>
+                                    {c.description}
+                                  </MenuItem>
+                                ))}
+                              </TextField>
+                            )}
+                          />
+                        </Grid>
+                      </Grid>
+                    )}
+                  </CollapsibleFormCard>
+                )}
+              />
+            );
+          })}
+        </Stack>
 
         <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end" }}>
           <Button
             type="submit"
             variant="contained"
             size="large"
-            disabled={isPending || !isDirty}
+            disabled={isPending}
             sx={{ minWidth: { xs: "100%", sm: 180 } }}
             startIcon={
               isPending ? (

@@ -36,21 +36,22 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
   isLoading = false,
 }) => {
   const theme = useTheme();
+
+  // Подписываемся на items для реактивного обновления при изменении количества
+  const items = useCartQuantityStore((state) => state.items);
   const { getQuantity } = useCartQuantityStore();
 
   // Вычисляем итоги
   const { itemsCount, subtotal } = React.useMemo(() => {
-    let count = 0;
     let total = 0;
 
     for (const item of cartItems) {
-      const quantity = getQuantity(item.count);
-      count += quantity;
-      total += item.product.price * item.product.count;
+      const quantity = getQuantity(item.product.id);
+      total += item.product.price * quantity;
     }
 
-    return { itemsCount: count, subtotal: total };
-  }, [cartItems, getQuantity]);
+    return { itemsCount: cartItems.length, subtotal: total };
+  }, [cartItems, getQuantity, items]); // items в зависимостях для реактивности
 
   // Плюрализация
   const getItemsWord = (count: number): string => {
@@ -127,23 +128,6 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
             {formatPrice(subtotal)} ₽
           </Typography>
         </Box>
-
-        {/* Можно добавить стоимость доставки */}
-        {/* <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 1,
-          }}
-        >
-          <Typography variant="body1" color="text.secondary">
-            Доставка
-          </Typography>
-          <Typography variant="body1" fontWeight={500}>
-            Бесплатно
-          </Typography>
-        </Box> */}
       </Box>
 
       <Divider sx={{ my: 2 }} />

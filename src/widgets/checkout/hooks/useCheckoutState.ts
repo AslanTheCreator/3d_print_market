@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import { useQueries } from "@tanstack/react-query";
 import { Address } from "@/entities/address/model/types";
 import { ShippingMethod } from "@/entities/transfer/model/types";
 import { ProductBasket } from "@/entities/cart";
-import { useOrderData } from "@/entities/order";
+import { orderApi } from "@/entities/order/api/orderApi";
+import { orderQueryKeys } from "@/entities/order/hooks/queryKeys";
 import { useDeliveryResolver } from "./useDeliveryResolver";
 
 interface UseCheckoutStateProps {
@@ -17,44 +19,45 @@ export const useCheckoutState = ({ cartItems = [] }: UseCheckoutStateProps) => {
     useState<ShippingMethod | null>(null);
   const [comment, setComment] = useState<string>("");
 
-  // Получаем уникальных продавцов
-  const uniqueSellerIds = useMemo(() => {
-    return [...new Set(cartItems.map((item) => item.sellerId))];
-  }, [cartItems]);
-
-  // Загружаем transfers для каждого продавца
-  // Используем первый товар продавца для получения его transfers
-  const sellerProductIds = useMemo(() => {
+  // Получаем уникальных продавцов и их первые товары
+  const sellerProductMap = useMemo(() => {
     const map = new Map<number, number>();
     for (const item of cartItems) {
-      if (!map.has(item.sellerId)) {
-        map.set(item.sellerId, item.id);
+      if (!map.has(item.product.sellerId)) {
+        map.set(item.product.sellerId, item.product.id);
       }
     }
     return map;
   }, [cartItems]);
 
-  // Запрашиваем данные для каждого продавца
-  const sellerQueries = uniqueSellerIds.map((sellerId) => {
-    const productId = sellerProductIds.get(sellerId) || 0;
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const query = useOrderData(productId);
-    return {
-      sellerId,
-      productId,
-      ...query,
-    };
+  // Преобразуем Map в стабильный массив для useQueries
+  const sellerProductEntries = useMemo(() => {
+    return Array.from(sellerProductMap.entries());
+  }, [sellerProductMap]);
+
+  // Используем useQueries вместо вызова хуков в цикле
+  const sellerQueries = useQueries({
+    queries: sellerProductEntries.map(([sellerId, productId]) => ({
+      queryKey: orderQueryKeys.orderData(productId),
+      queryFn: () => orderApi.getOrderData(productId),
+      enabled: !!productId,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+    })),
   });
 
   // Формируем данные для resolver
   const sellerTransfersData = useMemo(() => {
-    return sellerQueries.map((query) => ({
-      sellerId: query.sellerId,
-      transfers: query.data?.sellerTransfers || [],
-      isLoading: query.isLoading,
-      isError: query.isError,
-    }));
-  }, [sellerQueries]);
+    return sellerProductEntries.map(([sellerId], index) => {
+      const query = sellerQueries[index];
+      return {
+        sellerId,
+        transfers: query?.data?.sellerTransfers || [],
+        isLoading: query?.isLoading ?? true,
+        isError: query?.isError ?? false,
+      };
+    });
+  }, [sellerProductEntries, sellerQueries]);
 
   // Используем resolver для определения доставки
   const deliveryResolution = useDeliveryResolver({

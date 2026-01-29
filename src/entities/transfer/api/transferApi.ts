@@ -1,12 +1,20 @@
 import { authClient } from "@/shared/api";
 import type { Transfer, TransferInput } from "../model/types";
+import { ApiError } from "@/shared/lib/errorHandler";
 
 const API_URL = "/transfer";
 
 export const transferApi = {
   getAll: async (): Promise<Transfer[]> => {
-    const { data } = await authClient.get<Transfer[]>(API_URL);
-    return data;
+    try {
+      const { data } = await authClient.get<Transfer[]>(API_URL);
+      return data;
+    } catch (error: any) {
+      if (error?.response?.data?.code === "TRANSFER_NOT_FOUND") {
+        return [];
+      }
+      throw error;
+    }
   },
 
   create: async (input: TransferInput): Promise<void> => {
