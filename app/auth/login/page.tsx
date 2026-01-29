@@ -9,6 +9,7 @@ import { PasswordResetDialog } from "@/features/auth/ui/PasswordResetDialog";
 import { VerificationCodeDialog } from "@/features/auth/ui/VerificationCodeDialog";
 import { authApi } from "@/features/auth";
 import { VerificationRequiredError } from "@/features/auth/model/types";
+import { startTokenRefresh } from "@/shared/lib/token";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,7 +47,7 @@ export default function LoginPage() {
         // Показываем уведомление о необходимости верификации
         showNotification(
           "Необходимо подтвердить email. Открываем окно верификации...",
-          "warning"
+          "warning",
         );
 
         // Пытаемся отправить код верификации
@@ -62,7 +63,7 @@ export default function LoginPage() {
             setCooldownSeconds(result.retryAfterSec);
             showNotification(
               `Код уже был отправлен. Повторная отправка через ${result.retryAfterSec} сек.`,
-              "info"
+              "info",
             );
 
             // Важно: даже при cooldown мы не знаем userId, поэтому используем fallback
@@ -75,7 +76,7 @@ export default function LoginPage() {
           // Пользователь сможет повторить отправку через интерфейс
           showNotification(
             "Не удалось отправить код. Вы можете повторить попытку в окне верификации.",
-            "warning"
+            "warning",
           );
         }
 
@@ -84,7 +85,7 @@ export default function LoginPage() {
       } else {
         showNotification(
           "Ошибка авторизации. Проверьте логин и пароль.",
-          "error"
+          "error",
         );
       }
     } finally {
@@ -97,7 +98,7 @@ export default function LoginPage() {
     if (!userId) {
       showNotification(
         "Не удалось определить ID пользователя. Попробуйте повторно отправить код.",
-        "error"
+        "error",
       );
       throw new Error("User ID не найден");
     }

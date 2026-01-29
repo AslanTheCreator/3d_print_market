@@ -62,7 +62,7 @@ export const AddressSelector = ({
     );
   }
 
-  if (!addresses || addresses.length === 0) {
+  if (!addresses || (addresses.length === 0 && showAddButton)) {
     return (
       <Box
         sx={{

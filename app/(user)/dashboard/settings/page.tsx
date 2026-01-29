@@ -18,7 +18,10 @@ import { TransferFormWidget } from "@/widgets/transfer";
 import { AccountsFormWidget } from "@/widgets/accounts";
 import { SocialNetworksFormWidget } from "@/widgets/social-networks";
 
-// Маппинг табов
+// ─────────────────────────────────────────────────────────────────────────────
+// Tab Configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
 const TAB_KEYS = ["address", "shipping", "payment", "contacts"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
@@ -38,14 +41,38 @@ const INDEX_TO_TAB: Record<number, TabKey> = {
 
 const DEFAULT_TAB: TabKey = "address";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// TabPanel Component (Lazy mount + keep alive pattern)
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface TabPanelProps {
   children: React.ReactNode;
   index: number;
   value: number;
 }
 
+/**
+ * TabPanel с паттерном "lazy mount + keep alive":
+ * - Виджет монтируется только когда таб впервые становится активным
+ * - После монтирования виджет остаётся в DOM, но скрывается через CSS
+ * - Это сохраняет состояние форм при переключении между табами
+ * - И предотвращает лишние запросы при первой загрузке страницы
+ */
 const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
   const isActive = value === index;
+  // Отслеживаем, был ли таб когда-либо активен
+  const [hasBeenActive, setHasBeenActive] = React.useState(isActive);
+
+  React.useEffect(() => {
+    if (isActive && !hasBeenActive) {
+      setHasBeenActive(true);
+    }
+  }, [isActive, hasBeenActive]);
+
+  // Не рендерим ничего, пока таб не был активен хотя бы раз
+  if (!hasBeenActive) {
+    return null;
+  }
 
   return (
     <div
@@ -60,6 +87,10 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
   );
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Settings Page
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function SettingsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -73,7 +104,7 @@ export default function SettingsPage() {
       ? TAB_TO_INDEX[tabParam]
       : TAB_TO_INDEX[DEFAULT_TAB];
 
-  // Обработчик смены таба — обновляет URL
+  // Обработчик смены таба — обновляет URL без перезагрузки страницы
   const handleTabChange = (_: React.SyntheticEvent, newIndex: number) => {
     const newTab = INDEX_TO_TAB[newIndex];
     const params = new URLSearchParams(searchParams.toString());

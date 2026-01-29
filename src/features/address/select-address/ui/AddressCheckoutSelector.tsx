@@ -43,7 +43,6 @@ export const AddressCheckoutSelector: React.FC<
         selectedAddressId={selectedAddressId}
         onAddressSelect={onAddressSelect}
         showRadio={true}
-        showDeleteButton={false}
       />
     </Paper>
   );

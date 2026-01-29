@@ -1,15 +1,23 @@
-// src/app/providers/AuthProvider.tsx
 "use client";
 
-import { useEffect } from "react";
+import { ReactNode, useEffect } from "react";
 import { useAuthStore } from "@/app/store";
+import { useTokenRefresh } from "@/shared/lib/token";
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const initializeAuth = useAuthStore((state) => state.initializeAuth);
+interface AuthProviderProps {
+  children: ReactNode;
+}
 
+export function AuthProvider({ children }: AuthProviderProps) {
+  const checkAuth = useAuthStore((state) => state.checkAuthStatus);
+
+  // Инициализируем автоматическое обновление токенов
+  useTokenRefresh();
+
+  // Проверяем авторизацию при монтировании
   useEffect(() => {
-    initializeAuth();
-  }, [initializeAuth]);
+    checkAuth();
+  }, [checkAuth]);
 
   return <>{children}</>;
-};
+}
