@@ -61,7 +61,7 @@ const Checkout = () => {
   };
 
   // Загрузка
-  if (isCartLoading) {
+  if (isCartLoading || cartItems === undefined) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box
@@ -75,16 +75,13 @@ const Checkout = () => {
           }}
         >
           <CircularProgress size={48} />
-          <Typography variant="h6" color="text.secondary">
-            Загрузка корзины...
-          </Typography>
         </Box>
       </Container>
     );
   }
 
   // Пустая корзина
-  if (!cartItems?.length) {
+  if (cartItems.length === 0) {
     return <EmptyCartState />;
   }
 
@@ -116,7 +113,6 @@ const Checkout = () => {
           checkoutState={checkoutState}
           isSubmitting={isSubmitting}
           onSubmit={handleSubmit}
-          isMobile={isMobile}
         />
       </Container>
 

@@ -20,6 +20,7 @@ import {
   useCreateTransfer,
   useUpdateTransfer,
   useDeleteTransfer,
+  SHIPPING_ICONS,
   type ShippingMethod,
   type Transfer,
 } from "@/entities/transfer";
@@ -43,17 +44,6 @@ interface TransferFormItem {
 interface FormData {
   items: Record<string, TransferFormItem>;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────────────────
-
-const SHIPPING_ICONS: Record<string, React.ReactNode> = {
-  PRODUCT_PICKUP: <Store />,
-  TRANSPORT_COMPANY: <LocalShipping />,
-  RUSSIAN_POST: <Mail />,
-  FREE_POST: <LocalShipping />,
-};
 
 // Методы без настройки цены (бесплатные)
 const FREE_METHODS = new Set(["PRODUCT_PICKUP"]);
@@ -325,7 +315,7 @@ export const TransferFormWidget: React.FC = () => {
                     <CollapsibleFormCard
                       value={methodKey}
                       label={method.description}
-                      icon={SHIPPING_ICONS[methodKey]}
+                      icon={SHIPPING_ICONS[methodKey as ShippingMethod]}
                       isEnabled={field.value ?? false}
                       isExpanded={isExpanded(methodKey)}
                       onEnabledChange={field.onChange}

@@ -15,15 +15,10 @@ import {
   useTheme,
   Collapse,
 } from "@mui/material";
-import {
-  LocalShipping,
-  Store,
-  Mail,
-  Warning,
-  CheckCircle,
-} from "@mui/icons-material";
-import { ShippingMethod } from "@/entities/transfer/model/types";
+import { Warning, CheckCircle, InfoOutlined } from "@mui/icons-material";
+import { ShippingMethod, getDeliveryIcon } from "@/entities/transfer";
 import { useDictionary } from "@/entities/dictionary";
+import { AppLink } from "@/shared/ui/app-link/AppLink";
 
 interface DeliveryMethodSelectorProps {
   availableMethods: ShippingMethod[];
@@ -31,24 +26,10 @@ interface DeliveryMethodSelectorProps {
   onMethodSelect: (method: ShippingMethod) => void;
   isLoading?: boolean;
   isError?: boolean;
+  errorMessage?: string | null;
   fallbackMessages?: string[];
   hasFallbacks?: boolean;
 }
-
-const getDeliveryIcon = (method: ShippingMethod) => {
-  switch (method) {
-    case "PRODUCT_PICKUP":
-      return <Store />;
-    case "TRANSPORT_COMPANY":
-      return <LocalShipping />;
-    case "RUSSIAN_POST":
-      return <Mail />;
-    case "FREE_POST":
-      return <Mail />;
-    default:
-      return <LocalShipping />;
-  }
-};
 
 export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
   availableMethods,
@@ -56,6 +37,7 @@ export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
   onMethodSelect,
   isLoading = false,
   isError = false,
+  errorMessage,
   fallbackMessages = [],
   hasFallbacks = false,
 }) => {
@@ -104,8 +86,21 @@ export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
           border: `1px solid ${alpha(theme.palette.error.main, 0.3)}`,
         }}
       >
-        <Alert severity="error">
-          Не удалось загрузить способы доставки. Попробуйте обновить страницу.
+        <Typography variant="h6" fontWeight={600} gutterBottom>
+          Способ доставки
+        </Typography>
+        <Alert severity="info" icon={<InfoOutlined />}>
+          {errorMessage || "Не удалось загрузить способы доставки"}. Добавьте
+          способ доставки в{" "}
+          <AppLink
+            href="/dashboard/settings?tab=shipping"
+            color="primary"
+            underline="hover"
+            sx={{ fontWeight: 600 }}
+          >
+            настройках профиля
+          </AppLink>
+          .
         </Alert>
       </Paper>
     );
@@ -121,6 +116,9 @@ export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
           border: `1px solid ${alpha(theme.palette.warning.main, 0.3)}`,
         }}
       >
+        <Typography variant="h6" fontWeight={600} gutterBottom>
+          Способ доставки
+        </Typography>
         <Alert severity="warning">
           Нет доступных способов доставки для выбранных товаров.
         </Alert>
@@ -159,6 +157,19 @@ export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
           />
         )}
       </Box>
+
+      {/* Предупреждения о fallback */}
+      <Collapse in={hasFallbacks && fallbackMessages.length > 0}>
+        <Alert severity="warning" icon={<Warning />} sx={{ mb: 2 }}>
+          <Box>
+            {fallbackMessages.map((msg, idx) => (
+              <Typography key={idx} variant="body2">
+                {msg}
+              </Typography>
+            ))}
+          </Box>
+        </Alert>
+      </Collapse>
 
       <RadioGroup
         value={selectedMethod || ""}
@@ -252,36 +263,6 @@ export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
           })}
         </Box>
       </RadioGroup>
-
-      {/* Предупреждения о fallback */}
-      <Collapse in={hasFallbacks && fallbackMessages.length > 0}>
-        <Alert
-          severity="info"
-          icon={<Warning />}
-          sx={{
-            mt: 2,
-            "& .MuiAlert-message": {
-              width: "100%",
-            },
-          }}
-        >
-          <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-            Обратите внимание
-          </Typography>
-          <Box component="ul" sx={{ m: 0, pl: 2 }}>
-            {fallbackMessages.map((message, index) => (
-              <Typography
-                key={index}
-                component="li"
-                variant="body2"
-                sx={{ mb: 0.5 }}
-              >
-                {message}
-              </Typography>
-            ))}
-          </Box>
-        </Alert>
-      </Collapse>
     </Paper>
   );
 };

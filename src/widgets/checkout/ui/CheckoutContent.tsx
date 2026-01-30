@@ -22,7 +22,6 @@ interface CheckoutContentProps {
   checkoutState: CheckoutState;
   isSubmitting: boolean;
   onSubmit: () => void;
-  isMobile: boolean;
 }
 
 export const CheckoutContent: React.FC<CheckoutContentProps> = ({
@@ -30,7 +29,6 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
   checkoutState,
   isSubmitting,
   onSubmit,
-  isMobile,
 }) => {
   const theme = useTheme();
 
@@ -41,6 +39,8 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {/* Адрес доставки */}
           <AddressCheckoutSelector
+            addresses={checkoutState.addresses}
+            isLoading={checkoutState.isLoadingAddresses}
             selectedAddressId={checkoutState.selectedAddress?.id}
             onAddressSelect={checkoutState.setSelectedAddress}
           />
@@ -52,6 +52,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
             onMethodSelect={checkoutState.setSelectedDeliveryMethod}
             isLoading={checkoutState.isLoadingDelivery}
             isError={checkoutState.isDeliveryError}
+            errorMessage={checkoutState.deliveryErrorMessage}
             fallbackMessages={checkoutState.deliveryResolution.fallbackMessages}
             hasFallbacks={checkoutState.deliveryResolution.hasFallbacks}
           />
@@ -76,10 +77,9 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
               fullWidth
               multiline
               rows={3}
-              placeholder="Укажите дополнительную информацию для продавца (необязательно)"
+              placeholder="Добавьте комментарий к заказу (необязательно)"
               value={checkoutState.comment}
               onChange={(e) => checkoutState.setComment(e.target.value)}
-              variant="outlined"
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 2,
@@ -90,23 +90,14 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
         </Box>
       </Grid>
 
-      {/* Правая колонка - итого (на десктопе) */}
+      {/* Правая колонка - итоги */}
       <Grid item xs={12} lg={4}>
-        <Box
-          sx={{
-            position: { lg: "sticky" },
-            top: { lg: 24 },
-          }}
-        >
-          <CheckoutSummary
-            cartItems={cartItems}
-            isReadyToSubmit={checkoutState.isReadyToSubmit}
-            isSubmitting={isSubmitting}
-            onSubmit={onSubmit}
-            hasFallbacks={checkoutState.deliveryResolution.hasFallbacks}
-            isLoading={checkoutState.isLoadingDelivery}
-          />
-        </Box>
+        <CheckoutSummary
+          cartItems={cartItems}
+          isReadyToSubmit={checkoutState.isReadyToSubmit}
+          isSubmitting={isSubmitting}
+          onSubmit={onSubmit}
+        />
       </Grid>
     </Grid>
   );

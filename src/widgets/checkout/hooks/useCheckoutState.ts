@@ -8,6 +8,7 @@ import { ProductBasket } from "@/entities/cart";
 import { orderApi } from "@/entities/order/api/orderApi";
 import { orderQueryKeys } from "@/entities/order/hooks/queryKeys";
 import { useDeliveryResolver } from "./useDeliveryResolver";
+import { ApiError } from "@/shared/lib/errorHandler";
 
 interface UseCheckoutStateProps {
   cartItems: ProductBasket[] | undefined;
@@ -43,8 +44,20 @@ export const useCheckoutState = ({ cartItems = [] }: UseCheckoutStateProps) => {
       enabled: !!productId,
       staleTime: 5 * 60 * 1000,
       gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
     })),
   });
+
+  // Извлекаем адреса из первого успешного запроса
+  const { addresses, isLoadingAddresses } = useMemo(() => {
+    const isLoading = sellerQueries.some((q) => q.isLoading);
+    const successQuery = sellerQueries.find((q) => q.isSuccess && q.data);
+
+    return {
+      addresses: successQuery?.data?.addresses ?? [],
+      isLoadingAddresses: isLoading && !successQuery,
+    };
+  }, [sellerQueries]);
 
   // Формируем данные для resolver
   const sellerTransfersData = useMemo(() => {
@@ -58,6 +71,21 @@ export const useCheckoutState = ({ cartItems = [] }: UseCheckoutStateProps) => {
       };
     });
   }, [sellerProductEntries, sellerQueries]);
+
+  // Извлекаем сообщение об ошибке из первой ошибки (если есть)
+  const deliveryErrorMessage = useMemo(() => {
+    const errorQuery = sellerQueries.find((q) => q.isError && q.error);
+    if (!errorQuery?.error) return null;
+
+    const error = errorQuery.error;
+    if (error instanceof ApiError) {
+      return error.message;
+    }
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return "Не удалось загрузить способы доставки";
+  }, [sellerQueries]);
 
   // Используем resolver для определения доставки
   const deliveryResolution = useDeliveryResolver({
@@ -109,6 +137,8 @@ export const useCheckoutState = ({ cartItems = [] }: UseCheckoutStateProps) => {
     // Адрес
     selectedAddress,
     setSelectedAddress,
+    addresses,
+    isLoadingAddresses,
 
     // Способ доставки
     selectedDeliveryMethod,
@@ -124,9 +154,10 @@ export const useCheckoutState = ({ cartItems = [] }: UseCheckoutStateProps) => {
     deliveryResolution,
     getTransferIdForSeller,
 
-    // Состояние загрузки
+    // Состояние загрузки и ошибок
     isLoadingDelivery: deliveryResolution.isLoading,
     isDeliveryError: deliveryResolution.isError,
+    deliveryErrorMessage,
 
     // Готовность
     isReadyToSubmit,

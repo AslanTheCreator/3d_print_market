@@ -14,6 +14,9 @@ export {
   useDeleteTransfer,
 } from "./hooks/useTransferMutations";
 
+// Lib
+export { SHIPPING_ICONS, getDeliveryIcon } from "./lib/shippingIcons";
+
 // Types
 export type {
   Transfer,

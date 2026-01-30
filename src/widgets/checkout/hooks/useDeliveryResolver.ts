@@ -40,7 +40,7 @@ export const useDeliveryResolver = ({
 
   // Получаем уникальных продавцов из корзины
   const uniqueSellerIds = useMemo(() => {
-    return [...new Set(cartItems.map((item) => item.sellerId))];
+    return [...new Set(cartItems.map((item) => item.product.sellerId))];
   }, [cartItems]);
 
   // Находим доступные способы доставки (пересечение)
@@ -124,9 +124,11 @@ export const useDeliveryResolver = ({
 
         // Находим товары этого продавца для сообщения
         const sellerItems = cartItems.filter(
-          (item) => item.sellerId === sellerId,
+          (item) => item.product.sellerId === sellerId,
         );
-        const itemNames = sellerItems.map((item) => item.name).join(", ");
+        const itemNames = sellerItems
+          .map((item) => item.product.name)
+          .join(", ");
 
         if (fallbackTransfer) {
           fallbackMessages.push(
