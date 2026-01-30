@@ -92,10 +92,14 @@ export const orderApi = {
   },
 
   // Получение данных для создания заказа
-  getOrderData: async (productId: number) => {
+  getOrderData: async (productId: number): Promise<OrderGetDataModel> => {
     const { data } = await authClient.get<OrderGetDataModel>(
-      `${API_URL}/data/${productId}`,
+      `${API_URL}?productId=${productId}`,
     );
+    if (!data) {
+      throw new Error("Пустой ответ от сервера");
+    }
+
     return data;
   },
 

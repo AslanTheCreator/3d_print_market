@@ -10,7 +10,6 @@ import {
   useTheme,
   Typography,
   Stack,
-  Chip,
   Paper,
 } from "@mui/material";
 import { Refresh, TrendingUp, Inventory } from "@mui/icons-material";
@@ -19,9 +18,9 @@ import {
   ProductCardSkeleton,
   useUserProductsInfinite,
 } from "@/entities/product";
-import { ProductFilter, SortBy } from "@/entities/product/model/types";
 import { EmptyCatalogState } from "@/shared/ui/states";
 import { UserProductCard } from "./UserProductCard";
+import { ProductFilter, SortBy } from "@/shared/types";
 
 interface UserProductsListProps {
   participantId?: number;

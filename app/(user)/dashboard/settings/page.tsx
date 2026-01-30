@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import {
   Container,
   Paper,
@@ -9,6 +9,8 @@ import {
   Box,
   useTheme,
   useMediaQuery,
+  Skeleton,
+  Stack,
 } from "@mui/material";
 import { LocationOn, LocalShipping, Payment, Share } from "@mui/icons-material";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -60,7 +62,6 @@ interface TabPanelProps {
  */
 const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
   const isActive = value === index;
-  // Отслеживаем, был ли таб когда-либо активен
   const [hasBeenActive, setHasBeenActive] = React.useState(isActive);
 
   React.useEffect(() => {
@@ -69,7 +70,6 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
     }
   }, [isActive, hasBeenActive]);
 
-  // Не рендерим ничего, пока таб не был активен хотя бы раз
   if (!hasBeenActive) {
     return null;
   }
@@ -88,10 +88,10 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Settings Page
+// Settings Content (использует useSearchParams)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function SettingsPage() {
+function SettingsContent() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const router = useRouter();
@@ -113,6 +113,136 @@ export default function SettingsPage() {
   };
 
   return (
+    <Paper
+      elevation={0}
+      sx={{
+        borderRadius: 2,
+        overflow: "hidden",
+        border: `1px solid ${theme.palette.divider}`,
+      }}
+    >
+      <Tabs
+        value={activeTab}
+        onChange={handleTabChange}
+        variant={isMobile ? "fullWidth" : "standard"}
+        sx={{
+          borderBottom: 1,
+          borderColor: "divider",
+          bgcolor: "background.paper",
+          px: { xs: 0, sm: 2 },
+        }}
+      >
+        <Tab
+          icon={<LocationOn />}
+          iconPosition="start"
+          label="Адрес доставки"
+          id="settings-tab-0"
+          aria-controls="settings-tabpanel-0"
+          sx={{
+            minHeight: { xs: 56, sm: 64 },
+            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+          }}
+        />
+        <Tab
+          icon={<LocalShipping />}
+          iconPosition="start"
+          label="Способ отправки"
+          id="settings-tab-1"
+          aria-controls="settings-tabpanel-1"
+          sx={{
+            minHeight: { xs: 56, sm: 64 },
+            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+          }}
+        />
+        <Tab
+          icon={<Payment />}
+          iconPosition="start"
+          label="Способ оплаты"
+          id="settings-tab-2"
+          aria-controls="settings-tabpanel-2"
+          sx={{
+            minHeight: { xs: 56, sm: 64 },
+            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+          }}
+        />
+        <Tab
+          icon={<Share />}
+          iconPosition="start"
+          label="Способы связи"
+          id="settings-tab-3"
+          aria-controls="settings-tabpanel-3"
+          sx={{
+            minHeight: { xs: 56, sm: 64 },
+            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+          }}
+        />
+      </Tabs>
+
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        <TabPanel value={activeTab} index={0}>
+          <AddressManagerWidget />
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={1}>
+          <TransferFormWidget />
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={2}>
+          <AccountsFormWidget />
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={3}>
+          <SocialNetworksFormWidget />
+        </TabPanel>
+      </Box>
+    </Paper>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Settings Loading Skeleton
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SettingsLoadingSkeleton() {
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        borderRadius: 2,
+        overflow: "hidden",
+        border: "1px solid",
+        borderColor: "divider",
+      }}
+    >
+      {/* Tabs skeleton */}
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}
+      >
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} variant="rounded" width={120} height={40} />
+        ))}
+      </Stack>
+
+      {/* Content skeleton */}
+      <Box sx={{ p: 3 }}>
+        <Stack spacing={2}>
+          <Skeleton variant="rounded" height={56} />
+          <Skeleton variant="rounded" height={56} />
+          <Skeleton variant="rounded" height={56} />
+        </Stack>
+      </Box>
+    </Paper>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Settings Page (с Suspense boundary)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export default function SettingsPage() {
+  return (
     <Container
       maxWidth="md"
       sx={{
@@ -120,89 +250,9 @@ export default function SettingsPage() {
         px: { xs: 2, sm: 3 },
       }}
     >
-      <Paper
-        elevation={0}
-        sx={{
-          borderRadius: 2,
-          overflow: "hidden",
-          border: `1px solid ${theme.palette.divider}`,
-        }}
-      >
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          variant={isMobile ? "fullWidth" : "standard"}
-          sx={{
-            borderBottom: 1,
-            borderColor: "divider",
-            bgcolor: "background.paper",
-            px: { xs: 0, sm: 2 },
-          }}
-        >
-          <Tab
-            icon={<LocationOn />}
-            iconPosition="start"
-            label="Адрес доставки"
-            id="settings-tab-0"
-            aria-controls="settings-tabpanel-0"
-            sx={{
-              minHeight: { xs: 56, sm: 64 },
-              fontSize: { xs: "0.75rem", sm: "0.875rem" },
-            }}
-          />
-          <Tab
-            icon={<LocalShipping />}
-            iconPosition="start"
-            label="Способ отправки"
-            id="settings-tab-1"
-            aria-controls="settings-tabpanel-1"
-            sx={{
-              minHeight: { xs: 56, sm: 64 },
-              fontSize: { xs: "0.75rem", sm: "0.875rem" },
-            }}
-          />
-          <Tab
-            icon={<Payment />}
-            iconPosition="start"
-            label="Способ оплаты"
-            id="settings-tab-2"
-            aria-controls="settings-tabpanel-2"
-            sx={{
-              minHeight: { xs: 56, sm: 64 },
-              fontSize: { xs: "0.75rem", sm: "0.875rem" },
-            }}
-          />
-          <Tab
-            icon={<Share />}
-            iconPosition="start"
-            label="Способы связи"
-            id="settings-tab-3"
-            aria-controls="settings-tabpanel-3"
-            sx={{
-              minHeight: { xs: 56, sm: 64 },
-              fontSize: { xs: "0.75rem", sm: "0.875rem" },
-            }}
-          />
-        </Tabs>
-
-        <Box sx={{ p: { xs: 2, sm: 3 } }}>
-          <TabPanel value={activeTab} index={0}>
-            <AddressManagerWidget />
-          </TabPanel>
-
-          <TabPanel value={activeTab} index={1}>
-            <TransferFormWidget />
-          </TabPanel>
-
-          <TabPanel value={activeTab} index={2}>
-            <AccountsFormWidget />
-          </TabPanel>
-
-          <TabPanel value={activeTab} index={3}>
-            <SocialNetworksFormWidget />
-          </TabPanel>
-        </Box>
-      </Paper>
+      <Suspense fallback={<SettingsLoadingSkeleton />}>
+        <SettingsContent />
+      </Suspense>
     </Container>
   );
 }
