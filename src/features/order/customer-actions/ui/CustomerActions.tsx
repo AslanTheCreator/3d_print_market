@@ -9,7 +9,7 @@ import {
   DialogTitle,
   Stack,
 } from "@mui/material";
-import { Payment, ThumbUp } from "@mui/icons-material";
+import { Payment, ThumbUp, Cancel } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order/model/types";
 import {
   useConfirmPaymentByCustomer,
@@ -17,6 +17,7 @@ import {
   useConfirmReceiptByCustomer,
 } from "@/entities/order";
 import PaymentDialog from "@/features/order/confirm-payment-by-customer/ui/PaymentDialog";
+import { CancelOrderDialog } from "@/features/order/cancel-order/ui/CancelOrderDialog";
 
 interface CustomerActionsProps {
   order: ListOrdersModel;
@@ -26,6 +27,8 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [prepaymentDialogOpen, setPrepaymentDialogOpen] = useState(false);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+
   const confirmReceiptMutation = useConfirmReceiptByCustomer();
 
   const handleConfirmReceipt = () => {
@@ -37,13 +40,18 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
         onSuccess: () => {
           setReceiptDialogOpen(false);
         },
-      }
+      },
     );
   };
 
   const canPay = order.actualStatus === "AWAITING_PAYMENT";
   const canPrePay = order.actualStatus === "AWAITING_PREPAYMENT";
   const canConfirmReceipt = order.actualStatus === "ON_THE_WAY";
+
+  // Можно отменить на любом статусе, кроме завершённых
+  const canCancel = !["COMPLETED", "FAILED", "DISPUTED"].includes(
+    order.actualStatus,
+  );
 
   return (
     <>
@@ -60,6 +68,7 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
             Подтвердить оплату
           </Button>
         )}
+
         {canPrePay && (
           <Button
             variant="contained"
@@ -86,6 +95,20 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
             {confirmReceiptMutation.isPending
               ? "Подтверждение..."
               : "Подтвердить получение"}
+          </Button>
+        )}
+
+        {/* Кнопка отмены заказа */}
+        {canCancel && (
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<Cancel />}
+            onClick={() => setCancelDialogOpen(true)}
+            size="small"
+            fullWidth={true}
+          >
+            Отменить
           </Button>
         )}
       </Stack>
@@ -139,6 +162,14 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Диалог отмены заказа */}
+      <CancelOrderDialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
+        order={order}
+        userRole="customer"
+      />
     </>
   );
 };

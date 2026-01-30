@@ -1,10 +1,11 @@
-import exp from "constants";
-
+// Queries
 export {
   useOrderData,
   useSellerOrders,
   useCustomerOrders,
 } from "./hooks/useOrderQueries";
+
+// Mutations
 export {
   useCreateOrder,
   useConfirmOrderBySeller,
@@ -13,13 +14,16 @@ export {
   useConfirmPaymentByCustomer,
   useConfirmReceiptByCustomer,
   useSendOrderBySeller,
+  useCancelOrder,
 } from "./hooks/useOrderMutations";
 
+// Stats
 export {
   useCustomerOrdersStats,
   useSellerOrdersStats,
 } from "./hooks/useOrderStats";
 
+// UI Components
 export { OrderHistory } from "./ui/OrderHistory";
 export { OrderProgress } from "./ui/OrderProgress";
 export { OrderStatusChip } from "./ui/OrderStatusChip";
@@ -29,4 +33,5 @@ export { DeliveryInfo } from "./ui/DeliveryInfo";
 export { OrderCard } from "./ui/OrderCard";
 export { OrdersEmptyState } from "./ui/OrdersEmptyState";
 
-export type { ListOrdersModel } from "./model/types";
+// Types
+export type { ListOrdersModel, OrderCancel } from "./model/types";

@@ -1,23 +1,20 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { OrderCreateModel } from "../model/types";
+import { OrderCreateModel, OrderCancel } from "../model/types";
 import { orderApi } from "../api/orderApi";
 import { orderQueryKeys } from "./queryKeys";
+import { useNotification } from "@/app/providers";
 
 // Хук для создания заказа
 export const useCreateOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // API ожидает массив, оборачиваем один объект в массив
     mutationFn: (orderData: OrderCreateModel) =>
       orderApi.createOrder([orderData]),
     onSuccess: (_, variables) => {
-      // Инвалидируем кэш данных заказа для этого продукта
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.orderData(variables.productId),
       });
-
-      // Инвалидируем все заказы покупателя
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.customerOrders(),
       });
@@ -43,12 +40,9 @@ export const useConfirmOrderBySeller = () => {
       comment?: string;
     }) => orderApi.confirmOrderBySeller(orderId, accountId, comment),
     onSuccess: () => {
-      // Инвалидируем заказы продавца
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.sellerOrders(),
       });
-
-      // Инвалидируем заказы покупателя (для обновления статуса)
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.customerOrders(),
       });
@@ -72,12 +66,9 @@ export const useConfirmPreOrderBySeller = () => {
       comment?: string;
     }) => orderApi.confirmPreOrderBySeller(orderId, comment),
     onSuccess: () => {
-      // Инвалидируем заказы продавца
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.sellerOrders(),
       });
-
-      // Инвалидируем заказы покупателя
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.customerOrders(),
       });
@@ -103,12 +94,9 @@ export const useConfirmPrepaymentByCustomer = () => {
       comment?: string;
     }) => orderApi.confirmPrepaymentByCustomer(orderId, imageId, comment),
     onSuccess: () => {
-      // Инвалидируем заказы покупателя
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.customerOrders(),
       });
-
-      // Инвалидируем заказы продавца
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.sellerOrders(),
       });
@@ -134,12 +122,9 @@ export const useConfirmPaymentByCustomer = () => {
       comment?: string;
     }) => orderApi.confirmPaymentByCustomer(orderId, imageId, comment),
     onSuccess: () => {
-      // Инвалидируем заказы покупателя
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.customerOrders(),
       });
-
-      // Инвалидируем заказы продавца
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.sellerOrders(),
       });
@@ -163,12 +148,9 @@ export const useConfirmReceiptByCustomer = () => {
       comment?: string;
     }) => orderApi.confirmReceiptByCustomer(orderId, comment),
     onSuccess: () => {
-      // Инвалидируем заказы покупателя
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.customerOrders(),
       });
-
-      // Инвалидируем заказы продавца
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.sellerOrders(),
       });
@@ -194,18 +176,38 @@ export const useSendOrderBySeller = () => {
       comment?: string;
     }) => orderApi.sendOrderBySeller(orderId, deliveryUrl, comment),
     onSuccess: () => {
-      // Инвалидируем заказы продавца
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.sellerOrders(),
       });
-
-      // Инвалидируем заказы покупателя
       queryClient.invalidateQueries({
         queryKey: orderQueryKeys.customerOrders(),
       });
     },
     onError: (error) => {
       console.error("Ошибка отправки заказа:", error);
+    },
+  });
+};
+
+// Хук для отмены заказа
+export const useCancelOrder = () => {
+  const queryClient = useQueryClient();
+  const { showNotification } = useNotification();
+
+  return useMutation({
+    mutationFn: (orderData: OrderCancel) => orderApi.cancelOrder(orderData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: orderQueryKeys.sellerOrders(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: orderQueryKeys.customerOrders(),
+      });
+      showNotification("Заказ успешно отменён", "success");
+    },
+    onError: (error) => {
+      console.error("Ошибка отмены заказа:", error);
+      showNotification("Не удалось отменить заказ", "error");
     },
   });
 };

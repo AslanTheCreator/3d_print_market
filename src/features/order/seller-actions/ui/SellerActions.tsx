@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { Button, Stack } from "@mui/material";
-import { CheckCircle, LocalShipping } from "@mui/icons-material";
+import { CheckCircle, LocalShipping, Cancel } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order/model/types";
 import {
   useConfirmOrderBySeller,
@@ -9,6 +9,7 @@ import {
 } from "@/entities/order";
 import ShippingDialog from "../../send-order-by-seller/ui/ShippingDialog";
 import { ConfirmationDialog } from "../../confirm-order-by-seller/ui/ConfirmationDialog";
+import { CancelOrderDialog } from "../../cancel-order/ui/CancelOrderDialog";
 
 interface SellerActionsProps {
   order: ListOrdersModel;
@@ -19,6 +20,7 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
   const [preOrderConfirmDialogOpen, setPreOrderConfirmDialogOpen] =
     useState(false);
   const [shippingDialogOpen, setShippingDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   const confirmOrderMutation = useConfirmOrderBySeller();
   const confirmPreOrderMutation = useConfirmPreOrderBySeller();
@@ -27,6 +29,11 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
   const canConfirmPreOrder =
     order.actualStatus === "AWAITING_PREPAYMENT_APPROVAL";
   const canShipOrder = order.actualStatus === "ASSEMBLING";
+
+  // Можно отменить на любом статусе, кроме завершённых
+  const canCancel = !["COMPLETED", "FAILED", "DISPUTED"].includes(
+    order.actualStatus,
+  );
 
   return (
     <>
@@ -78,6 +85,20 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
             Отправить товар
           </Button>
         )}
+
+        {/* Кнопка отмены заказа */}
+        {canCancel && (
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<Cancel />}
+            onClick={() => setCancelDialogOpen(true)}
+            size="small"
+            fullWidth={true}
+          >
+            Отменить
+          </Button>
+        )}
       </Stack>
 
       {/* Диалог подтверждения обычного заказа */}
@@ -86,7 +107,7 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
         onClose={() => setConfirmDialogOpen(false)}
         order={order}
         confirmationType="order"
-        confirmationMutation={confirmOrderMutation as any} // Пофиксить тип
+        confirmationMutation={confirmOrderMutation as any}
       />
 
       {/* Диалог подтверждения предзаказа */}
@@ -103,6 +124,14 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
         open={shippingDialogOpen}
         onClose={() => setShippingDialogOpen(false)}
         order={order}
+      />
+
+      {/* Диалог отмены заказа */}
+      <CancelOrderDialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
+        order={order}
+        userRole="seller"
       />
     </>
   );

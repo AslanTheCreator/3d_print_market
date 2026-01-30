@@ -9,7 +9,7 @@ import { authClient } from "@/shared/api";
 const API_URL = `/order`;
 
 export const orderApi = {
-  //1
+  // Создание заказа
   createOrder: async (orderData: OrderCreateModel[]) => {
     const { data } = await authClient.post<number[]>(
       `${API_URL}/BOOKED`,
@@ -17,102 +17,100 @@ export const orderApi = {
     );
     return data;
   },
-  //2
-  confirmOrderBySeller: async (orderId: number, comment: string = "") => {
+
+  // Подтверждение заказа продавцом
+  confirmOrderBySeller: async (
+    orderId: number,
+    accountId: number,
+    comment: string = "",
+  ) => {
     const { data } = await authClient.post<number>(
-      `${API_URL}/${orderId}/AWAITING_PREPAYMENT?comment=${encodeURIComponent(
-        comment,
-      )}`,
+      `${API_URL}/${orderId}/AWAITING_PREPAYMENT?accountId=${accountId}&comment=${encodeURIComponent(comment)}`,
     );
     return data;
   },
-  //3.2
+
+  // Подтверждение предзаказа продавцом
   confirmPreOrderBySeller: async (orderId: number, comment: string = "") => {
     const { data } = await authClient.post<number>(
-      `${API_URL}/${orderId}/AWAITING_PAYMENT?comment=${encodeURIComponent(
-        comment,
-      )}`,
+      `${API_URL}/${orderId}/AWAITING_PAYMENT?comment=${encodeURIComponent(comment)}`,
     );
     return data;
   },
-  //3.1
+
+  // Подтверждение предоплаты покупателем
   confirmPrepaymentByCustomer: async (
     orderId: number,
     imageId: number,
     comment: string = "",
   ) => {
     const { data } = await authClient.post<number>(
-      `${API_URL}/${orderId}/AWAITING_PREPAYMENT_APPROVAL?imageId=${imageId}&comment=${encodeURIComponent(
-        comment,
-      )}`,
+      `${API_URL}/${orderId}/AWAITING_PREPAYMENT_APPROVAL?imageId=${imageId}&comment=${encodeURIComponent(comment)}`,
     );
     return data;
   },
-  //3.3
+
+  // Подтверждение оплаты покупателем
   confirmPaymentByCustomer: async (
     orderId: number,
     imageId: number,
     comment: string = "",
   ) => {
     const { data } = await authClient.post<number>(
-      `${API_URL}/${orderId}/ASSEMBLING?imageId=${imageId}&comment=${encodeURIComponent(
-        comment,
-      )}`,
+      `${API_URL}/${orderId}/ASSEMBLING?imageId=${imageId}&comment=${encodeURIComponent(comment)}`,
     );
     return data;
   },
-  //5
+
+  // Подтверждение получения заказа покупателем
   confirmReceiptByCustomer: async (orderId: number, comment: string = "") => {
     const { data } = await authClient.post<number>(
       `${API_URL}/${orderId}/COMPLETED?comment=${encodeURIComponent(comment)}`,
     );
     return data;
   },
-  //4
+
+  // Отправка заказа продавцом
   sendOrderBySeller: async (
     orderId: number,
     deliveryUrl: string,
     comment: string = "",
   ) => {
     const { data } = await authClient.post<number>(
-      `${API_URL}/${orderId}/ON_THE_WAY?deliveryUrl=${encodeURIComponent(
-        deliveryUrl,
-      )}&comment=${encodeURIComponent(comment)}`,
+      `${API_URL}/${orderId}/ON_THE_WAY?deliveryUrl=${encodeURIComponent(deliveryUrl)}&comment=${encodeURIComponent(comment)}`,
     );
     return data;
   },
-  getOrderData: async (productId: number): Promise<OrderGetDataModel> => {
-    const { data } = await authClient.get<OrderGetDataModel>(
-      `${API_URL}?productId=${productId}`,
-    );
-    if (!data) {
-      throw new Error("Пустой ответ от сервера");
-    }
 
+  // Отмена заказа
+  cancelOrder: async (orderData: OrderCancel) => {
+    const { data } = await authClient.post<number>(
+      `${API_URL}/${orderData.orderId}/FAILED`,
+      orderData,
+    );
     return data;
   },
-  getSellerOrders: async (): Promise<ListOrdersModel[]> => {
+
+  // Получение данных для создания заказа
+  getOrderData: async (productId: number) => {
+    const { data } = await authClient.get<OrderGetDataModel>(
+      `${API_URL}/data/${productId}`,
+    );
+    return data;
+  },
+
+  // Получение заказов продавца
+  getSellerOrders: async () => {
     const { data } = await authClient.get<ListOrdersModel[]>(
       `${API_URL}/seller`,
     );
-    if (!data) {
-      throw new Error("Пустой ответ от сервера");
-    }
     return data;
   },
-  getCustomerOrders: async (): Promise<ListOrdersModel[]> => {
+
+  // Получение заказов покупателя
+  getCustomerOrders: async () => {
     const { data } = await authClient.get<ListOrdersModel[]>(
       `${API_URL}/customer`,
-    );
-    if (!data) {
-      throw new Error("Пустой ответ от сервера");
-    }
-    return data;
-  },
-  cancelOrder: async (orderData: OrderCancel) => {
-    const { data } = await authClient.post<number>(
-      `${API_URL}/{orderId}/FAILED`,
-      orderData,
     );
     return data;
   },
