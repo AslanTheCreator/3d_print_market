@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import {
   Box,
   Checkbox,
@@ -15,6 +15,12 @@ import { useRemoveFromCartFeature } from "@/features/cart";
 
 interface CheckoutCartSectionProps {
   items: ProductBasket[];
+  // Состояние выбора из useCheckoutState
+  selectedProductIds: Set<number>;
+  isAllSelected: boolean;
+  selectedCount: number;
+  onToggleProductSelection: (productId: number, selected: boolean) => void;
+  onToggleSelectAll: (selected: boolean) => void;
 }
 
 // Компонент-обёртка для отдельного товара с хуком useCartQuantity
@@ -51,48 +57,30 @@ const CheckoutCartItemWrapper = ({
   );
 };
 
-export const CheckoutCartSection = ({ items }: CheckoutCartSectionProps) => {
+export const CheckoutCartSection = ({
+  items,
+  selectedProductIds,
+  isAllSelected,
+  selectedCount,
+  onToggleProductSelection,
+  onToggleSelectAll,
+}: CheckoutCartSectionProps) => {
   const theme = useTheme();
   const { handleRemoveItem, removingItemIds } = useRemoveFromCartFeature();
 
-  // Локальный стейт для выбранных товаров
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(() => {
-    return new Set(items.map((item) => item.product.id));
-  });
-
-  const isAllSelected = useMemo(() => {
-    return (
-      items.length > 0 &&
-      items.every((item) => selectedIds.has(item.product.id))
-    );
-  }, [items, selectedIds]);
-
-  const selectedCount = useMemo(() => {
-    return items.filter((item) => selectedIds.has(item.product.id)).length;
-  }, [items, selectedIds]);
-
   const handleSelectAll = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (event.target.checked) {
-        setSelectedIds(new Set(items.map((item) => item.product.id)));
-      } else {
-        setSelectedIds(new Set());
-      }
+      onToggleSelectAll(event.target.checked);
     },
-    [items],
+    [onToggleSelectAll],
   );
 
-  const handleSelectItem = useCallback((id: number, selected: boolean) => {
-    setSelectedIds((prev) => {
-      const newSet = new Set(prev);
-      if (selected) {
-        newSet.add(id);
-      } else {
-        newSet.delete(id);
-      }
-      return newSet;
-    });
-  }, []);
+  const handleSelectItem = useCallback(
+    (id: number, selected: boolean) => {
+      onToggleProductSelection(id, selected);
+    },
+    [onToggleProductSelection],
+  );
 
   // Плюрализация слова "товар"
   const getItemsWord = (count: number): string => {
@@ -163,7 +151,7 @@ export const CheckoutCartSection = ({ items }: CheckoutCartSectionProps) => {
           <CheckoutCartItemWrapper
             key={item.product.id}
             item={item}
-            isSelected={selectedIds.has(item.product.id)}
+            isSelected={selectedProductIds.has(item.product.id)}
             onSelectChange={handleSelectItem}
             onRemove={handleRemoveItem}
             isRemoving={removingItemIds.includes(item.product.id)}

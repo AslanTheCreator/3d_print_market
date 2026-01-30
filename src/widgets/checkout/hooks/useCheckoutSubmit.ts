@@ -40,17 +40,21 @@ export const useCheckoutSubmit = ({
     setSubmitResult(null);
 
     // Формируем список заказов для создания
+    // ProductBasket имеет структуру { product: Product, count: number }
+    // Используем getQuantity для актуального количества из UI
     const ordersToCreate: OrderToCreate[] = cartItems.map((item) => {
-      const transferId = checkoutState.getTransferIdForSeller(item.sellerId);
-      const quantity = getQuantity(item.id);
+      const transferId = checkoutState.getTransferIdForSeller(
+        item.product.sellerId,
+      );
+      const quantity = getQuantity(item.product.id);
 
       return {
-        productId: item.id,
-        productName: item.name,
+        productId: item.product.id,
+        productName: item.product.name,
         count: quantity,
         addressId: checkoutState.selectedAddress?.id || 0,
         transferId: transferId || 0,
-        sellerId: item.sellerId,
+        sellerId: item.product.sellerId,
         comment: checkoutState.comment,
       };
     });
@@ -59,13 +63,16 @@ export const useCheckoutSubmit = ({
     const orderPromises = ordersToCreate.map(
       async (order): Promise<OrderResult> => {
         try {
-          await orderApi.createOrder({
-            productId: order.productId,
-            count: order.count,
-            addressId: order.addressId,
-            transferId: order.transferId,
-            comment: order.comment,
-          });
+          // API ожидает массив, оборачиваем объект в массив
+          await orderApi.createOrder([
+            {
+              productId: order.productId,
+              count: order.count,
+              addressId: order.addressId,
+              transferId: order.transferId,
+              comment: order.comment,
+            },
+          ]);
 
           return {
             productId: order.productId,
@@ -75,7 +82,6 @@ export const useCheckoutSubmit = ({
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : "Неизвестная ошибка";
-
           return {
             productId: order.productId,
             productName: order.productName,
@@ -86,10 +92,8 @@ export const useCheckoutSubmit = ({
       },
     );
 
-    // Выполняем все запросы параллельно
     const results = await Promise.allSettled(orderPromises);
 
-    // Обрабатываем результаты
     const successResults: OrderResult[] = [];
     const failedResults: OrderResult[] = [];
 
@@ -102,7 +106,7 @@ export const useCheckoutSubmit = ({
           failedResults.push(orderResult);
         }
       } else {
-        // Promise rejected (не должно происходить т.к. мы ловим ошибки внутри)
+        // rejected (хотя мы ловим ошибки внутри)
         failedResults.push({
           productId: 0,
           productName: "Неизвестный товар",
@@ -161,7 +165,7 @@ export const useCheckoutSubmit = ({
 
     const failedProductIds = submitResult.failed.map((f) => f.productId);
     const failedItems = cartItems?.filter((item) =>
-      failedProductIds.includes(item.id),
+      failedProductIds.includes(item.product.id),
     );
 
     if (!failedItems?.length) return;
@@ -172,27 +176,30 @@ export const useCheckoutSubmit = ({
       async (item): Promise<OrderResult> => {
         try {
           const transferId = checkoutState.getTransferIdForSeller(
-            item.sellerId,
+            item.product.sellerId,
           );
-          const quantity = getQuantity(item.id);
+          const quantity = getQuantity(item.product.id);
 
-          await orderApi.createOrder({
-            productId: item.id,
-            count: quantity,
-            addressId: checkoutState.selectedAddress?.id || 0,
-            transferId: transferId || 0,
-            comment: checkoutState.comment,
-          });
+          // API ожидает массив, оборачиваем объект в массив
+          await orderApi.createOrder([
+            {
+              productId: item.product.id,
+              count: quantity,
+              addressId: checkoutState.selectedAddress?.id || 0,
+              transferId: transferId || 0,
+              comment: checkoutState.comment,
+            },
+          ]);
 
           return {
-            productId: item.id,
-            productName: item.name,
+            productId: item.product.id,
+            productName: item.product.name,
             status: "success",
           };
         } catch (error) {
           return {
-            productId: item.id,
-            productName: item.name,
+            productId: item.product.id,
+            productName: item.product.name,
             status: "error",
             errorMessage:
               error instanceof Error ? error.message : "Неизвестная ошибка",

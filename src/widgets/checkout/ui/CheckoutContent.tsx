@@ -58,7 +58,14 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
           />
 
           {/* Корзина с товарами */}
-          <CheckoutCartSection items={cartItems} />
+          <CheckoutCartSection
+            items={cartItems}
+            selectedProductIds={checkoutState.selectedProductIds}
+            isAllSelected={checkoutState.isAllSelected}
+            selectedCount={checkoutState.selectedCount}
+            onToggleProductSelection={checkoutState.toggleProductSelection}
+            onToggleSelectAll={checkoutState.toggleSelectAll}
+          />
 
           {/* Комментарий к заказу */}
           <Paper
@@ -93,10 +100,11 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
       {/* Правая колонка - итоги */}
       <Grid item xs={12} lg={4}>
         <CheckoutSummary
-          cartItems={cartItems}
+          cartItems={checkoutState.selectedItems}
           isReadyToSubmit={checkoutState.isReadyToSubmit}
           isSubmitting={isSubmitting}
           onSubmit={onSubmit}
+          hasFallbacks={checkoutState.deliveryResolution.hasFallbacks}
         />
       </Grid>
     </Grid>

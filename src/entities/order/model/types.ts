@@ -61,3 +61,9 @@ export interface ListOrdersModel {
   images: number[];
   histories: OrderHistory[];
 }
+
+export interface OrderCancel {
+  orderId: number;
+  closureReason: string;
+  comment: string;
+}

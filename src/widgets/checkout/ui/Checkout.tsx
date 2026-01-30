@@ -30,9 +30,10 @@ const Checkout = () => {
 
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
 
+  // Передаём только ВЫБРАННЫЕ товары в useCheckoutSubmit
   const { handleSubmit, retryFailed, isSubmitting, submitResult, clearResult } =
     useCheckoutSubmit({
-      cartItems,
+      cartItems: checkoutState.selectedItems,
       checkoutState,
       onSuccess: (result: CheckoutResult) => {
         setResultDialogOpen(true);

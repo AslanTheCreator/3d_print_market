@@ -8,8 +8,9 @@ export const useCreateOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    // API ожидает массив, оборачиваем один объект в массив
     mutationFn: (orderData: OrderCreateModel) =>
-      orderApi.createOrder(orderData),
+      orderApi.createOrder([orderData]),
     onSuccess: (_, variables) => {
       // Инвалидируем кэш данных заказа для этого продукта
       queryClient.invalidateQueries({
