@@ -1,18 +1,23 @@
 "use client";
 
 import React, { useState } from "react";
-import { IconButton, useTheme, useMediaQuery } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu"; // или используйте свою иконку
+import { IconButton, useTheme } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
-import { CategoriesDrawer } from "./CategoriesDrawer ";
+import { CategoriesDrawer } from "./CategoriesDrawer";
 
-export const HeaderCategoryButton = () => {
+interface HeaderCategoryButtonProps {
+  isMobile: boolean;
+}
+
+export const HeaderCategoryButton = ({
+  isMobile,
+}: HeaderCategoryButtonProps) => {
   const theme = useTheme();
   const [isOpen, setIsOpen] = useState(false);
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const toggleDrawer = () => {
-    setIsOpen(!isOpen);
+    setIsOpen((prev) => !prev);
   };
 
   return (
@@ -30,7 +35,7 @@ export const HeaderCategoryButton = () => {
             ["background-color", "transform"],
             {
               duration: theme.transitions.duration.shorter,
-            }
+            },
           ),
           "&:hover": {
             backgroundColor: theme.palette.primary.dark,
@@ -43,7 +48,11 @@ export const HeaderCategoryButton = () => {
       >
         {isOpen ? <CloseIcon /> : <MenuIcon />}
       </IconButton>
-      <CategoriesDrawer open={isOpen} onClose={toggleDrawer} />
+      <CategoriesDrawer
+        open={isOpen}
+        onClose={toggleDrawer}
+        isMobile={isMobile}
+      />
     </>
   );
 };

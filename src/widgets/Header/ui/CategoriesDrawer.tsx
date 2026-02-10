@@ -1,44 +1,31 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import {
   Drawer,
   Box,
   IconButton,
   useTheme,
-  useMediaQuery,
   ClickAwayListener,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { CategoriesMenu } from "./CategoriesMenu";
+import { LAYOUT } from "@/shared/config/layout";
 
 interface CategoriesDrawerProps {
   open: boolean;
   onClose: () => void;
+  isMobile: boolean;
 }
 
 export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
   open,
   onClose,
+  isMobile,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  // Закрытие при нажатии Escape
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && open) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [open, onClose]);
-
-  // Для мобильных устройств используем стандартный Drawer
+  // Для мобильных — стандартный MUI Drawer (Escape обрабатывается из коробки)
   if (isMobile) {
     return (
       <Drawer
@@ -67,7 +54,6 @@ export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
             position: "relative",
           }}
         >
-          {/* Close button for mobile */}
           <Box
             sx={{
               position: "absolute",
@@ -79,6 +65,7 @@ export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
             <IconButton
               onClick={onClose}
               size="small"
+              aria-label="Закрыть меню категорий"
               sx={{
                 backgroundColor: theme.palette.background.default,
                 "&:hover": {
@@ -96,39 +83,33 @@ export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
     );
   }
 
-  // Для десктопа используем кастомное позиционирование
+  // Для десктопа — кастомное позиционирование
   if (!open) return null;
+
+  const topOffset = `${LAYOUT.HEADER_HEIGHT + 3}px`;
 
   return (
     <ClickAwayListener onClickAway={onClose}>
       <Box
         sx={{
           position: "fixed",
-          top: "122px", // Высота хедера
+          top: topOffset,
           left: 0,
           width: "320px",
-          height: "calc(100vh - 119px)",
+          height: `calc(100vh - ${LAYOUT.HEADER_HEIGHT_PX})`,
           backgroundColor: theme.palette.background.paper,
           borderRight: `1px solid ${theme.palette.divider}`,
           boxShadow: theme.shadows[8],
           zIndex: theme.zIndex.drawer,
           transform: open ? "translateX(0)" : "translateX(-100%)",
-          transition: theme.transitions.create("transform", {
-            easing: theme.transitions.easing.sharp,
+          transition: theme.transitions.create(["transform"], {
             duration: theme.transitions.duration.enteringScreen,
+            easing: theme.transitions.easing.easeOut,
           }),
+          overflowY: "auto",
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            height: "100%",
-            position: "relative",
-          }}
-        >
-          <CategoriesMenu onClose={onClose} />
-        </Box>
+        <CategoriesMenu onClose={onClose} />
       </Box>
     </ClickAwayListener>
   );

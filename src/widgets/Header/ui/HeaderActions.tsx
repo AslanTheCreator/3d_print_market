@@ -1,3 +1,5 @@
+"use client";
+
 import { useAuth } from "@/features/auth";
 import { useCartChecks } from "@/entities/cart";
 import { useFavoritesChecks } from "@/entities/favorites/hooks";
@@ -5,7 +7,6 @@ import {
   Stack,
   IconButton,
   useTheme,
-  useMediaQuery,
   Typography,
   Box,
   Badge,
@@ -13,39 +14,32 @@ import {
 } from "@mui/material";
 import { FavoriteBorderOutlined } from "@mui/icons-material";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import PersonCustomIcon from "@/shared/assets/icons/userAccount.svg";
 import ShoppingCartCustomIcon from "@/shared/assets/icons/backet.svg";
+import { ICON_SIZES } from "../model/constants";
+
+interface HeaderActionsProps {
+  isMobile: boolean;
+}
 
 interface HeaderIconConfig {
   url: string;
   icon: React.ReactNode;
   label: string;
-  onClick?: (e: React.MouseEvent) => void;
   badge?: number;
 }
 
-const ICON_SIZES = {
-  mobile: 28,
-  desktop: 24,
-} as const;
-
-export const HeaderActions = () => {
+export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
   const theme = useTheme();
-  const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const { getCartItemsCount } = useCartChecks();
   const { getFavoritesItemsCount } = useFavoritesChecks();
 
   const iconSize = isMobile ? ICON_SIZES.mobile : ICON_SIZES.desktop;
 
-  const handleProfileClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    router.push(isAuthenticated ? "/dashboard" : "/auth/login");
-  };
+  const profileUrl = isAuthenticated ? "/dashboard" : "/auth/login";
 
   const headerIcons: HeaderIconConfig[] = [
     {
@@ -62,7 +56,7 @@ export const HeaderActions = () => {
       badge: getFavoritesItemsCount,
     },
     {
-      url: "/auth/login",
+      url: profileUrl,
       icon: (
         <Image
           src={PersonCustomIcon}
@@ -73,7 +67,6 @@ export const HeaderActions = () => {
         />
       ),
       label: "Профиль",
-      onClick: handleProfileClick,
     },
     {
       url: "/checkout",
@@ -102,12 +95,8 @@ export const HeaderActions = () => {
       }}
       aria-label="Действия в шапке сайта"
     >
-      {headerIcons.map((item, index) => (
-        <HeaderActionItem
-          key={`header-action-${index}`}
-          {...item}
-          isMobile={isMobile}
-        />
+      {headerIcons.map((item) => (
+        <HeaderActionItem key={item.label} {...item} isMobile={isMobile} />
       ))}
     </Stack>
   );
@@ -121,7 +110,6 @@ const HeaderActionItem = ({
   url,
   icon,
   label,
-  onClick,
   badge,
   isMobile,
 }: HeaderActionItemProps) => {
@@ -147,7 +135,7 @@ const HeaderActionItem = ({
             {
               duration: theme.transitions.duration.shorter,
               easing: theme.transitions.easing.easeInOut,
-            }
+            },
           ),
           "&:hover": {
             backgroundColor: alpha(theme.palette.common.white, 0.15),
@@ -197,13 +185,7 @@ const HeaderActionItem = ({
   );
 
   return (
-    <Link
-      href={url}
-      passHref
-      style={{ textDecoration: "none" }}
-      onClick={onClick}
-      aria-label={label}
-    >
+    <Link href={url} style={{ textDecoration: "none" }} aria-label={label}>
       {content}
     </Link>
   );

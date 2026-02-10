@@ -20,7 +20,12 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CategoryIcon from "@mui/icons-material/Category";
 import { alpha } from "@mui/material/styles";
-import { CategoryModel, useCategories } from "@/entities/category";
+import {
+  CategoryModel,
+  useCategories,
+  getCategorySlug,
+  buildCategoryPath,
+} from "@/entities/category";
 
 interface CategoriesMenuProps {
   onClose: () => void;
@@ -43,16 +48,8 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
   const router = useRouter();
   const hasChildren = category.childs?.length > 0;
 
-  // Создаем текущий slug для категории
-  // В CategoriesMenu.tsx
-  const currentSlug = `${category.id}-${encodeURIComponent(
-    category.name.toLowerCase().replace(/\s+/g, "-")
-  )}`;
-
-  // Формируем полный путь категории
-  const categoryPath = `/catalog/category/${[...parentSlugs, currentSlug].join(
-    "/"
-  )}`;
+  const currentSlug = getCategorySlug(category);
+  const categoryPath = buildCategoryPath(parentSlugs, category);
 
   const handleToggle = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -73,14 +70,14 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
         disablePadding
         divider={level === 0}
         sx={{
-          pl: level * 2, // Отступ для вложенных элементов
+          pl: level * 2,
         }}
       >
         <ListItemButton
           onClick={handleCategoryClick}
           sx={{
             py: 1.5,
-            pl: level > 0 ? 2 : 2,
+            pl: 2,
             minHeight: 48,
             "&:hover": {
               backgroundColor: (theme) =>

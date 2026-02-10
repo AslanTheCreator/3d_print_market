@@ -8,7 +8,7 @@ export const Footer = () => {
     <Box component={"footer"} bgcolor={"#54C5E5"} color={"white"}>
       <Container>
         <Stack justifyContent={"center"} alignItems={"center"} p={"16px 0"}>
-          <Typography>© 2025 3D Print Market</Typography>
+          <Typography>© 2026 Figurzilla</Typography>
         </Stack>
       </Container>
     </Box>

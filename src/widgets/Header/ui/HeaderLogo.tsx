@@ -1,24 +1,23 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Stack, Box, useTheme, useMediaQuery } from "@mui/material";
+import { Stack, Box } from "@mui/material";
 import { HeaderCategoryButton } from "./HeaderCategoryButton";
 import Logo from "@/shared/assets/logo/logo.svg";
 import LogoDesktop from "@/shared/assets/logo/logo-desktop.png";
+import { LOGO_SIZES } from "../model/constants";
 
-export const HeaderLogo: React.FC = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+interface HeaderLogoProps {
+  isMobile: boolean;
+}
 
-  // Адаптивные размеры логотипа динозаврика
-  const getLogoSize = () => {
-    if (isMobile) return { width: 60, height: 90 };
-    return { width: 69, height: 85 };
-  };
-
-  const logoSize = getLogoSize();
+export const HeaderLogo: React.FC<HeaderLogoProps> = ({ isMobile }) => {
+  const logoSize = useMemo(
+    () => (isMobile ? LOGO_SIZES.mobile : LOGO_SIZES.desktop),
+    [isMobile],
+  );
 
   if (!isMobile) {
     return (
@@ -38,7 +37,7 @@ export const HeaderLogo: React.FC = () => {
             style={{ objectFit: "contain" }}
           />
         </Link>
-        <HeaderCategoryButton />
+        <HeaderCategoryButton isMobile={false} />
       </Stack>
     );
   }
@@ -65,7 +64,7 @@ export const HeaderLogo: React.FC = () => {
           left: 17,
         }}
       >
-        <HeaderCategoryButton />
+        <HeaderCategoryButton isMobile />
       </Box>
     </Stack>
   );

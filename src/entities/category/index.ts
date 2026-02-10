@@ -8,3 +8,4 @@ export {
   createBreadcrumbs,
   generateCategoryTitle,
 } from "./lib/createBreadcrumbs";
+export { getCategorySlug, buildCategoryPath } from "./lib/categorySlug";

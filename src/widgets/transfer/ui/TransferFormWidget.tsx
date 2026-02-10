@@ -380,7 +380,10 @@ const TransferForm: React.FC<TransferFormProps> = ({
             type="submit"
             variant="contained"
             size="large"
-            disabled={isPending || !hasChanges}
+            disabled={
+              isPending ||
+              !Object.values(itemsData || {}).some((n) => n.enabled)
+            }
             sx={{ minWidth: { xs: "100%", sm: 180 } }}
             startIcon={
               isPending ? (
