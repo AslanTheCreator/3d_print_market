@@ -324,13 +324,7 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
                       icon={SOCIAL_ICONS[key] ?? <Telegram />}
                       isEnabled={field.value ?? false}
                       isExpanded={isExpanded}
-                      onEnabledChange={(checked: boolean) => {
-                        field.onChange(checked);
-                        // Авто-раскрытие при включении
-                        if (checked && !isExpanded) {
-                          toggleExpanded(key);
-                        }
-                      }}
+                      onEnabledChange={field.onChange}
                       onToggleExpand={() => toggleExpanded(key)}
                     >
                       <Grid container spacing={2}>

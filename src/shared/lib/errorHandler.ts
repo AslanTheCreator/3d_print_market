@@ -90,7 +90,9 @@ export const ErrorCodes = {
   // Validation
   COUNT_INVALID: "COUNT_INVALID",
 
-  // Можно добавлять другие коды по мере необходимости
+  // Product creation
+  TRANSFER_NOT_FOUND: "TRANSFER_NOT_FOUND",
+  SOCIAL_NETWORK_NOT_FOUND: "SOCIAL_NETWORK_NOT_FOUND",
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

@@ -30,7 +30,8 @@ import { useNotification } from "@/app/providers";
 import { useCreateProduct } from "@/entities/product";
 import { useMultipleImageUpload } from "@/features/image-upload";
 import { useCategories } from "@/entities/category";
-import { ApiError } from "@/shared/lib/errorHandler";
+import { ApiError, ErrorCodes } from "@/shared/lib/errorHandler";
+import { AppLink } from "@/shared/ui/app-link/AppLink";
 
 export const CreateProductForm = () => {
   const theme = useTheme();
@@ -80,11 +81,46 @@ export const CreateProductForm = () => {
         setTimeout(() => router.push("/dashboard/products"), 1500);
       },
       onError: (error) => {
-        const errorMessage =
-          error instanceof ApiError
-            ? error.message
-            : "Произошла ошибка при создании товара";
-        showNotification(errorMessage, "error");
+        if (error instanceof ApiError) {
+          if (error.isCode(ErrorCodes.TRANSFER_NOT_FOUND)) {
+            showNotification(
+              <>
+                {error.message}.{" "}
+                <AppLink
+                  href="/dashboard/settings?tab=shipping"
+                  color="primary"
+                  underline="hover"
+                  sx={{ fontWeight: 600 }}
+                >
+                  Настроить доставку →
+                </AppLink>
+              </>,
+              "info",
+            );
+            return;
+          }
+
+          if (error.isCode(ErrorCodes.SOCIAL_NETWORK_NOT_FOUND)) {
+            showNotification(
+              <>
+                {error.message}.{" "}
+                <AppLink
+                  href="/dashboard/settings?tab=contacts"
+                  color={"inherit"}
+                  sx={{ fontWeight: 600 }}
+                >
+                  Настроить соц. сети →
+                </AppLink>
+              </>,
+              "info",
+            );
+            return;
+          }
+
+          showNotification(error.message, "error");
+        } else {
+          showNotification("Произошла ошибка при создании товара", "error");
+        }
       },
     });
   };

@@ -5,19 +5,19 @@ import { Snackbar, Alert, Stack } from "@mui/material";
 
 interface Notification {
   id: string;
-  message: string;
+  message: React.ReactNode;
   severity: "success" | "error" | "warning" | "info";
 }
 
 interface NotificationContextType {
   showNotification: (
-    message: string,
-    severity?: Notification["severity"]
+    message: React.ReactNode,
+    severity?: Notification["severity"],
   ) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export const useNotification = () => {
@@ -40,8 +40,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const showNotification = (
-    message: string,
-    severity: Notification["severity"] = "success"
+    message: React.ReactNode,
+    severity: Notification["severity"] = "success",
   ) => {
     const id = Date.now().toString();
     const newNotification: Notification = { id, message, severity };

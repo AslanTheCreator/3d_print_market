@@ -293,12 +293,7 @@ const TransferForm: React.FC<TransferFormProps> = ({
                       icon={SHIPPING_ICONS[key as ShippingMethod] ?? null}
                       isEnabled={field.value ?? false}
                       isExpanded={isExpanded}
-                      onEnabledChange={(checked: boolean) => {
-                        field.onChange(checked);
-                        if (checked && !isExpanded) {
-                          toggleExpanded(key);
-                        }
-                      }}
+                      onEnabledChange={field.onChange}
                       onToggleExpand={() => toggleExpanded(key)}
                       showExpandIcon={!isFree}
                     >
