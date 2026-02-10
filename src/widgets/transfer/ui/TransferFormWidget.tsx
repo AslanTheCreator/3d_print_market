@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   Box,
   TextField,
@@ -13,7 +13,7 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
-import { LocalShipping, Store, Mail, InfoOutlined } from "@mui/icons-material";
+import { InfoOutlined } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
 import {
   useTransfers,
@@ -23,13 +23,13 @@ import {
   SHIPPING_ICONS,
   type ShippingMethod,
   type Transfer,
+  type TransferInput,
 } from "@/entities/transfer";
 import { useDictionary } from "@/entities/dictionary";
 import { useNotification } from "@/app/providers";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
-import { useBatchForm } from "@/shared/hooks/useBatchForm";
-import { useFormInitializer } from "@/shared/hooks/useFormInitializer";
-import { Currency } from "@/shared/types";
+import type { DictionaryItem } from "@/entities/dictionary/model/types";
+import type { Currency } from "@/shared/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -41,230 +41,204 @@ interface TransferFormItem {
   currency: string;
 }
 
-interface FormData {
+interface TransferFormData {
   items: Record<string, TransferFormItem>;
 }
 
-// Методы без настройки цены (бесплатные)
-const FREE_METHODS = new Set(["PRODUCT_PICKUP"]);
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
 
-// Валюта по умолчанию
+const FREE_METHODS = new Set(["PRODUCT_PICKUP"]);
 const DEFAULT_CURRENCY = "RUB";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Сравнивает существующий трансфер с данными формы.
- * Возвращает true, если данные НЕ изменились.
- */
-const compareTransferData = (
-  existing: Transfer,
-  formData: TransferFormItem,
-): boolean => {
-  // Для бесплатных методов сравниваем только валюту
-  if (FREE_METHODS.has(existing.sending)) {
-    return existing.currency === formData.currency;
+function buildDefaultValues(
+  methods: DictionaryItem[],
+  existing: Transfer[],
+): TransferFormData {
+  const byMethod: Record<string, Transfer> = {};
+  for (const t of existing) {
+    byMethod[t.sending] = t;
   }
-  return (
-    existing.price === formData.price && existing.currency === formData.currency
-  );
-};
+
+  const items: Record<string, TransferFormItem> = {};
+  for (const method of methods) {
+    const found = byMethod[method.value];
+    items[method.value] = {
+      enabled: !!found,
+      price: found?.price ?? 0,
+      currency: found?.currency ?? DEFAULT_CURRENCY,
+    };
+  }
+
+  return { items };
+}
+
+function buildInitialExpanded(
+  methods: DictionaryItem[],
+  existing: Transfer[],
+): Set<string> {
+  const existingMethods = new Set(existing.map((t) => t.sending));
+  const expanded = new Set<string>();
+  for (const method of methods) {
+    if (existingMethods.has(method.value as ShippingMethod)) {
+      expanded.add(method.value);
+    }
+  }
+  return expanded;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Component
+// Form Component (рендерится ТОЛЬКО когда данные загружены)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const TransferFormWidget: React.FC = () => {
+interface TransferFormProps {
+  methods: DictionaryItem[];
+  currencies: DictionaryItem[];
+  existing: Transfer[];
+}
+
+const TransferForm: React.FC<TransferFormProps> = ({
+  methods,
+  currencies,
+  existing,
+}) => {
   const { showNotification } = useNotification();
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Data Fetching
-  // ─────────────────────────────────────────────────────────────────────────
-
-  const { data: shippingMethods, isLoading: methodsLoading } =
-    useDictionary("SHOPPING_METHODS");
-  const { data: currencies, isLoading: currenciesLoading } =
-    useDictionary("CURRENCY");
-  const { data: transfers = [], isLoading: transfersLoading } = useTransfers();
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Mutations
-  // ─────────────────────────────────────────────────────────────────────────
 
   const createMutation = useCreateTransfer();
   const updateMutation = useUpdateTransfer();
   const deleteMutation = useDeleteTransfer();
 
-  const isMutating =
+  const isPending =
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteMutation.isPending;
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Form Setup
-  // ─────────────────────────────────────────────────────────────────────────
+  // Маппинг существующих трансферов — для submit
+  const existingByMethod = useMemo(() => {
+    const map: Record<string, Transfer> = {};
+    for (const t of existing) {
+      map[t.sending] = t;
+    }
+    return map;
+  }, [existing]);
+
+  // defaultValues — вычисляются ОДИН раз
+  const [defaultValues] = useState(() => buildDefaultValues(methods, existing));
 
   const {
     control,
     handleSubmit,
     watch,
-    setValue,
-    reset,
-    getValues,
-    formState: { errors, isDirty },
-  } = useForm<FormData>({
+    formState: { errors },
+  } = useForm<TransferFormData>({
     mode: "onChange",
-    defaultValues: { items: {} },
+    defaultValues,
   });
+
+  // Раскрытые карточки
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(() =>
+    buildInitialExpanded(methods, existing),
+  );
+
+  const toggleExpanded = useCallback((key: string) => {
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
 
   const itemsData = watch("items");
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Batch Form Logic (expanded items, compute changes)
-  // ─────────────────────────────────────────────────────────────────────────
+  // Есть ли изменения относительно серверных данных
+  const hasChanges = useMemo(() => {
+    if (!itemsData) return false;
 
-  const { toggleExpanded, isExpanded, computeChanges } = useBatchForm<
-    Transfer,
-    { sending: ShippingMethod; price: number; currency: Currency }
-  >({
-    existingItems: transfers,
-    getItemKey: (item) => item.sending,
-    getItemId: (item) => item.id,
-    mapToCreateModel: (data, key) => ({
-      sending: key as ShippingMethod,
-      price: FREE_METHODS.has(key) ? 0 : data.price,
-      currency: data.currency as Currency,
-    }),
-    compareItemData: compareTransferData,
-  });
+    for (const [method, formItem] of Object.entries(itemsData)) {
+      const prev = existingByMethod[method];
+      const wasEnabled = !!prev;
+      const nowEnabled = !!formItem.enabled;
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Form Initialization (runs once when data is loaded)
-  // ─────────────────────────────────────────────────────────────────────────
+      // Включили новый или выключили существующий
+      if (wasEnabled !== nowEnabled) return true;
 
-  // Фильтруем FREE_POST — его нельзя выбрать вручную
-  const availableMethods = React.useMemo(
-    () => shippingMethods?.filter((m) => m.value !== "FREE_POST") || [],
-    [shippingMethods],
-  );
+      // Изменили price/currency у существующего
+      if (wasEnabled && nowEnabled) {
+        const isFree = FREE_METHODS.has(method);
+        if (!isFree && prev.price !== formItem.price) return true;
+        if (prev.currency !== formItem.currency) return true;
+      }
+    }
 
-  useFormInitializer({
-    dictionaryItems: availableMethods,
-    existingItems: transfers,
-    isLoading: transfersLoading,
-    setValue,
-    getDictionaryKey: (item) => item.value,
-    getExistingKey: (item) => item.sending,
-    mapExistingToFormData: (item) => ({
-      price: item.price,
-      currency: item.currency,
-    }),
-    getDefaultFormData: () => ({
-      price: 0,
-      currency: DEFAULT_CURRENCY,
-    }),
-    onInitialized: (expandedKeys) => {
-      // Раскрываем карточки для уже включённых методов
-      expandedKeys.forEach((key) => {
-        if (!isExpanded(key)) {
-          toggleExpanded(key);
-        }
-      });
-    },
-  });
+    return false;
+  }, [itemsData, existingByMethod]);
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Submit Handler
+  // Submit
   // ─────────────────────────────────────────────────────────────────────────
 
   const onSubmit = useCallback(
-    async (data: FormData) => {
-      const { toCreate, toUpdate, toDelete } = computeChanges(data.items);
+    async (data: TransferFormData) => {
+      const operations: Promise<unknown>[] = [];
 
-      // Проверяем, есть ли что сохранять
-      if (
-        toCreate.length === 0 &&
-        toUpdate.length === 0 &&
-        toDelete.length === 0
-      ) {
+      for (const [method, formItem] of Object.entries(data.items)) {
+        const prev = existingByMethod[method];
+        const isFree = FREE_METHODS.has(method);
+
+        const input: TransferInput = {
+          sending: method as ShippingMethod,
+          price: isFree ? 0 : formItem.price,
+          currency: formItem.currency as Currency,
+        };
+
+        if (formItem.enabled) {
+          if (prev) {
+            // Обновляем только при изменениях
+            const hasChanges =
+              prev.price !== input.price || prev.currency !== input.currency;
+            if (hasChanges) {
+              operations.push(
+                updateMutation.mutateAsync({ id: prev.id, input }),
+              );
+            }
+          } else {
+            operations.push(createMutation.mutateAsync(input));
+          }
+        } else if (prev) {
+          operations.push(deleteMutation.mutateAsync(prev.id));
+        }
+      }
+
+      if (operations.length === 0) {
+        showNotification("Нет изменений для сохранения", "info");
         return;
       }
 
       try {
-        const operations: Promise<unknown>[] = [];
-
-        // Создание новых записей
-        toCreate.forEach((input) => {
-          operations.push(createMutation.mutateAsync(input));
-        });
-
-        // Обновление существующих записей
-        toUpdate.forEach(({ id, data: input }) => {
-          operations.push(updateMutation.mutateAsync({ id, input }));
-        });
-
-        // Удаление отключённых записей
-        toDelete.forEach((id) => {
-          operations.push(deleteMutation.mutateAsync(id));
-        });
-
         await Promise.all(operations);
-
-        // Сбрасываем isDirty, сохраняя текущие значения как новые defaultValues
-        reset(getValues(), { keepValues: true });
-
         showNotification("Способы доставки сохранены", "success");
       } catch (error) {
-        const message =
+        const msg =
           error instanceof Error
             ? error.message
             : "Не удалось сохранить изменения";
-        showNotification(message, "error");
+        showNotification(msg, "error");
       }
     },
     [
-      computeChanges,
+      existingByMethod,
       createMutation,
       updateMutation,
       deleteMutation,
       showNotification,
-      reset,
-      getValues,
     ],
   );
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Loading State
-  // ─────────────────────────────────────────────────────────────────────────
-
-  const isLoading = transfersLoading || methodsLoading || currenciesLoading;
-
-  if (isLoading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight={200}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Error State
-  // ─────────────────────────────────────────────────────────────────────────
-
-  if (!availableMethods.length) {
-    return (
-      <Alert severity="error" sx={{ borderRadius: 2 }}>
-        Не удалось загрузить способы доставки. Попробуйте обновить страницу.
-      </Alert>
-    );
-  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // Render
@@ -301,33 +275,39 @@ export const TransferFormWidget: React.FC = () => {
           </Typography>
 
           <Stack spacing={2}>
-            {availableMethods.map((method) => {
-              const methodKey = method.value;
-              const isEnabled = itemsData?.[methodKey]?.enabled ?? false;
-              const isFreeMethod = FREE_METHODS.has(methodKey);
+            {methods.map((method) => {
+              const key = method.value;
+              const isEnabled = itemsData?.[key]?.enabled ?? false;
+              const isExpanded = expandedItems.has(key);
+              const isFree = FREE_METHODS.has(key);
 
               return (
                 <Controller
-                  key={methodKey}
-                  name={`items.${methodKey}.enabled`}
+                  key={key}
+                  name={`items.${key}.enabled`}
                   control={control}
                   render={({ field }) => (
                     <CollapsibleFormCard
-                      value={methodKey}
+                      value={key}
                       label={method.description}
-                      icon={SHIPPING_ICONS[methodKey as ShippingMethod]}
+                      icon={SHIPPING_ICONS[key as ShippingMethod] ?? null}
                       isEnabled={field.value ?? false}
-                      isExpanded={isExpanded(methodKey)}
-                      onEnabledChange={field.onChange}
-                      onToggleExpand={() => toggleExpanded(methodKey)}
-                      showExpandIcon={!isFreeMethod}
+                      isExpanded={isExpanded}
+                      onEnabledChange={(checked: boolean) => {
+                        field.onChange(checked);
+                        if (checked && !isExpanded) {
+                          toggleExpanded(key);
+                        }
+                      }}
+                      onToggleExpand={() => toggleExpanded(key)}
+                      showExpandIcon={!isFree}
                     >
-                      {!isFreeMethod && (
+                      {!isFree && (
                         <Grid container spacing={2}>
                           {/* Цена */}
                           <Grid item xs={12} sm={6}>
                             <Controller
-                              name={`items.${methodKey}.price`}
+                              name={`items.${key}.price`}
                               control={control}
                               rules={{
                                 required: isEnabled
@@ -337,19 +317,22 @@ export const TransferFormWidget: React.FC = () => {
                                   ? { value: 0, message: "Минимум 0" }
                                   : undefined,
                               }}
-                              render={({ field }) => (
+                              render={({ field: priceField }) => (
                                 <TextField
-                                  {...field}
+                                  {...priceField}
+                                  value={priceField.value ?? 0}
                                   type="number"
                                   fullWidth
                                   label="Стоимость доставки"
                                   inputProps={{ min: 0, step: 1 }}
-                                  error={!!errors.items?.[methodKey]?.price}
+                                  error={!!errors.items?.[key]?.price}
                                   helperText={
-                                    errors.items?.[methodKey]?.price?.message
+                                    errors.items?.[key]?.price?.message
                                   }
                                   onChange={(e) =>
-                                    field.onChange(Number(e.target.value) || 0)
+                                    priceField.onChange(
+                                      Number(e.target.value) || 0,
+                                    )
                                   }
                                 />
                               )}
@@ -359,23 +342,26 @@ export const TransferFormWidget: React.FC = () => {
                           {/* Валюта */}
                           <Grid item xs={12} sm={6}>
                             <Controller
-                              name={`items.${methodKey}.currency`}
+                              name={`items.${key}.currency`}
                               control={control}
                               rules={{
                                 required: isEnabled ? "Выберите валюту" : false,
                               }}
-                              render={({ field }) => (
+                              render={({ field: currencyField }) => (
                                 <TextField
-                                  {...field}
+                                  {...currencyField}
+                                  value={
+                                    currencyField.value ?? DEFAULT_CURRENCY
+                                  }
                                   select
                                   fullWidth
                                   label="Валюта"
-                                  error={!!errors.items?.[methodKey]?.currency}
+                                  error={!!errors.items?.[key]?.currency}
                                   helperText={
-                                    errors.items?.[methodKey]?.currency?.message
+                                    errors.items?.[key]?.currency?.message
                                   }
                                 >
-                                  {currencies?.map((c) => (
+                                  {currencies.map((c) => (
                                     <MenuItem key={c.value} value={c.value}>
                                       {c.description}
                                     </MenuItem>
@@ -399,18 +385,76 @@ export const TransferFormWidget: React.FC = () => {
             type="submit"
             variant="contained"
             size="large"
-            disabled={isMutating || !isDirty}
+            disabled={isPending || !hasChanges}
             sx={{ minWidth: { xs: "100%", sm: 180 } }}
             startIcon={
-              isMutating ? (
+              isPending ? (
                 <CircularProgress size={16} color="inherit" />
               ) : undefined
             }
           >
-            {isMutating ? "Сохранение..." : "Сохранить"}
+            {isPending ? "Сохранение..." : "Сохранить"}
           </Button>
         </Box>
       </Box>
     </Box>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Loader Component (публичный экспорт)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const TransferFormWidget: React.FC = () => {
+  const { data: shippingMethods, isLoading: methodsLoading } =
+    useDictionary("SHOPPING_METHODS");
+  const { data: currencies, isLoading: currenciesLoading } =
+    useDictionary("CURRENCY");
+  const { data: transfers = [], isLoading: transfersLoading } = useTransfers();
+
+  const isLoading = methodsLoading || currenciesLoading || transfersLoading;
+
+  // Фильтруем FREE_POST — его нельзя выбрать вручную
+  const availableMethods = useMemo(
+    () => shippingMethods?.filter((m) => m.value !== "FREE_POST") ?? [],
+    [shippingMethods],
+  );
+
+  if (isLoading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight={200}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!availableMethods.length) {
+    return (
+      <Alert severity="error" sx={{ borderRadius: 2 }}>
+        Не удалось загрузить способы доставки. Попробуйте обновить страницу.
+      </Alert>
+    );
+  }
+
+  if (!currencies?.length) {
+    return (
+      <Alert severity="error" sx={{ borderRadius: 2 }}>
+        Не удалось загрузить валюты. Попробуйте обновить страницу.
+      </Alert>
+    );
+  }
+
+  // Форма рендерится ТОЛЬКО когда все данные готовы
+  return (
+    <TransferForm
+      methods={availableMethods}
+      currencies={currencies}
+      existing={transfers}
+    />
   );
 };

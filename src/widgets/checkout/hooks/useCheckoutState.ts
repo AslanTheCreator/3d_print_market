@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { Address } from "@/entities/address/model/types";
 import { ShippingMethod } from "@/entities/transfer/model/types";
@@ -27,7 +27,8 @@ export const useCheckoutState = ({ cartItems = [] }: UseCheckoutStateProps) => {
 
   // Синхронизация selectedProductIds при изменении cartItems
   // (добавляем новые товары, удаляем отсутствующие)
-  useMemo(() => {
+  // ✅ Правильный код
+  useEffect(() => {
     const currentProductIds = new Set(cartItems.map((item) => item.product.id));
 
     setSelectedProductIds((prev) => {
@@ -36,14 +37,6 @@ export const useCheckoutState = ({ cartItems = [] }: UseCheckoutStateProps) => {
       // Оставляем только те, что есть в корзине
       prev.forEach((id) => {
         if (currentProductIds.has(id)) {
-          newSet.add(id);
-        }
-      });
-
-      // Добавляем новые товары (которых не было раньше)
-      currentProductIds.forEach((id) => {
-        if (!prev.has(id) && prev.size === 0) {
-          // Если это первая загрузка - добавляем все
           newSet.add(id);
         }
       });

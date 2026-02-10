@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   Box,
   TextField,
@@ -26,23 +26,30 @@ import {
   useUpdateSocial,
   useDeleteSocial,
   type SocialNetwork,
+  type SocialNetworkInput,
   type SocialNetworkType,
 } from "@/entities/social-networks";
 import { useNotification } from "@/app/providers";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
+import type { DictionaryItem } from "@/entities/dictionary/model/types";
 
-// Тип данных для одной соцсети в форме
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface SocialFormItem {
   enabled: boolean;
   login: string;
 }
 
-// Тип всей формы
 interface SocialFormData {
   items: Record<string, SocialFormItem>;
 }
 
-// Иконки для соцсетей
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
 const SOCIAL_ICONS: Record<string, React.ReactNode> = {
   VK: (
     <Box
@@ -65,7 +72,6 @@ const SOCIAL_ICONS: Record<string, React.ReactNode> = {
   WHATSAPP: <WhatsApp />,
 };
 
-// Плейсхолдеры для разных соцсетей
 const SOCIAL_PLACEHOLDERS: Record<string, string> = {
   VK: "@username или id123456",
   TELEGRAM: "@username",
@@ -73,170 +79,201 @@ const SOCIAL_PLACEHOLDERS: Record<string, string> = {
   FACEBOOK: "Имя пользователя",
 };
 
-// Лейблы для полей ввода
 const SOCIAL_LABELS: Record<string, string> = {
   WHATSAPP: "Номер телефона",
-  DEFAULT: "Имя пользователя",
 };
 
-export const SocialNetworksFormWidget: React.FC = () => {
-  // Data fetching
-  const { data: socialNetworkTypes, isLoading: typesLoading } =
-    useDictionary("SOCIAL_NETWORK");
-  const { data: socialNetworks = [], isLoading: networksLoading } =
-    useSocialNetworks();
+const DEFAULT_LABEL = "Имя пользователя";
 
-  // Mutations
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Строит начальные значения формы из словаря и существующих данных.
+ * Вызывается ОДИН раз перед монтированием формы.
+ */
+function buildDefaultValues(
+  types: DictionaryItem[],
+  existing: SocialNetwork[],
+): SocialFormData {
+  const byType: Record<string, SocialNetwork> = {};
+  for (const item of existing) {
+    byType[item.type] = item;
+  }
+
+  const items: Record<string, SocialFormItem> = {};
+  for (const type of types) {
+    const found = byType[type.value];
+    items[type.value] = {
+      enabled: !!found,
+      login: found?.login ?? "",
+    };
+  }
+
+  return { items };
+}
+
+/**
+ * Определяет начально раскрытые карточки (те, что enabled).
+ */
+function buildInitialExpanded(
+  types: DictionaryItem[],
+  existing: SocialNetwork[],
+): Set<string> {
+  const existingTypes = new Set(existing.map((s) => s.type));
+  const expanded = new Set<string>();
+  for (const type of types) {
+    if (existingTypes.has(type.value as SocialNetworkType)) {
+      expanded.add(type.value);
+    }
+  }
+  return expanded;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Form Component (рендерится ТОЛЬКО когда данные уже загружены)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface SocialNetworksFormProps {
+  types: DictionaryItem[];
+  existing: SocialNetwork[];
+}
+
+const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
+  types,
+  existing,
+}) => {
+  const { showNotification } = useNotification();
+
   const createMutation = useCreateSocial();
   const updateMutation = useUpdateSocial();
   const deleteMutation = useDeleteSocial();
-
-  const { showNotification } = useNotification();
 
   const isPending =
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteMutation.isPending;
 
-  // Маппинг существующих соцсетей по типу
-  const socialsByType = React.useMemo(() => {
-    return socialNetworks.reduce<Record<string, SocialNetwork>>((acc, s) => {
-      acc[s.type] = s;
-      return acc;
-    }, {});
-  }, [socialNetworks]);
+  // Маппинг существующих соцсетей по типу — для submit
+  const existingByType = useMemo(() => {
+    const map: Record<string, SocialNetwork> = {};
+    for (const item of existing) {
+      map[item.type] = item;
+    }
+    return map;
+  }, [existing]);
 
-  // Form setup
+  // defaultValues вычисляются ОДИН раз при создании компонента
+  // (types и existing приходят уже загруженными из родителя)
+  const [defaultValues] = useState(() => buildDefaultValues(types, existing));
+
   const {
     control,
     handleSubmit,
     watch,
-    reset,
-    formState: { errors, isDirty },
+    formState: { errors },
   } = useForm<SocialFormData>({
     mode: "onChange",
-    defaultValues: { items: {} },
+    defaultValues,
   });
 
-  // Состояние раскрытых карточек
-  const [expandedItems, setExpandedItems] = React.useState<Set<string>>(
-    new Set(),
+  // Раскрытые карточки — локальное состояние
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(() =>
+    buildInitialExpanded(types, existing),
   );
 
-  const toggleExpanded = React.useCallback((key: string) => {
+  const toggleExpanded = useCallback((key: string) => {
     setExpandedItems((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }, []);
 
-  // Инициализация формы при загрузке данных
-  useEffect(() => {
-    if (!socialNetworkTypes?.length || networksLoading) return;
-
-    const formData: Record<string, SocialFormItem> = {};
-    const expanded = new Set<string>();
-
-    socialNetworkTypes.forEach((type) => {
-      const existing = socialsByType[type.value];
-
-      if (existing) {
-        formData[type.value] = {
-          enabled: true,
-          login: existing.login,
-        };
-        expanded.add(type.value);
-      } else {
-        formData[type.value] = {
-          enabled: false,
-          login: "",
-        };
-      }
-    });
-
-    reset({ items: formData }, { keepDirty: false });
-    setExpandedItems(expanded);
-  }, [socialNetworkTypes, socialsByType, networksLoading, reset]);
-
   const itemsData = watch("items");
 
-  // Сохранение формы
-  const onSubmit = async (data: SocialFormData) => {
-    const operations: Promise<void>[] = [];
+  // Есть ли изменения относительно серверных данных
+  const hasChanges = useMemo(() => {
+    if (!itemsData) return false;
 
-    for (const [type, formItem] of Object.entries(data.items)) {
-      const existing = socialsByType[type];
+    for (const [type, formItem] of Object.entries(itemsData)) {
+      const prev = existingByType[type];
+      const wasEnabled = !!prev;
+      const nowEnabled = !!formItem.enabled;
 
-      const input = {
-        type: type as SocialNetworkType,
-        login: formItem.login,
-      };
+      // Включили новую или выключили существующую
+      if (wasEnabled !== nowEnabled) return true;
 
-      if (formItem.enabled) {
-        if (existing) {
-          // Обновляем только если есть изменения
-          const hasChanges = existing.login !== input.login;
+      // Изменили login у существующей
+      if (wasEnabled && nowEnabled && prev.login !== formItem.login)
+        return true;
+    }
 
-          if (hasChanges) {
-            operations.push(
-              updateMutation
-                .mutateAsync({ id: existing.id, input })
-                .then(() => {}),
-            );
+    return false;
+  }, [itemsData, existingByType]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Submit
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const onSubmit = useCallback(
+    async (data: SocialFormData) => {
+      const operations: Promise<unknown>[] = [];
+
+      for (const [type, formItem] of Object.entries(data.items)) {
+        const prev = existingByType[type];
+        const input: SocialNetworkInput = {
+          type: type as SocialNetworkType,
+          login: formItem.login,
+        };
+
+        if (formItem.enabled) {
+          if (prev) {
+            // Обновляем только если login изменился
+            if (prev.login !== formItem.login) {
+              operations.push(
+                updateMutation.mutateAsync({ id: prev.id, input }),
+              );
+            }
+          } else {
+            operations.push(createMutation.mutateAsync(input));
           }
-        } else {
-          // Создаём новый
-          operations.push(createMutation.mutateAsync(input).then(() => {}));
+        } else if (prev) {
+          // Была включена, теперь выключена → удаляем
+          operations.push(deleteMutation.mutateAsync(prev.id));
         }
-      } else if (existing) {
-        // Удаляем выключенный
-        operations.push(deleteMutation.mutateAsync(existing.id));
       }
-    }
 
-    if (operations.length === 0) {
-      return;
-    }
+      if (operations.length === 0) {
+        showNotification("Нет изменений для сохранения", "info");
+        return;
+      }
 
-    try {
-      await Promise.all(operations);
-      showNotification("Социальные сети сохранены", "success");
-    } catch (error) {
-      const msg =
-        error instanceof Error
-          ? error.message
-          : "Не удалось сохранить изменения";
-      showNotification(msg, "error");
-    }
-  };
+      try {
+        await Promise.all(operations);
+        showNotification("Социальные сети сохранены", "success");
+      } catch (error) {
+        const msg =
+          error instanceof Error
+            ? error.message
+            : "Не удалось сохранить изменения";
+        showNotification(msg, "error");
+      }
+    },
+    [
+      existingByType,
+      createMutation,
+      updateMutation,
+      deleteMutation,
+      showNotification,
+    ],
+  );
 
-  // Loading state
-  if (networksLoading || typesLoading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight={200}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  // Error state
-  if (!socialNetworkTypes?.length) {
-    return (
-      <Alert severity="error" sx={{ borderRadius: 2 }}>
-        Не удалось загрузить социальные сети. Попробуйте обновить страницу.
-      </Alert>
-    );
-  }
+  // ─────────────────────────────────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <Box>
@@ -270,52 +307,53 @@ export const SocialNetworksFormWidget: React.FC = () => {
           </Typography>
 
           <Stack spacing={2}>
-            {socialNetworkTypes.map((network) => {
-              const networkKey = network.value;
-              const isEnabled = itemsData?.[networkKey]?.enabled ?? false;
-              const isExpanded = expandedItems.has(networkKey);
+            {types.map((network) => {
+              const key = network.value;
+              const isEnabled = itemsData?.[key]?.enabled ?? false;
+              const isExpanded = expandedItems.has(key);
 
               return (
                 <Controller
-                  key={networkKey}
-                  name={`items.${networkKey}.enabled`}
+                  key={key}
+                  name={`items.${key}.enabled`}
                   control={control}
                   render={({ field }) => (
                     <CollapsibleFormCard
-                      value={networkKey}
+                      value={key}
                       label={network.description}
-                      icon={SOCIAL_ICONS[networkKey] || <Telegram />}
+                      icon={SOCIAL_ICONS[key] ?? <Telegram />}
                       isEnabled={field.value ?? false}
                       isExpanded={isExpanded}
-                      onEnabledChange={field.onChange}
-                      onToggleExpand={() => toggleExpanded(networkKey)}
+                      onEnabledChange={(checked: boolean) => {
+                        field.onChange(checked);
+                        // Авто-раскрытие при включении
+                        if (checked && !isExpanded) {
+                          toggleExpanded(key);
+                        }
+                      }}
+                      onToggleExpand={() => toggleExpanded(key)}
                     >
                       <Grid container spacing={2}>
                         <Grid item xs={12}>
                           <Controller
-                            name={`items.${networkKey}.login`}
+                            name={`items.${key}.login`}
                             control={control}
                             rules={{
                               required: isEnabled
                                 ? "Укажите имя пользователя"
                                 : false,
                             }}
-                            render={({ field }) => (
+                            render={({ field: loginField }) => (
                               <TextField
-                                {...field}
+                                {...loginField}
+                                value={loginField.value ?? ""}
                                 fullWidth
-                                label={
-                                  SOCIAL_LABELS[networkKey] ||
-                                  SOCIAL_LABELS.DEFAULT
-                                }
+                                label={SOCIAL_LABELS[key] ?? DEFAULT_LABEL}
                                 placeholder={
-                                  SOCIAL_PLACEHOLDERS[networkKey] ||
-                                  "Имя пользователя"
+                                  SOCIAL_PLACEHOLDERS[key] ?? "Имя пользователя"
                                 }
-                                error={!!errors.items?.[networkKey]?.login}
-                                helperText={
-                                  errors.items?.[networkKey]?.login?.message
-                                }
+                                error={!!errors.items?.[key]?.login}
+                                helperText={errors.items?.[key]?.login?.message}
                               />
                             )}
                           />
@@ -334,18 +372,54 @@ export const SocialNetworksFormWidget: React.FC = () => {
             type="submit"
             variant="contained"
             size="large"
-            disabled={isPending || !isDirty}
+            disabled={isPending || !hasChanges}
             sx={{ minWidth: { xs: "100%", sm: 180 } }}
-            startIcon={
-              isPending ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : undefined
-            }
+            startIcon={isPending ? <CircularProgress size={16} /> : undefined}
           >
             {isPending ? "Сохранение..." : "Сохранить"}
           </Button>
         </Box>
       </Box>
     </Box>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Loader Component (публичный экспорт)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const SocialNetworksFormWidget: React.FC = () => {
+  const { data: socialNetworkTypes, isLoading: typesLoading } =
+    useDictionary("SOCIAL_NETWORK");
+  const { data: socialNetworks = [], isLoading: networksLoading } =
+    useSocialNetworks();
+
+  const isLoading = typesLoading || networksLoading;
+
+  if (isLoading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight={200}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!socialNetworkTypes?.length) {
+    return (
+      <Alert severity="error" sx={{ borderRadius: 2 }}>
+        Не удалось загрузить социальные сети. Попробуйте обновить страницу.
+      </Alert>
+    );
+  }
+
+  // Форма рендерится ТОЛЬКО когда данные готовы →
+  // defaultValues вычисляются корректно, без useEffect
+  return (
+    <SocialNetworksForm types={socialNetworkTypes} existing={socialNetworks} />
   );
 };

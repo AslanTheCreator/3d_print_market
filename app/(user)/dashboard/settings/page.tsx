@@ -99,13 +99,29 @@ function SettingsContent() {
 
   // Получаем активный таб из URL
   const tabParam = searchParams.get("tab") as TabKey | null;
-  const activeTab =
+  const initialTab =
     tabParam && TAB_KEYS.includes(tabParam)
       ? TAB_TO_INDEX[tabParam]
       : TAB_TO_INDEX[DEFAULT_TAB];
 
+  // Локальное состояние для мгновенного отклика UI
+  const [activeTab, setActiveTab] = React.useState(initialTab);
+
+  React.useEffect(() => {
+    const urlTab = searchParams.get("tab") as TabKey | null;
+    const urlIndex =
+      urlTab && TAB_KEYS.includes(urlTab)
+        ? TAB_TO_INDEX[urlTab]
+        : TAB_TO_INDEX[DEFAULT_TAB];
+    setActiveTab(urlIndex);
+  }, [searchParams]);
+
   // Обработчик смены таба — обновляет URL без перезагрузки страницы
   const handleTabChange = (_: React.SyntheticEvent, newIndex: number) => {
+    // 1. Мгновенно обновляем UI
+    setActiveTab(newIndex);
+
+    // 2. Обновляем URL в фоне (не блокирует UI)
     const newTab = INDEX_TO_TAB[newIndex];
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", newTab);
