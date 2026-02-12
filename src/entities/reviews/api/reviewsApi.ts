@@ -1,11 +1,13 @@
-import { authClient } from "@/shared/api";
+import { authClient, publicClient } from "@/shared/api";
 import { Review, ReviewCreate } from "../model/types";
 
 const API_URL = "/reviews";
 
 export const reviewsApi = {
   getSeller: async (id: number): Promise<Review[]> => {
-    const { data } = await authClient.get<Review[]>(`${API_URL}/seller/${id}`);
+    const { data } = await publicClient.get<Review[]>(
+      `${API_URL}/seller/${id}`,
+    );
     return data;
   },
   create: async (input: ReviewCreate): Promise<void> => {
