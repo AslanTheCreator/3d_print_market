@@ -18,12 +18,15 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
   price,
   prepaymentAmount,
   availability,
-  rating = 4.5,
-  reviewCount = 12,
+  rating,
+  reviewCount,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isPreorder = availability === "PREORDER";
+
+  const hasRating =
+    rating !== undefined && rating > 0 && (reviewCount ?? 0) > 0;
 
   // Форматирование количества оценок
   const formatReviewCount = (count: number): string => {
@@ -87,8 +90,13 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
         </>
       )}
 
-      {/* Рейтинг и отзывы */}
-      <Stack direction="row" spacing={0.5} alignItems="center">
+      {/* Рейтинг и отзывы — скрываем визуально, но сохраняем высоту */}
+      <Stack
+        direction="row"
+        spacing={0.5}
+        alignItems="center"
+        sx={{ visibility: hasRating ? "visible" : "hidden" }}
+      >
         <Star
           sx={{
             fontSize: isMobile ? "1rem" : "1.125rem",
@@ -103,7 +111,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
             color: "text.primary",
           }}
         >
-          {rating.toFixed(1)}
+          {hasRating ? rating!.toFixed(1) : "0.0"}
         </Typography>
         <Typography
           variant="caption"
@@ -122,7 +130,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
             fontWeight: 500,
           }}
         >
-          {formatReviewCount(reviewCount)}
+          {hasRating ? formatReviewCount(reviewCount!) : "0 оценок"}
         </Typography>
       </Stack>
     </Stack>

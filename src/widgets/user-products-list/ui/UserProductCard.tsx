@@ -52,6 +52,8 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
   availability,
   count,
   expirationDate,
+  sellerRating,
+  totalReviews,
   onCardClick,
 }) => {
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
@@ -264,6 +266,8 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
               price={price}
               prepaymentAmount={prepaymentAmount}
               availability={availability}
+              rating={sellerRating}
+              reviewCount={totalReviews}
             />
 
             {/* Количество */}

@@ -13,7 +13,7 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import LoginIcon from "@mui/icons-material/Login";
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 
-type UnauthorizedStateType = "cart" | "favorites";
+type UnauthorizedStateType = "cart" | "favorites" | "checkout";
 
 const configs: Record<
   UnauthorizedStateType,
@@ -33,6 +33,12 @@ const configs: Record<
       "Чтобы добавлять товары в избранное и оформлять заказы, необходимо войти в свой аккаунт или зарегистрироваться.",
     caption:
       "У вас уже есть товары в избранное? После входа в аккаунт они автоматически восстановятся.",
+  },
+  checkout: {
+    description:
+      "Чтобы оформить заказ, необходимо войти в свой аккаунт или зарегистрироваться.",
+    caption:
+      "У вас уже есть товары в корзине? После входа в аккаунт они автоматически восстановятся.",
   },
 };
 
@@ -104,21 +110,13 @@ export const UnauthorizedState = ({
             startIcon={<PersonAddOutlinedIcon />}
             onClick={() => router.push("/auth/register")}
             size={isMobile ? "medium" : "large"}
-            sx={{ minWidth: isMobile ? "100%" : 160, textTransform: "none" }}
+            sx={{ minWidth: isMobile ? "100%" : 140, textTransform: "none" }}
           >
             Регистрация
           </Button>
         </Stack>
 
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{
-            mt: 2,
-            maxWidth: 300,
-            lineHeight: 1.5,
-          }}
-        >
+        <Typography variant="caption" color="text.disabled">
           {config.caption}
         </Typography>
       </Box>

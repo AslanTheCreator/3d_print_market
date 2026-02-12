@@ -7,6 +7,8 @@ import { AuthFormModel } from "@/features/auth/model/types";
 import { useRouter } from "next/navigation";
 import { VerificationCodeDialog } from "@/features/auth/ui/VerificationCodeDialog";
 import { useAuthStore } from "@/app/store";
+import { useNotification } from "@/app/providers";
+import { ApiError } from "@/shared/lib/errorHandler";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,6 +19,7 @@ export default function RegisterPage() {
   const [userId, setUserId] = useState<number | null>(null);
 
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
+  const { showNotification } = useNotification();
 
   const handleRegister = async (mail: string, password: string) => {
     try {
@@ -36,6 +39,21 @@ export default function RegisterPage() {
       }
     } catch (error) {
       console.error("Registration failed:", error);
+
+      if (
+        error instanceof ApiError &&
+        error.isCode("PARTICIPANT_ALREADY_EXISTS")
+      ) {
+        showNotification(error.message, "warning");
+        return;
+      }
+
+      showNotification(
+        error instanceof ApiError
+          ? error.message
+          : "Ошибка при регистрации. Попробуйте позже",
+        "error",
+      );
     } finally {
       setIsLoading(false);
     }

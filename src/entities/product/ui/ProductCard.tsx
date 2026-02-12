@@ -33,6 +33,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   image,
   availability,
   actions,
+  sellerRating,
+  totalReviews,
 }) => {
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
   const theme = useTheme();
@@ -198,6 +200,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               price={price}
               prepaymentAmount={prepaymentAmount}
               availability={availability}
+              rating={sellerRating}
+              reviewCount={totalReviews}
             />
           </Box>
         </CardContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Container, Typography, Box, CircularProgress } from "@mui/material";
+import { Typography, Box, CircularProgress } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useCartProducts } from "@/entities/cart";
 import { useCheckoutState } from "../hooks/useCheckoutState";
@@ -42,7 +42,6 @@ const Checkout = () => {
       },
     });
 
-  // Закрытие диалога — принудительная навигация при полном успехе
   const handleCloseResultDialog = () => {
     setResultDialogOpen(false);
     clearResult();
@@ -62,23 +61,21 @@ const Checkout = () => {
     router.push("/dashboard/purchase");
   };
 
-  // Загрузка
+  // Загрузка корзины
   if (isCartLoading || cartItems === undefined) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: 400,
-            gap: 2,
-          }}
-        >
-          <CircularProgress size={48} />
-        </Box>
-      </Container>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: 400,
+          gap: 2,
+        }}
+      >
+        <CircularProgress size={48} />
+      </Box>
     );
   }
 
@@ -100,32 +97,24 @@ const Checkout = () => {
 
   return (
     <>
-      <Container
-        maxWidth="lg"
+      <Typography
+        variant="h4"
+        component="h1"
+        fontWeight={700}
         sx={{
-          py: { xs: 2, sm: 4 },
-          px: { xs: 2, sm: 3 },
+          mb: { xs: 2, sm: 4 },
+          fontSize: { xs: "1.5rem", sm: "2rem" },
         }}
       >
-        <Typography
-          variant="h4"
-          component="h1"
-          fontWeight={700}
-          sx={{
-            mb: { xs: 2, sm: 4 },
-            fontSize: { xs: "1.5rem", sm: "2rem" },
-          }}
-        >
-          Оформление заказа
-        </Typography>
+        Оформление заказа
+      </Typography>
 
-        <CheckoutContent
-          cartItems={cartItems}
-          checkoutState={checkoutState}
-          isSubmitting={isSubmitting}
-          onSubmit={handleSubmit}
-        />
-      </Container>
+      <CheckoutContent
+        cartItems={cartItems}
+        checkoutState={checkoutState}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+      />
 
       <CheckoutResultDialog
         open={resultDialogOpen}

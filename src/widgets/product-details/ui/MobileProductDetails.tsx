@@ -256,14 +256,34 @@ export function MobileProductDetails({
               <Typography variant="subtitle2" fontWeight={700}>
                 {productCard.sellerLogin || "Продавец"}
               </Typography>
-              {productCard.sellerRating && (
-                <Stack direction="row" spacing={0.5} alignItems="center">
-                  <Star sx={{ fontSize: 14, color: "warning.main" }} />
-                  <Typography variant="caption" fontWeight={600}>
-                    {productCard.sellerRating.toFixed(1)}
-                  </Typography>
-                </Stack>
-              )}
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                {productCard.sellerRating > 0 &&
+                productCard.totalReviews > 0 ? (
+                  <>
+                    <Star sx={{ fontSize: 14, color: "warning.main" }} />
+                    <Typography variant="caption" fontWeight={600}>
+                      {productCard.sellerRating.toFixed(1)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      •
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {productCard.totalReviews === 1
+                        ? "1 оценка"
+                        : productCard.totalReviews < 5
+                          ? `${productCard.totalReviews} оценки`
+                          : `${productCard.totalReviews} оценок`}
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <Star sx={{ fontSize: 14, color: "grey.400" }} />
+                    <Typography variant="caption" color="text.secondary">
+                      Нет оценок
+                    </Typography>
+                  </>
+                )}
+              </Stack>
             </Box>
           </Stack>
         </Paper>

@@ -284,14 +284,34 @@ export function DesktopProductDetails({
                   <Typography variant="subtitle1" fontWeight={700}>
                     {productCard.sellerLogin || "Продавец"}
                   </Typography>
-                  {productCard.sellerRating && (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Star sx={{ fontSize: 16, color: "warning.main" }} />
-                      <Typography variant="body2" fontWeight={600}>
-                        {productCard.sellerRating.toFixed(1)}
-                      </Typography>
-                    </Stack>
-                  )}
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    {productCard.sellerRating > 0 &&
+                    productCard.totalReviews > 0 ? (
+                      <>
+                        <Star sx={{ fontSize: 16, color: "warning.main" }} />
+                        <Typography variant="body2" fontWeight={600}>
+                          {productCard.sellerRating.toFixed(1)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          •
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {productCard.totalReviews === 1
+                            ? "1 оценка"
+                            : productCard.totalReviews < 5
+                              ? `${productCard.totalReviews} оценки`
+                              : `${productCard.totalReviews} оценок`}
+                        </Typography>
+                      </>
+                    ) : (
+                      <>
+                        <Star sx={{ fontSize: 16, color: "grey.400" }} />
+                        <Typography variant="body2" color="text.secondary">
+                          Нет оценок
+                        </Typography>
+                      </>
+                    )}
+                  </Stack>
                 </Box>
               </Stack>
             </Paper>
