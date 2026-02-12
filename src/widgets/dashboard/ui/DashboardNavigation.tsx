@@ -18,6 +18,7 @@ import {
   Inventory as InventoryIcon,
   TrendingUp as TrendingUpIcon,
   Settings as SettingsIcon,
+  Shield as ShieldIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -61,6 +62,12 @@ const navigationItems: NavigationItem[] = [
     icon: <SettingsIcon />,
     href: "/dashboard/settings",
     color: "#607d8b",
+  },
+  {
+    text: "Безопасность",
+    icon: <ShieldIcon />,
+    href: "/dashboard/security",
+    color: "#f57c00",
   },
 ];
 

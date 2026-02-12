@@ -62,3 +62,8 @@ export interface UserUpdateModel {
   deadlinePayment: number;
   imageId: number | null;
 }
+
+export interface ChangePasswordParams {
+  oldPassword: string;
+  newPassword: string;
+}

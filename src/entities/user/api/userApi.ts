@@ -38,4 +38,12 @@ export const userApi = {
     });
     return data;
   },
+  async changePassword(
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    await authClient.put(`${API_URL}/password`, null, {
+      params: { oldPassword, newPassword },
+    });
+  },
 };

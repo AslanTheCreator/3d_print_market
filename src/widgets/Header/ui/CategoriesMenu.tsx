@@ -26,6 +26,7 @@ import {
   getCategorySlug,
   buildCategoryPath,
 } from "@/entities/category";
+import { getCategoryIcon } from "@/entities/category/lib/categoryIcons";
 
 interface CategoriesMenuProps {
   onClose: () => void;
@@ -50,6 +51,8 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
 
   const currentSlug = getCategorySlug(category);
   const categoryPath = buildCategoryPath(parentSlugs, category);
+
+  const Icon = getCategoryIcon(category.name);
 
   const handleToggle = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -91,7 +94,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
               color: level === 0 ? "primary.main" : "text.secondary",
             }}
           >
-            <CategoryIcon />
+            <Icon />
           </ListItemIcon>
           <ListItemText
             primary={category.name}

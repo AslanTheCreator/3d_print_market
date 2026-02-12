@@ -1,15 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Container,
-  Typography,
-  Button,
-  useTheme,
-  useMediaQuery,
-  Box,
-  CircularProgress,
-} from "@mui/material";
+import { Container, Typography, Box, CircularProgress } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useCartProducts } from "@/entities/cart";
 import { useCheckoutState } from "../hooks/useCheckoutState";
@@ -17,38 +9,47 @@ import { useCheckoutSubmit } from "../hooks/useCheckoutSubmit";
 import { CheckoutResultDialog } from "./CheckoutResultDialog";
 import { CheckoutContent } from "./CheckoutContent";
 import { EmptyCartState } from "@/shared/ui/states";
+import { OrderSuccessState } from "@/shared/ui/states";
 import { CheckoutResult } from "../model/types";
 
 const Checkout = () => {
   const router = useRouter();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const { data: cartItems, isLoading: isCartLoading } = useCartProducts();
 
   const checkoutState = useCheckoutState({ cartItems });
 
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
+  const [orderCompleted, setOrderCompleted] = useState(false);
+  const [lastResult, setLastResult] = useState<CheckoutResult | null>(null);
 
-  // Передаём только ВЫБРАННЫЕ товары в useCheckoutSubmit
   const { handleSubmit, retryFailed, isSubmitting, submitResult, clearResult } =
     useCheckoutSubmit({
       cartItems: checkoutState.selectedItems,
       checkoutState,
       onSuccess: (result: CheckoutResult) => {
         setResultDialogOpen(true);
+        setOrderCompleted(true);
+        setLastResult(result);
       },
       onPartialSuccess: (result: CheckoutResult) => {
         setResultDialogOpen(true);
+        setLastResult(result);
       },
       onError: (result: CheckoutResult) => {
         setResultDialogOpen(true);
+        setLastResult(result);
       },
     });
 
+  // Закрытие диалога — принудительная навигация при полном успехе
   const handleCloseResultDialog = () => {
     setResultDialogOpen(false);
     clearResult();
+
+    if (lastResult?.successCount === lastResult?.totalCount) {
+      router.push("/dashboard/purchase");
+    }
   };
 
   const handleGoHome = () => {
@@ -81,7 +82,18 @@ const Checkout = () => {
     );
   }
 
-  // Пустая корзина
+  // После успешного оформления — показываем OrderSuccessState вместо пустой корзины
+  if (cartItems.length === 0 && orderCompleted) {
+    return (
+      <OrderSuccessState
+        orderCount={lastResult?.successCount}
+        onGoToOrders={handleGoToOrders}
+        onGoHome={handleGoHome}
+      />
+    );
+  }
+
+  // Пустая корзина (пользователь зашёл сам, без оформления)
   if (cartItems.length === 0) {
     return <EmptyCartState />;
   }
@@ -95,7 +107,6 @@ const Checkout = () => {
           px: { xs: 2, sm: 3 },
         }}
       >
-        {/* Заголовок */}
         <Typography
           variant="h4"
           component="h1"
@@ -108,7 +119,6 @@ const Checkout = () => {
           Оформление заказа
         </Typography>
 
-        {/* Основной контент */}
         <CheckoutContent
           cartItems={cartItems}
           checkoutState={checkoutState}
@@ -117,7 +127,6 @@ const Checkout = () => {
         />
       </Container>
 
-      {/* Диалог результатов */}
       <CheckoutResultDialog
         open={resultDialogOpen}
         result={submitResult}
