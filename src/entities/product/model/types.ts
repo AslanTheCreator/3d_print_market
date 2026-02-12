@@ -1,5 +1,5 @@
 import { ImageResponse } from "@/entities/image";
-import { ReviewModel } from "@/entities/reviews/model/types";
+import { Review } from "@/entities/reviews/model/types";
 import { Currency } from "@/shared/types";
 import { CategoryModel } from "@/entities/category/model/types";
 
@@ -44,7 +44,7 @@ export interface ProductDetailDto {
   availability: Availability;
   externalUrl: string;
   imageIds: number[];
-  reviews: ReviewModel[];
+  reviews: Review[];
   sellerLogin: string;
   sellerRating: number;
   totalReviews: number;

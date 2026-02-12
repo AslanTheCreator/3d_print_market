@@ -1,8 +1,13 @@
 "use client";
 
+import React, { useState, useCallback } from "react";
 import { useAuth } from "@/features/auth";
 import { useCartChecks } from "@/entities/cart";
 import { useFavoritesChecks } from "@/entities/favorites/hooks";
+import {
+  useUserPendingActions,
+  PendingActionsPopover,
+} from "@/features/pending-actions";
 import {
   Stack,
   IconButton,
@@ -28,6 +33,7 @@ interface HeaderIconConfig {
   icon: React.ReactNode;
   label: string;
   badge?: number;
+  onClick?: (event: React.MouseEvent<HTMLElement>) => void;
 }
 
 export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
@@ -36,6 +42,30 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
 
   const { getCartItemsCount } = useCartChecks();
   const { getFavoritesItemsCount } = useFavoritesChecks();
+  const {
+    totalCount: pendingActionsCount,
+    sellerActionGroups,
+    customerActionGroups,
+    renewalGroup,
+    isLoading: isPendingLoading,
+  } = useUserPendingActions();
+
+  // Popover state
+  const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
+  const isPopoverOpen = Boolean(popoverAnchor);
+
+  const handleProfileClick = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      if (!isAuthenticated) return; // Link навигация сработает
+      event.preventDefault();
+      setPopoverAnchor(event.currentTarget);
+    },
+    [isAuthenticated],
+  );
+
+  const handlePopoverClose = useCallback(() => {
+    setPopoverAnchor(null);
+  }, []);
 
   const iconSize = isMobile ? ICON_SIZES.mobile : ICON_SIZES.desktop;
 
@@ -67,6 +97,8 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
         />
       ),
       label: "Профиль",
+      badge: isAuthenticated ? pendingActionsCount : undefined,
+      onClick: handleProfileClick,
     },
     {
       url: "/checkout",
@@ -85,20 +117,34 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
   ];
 
   return (
-    <Stack
-      component="nav"
-      direction="row"
-      spacing={isMobile ? 0.5 : 1}
-      alignItems="center"
-      sx={{
-        minHeight: { xs: 40, sm: 50 },
-      }}
-      aria-label="Действия в шапке сайта"
-    >
-      {headerIcons.map((item) => (
-        <HeaderActionItem key={item.label} {...item} isMobile={isMobile} />
-      ))}
-    </Stack>
+    <>
+      <Stack
+        component="nav"
+        direction="row"
+        spacing={isMobile ? 0.5 : 1}
+        alignItems="center"
+        sx={{
+          minHeight: { xs: 40, sm: 50 },
+        }}
+        aria-label="Действия в шапке сайта"
+      >
+        {headerIcons.map((item) => (
+          <HeaderActionItem key={item.label} {...item} isMobile={isMobile} />
+        ))}
+      </Stack>
+
+      {/* Popover с действиями профиля */}
+      <PendingActionsPopover
+        anchorEl={popoverAnchor}
+        open={isPopoverOpen}
+        onClose={handlePopoverClose}
+        sellerActionGroups={sellerActionGroups}
+        customerActionGroups={customerActionGroups}
+        renewalGroup={renewalGroup}
+        totalCount={pendingActionsCount}
+        isLoading={isPendingLoading}
+      />
+    </>
   );
 };
 
@@ -112,6 +158,7 @@ const HeaderActionItem = ({
   label,
   badge,
   isMobile,
+  onClick,
 }: HeaderActionItemProps) => {
   const theme = useTheme();
 
@@ -185,7 +232,12 @@ const HeaderActionItem = ({
   );
 
   return (
-    <Link href={url} style={{ textDecoration: "none" }} aria-label={label}>
+    <Link
+      href={url}
+      style={{ textDecoration: "none" }}
+      aria-label={label}
+      onClick={onClick}
+    >
       {content}
     </Link>
   );

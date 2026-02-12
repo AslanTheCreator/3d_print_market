@@ -2,13 +2,13 @@
 
 import { useState, useCallback } from "react";
 import { Box, Paper, IconButton, alpha, useTheme } from "@mui/material";
-import { Fullscreen } from "@mui/icons-material";
+import { Fullscreen, ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { MainImage } from "./MainImage";
 import { ThumbnailList } from "./ThumbnailList";
 import { FullscreenImageViewer } from "./FullscreenImageViewer";
 
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper/modules";
+import { Pagination } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
 
 interface ImageGalleryProps {
@@ -38,11 +38,35 @@ export function ImageGallery({
     setIsFullscreenOpen(false);
   }, []);
 
-  const handleImageClick = useCallback(() => {
-    handleOpenFullscreen();
-  }, [handleOpenFullscreen]);
+  const handleImageClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const target = e.target as HTMLElement;
+
+      // Не открываем fullscreen при клике на навигационные элементы
+      if (
+        target.closest(".gallery-nav-button") ||
+        target.closest(".fullscreen-button") ||
+        target.closest(".swiper-pagination")
+      ) {
+        return;
+      }
+
+      handleOpenFullscreen();
+    },
+    [handleOpenFullscreen],
+  );
+
+  const handlePrev = useCallback(() => {
+    swiperInstance?.slidePrev();
+  }, [swiperInstance]);
+
+  const handleNext = useCallback(() => {
+    swiperInstance?.slideNext();
+  }, [swiperInstance]);
 
   if (!images.length) return null;
+
+  const showNavigation = images.length > 1;
 
   return (
     <>
@@ -73,6 +97,9 @@ export function ImageGallery({
                 opacity: 1,
                 transform: "translate(0, 0)",
               },
+              "& .gallery-nav-button": {
+                opacity: 1,
+              },
             },
           }}
           onClick={handleImageClick}
@@ -92,7 +119,10 @@ export function ImageGallery({
               bgcolor: alpha(theme.palette.background.paper, 0.8),
               backdropFilter: "blur(8px)",
               opacity: { xs: 1, sm: 0 },
-              transform: { xs: "translate(0, 0)", sm: "translate(8px, -8px)" },
+              transform: {
+                xs: "translate(0, 0)",
+                sm: "translate(8px, -8px)",
+              },
               transition: "all 0.3s ease",
               "&:hover": {
                 bgcolor: theme.palette.background.paper,
@@ -104,11 +134,77 @@ export function ImageGallery({
             <Fullscreen />
           </IconButton>
 
+          {/* Кастомные стрелки навигации */}
+          {showNavigation && (
+            <>
+              <IconButton
+                className="gallery-nav-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrev();
+                }}
+                sx={{
+                  position: "absolute",
+                  left: { xs: 8, sm: 12, md: 16 },
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  zIndex: 2,
+                  width: { xs: 36, sm: 40, md: 44 },
+                  height: { xs: 36, sm: 40, md: 44 },
+                  bgcolor: alpha(theme.palette.common.white, 0.85),
+                  backdropFilter: "blur(8px)",
+                  color: theme.palette.text.primary,
+                  opacity: 0,
+                  transition: "all 0.3s ease",
+                  boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.15)}`,
+                  "&:hover": {
+                    bgcolor: theme.palette.common.white,
+                    transform: "translateY(-50%) scale(1.08)",
+                    boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.2)}`,
+                  },
+                }}
+                aria-label="Предыдущее изображение"
+              >
+                <ChevronLeft sx={{ fontSize: { xs: 22, sm: 24, md: 26 } }} />
+              </IconButton>
+
+              <IconButton
+                className="gallery-nav-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNext();
+                }}
+                sx={{
+                  position: "absolute",
+                  right: { xs: 8, sm: 12, md: 16 },
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  zIndex: 2,
+                  width: { xs: 36, sm: 40, md: 44 },
+                  height: { xs: 36, sm: 40, md: 44 },
+                  bgcolor: alpha(theme.palette.common.white, 0.85),
+                  backdropFilter: "blur(8px)",
+                  color: theme.palette.text.primary,
+                  opacity: 0,
+                  transition: "all 0.3s ease",
+                  boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.15)}`,
+                  "&:hover": {
+                    bgcolor: theme.palette.common.white,
+                    transform: "translateY(-50%) scale(1.08)",
+                    boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.2)}`,
+                  },
+                }}
+                aria-label="Следующее изображение"
+              >
+                <ChevronRight sx={{ fontSize: { xs: 22, sm: 24, md: 26 } }} />
+              </IconButton>
+            </>
+          )}
+
           <Swiper
-            modules={[Navigation, Pagination]}
+            modules={[Pagination]}
             onSlideChange={(swiper) => setCurrentIndex(swiper.activeIndex)}
             onSwiper={setSwiperInstance}
-            navigation
             pagination={{ clickable: true }}
             spaceBetween={10}
             slidesPerView={1}
