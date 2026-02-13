@@ -1,4 +1,4 @@
-export { EmptyCartState } from "./EmptyCartState";
+export { EmptyPageState } from "./EmptyPageState";
 export { EmptyCatalogState } from "./EmptyCatalogState";
 export { EmptyOrderState } from "./EmptyOrderState";
 export { LoadingCartState } from "./LoadingCartState";

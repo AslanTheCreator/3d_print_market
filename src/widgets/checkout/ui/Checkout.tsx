@@ -2,15 +2,21 @@
 
 import React, { useState } from "react";
 import { Typography, Box, CircularProgress } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useRouter } from "next/navigation";
 import { useCartProducts } from "@/entities/cart";
 import { useCheckoutState } from "../hooks/useCheckoutState";
 import { useCheckoutSubmit } from "../hooks/useCheckoutSubmit";
 import { CheckoutResultDialog } from "./CheckoutResultDialog";
 import { CheckoutContent } from "./CheckoutContent";
-import { EmptyCartState } from "@/shared/ui/states";
 import { OrderSuccessState } from "@/shared/ui/states";
 import { CheckoutResult } from "../model/types";
+import { EmptyPageState } from "@/shared/ui/states";
+import {
+  ShoppingCartOutlined,
+  StorefrontOutlined,
+  FavoriteBorderOutlined,
+} from "@mui/icons-material";
 
 const Checkout = () => {
   const router = useRouter();
@@ -92,7 +98,41 @@ const Checkout = () => {
 
   // Пустая корзина (пользователь зашёл сам, без оформления)
   if (cartItems.length === 0) {
-    return <EmptyCartState />;
+    return (
+      <EmptyPageState
+        icon={
+          <ShoppingCartOutlined
+            sx={{
+              fontSize: { xs: 48, sm: 56 },
+              color: (t) => alpha(t.palette.primary.main, 0.6),
+            }}
+          />
+        }
+        title="Корзина пуста"
+        description="Добавьте товары, которые вам понравились, и возвращайтесь сюда для оформления заказа."
+        actions={[
+          {
+            label: "Перейти в каталог",
+            icon: <StorefrontOutlined />,
+            onClick: () => router.push("/"),
+          },
+          {
+            label: "Избранное",
+            icon: <FavoriteBorderOutlined />,
+            onClick: () => router.push("/favorites"),
+            variant: "outlined",
+          },
+        ]}
+        tips={{
+          title: "Не знаете с чего начать?",
+          items: [
+            "Просмотрите каталог и добавьте товары в корзину",
+            "Загляните в избранное — возможно, там уже что-то ждёт",
+            "Используйте поиск для быстрого нахождения нужного товара",
+          ],
+        }}
+      />
+    );
   }
 
   return (

@@ -14,7 +14,7 @@ const API_URL_PROFILE = `/auth/profile`;
 export const userApi = {
   async getUser(): Promise<UserBaseModel> {
     const { data } = await authClient.get<UserBaseModel>(API_URL);
-    const images = await imageApi.getImages(data.imageId);
+    const images = data.imageId ? await imageApi.getImages(data.imageId) : [];
     return { ...data, image: images };
   },
   async getUserByParams(id?: number): Promise<UserFindModel[]> {
@@ -27,7 +27,7 @@ export const userApi = {
     UserProfileModel & { image: ImageResponse[] }
   > {
     const { data } = await authClient.get<UserProfileModel>(API_URL_PROFILE);
-    const image = await imageApi.getImages(data.imageId);
+    const image = data.imageId ? await imageApi.getImages(data.imageId) : [];
     return { ...data, image: image };
   },
   async updateUser(userData: UserUpdateModel): Promise<number> {

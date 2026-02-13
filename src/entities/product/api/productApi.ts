@@ -4,29 +4,12 @@ import {
   ProductCreateModel,
   ProductDto,
 } from "../model/types";
-import { imageApi } from "@/entities/image";
+import { imageApi, attachImages } from "@/entities/image";
 import { publicClient, authClient, buildProductRequest } from "@/shared/api";
 import { FetchProductsParams } from "@/shared/types";
 
 const API_URL_PRODUCT = `/product`;
 const API_URL = `/products`;
-
-/**
- * Загружает картинки для списка товаров
- */
-const attachImagesToProducts = async (
-  products: ProductDto[],
-): Promise<Product[]> => {
-  return Promise.all(
-    products.map(async (product) => {
-      const images =
-        product.imageId !== undefined
-          ? await imageApi.getImages(product.imageId)
-          : [];
-      return { ...product, image: images };
-    }),
-  );
-};
 
 export const productApi = {
   getProducts: async (params: FetchProductsParams): Promise<Product[]> => {
@@ -36,7 +19,7 @@ export const productApi = {
       requestData,
     );
 
-    return attachImagesToProducts(data);
+    return attachImages<ProductDto, Product>(data, (p) => p.imageId);
   },
 
   getUserProducts: async (params: FetchProductsParams): Promise<Product[]> => {
@@ -46,7 +29,7 @@ export const productApi = {
       requestData,
     );
 
-    return attachImagesToProducts(data);
+    return attachImages<ProductDto, Product>(data, (p) => p.imageId);
   },
 
   getProductById: async (id: number): Promise<ProductDetail> => {
@@ -63,6 +46,6 @@ export const productApi = {
   },
 
   extendProductExpiration: async (productId: number) => {
-    await authClient.post(`${API_URL_PRODUCT}/extend/${productId}`);
+    await authClient.post(`${API_URL}/extend/${productId}`);
   },
 };

@@ -1,30 +1,9 @@
 import { ProductBasket, ProductBasketDto } from "../model/types";
-import { imageApi } from "@/entities/image";
+import { imageApi, attachImages } from "@/entities/image";
 import { authClient, buildProductRequest } from "@/shared/api";
 import { FetchProductsParams } from "@/shared/types";
 
 const API_URL = `/basket`;
-
-/**
- * Загружает картинки для товаров в корзине
- */
-const attachImagesToBasketItems = async (
-  items: ProductBasketDto[],
-): Promise<ProductBasket[]> => {
-  return Promise.all(
-    items.map(async (item) => {
-      const images =
-        item.product.imageId !== undefined
-          ? await imageApi.getImages(item.product.imageId)
-          : [];
-
-      return {
-        product: { ...item.product, image: images },
-        count: item.count,
-      };
-    }),
-  );
-};
 
 export const cartApi = {
   getCart: async (params: FetchProductsParams): Promise<ProductBasket[]> => {
@@ -34,7 +13,11 @@ export const cartApi = {
       requestData,
     );
 
-    return attachImagesToBasketItems(data);
+    const withImages = await attachImages(data, (item) => item.product.imageId);
+    return withImages.map((item) => ({
+      product: { ...item.product, image: item.image },
+      count: item.count,
+    }));
   },
 
   addToCart: async (productId: number, count: number) => {

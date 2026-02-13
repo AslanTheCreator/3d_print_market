@@ -13,7 +13,7 @@ export const imageApi = {
 
     const ids = Array.isArray(imageIds) ? imageIds : [imageIds];
 
-    const validIds = ids.filter((id) => id && id !== 0);
+    const validIds = ids.filter((id) => id > 0);
 
     if (validIds.length === 0) {
       return [];

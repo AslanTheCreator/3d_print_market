@@ -56,11 +56,12 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
 
   const handleProfileClick = useCallback(
     (event: React.MouseEvent<HTMLElement>) => {
-      if (!isAuthenticated) return; // Link навигация сработает
+      if (!isAuthenticated) return;
+      if (pendingActionsCount === 0) return;
       event.preventDefault();
       setPopoverAnchor(event.currentTarget);
     },
-    [isAuthenticated],
+    [isAuthenticated, pendingActionsCount],
   );
 
   const handlePopoverClose = useCallback(() => {

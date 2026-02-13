@@ -1,3 +1,10 @@
+// API
 export { reviewsApi } from "./api/reviewsApi";
 
-export type { Review } from "./model/types";
+// Hooks
+export { useSellerReviews } from "./hooks/useReviewQueries";
+export { useCreateReview, useDeleteReview } from "./hooks/useReviewMutations";
+export { reviewsQueryKeys } from "./hooks/queryKeys";
+
+// Types
+export type { Review, ReviewCreate } from "./model/types";

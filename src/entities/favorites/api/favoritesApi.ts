@@ -1,27 +1,10 @@
 import { Product } from "@/entities/product";
 import { ProductDto } from "@/entities/product/model/types";
-import { imageApi } from "@/entities/image";
+import { attachImages, imageApi } from "@/entities/image";
 import { authClient, buildProductRequest } from "@/shared/api";
 import { FetchProductsParams } from "@/shared/types";
 
 const API_URL = `/favorites`;
-
-/**
- * Загружает картинки для списка товаров
- */
-const attachImagesToProducts = async (
-  products: ProductDto[],
-): Promise<Product[]> => {
-  return Promise.all(
-    products.map(async (product) => {
-      const images =
-        product.imageId !== undefined
-          ? await imageApi.getImages(product.imageId)
-          : [];
-      return { ...product, image: images };
-    }),
-  );
-};
 
 export const favoritesApi = {
   getFavorites: async (params: FetchProductsParams): Promise<Product[]> => {
@@ -31,7 +14,7 @@ export const favoritesApi = {
       requestData,
     );
 
-    return attachImagesToProducts(data);
+    return attachImages<ProductDto, Product>(data, (p) => p.imageId);
   },
 
   addToFavorites: async (productId: number) => {
