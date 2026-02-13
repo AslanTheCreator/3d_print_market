@@ -9,7 +9,7 @@ import {
   DialogTitle,
   Stack,
 } from "@mui/material";
-import { Payment, ThumbUp, Cancel } from "@mui/icons-material";
+import { Payment, ThumbUp, Cancel, RateReview } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order/model/types";
 import {
   useConfirmPaymentByCustomer,
@@ -18,6 +18,7 @@ import {
 } from "@/entities/order";
 import PaymentDialog from "@/features/order/confirm-payment-by-customer/ui/PaymentDialog";
 import { CancelOrderDialog } from "@/features/order/cancel-order/ui/CancelOrderDialog";
+import { LeaveReviewDialog } from "@/features/reviews/leave-review";
 
 interface CustomerActionsProps {
   order: ListOrdersModel;
@@ -28,6 +29,9 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
   const [prepaymentDialogOpen, setPrepaymentDialogOpen] = useState(false);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+
+  const canLeaveReview = order.actualStatus === "COMPLETED";
 
   const confirmReceiptMutation = useConfirmReceiptByCustomer();
 
@@ -68,7 +72,6 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
             Подтвердить оплату
           </Button>
         )}
-
         {canPrePay && (
           <Button
             variant="contained"
@@ -81,7 +84,6 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
             Подтвердить предоплату
           </Button>
         )}
-
         {canConfirmReceipt && (
           <Button
             variant="contained"
@@ -97,7 +99,6 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
               : "Подтвердить получение"}
           </Button>
         )}
-
         {/* Кнопка отмены заказа */}
         {canCancel && (
           <Button
@@ -109,6 +110,19 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
             fullWidth={true}
           >
             Отменить
+          </Button>
+        )}
+
+        {canLeaveReview && (
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<RateReview />}
+            onClick={() => setReviewDialogOpen(true)}
+            size="small"
+            fullWidth={true}
+          >
+            Оставить отзыв
           </Button>
         )}
       </Stack>
@@ -169,6 +183,14 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
         onClose={() => setCancelDialogOpen(false)}
         order={order}
         userRole="customer"
+      />
+
+      {/* Диалог оставления отзыва */}
+      <LeaveReviewDialog
+        open={reviewDialogOpen}
+        onClose={() => setReviewDialogOpen(false)}
+        orderId={order.orderId}
+        product={order.product}
       />
     </>
   );

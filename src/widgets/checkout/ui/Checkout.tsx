@@ -96,7 +96,6 @@ const Checkout = () => {
     );
   }
 
-  // Пустая корзина (пользователь зашёл сам, без оформления)
   if (cartItems.length === 0) {
     return (
       <EmptyPageState
