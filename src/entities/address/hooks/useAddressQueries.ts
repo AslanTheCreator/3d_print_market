@@ -4,7 +4,7 @@ import { addressKeys } from "./queryKeys";
 
 export const useAddresses = () => {
   return useQuery({
-    queryKey: addressKeys.list(),
+    queryKey: addressKeys.lists(),
     queryFn: addressApi.getAll,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,

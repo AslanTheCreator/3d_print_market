@@ -3,19 +3,17 @@ import { socialNetworksApi } from "../api/socialNetworksApi";
 import { socialNetworksKeys } from "./queryKeys";
 import type { SocialNetwork, SocialNetworkInput } from "../model/types";
 
-// Создание соцсети
 export const useCreateSocial = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: SocialNetworkInput) => socialNetworksApi.create(input),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: socialNetworksKeys.list() });
+      queryClient.invalidateQueries({ queryKey: socialNetworksKeys.lists() });
     },
   });
 };
 
-// Обновление соцсети
 export const useUpdateSocial = () => {
   const queryClient = useQueryClient();
 
@@ -23,12 +21,11 @@ export const useUpdateSocial = () => {
     mutationFn: ({ id, input }: { id: number; input: SocialNetworkInput }) =>
       socialNetworksApi.update(id, input),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: socialNetworksKeys.list() });
+      queryClient.invalidateQueries({ queryKey: socialNetworksKeys.lists() });
     },
   });
 };
 
-// Удаление соцсети
 export const useDeleteSocial = () => {
   const queryClient = useQueryClient();
 
@@ -36,14 +33,15 @@ export const useDeleteSocial = () => {
     mutationFn: (id: number) => socialNetworksApi.delete(id),
 
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: socialNetworksKeys.list() });
+      await queryClient.cancelQueries({
+        queryKey: socialNetworksKeys.lists(),
+      });
       const previous = queryClient.getQueryData<SocialNetwork[]>(
-        socialNetworksKeys.list(),
+        socialNetworksKeys.lists(),
       );
 
-      // Оптимистично удаляем из кэша
       queryClient.setQueryData<SocialNetwork[]>(
-        socialNetworksKeys.list(),
+        socialNetworksKeys.lists(),
         (old = []) => old.filter((s) => s.id !== id),
       );
 
@@ -52,12 +50,12 @@ export const useDeleteSocial = () => {
 
     onError: (_error, _id, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(socialNetworksKeys.list(), context.previous);
+        queryClient.setQueryData(socialNetworksKeys.lists(), context.previous);
       }
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: socialNetworksKeys.list() });
+      queryClient.invalidateQueries({ queryKey: socialNetworksKeys.lists() });
     },
   });
 };

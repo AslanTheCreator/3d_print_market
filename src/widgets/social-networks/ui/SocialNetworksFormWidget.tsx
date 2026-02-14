@@ -194,26 +194,6 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
 
   const itemsData = watch("items");
 
-  // Есть ли изменения относительно серверных данных
-  const hasChanges = useMemo(() => {
-    if (!itemsData) return false;
-
-    for (const [type, formItem] of Object.entries(itemsData)) {
-      const prev = existingByType[type];
-      const wasEnabled = !!prev;
-      const nowEnabled = !!formItem.enabled;
-
-      // Включили новую или выключили существующую
-      if (wasEnabled !== nowEnabled) return true;
-
-      // Изменили login у существующей
-      if (wasEnabled && nowEnabled && prev.login !== formItem.login)
-        return true;
-    }
-
-    return false;
-  }, [itemsData, existingByType]);
-
   // ─────────────────────────────────────────────────────────────────────────
   // Submit
   // ─────────────────────────────────────────────────────────────────────────

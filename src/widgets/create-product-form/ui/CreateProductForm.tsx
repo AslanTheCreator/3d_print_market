@@ -36,7 +36,7 @@ import { AppLink } from "@/shared/ui/app-link/AppLink";
 export const CreateProductForm = () => {
   const theme = useTheme();
   const router = useRouter();
-  const { categories } = useCategories();
+  const { data: categories = [], isLoading, error, refetch } = useCategories();
   const { showNotification } = useNotification();
   const { mutate: createProduct, isPending } = useCreateProduct();
 

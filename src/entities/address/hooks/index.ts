@@ -1,5 +1,5 @@
 export { addressKeys } from "./queryKeys";
-export { useAddresses } from "./useAddresses";
+export { useAddresses } from "./useAddressQueries";
 export {
   useCreateAddress,
   useUpdateAddress,

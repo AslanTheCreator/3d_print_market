@@ -149,7 +149,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
 };
 
 export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
-  const { categories, loading, error } = useCategories();
+  const { data: categories = [], isLoading, error, refetch } = useCategories();
 
   return (
     <Box
@@ -204,7 +204,7 @@ export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
       </Box>
 
       {/* Loading state */}
-      {loading && (
+      {isLoading && (
         <Box
           sx={{
             display: "flex",
@@ -218,16 +218,16 @@ export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
       )}
 
       {/* Error state */}
-      {error && !loading && (
+      {error && !isLoading && (
         <Box sx={{ p: 2 }}>
           <Alert severity="error" sx={{ borderRadius: 2 }}>
-            {error}
+            {error.message}
           </Alert>
         </Box>
       )}
 
       {/* Categories list */}
-      {!loading && !error && categories.length > 0 && (
+      {!isLoading && !error && categories.length > 0 && (
         <List sx={{ width: "100%", p: 0, mt: 0 }}>
           {categories.map((category) => (
             <CategoryItem
@@ -240,7 +240,7 @@ export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
       )}
 
       {/* Empty state */}
-      {!loading && !error && categories.length === 0 && (
+      {!isLoading && !error && categories.length === 0 && (
         <Box
           sx={{
             display: "flex",

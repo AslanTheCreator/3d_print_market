@@ -3,58 +3,62 @@ import { addressApi } from "../api/addressApi";
 import { addressKeys } from "./queryKeys";
 import type { Address, AddressInput } from "../model/types";
 
-// Создание адреса
 export const useCreateAddress = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: AddressInput) => addressApi.create(input),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: addressKeys.list() });
+    mutationFn: addressApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: addressKeys.lists() });
     },
   });
 };
 
-// Обновление адреса
 export const useUpdateAddress = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, input }: { id: number; input: AddressInput }) =>
       addressApi.update(id, input),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: addressKeys.list() });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: addressKeys.lists() });
     },
   });
 };
 
-// Удаление адреса
 export const useDeleteAddress = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => addressApi.delete(id),
+    mutationFn: addressApi.delete,
 
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: addressKeys.list() });
-      const previous = queryClient.getQueryData<Address[]>(addressKeys.list());
-
-      // Оптимистично удаляем из кэша
-      queryClient.setQueryData<Address[]>(addressKeys.list(), (old = []) =>
-        old.filter((a) => a.id !== id),
+    onMutate: async (addressId: number) => {
+      await queryClient.cancelQueries({ queryKey: addressKeys.lists() });
+      const previousAddresses = queryClient.getQueryData<Address[]>(
+        addressKeys.lists(),
       );
 
-      return { previous };
+      if (previousAddresses) {
+        queryClient.setQueryData<Address[]>(
+          addressKeys.lists(),
+          previousAddresses.filter((address) => address.id !== addressId),
+        );
+      }
+
+      return { previousAddresses };
     },
 
-    onError: (_error, _id, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(addressKeys.list(), context.previous);
+    onError: (_err, _addressId, context) => {
+      if (context?.previousAddresses) {
+        queryClient.setQueryData(
+          addressKeys.lists(),
+          context.previousAddresses,
+        );
       }
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: addressKeys.list() });
+      queryClient.invalidateQueries({ queryKey: addressKeys.lists() });
     },
   });
 };

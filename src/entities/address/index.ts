@@ -5,7 +5,7 @@ export { addressApi } from "./api/addressApi";
 export { addressKeys } from "./hooks/queryKeys";
 
 // Queries
-export { useAddresses } from "./hooks/useAddresses";
+export { useAddresses } from "./hooks/useAddressQueries";
 
 // Mutations
 export {
@@ -20,5 +20,4 @@ export { AddressForm } from "./ui/AddressForm";
 
 // Types
 export type { Address, AddressInput, AddressFormData } from "./model/types";
-
 export { DEFAULT_COUNTRY, ADDRESS_VALIDATION } from "./model/types";

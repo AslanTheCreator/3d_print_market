@@ -1,7 +1,7 @@
 export { socialNetworksKeys } from "./queryKeys";
-export { useSocialNetworks } from "./useSocialNetworks";
+export { useSocialNetworks } from "./useSocialNetworksQuery";
 export {
   useCreateSocial,
   useUpdateSocial,
   useDeleteSocial,
-} from "./useSocialMutations";
+} from "./useSocialNetworksMutations";

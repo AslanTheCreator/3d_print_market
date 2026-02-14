@@ -5,14 +5,14 @@ export { socialNetworksApi } from "./api/socialNetworksApi";
 export { socialNetworksKeys } from "./hooks/queryKeys";
 
 // Queries
-export { useSocialNetworks } from "./hooks/useSocialNetworks";
+export { useSocialNetworks } from "./hooks/useSocialNetworksQuery";
 
 // Mutations
 export {
   useCreateSocial,
   useUpdateSocial,
   useDeleteSocial,
-} from "./hooks/useSocialMutations";
+} from "./hooks/useSocialNetworksMutations";
 
 // Types
 export type {

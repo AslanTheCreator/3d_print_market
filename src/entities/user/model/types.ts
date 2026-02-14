@@ -1,11 +1,13 @@
-import { AccountsBaseModel } from "@/entities/accounts/model/types";
-import { Address } from "@/entities/address/model/types";
-import { ImageResponse } from "@/entities/image";
-import { SocialNetwork } from "@/entities/social-networks";
-import { Transfer } from "@/entities/transfer/model/types";
+import type {
+  AccountsBaseModel,
+  TransferMoney,
+} from "@/entities/accounts/model/types";
+import type { Address } from "@/entities/address/model/types";
+import type { ImageResponse } from "@/entities/image";
+import type { SocialNetwork } from "@/entities/social-networks";
+import type { Transfer } from "@/entities/transfer/model/types";
 
 type UserStatus = "ACTIVE" | "BLOCKED" | "DELETED";
-type TransferMoney = "BANK_CARD" | "BANK_SBP" | "CASH";
 type SellerStatus = "DEFAULT" | "VIP" | "PRO";
 
 export interface UserProfileModel extends Pick<

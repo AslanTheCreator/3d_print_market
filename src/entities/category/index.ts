@@ -1,9 +1,23 @@
+// API
 export { categoryApi } from "./api/categoryApi";
 
-export * from "./hooks/useCategories";
-export * from "./model/types";
+// Query keys
+export { categoryKeys } from "./hooks/queryKeys";
 
+// Hooks
+export { useCategories, useCategoryById } from "./hooks/useCategories";
+
+// Types
+export type {
+  CategoryModel,
+  BreadcrumbItem,
+  CategoryPath,
+} from "./model/types";
+
+// UI
 export { CategoryBreadcrumbs } from "./ui/CategoryBreadcrumbs";
+
+// Lib
 export {
   createBreadcrumbs,
   generateCategoryTitle,

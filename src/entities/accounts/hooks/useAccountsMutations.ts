@@ -1,12 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { accountsApi } from "../api/accountsApi";
 import { accountsKeys } from "./queryKeys";
-import { useNotification } from "@/app/providers";
 import type { AccountsBaseModel, AccountsCreateModel } from "../model/types";
 
 export const useCreateAccount = () => {
   const queryClient = useQueryClient();
-  const { showNotification } = useNotification();
 
   return useMutation({
     mutationFn: accountsApi.createAccount,
@@ -15,7 +13,7 @@ export const useCreateAccount = () => {
       await queryClient.cancelQueries({ queryKey: accountsKeys.userList() });
 
       const previous = queryClient.getQueryData<AccountsBaseModel[]>(
-        accountsKeys.userList()
+        accountsKeys.userList(),
       );
 
       queryClient.setQueryData<AccountsBaseModel[]>(
@@ -27,23 +25,14 @@ export const useCreateAccount = () => {
             id: Date.now(),
             participantId: 0,
           } as AccountsBaseModel,
-        ]
+        ],
       );
 
       return { previous };
     },
 
-    onError: (error, _vars, context) => {
+    onError: (_error, _vars, context) => {
       queryClient.setQueryData(accountsKeys.userList(), context?.previous);
-      const msg =
-        error instanceof Error
-          ? error.message
-          : "Не удалось добавить способ оплаты";
-      showNotification(msg, "error");
-    },
-
-    onSuccess: () => {
-      showNotification("Способ оплаты добавлен", "success");
     },
 
     onSettled: () => {
@@ -54,7 +43,6 @@ export const useCreateAccount = () => {
 
 export const useDeleteAccount = () => {
   const queryClient = useQueryClient();
-  const { showNotification } = useNotification();
 
   return useMutation({
     mutationFn: accountsApi.deleteAccount,
@@ -62,12 +50,12 @@ export const useDeleteAccount = () => {
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: accountsKeys.userList() });
       const previous = queryClient.getQueryData<AccountsBaseModel[]>(
-        accountsKeys.userList()
+        accountsKeys.userList(),
       );
 
       queryClient.setQueryData<AccountsBaseModel[]>(
         accountsKeys.userList(),
-        (old = []) => old.filter((account) => account.id !== id)
+        (old = []) => old.filter((account) => account.id !== id),
       );
 
       return { previous };
@@ -75,11 +63,6 @@ export const useDeleteAccount = () => {
 
     onError: (_err, _id, context) => {
       queryClient.setQueryData(accountsKeys.userList(), context?.previous);
-      showNotification("Не удалось удалить способ оплаты", "error");
-    },
-
-    onSuccess: () => {
-      showNotification("Способ оплаты удалён", "success");
     },
 
     onSettled: () => {
@@ -95,7 +78,6 @@ interface SaveBatchInput {
 
 export const useSaveAccountsBatch = () => {
   const queryClient = useQueryClient();
-  const { showNotification } = useNotification();
 
   return useMutation({
     mutationFn: async ({ toCreate, toDelete }: SaveBatchInput) => {
@@ -109,13 +91,13 @@ export const useSaveAccountsBatch = () => {
       await queryClient.cancelQueries({ queryKey: accountsKeys.userList() });
 
       const previous = queryClient.getQueryData<AccountsBaseModel[]>(
-        accountsKeys.userList()
+        accountsKeys.userList(),
       );
 
       queryClient.setQueryData<AccountsBaseModel[]>(
         accountsKeys.userList(),
         (old = []) => {
-          let updated = old.filter((acc) => !toDelete.includes(acc.id));
+          const updated = old.filter((acc) => !toDelete.includes(acc.id));
 
           const newOnes = toCreate.map(
             (acc) =>
@@ -123,11 +105,11 @@ export const useSaveAccountsBatch = () => {
                 ...acc,
                 id: Date.now() + Math.random(),
                 participantId: 0,
-              } as AccountsBaseModel)
+              }) as AccountsBaseModel,
           );
 
           return [...updated, ...newOnes];
-        }
+        },
       );
 
       return { previous };
@@ -135,11 +117,6 @@ export const useSaveAccountsBatch = () => {
 
     onError: (_err, _vars, context) => {
       queryClient.setQueryData(accountsKeys.userList(), context?.previous);
-      showNotification("Не удалось сохранить способы оплаты", "error");
-    },
-
-    onSuccess: () => {
-      showNotification("Способы оплаты сохранены", "success");
     },
 
     onSettled: () => {
