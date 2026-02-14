@@ -16,7 +16,7 @@ import {
   useCreateAddress,
   useDeleteAddress,
 } from "@/entities/address/hooks";
-import { AddressFormData, Address } from "@/entities/address/model/types";
+import { AddressInput, Address } from "@/entities/address/model/types";
 import { useNotification } from "@/app/providers";
 
 type ViewMode = "list" | "add";
@@ -33,7 +33,7 @@ export const AddressManager: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addressToDelete, setAddressToDelete] = useState<Address | null>(null);
 
-  const handleSubmit = async (data: AddressFormData) => {
+  const handleSubmit = async (data: AddressInput) => {
     try {
       await createAddress(data);
       setViewMode("list");

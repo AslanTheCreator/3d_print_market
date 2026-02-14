@@ -12,6 +12,7 @@ import { CheckoutContent } from "./CheckoutContent";
 import { OrderSuccessState } from "@/shared/ui/states";
 import { CheckoutResult } from "../model/types";
 import { EmptyPageState } from "@/shared/ui/states";
+import { useAuth } from "@/features/auth";
 import {
   ShoppingCartOutlined,
   StorefrontOutlined,
@@ -20,8 +21,10 @@ import {
 
 const Checkout = () => {
   const router = useRouter();
-
-  const { data: cartItems, isLoading: isCartLoading } = useCartProducts();
+  const { isAuthenticated } = useAuth();
+  const { data: cartItems, isLoading: isCartLoading } = useCartProducts({
+    enabled: isAuthenticated,
+  });
 
   const checkoutState = useCheckoutState({ cartItems });
 

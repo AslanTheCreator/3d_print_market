@@ -19,7 +19,7 @@ export interface AddressInput {
   index: number;
 }
 
-export interface AddressFormData {
+export interface AddressInput {
   country: string;
   city: string;
   street: string;
@@ -38,5 +38,3 @@ export const ADDRESS_VALIDATION = {
   INDEX_MAX: 999999,
   INDEX_LENGTH: 6,
 } as const;
-
-

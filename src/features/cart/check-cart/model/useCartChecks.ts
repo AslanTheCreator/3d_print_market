@@ -1,9 +1,6 @@
-import { useAuth } from "@/features/auth";
-import { useCartProducts } from "./useCartQueries";
-import { useCartQuantityStore } from "../model/cartQuantityStore";
+import { useCartProducts, useCartQuantityStore } from "@/entities/cart";
 
-export const useCartChecks = () => {
-  const { isAuthenticated } = useAuth();
+export const useCartChecks = (isAuthenticated: boolean) => {
   const { data: cartItems } = useCartProducts();
   const getQuantity = useCartQuantityStore((state) => state.getQuantity);
 

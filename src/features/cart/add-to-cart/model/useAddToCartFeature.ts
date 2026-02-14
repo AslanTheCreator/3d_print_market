@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useAddToCart, useCartChecks } from "@/entities/cart";
-import { useAuth } from "@/features/auth";
+import { useAddToCart } from "@/entities/cart";
+import { useCartChecks } from "@/features/cart/check-cart";
 
 interface UseAddToCartFeatureParams {
   onAuthRequired?: (productName?: string) => void;
@@ -10,11 +10,13 @@ interface UseAddToCartFeatureParams {
   onError?: (error: unknown) => void;
 }
 
-export function useAddToCartFeature(params?: UseAddToCartFeatureParams) {
+export function useAddToCartFeature(
+  isAuthenticated: boolean,
+  params?: UseAddToCartFeatureParams,
+) {
   const router = useRouter();
   const { mutate: addToCart, isPending } = useAddToCart();
-  const { isAuthenticated } = useAuth();
-  const { isProductInCart } = useCartChecks();
+  const { isProductInCart } = useCartChecks(isAuthenticated);
 
   const handleAddToCart = useCallback(
     (productId: number, productName?: string) => {

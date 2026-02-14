@@ -15,6 +15,7 @@ import { ArrowBack } from "@mui/icons-material";
 import { AvatarUpload } from "@/shared/ui/avatar-upload";
 import { useImageUpload } from "@/features/image-upload";
 import { useUpdateUser, UserBaseModel } from "@/entities/user";
+import { useNotification } from "@/app/providers";
 import { useState, useEffect } from "react";
 
 interface ProfileFormValues {
@@ -35,10 +36,9 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
   onSuccess,
 }) => {
   const { mutateAsync, isPending } = useUpdateUser();
+  const { showNotification } = useNotification();
   const [hasImageChanged, setHasImageChanged] = useState(false);
-  const [currentImageId, setCurrentImageId] = useState<number | null>(
-    initialData?.imageId ?? null
-  );
+  const [currentImageId, setCurrentImageId] = useState<number | null>(null);
 
   const {
     imagePreview,
@@ -92,13 +92,22 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
   const displayImagePreview = imagePreview || existingImagePreview;
 
   const onSubmit = async (data: ProfileFormValues) => {
-    await mutateAsync({
-      ...data,
-      imageId: currentImageId,
-      deadlineSending: 0,
-      deadlinePayment: 0,
-    });
-    onSuccess?.();
+    try {
+      await mutateAsync({
+        ...data,
+        imageId: hasImageChanged ? currentImageId : null,
+        deadlineSending: 0,
+        deadlinePayment: 0,
+      });
+      showNotification("Профиль успешно обновлён", "success");
+      onSuccess?.();
+    } catch (error) {
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Не удалось сохранить изменения";
+      showNotification(msg, "error");
+    }
   };
 
   return (

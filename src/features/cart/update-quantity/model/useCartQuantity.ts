@@ -1,8 +1,7 @@
 import { useCallback, useRef } from "react";
-import { useCartQuantityStore } from "../model/cartQuantityStore";
-import { useCartChecks } from "./useCartChecks";
-import { useUpdateCartQuantity } from "./useCartMutations";
+import { useCartChecks } from "@/features/cart/check-cart";
 import { debounce } from "lodash";
+import { useCartQuantityStore, useUpdateCartQuantity } from "@/entities/cart";
 
 interface UseCartQuantityOptions {
   maxQuantity?: number | null; // null означает неограниченное количество
@@ -10,9 +9,10 @@ interface UseCartQuantityOptions {
 
 export const useCartQuantity = (
   productId: number,
+  isAuthenticated: boolean,
   options?: UseCartQuantityOptions,
 ) => {
-  const { isProductInCart } = useCartChecks();
+  const { isProductInCart } = useCartChecks(isAuthenticated);
   const { mutate: updateServerQuantity } = useUpdateCartQuantity();
 
   const {

@@ -7,8 +7,9 @@ import { AuthRequiredDialog } from "@/shared/ui/auth-required-dialog";
 import { CartCounter } from "@/shared/ui/cart-counter";
 import { useAddToCartFeature } from "../model/useAddToCartFeature";
 import { useNotification } from "@/app/providers";
-import { useCartQuantity } from "@/entities/cart/hooks/useCartQuantity";
+import { useCartQuantity } from "@/features/cart/update-quantity";
 import { useRemoveFromCartFeature } from "@/features/cart/remove-from-cart/model/useRemoveFromCartFeature";
+import { useAuth } from "@/features/auth";
 
 interface AddToCartButtonProps {
   productId: number;
@@ -37,9 +38,10 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     showDialog,
     hideDialog,
   } = useAuthRequired();
+  const { isAuthenticated } = useAuth();
   const { showNotification } = useNotification();
 
-  const { handleAddToCart, isPending } = useAddToCartFeature({
+  const { handleAddToCart, isPending } = useAddToCartFeature(isAuthenticated, {
     onAuthRequired: (name) => showDialog(name),
     onNotification: (message, severity) => showNotification(message, severity),
     onSuccess: () => {
@@ -59,7 +61,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     handleDecrement,
     handleSetQuantity,
     adjustQuantityToMax,
-  } = useCartQuantity(productId, { maxQuantity: stockCount });
+  } = useCartQuantity(productId, isAuthenticated, { maxQuantity: stockCount });
 
   const isPreorder = availability === "PREORDER";
   const isRemoving = removingItemIds.includes(productId);

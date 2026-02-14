@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { useAuth } from "@/features/auth";
-import { useCartChecks } from "@/entities/cart";
+import { useCartChecks } from "@/features/cart/check-cart";
 import { useFavoritesChecks } from "@/entities/favorites/hooks";
 import {
   useUserPendingActions,
@@ -40,7 +40,7 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
   const theme = useTheme();
   const { isAuthenticated } = useAuth();
 
-  const { getCartItemsCount } = useCartChecks();
+  const { getCartItemsCount } = useCartChecks(isAuthenticated);
   const { getFavoritesItemsCount } = useFavoritesChecks();
   const {
     totalCount: pendingActionsCount,

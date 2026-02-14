@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useCallback } from "react";
 import {
   Box,
   Checkbox,
@@ -9,9 +9,11 @@ import {
   alpha,
   Paper,
 } from "@mui/material";
-import { ProductBasket, useCartQuantity } from "@/entities/cart";
+import { ProductBasket } from "@/entities/cart";
 import { CheckoutCartItemCard } from "@/entities/cart/ui/CheckoutCartItemCard";
 import { useRemoveFromCartFeature } from "@/features/cart";
+import { useCartQuantity } from "@/features/cart/update-quantity";
+import { useAuth } from "@/features/auth";
 
 interface CheckoutCartSectionProps {
   items: ProductBasket[];
@@ -37,10 +39,13 @@ const CheckoutCartItemWrapper = ({
   onRemove: (id: number) => void;
   isRemoving: boolean;
 }) => {
+  const { isAuthenticated } = useAuth();
   // item.product.count — количество в наличии (максимум)
   // item.count — количество в корзине (серверное)
   const { quantity, handleIncrement, handleDecrement, maxQuantity } =
-    useCartQuantity(item.product.id, { maxQuantity: item.product.count });
+    useCartQuantity(item.product.id, isAuthenticated, {
+      maxQuantity: item.product.count,
+    });
 
   return (
     <CheckoutCartItemCard

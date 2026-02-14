@@ -22,6 +22,7 @@ import {
   CheckCircleOutline,
 } from "@mui/icons-material";
 import { useChangePassword } from "@/entities/user";
+import { useNotification } from "@/app/providers";
 
 interface PasswordFormData {
   oldPassword: string;
@@ -32,6 +33,7 @@ interface PasswordFormData {
 export const ChangePasswordForm: React.FC = () => {
   const theme = useTheme();
   const { mutate: changePassword, isPending } = useChangePassword();
+  const { showNotification } = useNotification();
 
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -62,6 +64,14 @@ export const ChangePasswordForm: React.FC = () => {
       {
         onSuccess: () => {
           reset();
+          showNotification("Пароль успешно изменён", "success");
+        },
+        onError: (error) => {
+          const msg =
+            error instanceof Error
+              ? error.message
+              : "Не удалось изменить пароль";
+          showNotification(msg, "error");
         },
       },
     );
@@ -260,27 +270,19 @@ export const ChangePasswordForm: React.FC = () => {
             )}
           />
 
-          {/* Кнопки */}
-          <Stack direction="row" spacing={2} justifyContent="flex-end">
-            <Button
-              variant="outlined"
-              onClick={() => reset()}
-              disabled={!isDirty || isPending}
-              sx={{ textTransform: "none" }}
-            >
-              Отмена
-            </Button>
-
+          {/* Кнопка отправки */}
+          <Box sx={{ display: "flex", justifyContent: "flex-end", pt: 1 }}>
             <Button
               type="submit"
               variant="contained"
-              disabled={!isDirty || isPending}
-              startIcon={isPending ? <CircularProgress size={20} /> : undefined}
-              sx={{ textTransform: "none", minWidth: 180 }}
+              size="large"
+              disabled={isPending || !isDirty}
+              sx={{ minWidth: { xs: "100%", sm: 180 } }}
+              startIcon={isPending ? <CircularProgress size={16} /> : undefined}
             >
               {isPending ? "Сохранение..." : "Изменить пароль"}
             </Button>
-          </Stack>
+          </Box>
         </Stack>
       </Box>
     </Paper>

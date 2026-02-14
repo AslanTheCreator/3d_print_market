@@ -10,16 +10,16 @@ import {
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import {
-  AddressFormData,
+  AddressInput,
   DEFAULT_COUNTRY,
   ADDRESS_VALIDATION,
 } from "../model/types";
 
 interface AddressFormProps {
-  onSubmit: (data: AddressFormData) => void | Promise<void>;
+  onSubmit: (data: AddressInput) => void | Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
-  initialData?: Partial<AddressFormData>;
+  initialData?: Partial<AddressInput>;
   submitButtonText?: string;
   title?: string;
 }
@@ -37,7 +37,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
     handleSubmit,
     formState: { errors, isValid, isDirty },
     reset,
-  } = useForm<AddressFormData>({
+  } = useForm<AddressInput>({
     mode: "onChange",
     defaultValues: {
       country: initialData?.country || DEFAULT_COUNTRY,
@@ -49,7 +49,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
     },
   });
 
-  const handleFormSubmit = async (data: AddressFormData) => {
+  const handleFormSubmit = async (data: AddressInput) => {
     try {
       await onSubmit(data);
       reset();

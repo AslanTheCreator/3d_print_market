@@ -25,7 +25,6 @@ export const useAddToFavorites = () => {
         queryClient.setQueryData<Product[]>(favoritesKeys.lists(), (old) =>
           old ? [...old, productData] : [productData],
         );
-      } else if (previousFavorites === undefined) {
       }
 
       return { previousFavorites };

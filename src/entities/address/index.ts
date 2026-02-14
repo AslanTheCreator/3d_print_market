@@ -19,5 +19,5 @@ export { AddressSelector } from "./ui/AddressSelector";
 export { AddressForm } from "./ui/AddressForm";
 
 // Types
-export type { Address, AddressInput, AddressFormData } from "./model/types";
+export type { Address, AddressInput } from "./model/types";
 export { DEFAULT_COUNTRY, ADDRESS_VALIDATION } from "./model/types";
