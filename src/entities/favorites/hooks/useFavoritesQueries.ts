@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { favoritesApi } from "../api/favoritesApi";
 import { favoritesKeys } from "./queryKeys";
-import { Product } from "@/entities/product";
+import { Product } from "@/shared/types";
 import { useAuth } from "@/features/auth";
 
 export const useFavoritesProducts = () => {

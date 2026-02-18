@@ -12,7 +12,7 @@ import {
   Chip,
 } from "@mui/material";
 import { Controller, Control, FieldError } from "react-hook-form";
-import { ShippingMethod, Transfer } from "@/entities/transfer/model/types";
+import { ShippingMethod, Transfer } from "@/shared/types";
 import { useDictionary } from "@/entities/dictionary";
 import { DictionaryItem } from "@/entities/dictionary/model/types";
 import { formatPrice } from "@/shared/lib/utils/formatPrice";

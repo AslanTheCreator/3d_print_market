@@ -8,3 +8,4 @@ export {
   extractLastCategoryId,
   normalizeSlugParam,
 } from "./url/parseCategorySlug";
+export { attachImages } from "./attachImages";

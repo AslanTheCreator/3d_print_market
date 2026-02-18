@@ -1,12 +1,17 @@
+import { ProductCreateModel } from "../model/types";
+import { attachImages } from "@/shared/lib";
 import {
+  publicClient,
+  authClient,
+  buildProductRequest,
+  imageApi,
+} from "@/shared/api";
+import {
+  FetchProductsParams,
   Product,
-  ProductDetail,
-  ProductCreateModel,
   ProductDto,
-} from "../model/types";
-import { imageApi, attachImages } from "@/entities/image";
-import { publicClient, authClient, buildProductRequest } from "@/shared/api";
-import { FetchProductsParams } from "@/shared/types";
+  ProductDetail,
+} from "@/shared/types";
 
 const API_URL_PRODUCT = `/product`;
 const API_URL = `/products`;

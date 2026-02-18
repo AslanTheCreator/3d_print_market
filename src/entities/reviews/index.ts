@@ -7,4 +7,4 @@ export { useCreateReview, useDeleteReview } from "./hooks/useReviewMutations";
 export { reviewsQueryKeys } from "./hooks/queryKeys";
 
 // Types
-export type { Review, ReviewCreate } from "./model/types";
+export type { ReviewCreate } from "./model/types";

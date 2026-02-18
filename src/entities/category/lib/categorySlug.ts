@@ -1,4 +1,4 @@
-import type { CategoryModel } from "../model/types";
+import { CategoryModel } from "@/shared/types";
 
 /**
  * Генерирует slug для категории

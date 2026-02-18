@@ -8,11 +8,7 @@ export { categoryKeys } from "./hooks/queryKeys";
 export { useCategories, useCategoryById } from "./hooks/useCategories";
 
 // Types
-export type {
-  CategoryModel,
-  BreadcrumbItem,
-  CategoryPath,
-} from "./model/types";
+export type { BreadcrumbItem, CategoryPath } from "./model/types";
 
 // UI
 export { CategoryBreadcrumbs } from "./ui/CategoryBreadcrumbs";

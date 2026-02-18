@@ -28,7 +28,7 @@ import {
   CheckCircleOutline,
 } from "@mui/icons-material";
 import { Controller } from "react-hook-form";
-import { Product } from "@/entities/product";
+import { Product } from "@/shared/types";
 import { useLeaveReview } from "../model/useLeaveReview";
 import { REVIEW_VALIDATION, REVIEW_FORM_RULES } from "../model/types";
 

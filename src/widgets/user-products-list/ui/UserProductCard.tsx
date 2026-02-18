@@ -30,7 +30,7 @@ import {
   TrendingUp,
   Info,
 } from "@mui/icons-material";
-import { Product } from "@/entities/product/model/types";
+import { Product } from "@/shared/types";
 import { ExtendProductButton } from "@/features/product/extend-product/ui/ExtendProductButton";
 import {
   getExpirationStatus,

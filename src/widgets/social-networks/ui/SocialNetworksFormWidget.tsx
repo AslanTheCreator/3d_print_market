@@ -25,13 +25,12 @@ import {
   useCreateSocial,
   useUpdateSocial,
   useDeleteSocial,
-  type SocialNetwork,
   type SocialNetworkInput,
-  type SocialNetworkType,
 } from "@/entities/social-networks";
 import { useNotification } from "@/app/providers";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
 import type { DictionaryItem } from "@/entities/dictionary/model/types";
+import { SocialNetwork, SocialNetworkType } from "@/shared/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types

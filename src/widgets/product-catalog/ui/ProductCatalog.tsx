@@ -1,17 +1,18 @@
 import React from "react";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import {
-  Product,
   ProductCard,
   ProductCardSkeleton,
   ProductGrid,
   ProductGridItem,
 } from "@/entities/product";
+import { Product } from "@/shared/types";
 import { FavoriteButton } from "@/features/toggle-favorite";
 import { AddToCartButton } from "@/features/cart";
-import { useFavoritesChecks } from "@/entities/favorites/hooks";
+import { useFavoritesChecks } from "@/features/favorites/check-favorites";
 import { ErrorState, EmptyCatalogState } from "@/shared/ui/states";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/features/auth";
 
 interface ProductCatalogProps {
   products: Product[];
@@ -27,10 +28,11 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   onRetry,
 }) => {
   const theme = useTheme();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
-  const { isProductInFavorites } = useFavoritesChecks();
+  const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
 
   const getSkeletonCount = () => {
     if (isMobile) return 6;

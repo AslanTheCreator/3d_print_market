@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { Button, useMediaQuery, useTheme, Box, Tooltip } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
-import { Availability } from "@/entities/product/model/types";
 import { useAuthRequired } from "@/shared/hooks";
 import { AuthRequiredDialog } from "@/shared/ui/auth-required-dialog";
 import { CartCounter } from "@/shared/ui/cart-counter";
@@ -10,6 +9,7 @@ import { useNotification } from "@/app/providers";
 import { useCartQuantity } from "@/features/cart/update-quantity";
 import { useRemoveFromCartFeature } from "@/features/cart/remove-from-cart/model/useRemoveFromCartFeature";
 import { useAuth } from "@/features/auth";
+import { Availability } from "@/shared/types";
 
 interface AddToCartButtonProps {
   productId: number;

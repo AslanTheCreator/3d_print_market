@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
-import { ImageTag, imageApi } from "@/entities/image";
 import {
   revokeImagePreview,
   createImagePreview,
   validateImage,
 } from "@/shared/lib";
+import { ImageTag } from "@/shared/types";
+import { imageApi } from "@/shared/api";
 
 interface ImageUploadState {
   file: File;
@@ -26,7 +27,7 @@ export interface UseMultipleImageUploadReturn {
 
 export const useMultipleImageUpload = (
   tag: ImageTag,
-  maxImages: number = 3
+  maxImages: number = 3,
 ): UseMultipleImageUploadReturn => {
   const [images, setImages] = useState<ImageUploadState[]>([]);
 
@@ -71,8 +72,8 @@ export const useMultipleImageUpload = (
           prev.map((img) =>
             img.preview === preview
               ? { ...img, id: imageId, isUploading: false }
-              : img
-          )
+              : img,
+          ),
         );
       } catch (error) {
         console.error("Ошибка загрузки изображения:", error);
@@ -84,13 +85,13 @@ export const useMultipleImageUpload = (
                   isUploading: false,
                   error: "Не удалось загрузить изображение",
                 }
-              : img
-          )
+              : img,
+          ),
         );
         throw error;
       }
     },
-    [images.length, maxImages, tag]
+    [images.length, maxImages, tag],
   );
 
   const removeImage = useCallback((index: number) => {

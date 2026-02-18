@@ -3,7 +3,6 @@
 import React, { useState, useCallback } from "react";
 import { useAuth } from "@/features/auth";
 import { useCartChecks } from "@/features/cart/check-cart";
-import { useFavoritesChecks } from "@/entities/favorites/hooks";
 import {
   useUserPendingActions,
   PendingActionsPopover,
@@ -23,6 +22,7 @@ import Image from "next/image";
 import PersonCustomIcon from "@/shared/assets/icons/userAccount.svg";
 import ShoppingCartCustomIcon from "@/shared/assets/icons/backet.svg";
 import { ICON_SIZES } from "../model/constants";
+import { useFavoritesChecks } from "@/features/favorites/check-favorites";
 
 interface HeaderActionsProps {
   isMobile: boolean;
@@ -41,7 +41,7 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
   const { isAuthenticated } = useAuth();
 
   const { getCartItemsCount } = useCartChecks(isAuthenticated);
-  const { getFavoritesItemsCount } = useFavoritesChecks();
+  const { getFavoritesItemsCount } = useFavoritesChecks(isAuthenticated);
   const {
     totalCount: pendingActionsCount,
     sellerActionGroups,

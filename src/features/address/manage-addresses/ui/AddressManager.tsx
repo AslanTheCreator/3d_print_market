@@ -10,14 +10,16 @@ import {
   DialogActions,
   Button,
 } from "@mui/material";
-import { AddressSelector, AddressForm } from "@/entities/address";
 import {
   useAddresses,
   useCreateAddress,
   useDeleteAddress,
-} from "@/entities/address/hooks";
-import { AddressInput, Address } from "@/entities/address/model/types";
+  AddressInput,
+  AddressSelector,
+  AddressForm,
+} from "@/entities/address";
 import { useNotification } from "@/app/providers";
+import { Address } from "@/shared/types";
 
 type ViewMode = "list" | "add";
 

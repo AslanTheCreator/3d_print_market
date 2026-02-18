@@ -11,10 +11,9 @@ import {
   Fab,
 } from "@mui/material";
 import { ImageGallery } from "@/shared/ui/image-gallery";
-import { ProductDetail } from "@/entities/product";
+import { ProductDetail } from "@/shared/types";
 import { RelatedProducts } from "./RelatedProducts";
 import { AddToCartButton } from "@/features/cart";
-import { FavoriteButton } from "@/features/toggle-favorite";
 import {
   Verified,
   LocalShipping,

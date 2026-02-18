@@ -21,12 +21,12 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CategoryIcon from "@mui/icons-material/Category";
 import { alpha } from "@mui/material/styles";
 import {
-  CategoryModel,
   useCategories,
   getCategorySlug,
   buildCategoryPath,
 } from "@/entities/category";
 import { getCategoryIcon } from "@/entities/category/lib/categoryIcons";
+import { CategoryModel } from "@/shared/types";
 
 interface CategoriesMenuProps {
   onClose: () => void;

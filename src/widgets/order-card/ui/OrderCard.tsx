@@ -13,13 +13,15 @@ import {
   IconButton,
 } from "@mui/material";
 import { ExpandMore } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order";
-import { OrderStatusChip } from "./OrderStatusChip";
-import { OrderProgress } from "./OrderProgress";
-import { UserInfo } from "./UserInfo";
-import { ProductInfo } from "./ProductInfo";
-import { DeliveryInfo } from "./DeliveryInfo";
-import { OrderHistory } from "./OrderHistory";
+import {
+  ListOrdersModel,
+  OrderHistory,
+  OrderStatusChip,
+  OrderProgress,
+  UserInfo,
+  ProductInfo,
+  DeliveryInfo,
+} from "@/entities/order";
 import { CustomerActions, SellerActions } from "@/features/order";
 
 type UserRole = "seller" | "customer";
@@ -40,11 +42,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, userRole }) => {
   const needsAttention =
     (userRole === "seller" &&
       ["BOOKED", "AWAITING_PREPAYMENT_APPROVAL", "ASSEMBLING"].includes(
-        order.actualStatus
+        order.actualStatus,
       )) ||
     (userRole === "customer" &&
       ["AWAITING_PREPAYMENT", "AWAITING_PAYMENT", "ON_THE_WAY"].includes(
-        order.actualStatus
+        order.actualStatus,
       ));
 
   // Фильтрация статусов для не-предзаказов
@@ -53,7 +55,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, userRole }) => {
 
     // Для обычных товаров скрываем статусы предоплаты
     return !["AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL"].includes(
-      order.actualStatus
+      order.actualStatus,
     );
   };
 

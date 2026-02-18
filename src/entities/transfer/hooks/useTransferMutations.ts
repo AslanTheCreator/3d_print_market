@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { transferApi } from "../api/transferApi";
 import { transferKeys } from "./queryKeys";
-import type { Transfer, TransferInput } from "../model/types";
+import type { TransferInput } from "../model/types";
+import { Transfer } from "@/shared/types";
 
 // Создание трансфера
 export const useCreateTransfer = () => {

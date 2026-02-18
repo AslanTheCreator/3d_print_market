@@ -2,11 +2,9 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { Address } from "@/entities/address/model/types";
-import { ShippingMethod } from "@/entities/transfer/model/types";
+import { Address, ShippingMethod } from "@/shared/types";
 import { ProductBasket } from "@/entities/cart";
-import { orderApi } from "@/entities/order/api/orderApi";
-import { orderQueryKeys } from "@/entities/order/hooks/queryKeys";
+import { orderApi, orderQueryKeys } from "@/entities/order";
 import { useDeliveryResolver } from "./useDeliveryResolver";
 import { ApiError } from "@/shared/lib/errorHandler";
 

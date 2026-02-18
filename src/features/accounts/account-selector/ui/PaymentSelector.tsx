@@ -15,10 +15,7 @@ import {
 } from "@mui/material";
 import { Control, Controller, FieldError } from "react-hook-form";
 import { CreditCard, Smartphone, Banknote } from "lucide-react";
-import {
-  AccountsBaseModel,
-  TransferMoney,
-} from "@/entities/accounts/model/types";
+import { AccountsBaseModel, TransferMoney } from "@/shared/types";
 import { useDictionary } from "@/entities/dictionary";
 import { DictionaryItem } from "@/entities/dictionary/model/types";
 import { useUserAccounts } from "@/entities/accounts";
@@ -75,7 +72,7 @@ export const PaymentSelector: React.FC<PaymentSelectorProps> = ({
     if (!transferMoney) return new Map();
 
     return new Map(
-      transferMoney.map((method: DictionaryItem) => [method.value, method])
+      transferMoney.map((method: DictionaryItem) => [method.value, method]),
     );
   }, [transferMoney]);
 
@@ -104,7 +101,7 @@ export const PaymentSelector: React.FC<PaymentSelectorProps> = ({
   // Обработчик выбора способа оплаты
   const handlePaymentChange = (
     methodValue: string,
-    onChange: (value: any) => void
+    onChange: (value: any) => void,
   ) => {
     const selectedMethod =
       availableMethods?.find((m) => m.id.toString() === methodValue) || null;

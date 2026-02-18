@@ -17,7 +17,7 @@ import {
   OutlinedInput,
 } from "@mui/material";
 import { Inventory } from "@mui/icons-material";
-import { CategoryModel } from "@/entities/category/model/types";
+import { CategoryModel } from "@/shared/types";
 import { Currency } from "@/shared/types";
 import { ProductFormData } from "@/entities/product/model/form";
 

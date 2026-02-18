@@ -21,15 +21,13 @@ import {
   useUpdateTransfer,
   useDeleteTransfer,
   SHIPPING_ICONS,
-  type ShippingMethod,
-  type Transfer,
   type TransferInput,
 } from "@/entities/transfer";
 import { useDictionary } from "@/entities/dictionary";
 import { useNotification } from "@/app/providers";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
 import type { DictionaryItem } from "@/entities/dictionary/model/types";
-import type { Currency } from "@/shared/types";
+import type { Currency, ShippingMethod, Transfer } from "@/shared/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types

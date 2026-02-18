@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { productApi } from "../api/productApi";
 import { productKeys } from "./queryKeys";
-import { ProductDetail } from "../model/types";
+import { ProductDetail } from "@/shared/types";
 import { ProductFilter, SortBy } from "@/shared/types";
 import { useInfiniteProducts } from "@/shared/hooks/useInfiniteProducts";
 

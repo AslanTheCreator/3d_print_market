@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useProductById } from "./useProductQueries";
-import { ProductDetail } from "../model/types";
+import { ProductDetail } from "@/shared/types";
 
 interface UseProductDetailsReturn {
   productCard: ProductDetail | undefined;

@@ -1,11 +1,11 @@
-import type {
+import {
+  Address,
+  SocialNetwork,
   AccountsBaseModel,
+  ImageResponse,
   TransferMoney,
-} from "@/entities/accounts/model/types";
-import type { Address } from "@/entities/address/model/types";
-import type { ImageResponse } from "@/entities/image";
-import type { SocialNetwork } from "@/entities/social-networks";
-import type { Transfer } from "@/entities/transfer/model/types";
+  Transfer,
+} from "@/shared/types";
 
 type UserStatus = "ACTIVE" | "BLOCKED" | "DELETED";
 type SellerStatus = "DEFAULT" | "VIP" | "PRO";

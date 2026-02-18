@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
-import { ImageTag, imageApi } from "@/entities/image";
 import {
   revokeImagePreview,
   createImagePreview,
   validateImage,
 } from "@/shared/lib";
+import { ImageTag } from "@/shared/types";
+import { imageApi } from "@/shared/api";
 
 export interface UseImageUploadReturn {
   image: File | null;
@@ -65,7 +66,7 @@ export const useImageUpload = (tag: ImageTag): UseImageUploadReturn => {
         setIsUploading(false);
       }
     },
-    [tag, imagePreview]
+    [tag, imagePreview],
   );
 
   const resetImageState = useCallback(() => {

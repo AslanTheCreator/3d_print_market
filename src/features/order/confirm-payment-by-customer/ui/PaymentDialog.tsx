@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import { Close, CloudUpload, Payment, CheckCircle } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order/model/types";
-import { imageApi } from "@/entities/image";
+import { imageApi } from "@/shared/api";
 import { UseMutationResult } from "@tanstack/react-query";
 
 // Типы для различных видов оплаты
@@ -107,7 +107,7 @@ const PaymentDialog = ({
   };
 
   const handleImageUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -136,7 +136,7 @@ const PaymentDialog = ({
       setImageError(
         `Пожалуйста, загрузите подтверждение ${
           paymentType === "payment" ? "оплаты" : "предоплаты"
-        }`
+        }`,
       );
       return;
     }
@@ -151,7 +151,7 @@ const PaymentDialog = ({
         onSuccess: () => {
           handleClose();
         },
-      }
+      },
     );
   };
 

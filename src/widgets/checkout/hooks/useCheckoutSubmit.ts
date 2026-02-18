@@ -2,10 +2,9 @@
 
 import { useState, useCallback } from "react";
 import { ProductBasket, useCartQuantityStore } from "@/entities/cart";
-import { orderApi } from "@/entities/order/api/orderApi";
+import { orderApi, orderQueryKeys } from "@/entities/order";
 import { useQueryClient } from "@tanstack/react-query";
-import { cartKeys } from "@/entities/cart/hooks/queryKeys";
-import { orderQueryKeys } from "@/entities/order/hooks/queryKeys";
+import { cartKeys } from "@/entities/cart";
 import { CheckoutState } from "./useCheckoutState";
 import { OrderResult, CheckoutResult, OrderToCreate } from "../model/types";
 

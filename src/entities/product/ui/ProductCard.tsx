@@ -16,7 +16,7 @@ import {
   Chip,
 } from "@mui/material";
 import { Schedule } from "@mui/icons-material";
-import { Product } from "../model/types";
+import { Product } from "@/shared/types";
 import { ProductPriceDisplay } from "./ProductPriceDisplay";
 
 interface ProductCardProps extends Product {

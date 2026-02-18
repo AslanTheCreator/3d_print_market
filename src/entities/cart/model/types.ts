@@ -1,4 +1,4 @@
-import { Product, ProductDto } from "@/entities/product";
+import { Product, ProductDto } from "@/shared/types";
 
 // DTO от сервера (без картинок)
 export interface ProductBasketDto {

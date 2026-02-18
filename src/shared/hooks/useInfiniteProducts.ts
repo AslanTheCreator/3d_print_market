@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Product } from "@/entities/product/model/types";
+import { Product } from "@/shared/types";
 import { FetchProductsParams, ProductFilter, SortBy } from "@/shared/types";
 
 export interface CursorPageParam {

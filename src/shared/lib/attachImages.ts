@@ -1,5 +1,5 @@
-import { imageApi } from "../api/imageApi";
-import { ImageResponse } from "../model/types";
+import { imageApi } from "@/shared/api";
+import type { ImageResponse } from "@/shared/types";
 
 /**
  * Generic-хелпер: для массива элементов подгружает картинки по imageId

@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { accountsApi } from "../api/accountsApi";
 import { accountsKeys } from "./queryKeys";
-import type { AccountsBaseModel, AccountsCreateModel } from "../model/types";
+import type { AccountsCreateModel } from "../model/types";
+import { AccountsBaseModel } from "@/shared/types";
 
 export const useCreateAccount = () => {
   const queryClient = useQueryClient();
@@ -103,7 +104,7 @@ export const useSaveAccountsBatch = () => {
             (acc) =>
               ({
                 ...acc,
-                id: Date.now() + Math.random(),
+                id: -(Date.now() + Math.floor(Math.random() * 1000)),
                 participantId: 0,
               }) as AccountsBaseModel,
           );

@@ -1,9 +1,12 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
+import { productKeys } from "@/entities/product";
 import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useCreateReview } from "@/entities/reviews";
 import { LeaveReviewFormData } from "./types";
+import { orderQueryKeys } from "@/entities/order/hooks/queryKeys";
 
 type DialogState = "form" | "success";
 
@@ -19,6 +22,7 @@ export const useLeaveReview = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogState, setDialogState] = useState<DialogState>("form");
   const createReviewMutation = useCreateReview();
+  const queryClient = useQueryClient();
 
   const form = useForm<LeaveReviewFormData>({
     mode: "onChange",
@@ -52,6 +56,13 @@ export const useLeaveReview = ({
       },
       {
         onSuccess: () => {
+          // Инвалидация смежных entities — ответственность feature
+          queryClient.invalidateQueries({ queryKey: productKeys.details() });
+          queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+          queryClient.invalidateQueries({
+            queryKey: orderQueryKeys.customerOrders(),
+          });
+
           setDialogState("success");
           onSuccess?.();
         },

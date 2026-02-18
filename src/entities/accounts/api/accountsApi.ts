@@ -1,4 +1,5 @@
-import { AccountsBaseModel, AccountsCreateModel } from "../model/types";
+import { AccountsBaseModel } from "@/shared/types";
+import { AccountsCreateModel } from "../model/types";
 import { authClient } from "@/shared/api";
 
 const API_URL = `/accounts`;

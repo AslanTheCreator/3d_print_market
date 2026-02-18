@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from "react";
 import { ProductBasket } from "@/entities/cart";
-import { ShippingMethod, Transfer } from "@/entities/transfer/model/types";
+import { ShippingMethod, Transfer } from "@/shared/types";
 import { useDictionary } from "@/entities/dictionary";
 import { DeliveryResolution, SellerDeliveryInfo } from "../model/types";
 

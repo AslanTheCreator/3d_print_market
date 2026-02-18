@@ -1,5 +1,6 @@
 import { authClient, publicClient } from "@/shared/api";
-import { Review, ReviewCreate } from "../model/types";
+import { ReviewCreate } from "../model/types";
+import { Review } from "@/shared/types";
 
 const API_URL = "/reviews";
 

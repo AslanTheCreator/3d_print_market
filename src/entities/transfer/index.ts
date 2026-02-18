@@ -18,11 +18,4 @@ export {
 export { SHIPPING_ICONS, getDeliveryIcon } from "./lib/shippingIcons";
 
 // Types
-export type {
-  Transfer,
-  TransferInput,
-  TransferFormItem,
-  TransferFormData,
-  ShippingMethod,
-  TransferStatus,
-} from "./model/types";
+export type { TransferInput } from "./model/types";

@@ -20,7 +20,7 @@ import {
 } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
 import { useUserAccounts, useSaveAccountsBatch } from "@/entities/accounts";
-import type { AccountsBaseModel } from "@/entities/accounts/model/types";
+import type { AccountsBaseModel } from "@/shared/types";
 import { useNotification } from "@/app/providers";
 import { useDictionary } from "@/entities/dictionary";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card/CollapsibleFormCard";
@@ -54,7 +54,7 @@ const getPaymentIcon = (value: string) => {
 // Функция сравнения для определения изменений
 const compareAccountData = (
   existing: AccountsBaseModel,
-  formData: any
+  formData: any,
 ): boolean => {
   return (
     existing.username === formData.username &&
@@ -249,15 +249,15 @@ export const AccountsFormWidget = () => {
                                   method.value === "BANK_CARD"
                                     ? "Номер карты"
                                     : method.value === "BANK_SBP"
-                                    ? "Номер телефона"
-                                    : "Способ передачи"
+                                      ? "Номер телефона"
+                                      : "Способ передачи"
                                 }
                                 placeholder={
                                   method.value === "BANK_CARD"
                                     ? "0000 0000 0000 0000"
                                     : method.value === "BANK_SBP"
-                                    ? "+7 (000) 000-00-00"
-                                    : "Укажите детали"
+                                      ? "+7 (000) 000-00-00"
+                                      : "Укажите детали"
                                 }
                                 error={
                                   !!errors.items?.[method.value]?.entityValue

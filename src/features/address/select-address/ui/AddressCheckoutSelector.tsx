@@ -2,8 +2,8 @@ import React from "react";
 import { Typography, Paper, Alert } from "@mui/material";
 import { InfoOutlined } from "@mui/icons-material";
 import { AddressSelector } from "@/entities/address";
-import { Address } from "@/entities/address/model/types";
-import { AppLink } from "@/shared/ui/app-link/AppLink";
+import { Address } from "@/shared/types";
+import { AppLink } from "@/shared/ui/app-link";
 
 interface AddressCheckoutSelectorProps {
   addresses: Address[];

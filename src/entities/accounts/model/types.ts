@@ -1,13 +1,6 @@
-export type TransferMoney = "BANK_CARD" | "BANK_SBP" | "CASH";
+import { AccountsBaseModel } from "@/shared/types";
 
-export interface AccountsBaseModel {
-  id: number;
-  transferMoney: TransferMoney;
-  username: string;
-  entityValue: string;
-  comment: string;
-  participantId: number;
-}
-
-export interface AccountsCreateModel
-  extends Omit<AccountsBaseModel, "id" | "participantId"> {}
+export interface AccountsCreateModel extends Omit<
+  AccountsBaseModel,
+  "id" | "participantId"
+> {}

@@ -1,10 +1,5 @@
 // Экспорт типов
-export type {
-  Product,
-  ProductDetail,
-  ProductCreateModel,
-  Availability,
-} from "./types";
+export type { ProductCreateModel } from "./types";
 
 // Экспорт типов и утилит формы
 export type { ProductFormData } from "./form";

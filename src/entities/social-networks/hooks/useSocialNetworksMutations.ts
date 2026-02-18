@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { socialNetworksApi } from "../api/socialNetworksApi";
 import { socialNetworksKeys } from "./queryKeys";
-import type { SocialNetwork, SocialNetworkInput } from "../model/types";
+import type { SocialNetworkInput } from "../model/types";
+import { SocialNetwork } from "@/shared/types";
 
 export const useCreateSocial = () => {
   const queryClient = useQueryClient();

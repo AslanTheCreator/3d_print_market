@@ -1,4 +1,4 @@
-import { ImageResponse, ImageTag } from "../model/types";
+import type { ImageResponse, ImageTag } from "@/shared/types";
 import { publicClient, authClient } from "@/shared/api";
 
 const API_URL = `/images`;

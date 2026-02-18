@@ -1,8 +1,6 @@
-import { Product } from "@/entities/product";
-import { ProductDto } from "@/entities/product/model/types";
-import { attachImages, imageApi } from "@/entities/image";
+import { attachImages } from "@/shared/lib";
 import { authClient, buildProductRequest } from "@/shared/api";
-import { FetchProductsParams } from "@/shared/types";
+import { FetchProductsParams, ProductDto, Product } from "@/shared/types";
 
 const API_URL = `/favorites`;
 

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Product } from "@/entities/product";
+import { Product } from "@/shared/types";
 import { favoritesApi } from "../api/favoritesApi";
 import { favoritesKeys } from "./queryKeys";
 
@@ -17,7 +17,7 @@ export const useAddToFavorites = () => {
 
       const productData = queryClient
         .getQueryCache()
-        .findAll({ queryKey: ["products"] }) // Assuming a general products key exists
+        .findAll({ queryKey: ["products"] })
         .flatMap((query) => (query.state.data as Product[]) || [])
         .find((product) => product.id === productId);
 
@@ -36,7 +36,6 @@ export const useAddToFavorites = () => {
           context.previousFavorites,
         );
       }
-      console.error("Ошибка добавления в избранное:", error);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: favoritesKeys.lists() });
@@ -70,11 +69,8 @@ export const useRemoveFromFavorites = () => {
           context.previousFavorites,
         );
       }
-      console.error("Ошибка удаления из избранного:", error);
     },
     onSuccess: () => {
-      // Invalidation ensures consistency if optimistic update had issues
-      // or if other state depends on this.
       queryClient.invalidateQueries({ queryKey: favoritesKeys.lists() });
     },
   });

@@ -20,7 +20,7 @@ import {
   RadioButtonUnchecked,
   Add,
 } from "@mui/icons-material";
-import { Address } from "@/entities/address/model/types";
+import { Address } from "@/shared/types";
 
 interface AddressSelectorProps {
   addresses: Address[];

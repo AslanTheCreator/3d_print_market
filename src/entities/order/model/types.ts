@@ -1,7 +1,4 @@
-import { Address } from "@/entities/address/model/types";
-import { Product } from "@/entities/product";
-import { Transfer } from "@/entities/transfer/model/types";
-import { Currency } from "@/shared/types";
+import { Currency, Address, Product, Transfer } from "@/shared/types";
 
 type OrderStatus =
   | "BOOKED"

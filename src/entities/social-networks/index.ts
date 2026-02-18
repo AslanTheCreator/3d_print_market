@@ -15,8 +15,4 @@ export {
 } from "./hooks/useSocialNetworksMutations";
 
 // Types
-export type {
-  SocialNetwork,
-  SocialNetworkInput,
-  SocialNetworkType,
-} from "./model/types";
+export type { SocialNetworkInput } from "./model/types";

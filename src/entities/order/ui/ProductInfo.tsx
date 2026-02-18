@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { Stack, Box, Typography, Skeleton, Chip } from "@mui/material";
 import { ListOrdersModel } from "@/entities/order";
-import { imageApi, ImageResponse } from "@/entities/image";
+import { ImageResponse } from "@/shared/types";
+import { imageApi } from "@/shared/api";
 
 interface ProductInfoProps {
   product: ListOrdersModel["product"];

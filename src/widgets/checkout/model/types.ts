@@ -1,5 +1,4 @@
-import { ProductBasket } from "@/entities/cart";
-import { ShippingMethod, Transfer } from "@/entities/transfer/model/types";
+import { ShippingMethod, Transfer } from "@/shared/types";
 
 // Результат создания одного заказа
 export interface OrderResult {

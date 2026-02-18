@@ -10,7 +10,7 @@ import {
   Stack,
 } from "@mui/material";
 import { Payment, ThumbUp, Cancel, RateReview } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order/model/types";
+import { ListOrdersModel } from "@/entities/order";
 import {
   useConfirmPaymentByCustomer,
   useConfirmPrepaymentByCustomer,

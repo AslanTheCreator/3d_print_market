@@ -1,5 +1,6 @@
 import { authClient } from "@/shared/api";
-import type { Transfer, TransferInput } from "../model/types";
+import type { TransferInput } from "../model/types";
+import { Transfer } from "@/shared/types";
 
 const API_URL = "/transfer";
 

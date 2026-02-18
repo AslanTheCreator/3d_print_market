@@ -12,11 +12,11 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { UseQueryResult } from "@tanstack/react-query";
-import { ListOrdersModel } from "@/entities/order/model/types";
+import { ListOrdersModel } from "@/entities/order";
 import { LoadingOrderState } from "@/shared/ui/states";
-import { OrderCard } from "@/entities/order/ui/OrderCard";
 import { OrdersEmptyState } from "@/entities/order";
 import { Receipt, Storefront } from "@mui/icons-material";
+import { OrderCard } from "@/widgets/order-card";
 
 type UserRole = "seller" | "customer";
 
@@ -39,7 +39,7 @@ export const UnifiedOrdersWidget: React.FC<UnifiedOrdersWidgetProps> = ({
   // Обработка данных
   const ordersList: ListOrdersModel[] = useMemo(
     () => (Array.isArray(orders) ? orders : []),
-    [orders]
+    [orders],
   );
 
   // Подсчет заказов, требующих внимания
@@ -53,7 +53,7 @@ export const UnifiedOrdersWidget: React.FC<UnifiedOrdersWidgetProps> = ({
         ].includes(order.actualStatus);
       }
       return ["AWAITING_PREPAYMENT", "AWAITING_PAYMENT", "ON_THE_WAY"].includes(
-        order.actualStatus
+        order.actualStatus,
       );
     });
   }, [ordersList, userRole]);
@@ -81,10 +81,10 @@ export const UnifiedOrdersWidget: React.FC<UnifiedOrdersWidgetProps> = ({
         "AWAITING_PAYMENT",
         "ASSEMBLING",
         "ON_THE_WAY",
-      ].includes(o.actualStatus)
+      ].includes(o.actualStatus),
     ).length;
     const completed = ordersList.filter(
-      (o) => o.actualStatus === "COMPLETED"
+      (o) => o.actualStatus === "COMPLETED",
     ).length;
 
     return { total, active, completed };
