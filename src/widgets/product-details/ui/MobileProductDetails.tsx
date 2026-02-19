@@ -23,6 +23,8 @@ import {
   FavoriteBorder,
   Inventory2Outlined,
 } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
+import { buildCategoryPath } from "@/entities/category";
 
 interface MobileProductDetailsProps {
   productCard: ProductDetail;
@@ -170,6 +172,7 @@ export function MobileProductDetails({
   productCard,
   allImages,
 }: MobileProductDetailsProps) {
+  const router = useRouter();
   return (
     <Box sx={{ pb: 12 }}>
       {/* Галерея */}
@@ -198,13 +201,24 @@ export function MobileProductDetails({
 
         {/* Категория и бейджи */}
         <Stack direction="row" spacing={1} mb={2} flexWrap="wrap" useFlexGap>
-          <Chip
-            label={productCard.categories[0]?.name}
-            size="small"
-            variant="outlined"
-            color="secondary"
-            sx={{ fontWeight: 600 }}
-          />
+          {productCard.categories.map((category) => (
+            <Chip
+              key={category.id}
+              label={category.name}
+              size="small"
+              variant="outlined"
+              color="secondary"
+              clickable
+              onClick={() => router.push(buildCategoryPath([], category))}
+              sx={{
+                fontWeight: 600,
+                "&:hover": {
+                  bgcolor: "secondary.main",
+                  color: "secondary.contrastText",
+                },
+              }}
+            />
+          ))}
           <Chip
             icon={<Verified sx={{ fontSize: 14 }} />}
             label={productCard.originality}
@@ -349,7 +363,10 @@ export function MobileProductDetails({
 
         {/* Похожие товары */}
         <Box sx={{ mt: 3 }}>
-          <RelatedProducts categoryId={productCard.categories[0]?.id} />
+          <RelatedProducts
+            categoryId={productCard.categories[0]?.id}
+            excludeProductId={productCard.id}
+          />
         </Box>
       </Box>
 

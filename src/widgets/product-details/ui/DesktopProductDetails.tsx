@@ -23,6 +23,8 @@ import {
   Star,
   Inventory2Outlined,
 } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
+import { buildCategoryPath } from "@/entities/category";
 
 interface DesktopProductDetailsProps {
   productCard: ProductDetail;
@@ -206,13 +208,13 @@ export function DesktopProductDetails({
   productCard,
   allImages,
 }: DesktopProductDetailsProps) {
-  const isOutOfStock = productCard.count !== null && productCard.count <= 0;
+  const router = useRouter();
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Хлебные крошки */}
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Главная / {productCard.categories[0]?.name} / {productCard.name}
+        Главная / {productCard.categories.map((c) => c.name).join(", ")}
       </Typography>
 
       {/* Заголовок */}
@@ -244,6 +246,31 @@ export function DesktopProductDetails({
           <Stack spacing={3}>
             {/* Информационные бейджи */}
             <InfoBadges product={productCard} />
+
+            {/* Категории */}
+            {productCard.categories.length > 0 && (
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {productCard.categories.map((category) => (
+                  <Chip
+                    key={category.id}
+                    label={category.name}
+                    size="small"
+                    variant="outlined"
+                    color="secondary"
+                    clickable
+                    onClick={() => router.push(buildCategoryPath([], category))}
+                    sx={{
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      "&:hover": {
+                        bgcolor: "secondary.main",
+                        color: "secondary.contrastText",
+                      },
+                    }}
+                  />
+                ))}
+              </Stack>
+            )}
 
             {/* Цена и остаток */}
             <PriceSection
@@ -386,7 +413,10 @@ export function DesktopProductDetails({
 
       {/* Похожие товары */}
       <Box sx={{ mt: 6 }}>
-        <RelatedProducts categoryId={productCard.categories[0]?.id} />
+        <RelatedProducts
+          categoryId={productCard.categories[0]?.id}
+          excludeProductId={productCard.id}
+        />
       </Box>
     </Container>
   );

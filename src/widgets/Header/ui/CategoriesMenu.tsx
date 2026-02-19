@@ -8,7 +8,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  IconButton,
   Typography,
   Collapse,
   CircularProgress,
@@ -54,14 +53,10 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
 
   const Icon = getCategoryIcon(category.name);
 
-  const handleToggle = (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsExpanded(!isExpanded);
-  };
-
   const handleCategoryClick = () => {
-    if (!hasChildren) {
+    if (hasChildren) {
+      setIsExpanded(!isExpanded);
+    } else {
       router.replace(categoryPath);
       onClose();
     }
@@ -105,20 +100,11 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
             }}
           />
           {hasChildren ? (
-            <IconButton
-              onClick={handleToggle}
-              size="small"
-              sx={{
-                color: "action.active",
-                opacity: 0.7,
-                "&:hover": {
-                  backgroundColor: (theme) =>
-                    alpha(theme.palette.primary.main, 0.04),
-                },
-              }}
-            >
-              {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            </IconButton>
+            isExpanded ? (
+              <ExpandLessIcon sx={{ color: "action.active", opacity: 0.7 }} />
+            ) : (
+              <ExpandMoreIcon sx={{ color: "action.active", opacity: 0.7 }} />
+            )
           ) : (
             <ChevronRightIcon
               sx={{

@@ -20,7 +20,7 @@ export const OrdersEmptyState = ({ userRole }: OrdersEmptyStateProps) => {
       "Когда кто-то купит ваш товар, заказ появится здесь. Добавьте больше товаров, чтобы увеличить продажи!",
     actionButton: {
       text: "Добавить товар",
-      onClick: () => router.push("/dashboard/products/add"),
+      onClick: () => router.push("/dashboard/products/new"),
       variant: "contained" as const,
     },
   };

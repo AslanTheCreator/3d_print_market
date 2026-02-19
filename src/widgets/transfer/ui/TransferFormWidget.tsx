@@ -310,22 +310,41 @@ const TransferForm: React.FC<TransferFormProps> = ({
                                   ? { value: 0, message: "Минимум 0" }
                                   : undefined,
                               }}
-                              render={({ field: priceField }) => (
+                              render={({
+                                field: { onChange, value, ...restField },
+                              }) => (
                                 <TextField
-                                  {...priceField}
-                                  value={priceField.value ?? 0}
-                                  type="number"
+                                  {...restField}
+                                  value={
+                                    value === 0 || value == null
+                                      ? ""
+                                      : String(value)
+                                  }
+                                  onChange={(e) => {
+                                    const raw = e.target.value;
+
+                                    // Разрешаем только цифры
+                                    if (raw !== "" && !/^\d+$/.test(raw))
+                                      return;
+
+                                    // Убираем ведущие нули: "0123" → "123"
+                                    const cleaned = raw.replace(
+                                      /^0+(\d)/,
+                                      "$1",
+                                    );
+
+                                    onChange(
+                                      cleaned === "" ? 0 : Number(cleaned),
+                                    );
+                                  }}
+                                  type="text"
+                                  inputMode="numeric"
                                   fullWidth
                                   label="Стоимость доставки"
-                                  inputProps={{ min: 0, step: 1 }}
+                                  placeholder="0"
                                   error={!!errors.items?.[key]?.price}
                                   helperText={
                                     errors.items?.[key]?.price?.message
-                                  }
-                                  onChange={(e) =>
-                                    priceField.onChange(
-                                      Number(e.target.value) || 0,
-                                    )
                                   }
                                 />
                               )}
