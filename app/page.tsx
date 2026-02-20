@@ -30,7 +30,7 @@ export default function HomePage() {
             fontSize: { xs: "1.75rem", sm: "2rem" },
           }}
         >
-          Свежие предзаказы
+          Новинки
         </Typography>
       )}
       <Box>

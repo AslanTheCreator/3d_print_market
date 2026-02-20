@@ -1,7 +1,7 @@
 "use client";
 
 import { Paper } from "@mui/material";
-import { Availability } from "@/entities/product/model/types";
+import { Availability } from "@/shared/types";
 import { AddToCartButton } from "@/features/cart";
 
 interface FixedBottomCartProps {

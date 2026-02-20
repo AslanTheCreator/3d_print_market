@@ -48,7 +48,7 @@ export const CheckoutCartItemCard = ({
 
   // Деструктурируем product из ProductBasket
   const { product } = item;
-  const { id, name, price, categories, image } = product;
+  const { id, name, price, categories, image, currency } = product;
 
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onSelectChange(id, event.target.checked);
@@ -86,9 +86,8 @@ export const CheckoutCartItemCard = ({
       />
 
       {/* Product Image */}
-      <Link href={`/catalog/${id}/detail`} passHref legacyBehavior>
+      <Link href={`/catalog/${id}/detail`} style={{ textDecoration: "none" }}>
         <Box
-          component="a"
           sx={{
             position: "relative",
             width: { xs: 80, sm: 100 },
@@ -164,9 +163,11 @@ export const CheckoutCartItemCard = ({
                 {categoryName}
               </Typography>
             )}
-            <Link href={`/catalog/${id}/detail`} passHref legacyBehavior>
+            <Link
+              href={`/catalog/${id}/detail`}
+              style={{ textDecoration: "none" }}
+            >
               <Typography
-                component="a"
                 variant={isMobile ? "body2" : "body1"}
                 fontWeight={600}
                 sx={{
@@ -217,7 +218,7 @@ export const CheckoutCartItemCard = ({
             fontWeight={700}
             color="primary"
           >
-            {formatPrice(price * quantity)}
+            {formatPrice(price * quantity, currency)}
           </Typography>
 
           <QuantityCounter

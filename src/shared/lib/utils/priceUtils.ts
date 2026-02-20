@@ -1,4 +1,4 @@
-import { Availability } from "@/entities/product/model/types";
+import { Availability } from "@/shared/types";
 
 /**
  * Рассчитывает остаток к оплате для предзаказа

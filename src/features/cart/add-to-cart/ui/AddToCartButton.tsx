@@ -6,12 +6,8 @@ import {
   Box,
   Tooltip,
   Stack,
-  IconButton,
-  Typography,
 } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
-import RemoveIcon from "@mui/icons-material/Remove";
-import AddIcon from "@mui/icons-material/Add";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useRouter } from "next/navigation";
 import { useAuthRequired } from "@/shared/hooks";
@@ -204,6 +200,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
             onDecrement={handleDecrementWithRemove}
             disabled={isPending || isRemoving}
             isAtMax={isAtMaxQuantity}
+            size="large"
           />
 
           <Button
@@ -212,10 +209,10 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
             endIcon={<ChevronRightIcon />}
             fullWidth
             sx={{
-              borderRadius: "12px",
+              borderRadius: 3,
               fontSize: "16px",
               fontWeight: 600,
-              py: 1.5,
+              height: 48,
               "&:hover": {
                 bgcolor: "primary.dark",
               },

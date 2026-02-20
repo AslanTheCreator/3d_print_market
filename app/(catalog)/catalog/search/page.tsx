@@ -19,7 +19,7 @@ function SearchContent() {
   return (
     <Container sx={{ pt: "20px" }}>
       <Typography component="h2" variant="h2">
-        {query ? `Результаты поиска: "${query}"` : "Свежие предзаказы"}
+        {query ? `Результаты поиска: "${query}"` : "Новинки"}
       </Typography>
       <Box pt="20px">
         <InfiniteScroll

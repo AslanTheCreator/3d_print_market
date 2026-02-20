@@ -16,9 +16,10 @@ import {
   Collapse,
 } from "@mui/material";
 import { Warning, CheckCircle, InfoOutlined } from "@mui/icons-material";
-import { ShippingMethod, getDeliveryIcon } from "@/entities/transfer";
+import { getDeliveryIcon } from "@/entities/transfer";
 import { useDictionary } from "@/entities/dictionary";
 import { AppLink } from "@/shared/ui/app-link/AppLink";
+import { ShippingMethod } from "@/shared/types";
 
 interface DeliveryMethodSelectorProps {
   availableMethods: ShippingMethod[];

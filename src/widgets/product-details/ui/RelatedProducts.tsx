@@ -27,6 +27,10 @@ export function RelatedProducts({
     [data, excludeProductId],
   );
 
+  if (!isLoading && filteredProducts.length === 0) {
+    return null;
+  }
+
   return (
     <Paper
       elevation={0}

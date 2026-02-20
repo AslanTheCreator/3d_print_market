@@ -1,5 +1,5 @@
-import { Currency } from "@/shared/types";
-import { Availability, ProductCreateModel } from "./types";
+import { Currency, Availability } from "@/shared/types";
+import { ProductCreateModel } from "./types";
 
 /**
  * Данные формы создания/редактирования продукта

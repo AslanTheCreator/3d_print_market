@@ -1,3 +1,5 @@
+// src/shared/ui/cart-counter/CartCounter.tsx
+
 "use client";
 
 import React from "react";
@@ -10,7 +12,25 @@ interface CartCounterProps {
   onDecrement: () => void;
   disabled?: boolean;
   isAtMax?: boolean;
+  size?: "compact" | "large";
 }
+
+const sizeConfig = {
+  compact: {
+    height: { mobile: 32, desktop: 36 },
+    buttonWidth: { mobile: 36, desktop: 44 },
+    iconSize: { mobile: "1.125rem", desktop: "1.25rem" },
+    fontSize: { mobile: "0.875rem", desktop: "1rem" },
+    borderRadius: { mobile: 1, desktop: 1.5 },
+  },
+  large: {
+    height: { mobile: 44, desktop: 48 },
+    buttonWidth: { mobile: 44, desktop: 52 },
+    iconSize: { mobile: "1.25rem", desktop: "1.375rem" },
+    fontSize: { mobile: "1rem", desktop: "1.125rem" },
+    borderRadius: { mobile: 2, desktop: 3 },
+  },
+};
 
 export const CartCounter: React.FC<CartCounterProps> = ({
   value,
@@ -18,9 +38,12 @@ export const CartCounter: React.FC<CartCounterProps> = ({
   onDecrement,
   disabled = false,
   isAtMax = false,
+  size = "compact",
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const device = isMobile ? "mobile" : "desktop";
+  const config = sizeConfig[size];
 
   const handleDecrement = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -45,22 +68,21 @@ export const CartCounter: React.FC<CartCounterProps> = ({
         alignItems: "center",
         justifyContent: "space-between",
         width: "100%",
-        height: isMobile ? 32 : 36,
+        height: config.height[device],
         bgcolor: alpha(theme.palette.primary.main, 0.1),
-        borderRadius: isMobile ? 1 : 1.5,
+        borderRadius: config.borderRadius[device],
         overflow: "hidden",
         opacity: disabled ? 0.6 : 1,
         transition: "all 0.2s ease-in-out",
       }}
     >
-      {/* Кнопка минус */}
       <Box
         onClick={handleDecrement}
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          width: isMobile ? 36 : 44,
+          width: config.buttonWidth[device],
           height: "100%",
           cursor: disabled ? "not-allowed" : "pointer",
           transition: "background-color 0.15s ease",
@@ -78,19 +100,18 @@ export const CartCounter: React.FC<CartCounterProps> = ({
       >
         <Remove
           sx={{
-            fontSize: isMobile ? "1.125rem" : "1.25rem",
+            fontSize: config.iconSize[device],
             color: theme.palette.primary.main,
           }}
         />
       </Box>
 
-      {/* Значение счётчика */}
       <Typography
         sx={{
           flex: 1,
           textAlign: "center",
           fontWeight: 700,
-          fontSize: isMobile ? "0.875rem" : "1rem",
+          fontSize: config.fontSize[device],
           color: theme.palette.primary.main,
           userSelect: "none",
         }}
@@ -98,14 +119,13 @@ export const CartCounter: React.FC<CartCounterProps> = ({
         {value}
       </Typography>
 
-      {/* Кнопка плюс */}
       <Box
         onClick={handleIncrement}
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          width: isMobile ? 36 : 44,
+          width: config.buttonWidth[device],
           height: "100%",
           cursor: disabled || isAtMax ? "not-allowed" : "pointer",
           opacity: isAtMax ? 0.5 : 1,
@@ -126,7 +146,7 @@ export const CartCounter: React.FC<CartCounterProps> = ({
       >
         <Add
           sx={{
-            fontSize: isMobile ? "1.125rem" : "1.25rem",
+            fontSize: config.iconSize[device],
             color: theme.palette.primary.main,
           }}
         />
