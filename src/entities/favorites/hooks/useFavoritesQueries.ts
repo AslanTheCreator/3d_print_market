@@ -2,15 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { favoritesApi } from "../api/favoritesApi";
 import { favoritesKeys } from "./queryKeys";
 import { Product } from "@/shared/types";
-import { useAuth } from "@/features/auth";
 
-export const useFavoritesProducts = () => {
-  const { isAuthenticated } = useAuth();
-
+export const useFavoritesProducts = (enabled: boolean = true) => {
   return useQuery<Product[]>({
     queryKey: favoritesKeys.lists(),
     queryFn: () => favoritesApi.getFavorites({ size: 50 }),
-    enabled: isAuthenticated,
+    enabled,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });

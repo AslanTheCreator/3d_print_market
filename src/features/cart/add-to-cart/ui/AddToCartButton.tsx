@@ -16,7 +16,7 @@ import { CartCounter } from "@/shared/ui/cart-counter";
 import { useAddToCartFeature } from "../model/useAddToCartFeature";
 import { useNotification } from "@/app/providers";
 import { useCartQuantity } from "@/features/cart/update-quantity";
-import { useRemoveFromCartFeature } from "@/features/cart/remove-from-cart/model/useRemoveFromCartFeature";
+import { useRemoveFromCartFeature } from "@/features/cart/remove-from-cart";
 import { useAuth } from "@/features/auth";
 import { Availability } from "@/shared/types";
 

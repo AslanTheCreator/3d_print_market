@@ -7,9 +7,9 @@ import {
   ProductGridItem,
 } from "@/entities/product";
 import { Product } from "@/shared/types";
-import { FavoriteButton } from "@/features/toggle-favorite";
+import { FavoriteButton } from "@/features/favorite/toggle-favorite";
 import { AddToCartButton } from "@/features/cart";
-import { useFavoritesChecks } from "@/features/favorites/check-favorites";
+import { useFavoritesChecks } from "@/features/favorite/check-favorites";
 import { ErrorState, EmptyCatalogState } from "@/shared/ui/states";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth";

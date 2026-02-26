@@ -5,7 +5,7 @@ import AuthForm from "@/widgets/auth-form";
 import { authApi } from "@/features/auth";
 import { AuthFormModel } from "@/features/auth/model/types";
 import { useRouter } from "next/navigation";
-import { VerificationCodeDialog } from "@/features/auth/ui/VerificationCodeDialog";
+import { VerificationCodeDialog } from "@/features/auth";
 import { useAuthStore } from "@/app/store";
 import { useNotification } from "@/app/providers";
 import { ApiError } from "@/shared/lib/errorHandler";

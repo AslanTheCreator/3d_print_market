@@ -18,7 +18,7 @@ import {
 } from "@/entities/order";
 import PaymentDialog from "@/features/order/confirm-payment-by-customer/ui/PaymentDialog";
 import { CancelOrderDialog } from "@/features/order/cancel-order/ui/CancelOrderDialog";
-import { LeaveReviewDialog } from "@/features/reviews/leave-review";
+import { LeaveReviewDialog } from "@/features/review/leave-review";
 
 interface CustomerActionsProps {
   order: ListOrdersModel;

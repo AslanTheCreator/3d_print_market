@@ -1,7 +1,7 @@
 import { useFavoritesProducts } from "@/entities/favorites";
 
 export const useFavoritesChecks = (isAuthenticated: boolean) => {
-  const { data: favorites } = useFavoritesProducts();
+  const { data: favorites } = useFavoritesProducts(isAuthenticated);
 
   const isProductInFavorites = (productId: number) => {
     if (!isAuthenticated) return false;

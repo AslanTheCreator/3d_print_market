@@ -22,7 +22,7 @@ export function useRemoveFromCartFeature() {
         },
       });
     },
-    [removeFromCart]
+    [removeFromCart],
   );
 
   return { handleRemoveItem, removingItemIds };

@@ -21,7 +21,7 @@ export default function FavoritesPage() {
     isLoading,
     isError,
     refetch,
-  } = useFavoritesProducts();
+  } = useFavoritesProducts(isAuthenticated);
 
   if (!isAuthenticated) {
     return <UnauthorizedState type="favorites" />;

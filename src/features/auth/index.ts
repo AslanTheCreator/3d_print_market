@@ -1,4 +1,6 @@
-export * from "./ui/LogoutButton";
+export { LogoutButton } from "./ui/LogoutButton";
+export { VerificationCodeDialog } from "./ui/VerificationCodeDialog";
+export { PasswordResetDialog } from "./ui/PasswordResetDialog";
 
-export { useAuth } from "./hooks/useAuth";
+export { useAuth } from "./model/useAuth";
 export { authApi } from "./api/authApi";

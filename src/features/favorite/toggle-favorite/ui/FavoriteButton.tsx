@@ -11,7 +11,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import { useAuth } from "@/features/auth";
 import { useAuthRequired } from "@/shared/hooks";
 import { AuthRequiredDialog } from "@/shared/ui/auth-required-dialog";
-import { useToggleFavorite } from "@/features/toggle-favorite";
+import { useToggleFavorite } from "@/features/favorite/toggle-favorite";
 
 interface FavoriteButtonProps {
   productId: number;
@@ -28,8 +28,8 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { toggleFavorite, isLoading } = useToggleFavorite();
   const { isAuthenticated } = useAuth();
+  const { toggleFavorite, isLoading } = useToggleFavorite(isAuthenticated);
   const {
     isOpen,
     productName: dialogProductName,

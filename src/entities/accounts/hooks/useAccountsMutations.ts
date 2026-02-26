@@ -8,7 +8,7 @@ export const useCreateAccount = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: accountsApi.createAccount,
+    mutationFn: accountsApi.create,
 
     onMutate: async (newAccount) => {
       await queryClient.cancelQueries({ queryKey: accountsKeys.userList() });
@@ -46,7 +46,7 @@ export const useDeleteAccount = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: accountsApi.deleteAccount,
+    mutationFn: accountsApi.delete,
 
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: accountsKeys.userList() });
@@ -83,8 +83,8 @@ export const useSaveAccountsBatch = () => {
   return useMutation({
     mutationFn: async ({ toCreate, toDelete }: SaveBatchInput) => {
       await Promise.all([
-        ...toCreate.map((acc) => accountsApi.createAccount(acc)),
-        ...toDelete.map((id) => accountsApi.deleteAccount(id)),
+        ...toCreate.map((acc) => accountsApi.create(acc)),
+        ...toDelete.map((id) => accountsApi.delete(id)),
       ]);
     },
 

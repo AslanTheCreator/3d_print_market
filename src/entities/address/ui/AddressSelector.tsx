@@ -98,7 +98,7 @@ export const AddressSelector = ({
 
   return (
     <FormControl component="fieldset" fullWidth>
-      {showRadio && (
+      {showRadio && addresses.length > 0 && (
         <FormLabel
           component="legend"
           sx={{

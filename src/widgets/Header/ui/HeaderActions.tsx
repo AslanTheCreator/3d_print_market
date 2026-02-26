@@ -6,7 +6,7 @@ import { useCartChecks } from "@/features/cart/check-cart";
 import {
   useUserPendingActions,
   PendingActionsPopover,
-} from "@/features/pending-actions";
+} from "@/features/pending-action";
 import {
   Stack,
   IconButton,
@@ -22,7 +22,7 @@ import Image from "next/image";
 import PersonCustomIcon from "@/shared/assets/icons/userAccount.svg";
 import ShoppingCartCustomIcon from "@/shared/assets/icons/backet.svg";
 import { ICON_SIZES } from "../model/constants";
-import { useFavoritesChecks } from "@/features/favorites/check-favorites";
+import { useFavoritesChecks } from "@/features/favorite/check-favorites";
 
 interface HeaderActionsProps {
   isMobile: boolean;

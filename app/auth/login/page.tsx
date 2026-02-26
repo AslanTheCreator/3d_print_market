@@ -5,11 +5,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/app/store";
 import { useNotification } from "@/app/providers";
-import { PasswordResetDialog } from "@/features/auth/ui/PasswordResetDialog";
-import { VerificationCodeDialog } from "@/features/auth/ui/VerificationCodeDialog";
+import { PasswordResetDialog } from "@/features/auth";
+import { VerificationCodeDialog } from "@/features/auth";
 import { authApi } from "@/features/auth";
 import { VerificationRequiredError } from "@/features/auth/model/types";
-import { startTokenRefresh } from "@/shared/lib/token";
 
 export default function LoginPage() {
   const router = useRouter();

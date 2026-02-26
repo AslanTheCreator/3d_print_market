@@ -1,7 +1,7 @@
 import { useCartProducts, useCartQuantityStore } from "@/entities/cart";
 
 export const useCartChecks = (isAuthenticated: boolean) => {
-  const { data: cartItems } = useCartProducts();
+  const { data: cartItems } = useCartProducts({ enabled: isAuthenticated });
   const getQuantity = useCartQuantityStore((state) => state.getQuantity);
 
   const isProductInCart = (productId: number) => {

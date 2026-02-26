@@ -5,10 +5,10 @@ import {
 } from "@/entities/favorites";
 
 // Хук для переключения состояния избранного (добавить/удалить)
-export const useToggleFavorite = () => {
+export const useToggleFavorite = (isAuthenticated: boolean) => {
   const addToFavorites = useAddToFavorites();
   const removeFromFavorites = useRemoveFromFavorites();
-  const { data: favorites = [] } = useFavoritesProducts();
+  const { data: favorites = [] } = useFavoritesProducts(isAuthenticated);
 
   const toggleFavorite = (productId: number) => {
     const isFavorite = favorites.some((product) => product.id === productId);
