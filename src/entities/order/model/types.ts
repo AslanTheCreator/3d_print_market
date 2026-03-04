@@ -56,6 +56,7 @@ export interface ListOrdersModel {
   product: Product;
   transfer: OrderTransfer;
   images: number[];
+  deliveryUrl: string;
   histories: OrderHistory[];
 }
 

@@ -2,11 +2,13 @@
 
 import { Typography, Container, Box } from "@mui/material";
 import { useParams } from "next/navigation";
-import { useCategoryFilter } from "@/features/product-filter/by-category";
-import { CategoryPageHeader } from "@/features/product-filter/by-category";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { useProductsInfinite } from "@/entities/product";
 import { ProductCatalog } from "@/widgets/product-catalog";
+import {
+  CategoryPageHeader,
+  useCategoryFilter,
+} from "@/features/product/filter-by-category";
 
 export default function CategoryPage() {
   const params = useParams();

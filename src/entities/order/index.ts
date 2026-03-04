@@ -27,6 +27,7 @@ export { UserInfo } from "./ui/UserInfo";
 export { ProductInfo } from "./ui/ProductInfo";
 export { DeliveryInfo } from "./ui/DeliveryInfo";
 export { OrdersEmptyState } from "./ui/OrdersEmptyState";
+export { PaymentProofImages } from "./ui/PaymentProofImages";
 
 // Types
 export type { ListOrdersModel, OrderCancel } from "./model/types";

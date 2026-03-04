@@ -12,4 +12,8 @@ export const accountsKeys = {
 
   byTransferMethod: (method: string) =>
     [...accountsKeys.all, "transfer", method] as const,
+
+  // Ключи для счетов участника (продавца)
+  participant: (participantId: number) =>
+    [...accountsKeys.all, "participant", participantId] as const,
 } as const;

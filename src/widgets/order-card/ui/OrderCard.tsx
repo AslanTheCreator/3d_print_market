@@ -21,6 +21,7 @@ import {
   UserInfo,
   ProductInfo,
   DeliveryInfo,
+  PaymentProofImages,
 } from "@/entities/order";
 import { CustomerActions, SellerActions } from "@/features/order";
 
@@ -30,6 +31,25 @@ interface OrderCardProps {
   order: ListOrdersModel;
   userRole: UserRole;
 }
+
+/**
+ * Статусы, при которых покупатель уже загрузил скриншот оплаты
+ * и продавцу есть что смотреть.
+ */
+const STATUSES_WITH_PAYMENT_PROOF = [
+  "AWAITING_PREPAYMENT_APPROVAL",
+  "AWAITING_PAYMENT",
+  "ASSEMBLING",
+  "ON_THE_WAY",
+  "COMPLETED",
+  "DISPUTED",
+];
+
+/**
+ * Статусы, при которых посылка уже отправлена
+ * и покупателю доступна ссылка отслеживания.
+ */
+const STATUSES_WITH_TRACKING = ["ON_THE_WAY", "COMPLETED"];
 
 export const OrderCard: React.FC<OrderCardProps> = ({ order, userRole }) => {
   const theme = useTheme();
@@ -53,11 +73,24 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, userRole }) => {
   const shouldShowProgress = () => {
     if (isPreorder) return true;
 
-    // Для обычных товаров скрываем статусы предоплаты
     return !["AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL"].includes(
       order.actualStatus,
     );
   };
+
+  // Скриншоты оплаты — только для продавца
+  const showPaymentProof =
+    userRole === "seller" &&
+    order.images.length > 0 &&
+    STATUSES_WITH_PAYMENT_PROOF.includes(order.actualStatus);
+
+  // Ссылка отслеживания — только для покупателя, когда посылка отправлена
+  const trackingUrl =
+    userRole === "customer" &&
+    order.deliveryUrl &&
+    STATUSES_WITH_TRACKING.includes(order.actualStatus)
+      ? order.deliveryUrl
+      : undefined;
 
   return (
     <Card
@@ -146,8 +179,19 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, userRole }) => {
 
               <Divider />
 
-              {/* Информация о доставке */}
-              <DeliveryInfo transfer={order.transfer} />
+              {/* Информация о доставке + ссылка отслеживания */}
+              <DeliveryInfo
+                transfer={order.transfer}
+                deliveryUrl={trackingUrl}
+              />
+
+              {/* Скриншоты оплаты (только для продавца) */}
+              {showPaymentProof && (
+                <>
+                  <Divider />
+                  <PaymentProofImages imageIds={order.images} />
+                </>
+              )}
 
               <Divider />
 

@@ -18,20 +18,23 @@ import {
 } from "@mui/material";
 import { Close, CloudUpload, Payment, CheckCircle } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order/model/types";
+import { useSellerAccounts } from "@/entities/accounts";
 import { imageApi } from "@/shared/api";
 import { UseMutationResult } from "@tanstack/react-query";
+import { SellerPaymentDetails } from "./SellerPaymentDetails";
 
-// Типы для различных видов оплаты
+// ─────────────────────────────────────────────────────────────────────────────
+// Типы
+// ─────────────────────────────────────────────────────────────────────────────
+
 export type PaymentType = "payment" | "prepayment";
 
-// Интерфейс для параметров мутации
 interface PaymentMutationParams {
   orderId: number;
   imageId: number;
   comment?: string;
 }
 
-// Интерфейс для пропсов компонента
 interface PaymentDialogProps {
   open: boolean;
   onClose: () => void;
@@ -45,14 +48,17 @@ interface PaymentDialogProps {
   >;
 }
 
-// Конфигурация для разных типов оплаты
+// ─────────────────────────────────────────────────────────────────────────────
+// Конфигурация
+// ─────────────────────────────────────────────────────────────────────────────
+
 const paymentConfig = {
   payment: {
     title: "Подтверждение оплаты",
     buttonText: "Подтвердить оплату",
     buttonLoadingText: "Подтверждение...",
     instruction:
-      "Переведите указанную сумму продавцу любым удобным способом и загрузите скриншот или фото чека как подтверждение оплаты.",
+      "Выберите способ оплаты, переведите указанную сумму по реквизитам и загрузите скриншот или фото чека.",
     warning:
       "Убедитесь, что сумма и реквизиты верны. После подтверждения оплаты изменить данные будет невозможно.",
     amountLabel: "К оплате:",
@@ -62,12 +68,16 @@ const paymentConfig = {
     buttonText: "Подтвердить предоплату",
     buttonLoadingText: "Подтверждение...",
     instruction:
-      "Переведите указанную сумму предоплаты продавцу любым удобным способом и загрузите скриншот или фото чека как подтверждение предоплаты.",
+      "Выберите способ оплаты, переведите указанную сумму предоплаты по реквизитам и загрузите скриншот или фото чека.",
     warning:
       "Убедитесь, что сумма и реквизиты верны. После подтверждения предоплаты изменить данные будет невозможно.",
     amountLabel: "К предоплате:",
   },
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Компонент
+// ─────────────────────────────────────────────────────────────────────────────
 
 const PaymentDialog = ({
   open,
@@ -82,9 +92,26 @@ const PaymentDialog = ({
   const [imageId, setImageId] = useState<number | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
+    null,
+  );
 
-  // Получаем конфигурацию для текущего типа оплаты
   const config = paymentConfig[paymentType];
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Загрузка всех счетов продавца
+  // participantId = order.userInfo.id (он же product.sellerId)
+  // Запрос выполняется только когда диалог открыт
+  // ──────────────────────────────────────────────────────────────────────────
+  const {
+    data: sellerAccounts,
+    isLoading: isAccountsLoading,
+    isError: isAccountsError,
+  } = useSellerAccounts(open ? order.userInfo.id : undefined);
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Обработчики изображения
+  // ──────────────────────────────────────────────────────────────────────────
 
   const validateImage = (file: File): boolean => {
     if (file.size > 10 * 1024 * 1024) {
@@ -131,7 +158,13 @@ const PaymentDialog = ({
     }
   };
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Подтверждение оплаты
+  // ──────────────────────────────────────────────────────────────────────────
+
   const handleConfirmPayment = () => {
+    if (!selectedAccountId) return;
+
     if (!imageId) {
       setImageError(
         `Пожалуйста, загрузите подтверждение ${
@@ -162,11 +195,15 @@ const PaymentDialog = ({
     setImageId(null);
     setImageError(null);
     setIsUploadingImage(false);
+    setSelectedAccountId(null);
     onClose();
   };
 
   const canConfirmPayment =
-    imageId && !paymentMutation.isPending && !isUploadingImage;
+    selectedAccountId &&
+    imageId &&
+    !paymentMutation.isPending &&
+    !isUploadingImage;
 
   return (
     <Dialog
@@ -208,10 +245,19 @@ const PaymentDialog = ({
           </Typography>
         </Paper>
 
-        {/* Инструкция по оплате */}
+        {/* Инструкция */}
         <Alert severity="info" sx={{ mb: 3 }}>
           <Typography variant="body2">{config.instruction}</Typography>
         </Alert>
+
+        {/* ── Реквизиты продавца (список с выбором) ── */}
+        <SellerPaymentDetails
+          accounts={sellerAccounts}
+          isLoading={isAccountsLoading}
+          isError={isAccountsError}
+          selectedAccountId={selectedAccountId}
+          onSelectAccount={setSelectedAccountId}
+        />
 
         {/* Загрузка чека */}
         <Box sx={{ mb: 3 }}>
