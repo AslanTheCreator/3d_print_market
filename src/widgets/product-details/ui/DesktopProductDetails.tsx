@@ -25,6 +25,9 @@ import {
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { buildCategoryPath } from "@/entities/category";
+import { SellerAvatar } from "@/entities/user";
+import { useAuth } from "@/features/auth";
+import { useFavoritesChecks } from "@/features/favorite/check-favorites";
 
 interface DesktopProductDetailsProps {
   productCard: ProductDetail;
@@ -209,6 +212,8 @@ export function DesktopProductDetails({
   allImages,
 }: DesktopProductDetailsProps) {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -291,22 +296,11 @@ export function DesktopProductDetails({
               }}
             >
               <Stack direction="row" alignItems="center" spacing={2}>
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: "50%",
-                    bgcolor: "primary.main",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "white",
-                    fontWeight: 700,
-                    fontSize: "1.25rem",
-                  }}
-                >
-                  {productCard.sellerLogin?.charAt(0) || "S"}
-                </Box>
+                <SellerAvatar
+                  participantId={productCard.participantId}
+                  sellerLogin={productCard.sellerLogin}
+                  size={48}
+                />
                 <Box flex={1}>
                   <Typography variant="subtitle1" fontWeight={700}>
                     {productCard.sellerLogin || "Продавец"}
@@ -355,8 +349,9 @@ export function DesktopProductDetails({
 
               <FavoriteButton
                 productId={productCard.id}
-                isFavorite={false}
+                isFavorite={isProductInFavorites(productCard.id)}
                 productName={productCard.name}
+                variant="detailed"
               />
             </Stack>
 

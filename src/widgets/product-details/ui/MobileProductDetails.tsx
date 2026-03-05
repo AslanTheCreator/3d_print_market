@@ -8,7 +8,6 @@ import {
   Paper,
   Divider,
   alpha,
-  Fab,
 } from "@mui/material";
 import { ImageGallery } from "@/shared/ui/image-gallery";
 import { ProductDetail } from "@/shared/types";
@@ -16,15 +15,16 @@ import { RelatedProducts } from "./RelatedProducts";
 import { AddToCartButton } from "@/features/cart";
 import {
   Verified,
-  LocalShipping,
   Schedule,
   Star,
-  Favorite,
-  FavoriteBorder,
   Inventory2Outlined,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { buildCategoryPath } from "@/entities/category";
+import { SellerAvatar } from "@/entities/user";
+import { FavoriteButton } from "@/features/favorite/toggle-favorite";
+import { useAuth } from "@/features/auth";
+import { useFavoritesChecks } from "@/features/favorite/check-favorites";
 
 interface MobileProductDetailsProps {
   productCard: ProductDetail;
@@ -173,6 +173,8 @@ export function MobileProductDetails({
   allImages,
 }: MobileProductDetailsProps) {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
   return (
     <Box sx={{ pb: 12 }}>
       {/* Галерея */}
@@ -249,22 +251,11 @@ export function MobileProductDetails({
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                bgcolor: "primary.main",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                fontWeight: 700,
-                fontSize: "1.125rem",
-              }}
-            >
-              {productCard.sellerLogin?.charAt(0) || "S"}
-            </Box>
+            <SellerAvatar
+              participantId={productCard.participantId}
+              sellerLogin={productCard.sellerLogin}
+              size={48}
+            />
             <Box flex={1}>
               <Typography variant="subtitle2" fontWeight={700}>
                 {productCard.sellerLogin || "Продавец"}
@@ -399,17 +390,12 @@ export function MobileProductDetails({
       </Paper>
 
       {/* Кнопка избранного */}
-      <Fab
-        color="primary"
-        sx={{
-          position: "fixed",
-          bottom: 80,
-          right: 16,
-          boxShadow: "0 4px 16px rgba(247, 110, 160, 0.3)",
-        }}
-      >
-        <FavoriteBorder />
-      </Fab>
+      <FavoriteButton
+        productId={productCard.id}
+        isFavorite={isProductInFavorites(productCard.id)}
+        productName={productCard.name}
+        variant="fab"
+      />
     </Box>
   );
 }

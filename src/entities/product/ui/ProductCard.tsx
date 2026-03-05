@@ -181,14 +181,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               fontSize={isMobile ? "0.8rem" : "0.9rem"}
               fontWeight={600}
               color="text.primary"
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                lineHeight: 1.3,
-              }}
+              noWrap
+              sx={{ lineHeight: 1.3 }}
             >
               {name}
             </Typography>
