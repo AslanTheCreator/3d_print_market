@@ -1,8 +1,8 @@
-import { useFavoritesProducts } from "@/entities/favorites";
+import { useFavoritesProducts } from "@/entities/favorite";
 import {
   useAddToFavorites,
   useRemoveFromFavorites,
-} from "@/entities/favorites";
+} from "@/entities/favorite";
 
 // Хук для переключения состояния избранного (добавить/удалить)
 export const useToggleFavorite = (isAuthenticated: boolean) => {

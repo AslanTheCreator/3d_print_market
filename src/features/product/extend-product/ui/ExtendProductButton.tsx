@@ -16,8 +16,8 @@ import {
 } from "@mui/material";
 import { Update, CalendarMonth, CheckCircle } from "@mui/icons-material";
 import { useExtendProductExpiration } from "@/entities/product";
-import { formatExpirationDate } from "@/entities/product/lib/productExpirationUtils";
-
+import { formatExpirationDate } from "@/entities/product";
+import { useNotification } from "@/app/providers";
 interface ExtendProductButtonProps {
   productId: number;
   productName: string;
@@ -35,6 +35,7 @@ export const ExtendProductButton: React.FC<ExtendProductButtonProps> = ({
 }) => {
   const theme = useTheme();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { showNotification } = useNotification();
   const { mutate: extendExpiration, isPending } = useExtendProductExpiration();
 
   const handleOpenDialog = () => {
@@ -50,7 +51,14 @@ export const ExtendProductButton: React.FC<ExtendProductButtonProps> = ({
   const handleConfirm = () => {
     extendExpiration(productId, {
       onSuccess: () => {
+        showNotification("Срок действия товара продлён на 30 дней", "success");
         handleCloseDialog();
+      },
+      onError: () => {
+        showNotification(
+          "Не удалось продлить товар. Попробуйте позже",
+          "error",
+        );
       },
     });
   };

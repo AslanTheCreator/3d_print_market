@@ -1,6 +1,6 @@
-export type { DictionaryItem, DictionaryType } from "./model/types";
+﻿export type { DictionaryItem, DictionaryType } from "./model/types";
 export {
   useDictionary,
   usePrefetchDictionary,
   useMultipleDictionaries,
-} from "./hooks/useDictionaryQueries";
+} from "./model/useDictionaryQueries";

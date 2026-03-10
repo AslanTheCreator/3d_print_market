@@ -12,7 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Close, CheckCircle } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order/model/types";
+import { ListOrdersModel } from "@/entities/order";
 import { UseMutationResult } from "@tanstack/react-query";
 
 // Типы для различных видов подтверждения

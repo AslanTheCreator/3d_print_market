@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Stack, Box, Typography, Skeleton, Chip } from "@mui/material";
-import { ListOrdersModel } from "@/entities/order";
+import type { ListOrdersModel } from "../model/types";
 import { ImageResponse } from "@/shared/types";
 import { imageApi } from "@/shared/api";
 

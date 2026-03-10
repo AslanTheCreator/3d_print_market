@@ -2,7 +2,7 @@
 import React, { useMemo } from "react";
 import { Box, Stack, Typography, Skeleton, Tooltip } from "@mui/material";
 import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
-import { useOrderStatusDictionary } from "@/entities/order/lib/useOrderStatusDictionary";
+import { useOrderStatusDictionary } from "../lib/useOrderStatusDictionary";
 
 type UserRole = "seller" | "customer";
 

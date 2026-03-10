@@ -1,18 +1,18 @@
-// API
+﻿// API
 export { transferApi } from "./api/transferApi";
 
 // Query keys
-export { transferKeys } from "./hooks/queryKeys";
+export { transferKeys } from "./model/queryKeys";
 
 // Queries
-export { useTransfers } from "./hooks/useTransfers";
+export { useTransfers } from "./model/useTransfers";
 
 // Mutations
 export {
   useCreateTransfer,
   useUpdateTransfer,
   useDeleteTransfer,
-} from "./hooks/useTransferMutations";
+} from "./model/useTransferMutations";
 
 // Lib
 export { SHIPPING_ICONS, getDeliveryIcon } from "./lib/shippingIcons";

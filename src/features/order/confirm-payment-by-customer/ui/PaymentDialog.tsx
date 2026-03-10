@@ -17,8 +17,8 @@ import {
   FormHelperText,
 } from "@mui/material";
 import { Close, CloudUpload, Payment, CheckCircle } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order/model/types";
-import { useSellerAccounts } from "@/entities/accounts";
+import { ListOrdersModel } from "@/entities/order";
+import { useSellerAccounts } from "@/entities/account";
 import { imageApi } from "@/shared/api";
 import { UseMutationResult } from "@tanstack/react-query";
 import { SellerPaymentDetails } from "./SellerPaymentDetails";

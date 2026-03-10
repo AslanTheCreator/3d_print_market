@@ -17,7 +17,7 @@ export interface UseInfiniteProductsOptions {
   filters?: ProductFilter;
   sortBy?: SortBy;
   fetchFunction: ProductFetchFunction;
-  queryKey: string[];
+  queryKey: readonly unknown[];
   staleTime?: number;
   retry?: number;
 }

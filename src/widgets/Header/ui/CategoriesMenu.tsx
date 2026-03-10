@@ -24,7 +24,7 @@ import {
   getCategorySlug,
   buildCategoryPath,
 } from "@/entities/category";
-import { getCategoryIcon } from "@/entities/category/lib/categoryIcons";
+import { getCategoryIcon } from "@/entities/category";
 import { CategoryModel } from "@/shared/types";
 
 interface CategoriesMenuProps {

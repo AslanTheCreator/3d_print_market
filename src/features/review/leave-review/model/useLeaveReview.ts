@@ -4,9 +4,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { productKeys } from "@/entities/product";
 import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { useCreateReview } from "@/entities/reviews";
+import { useCreateReview } from "./useCreateReview";
 import { LeaveReviewFormData } from "./types";
-import { orderQueryKeys } from "@/entities/order/hooks/queryKeys";
+import { orderQueryKeys } from "@/entities/order";
 
 type DialogState = "form" | "success";
 

@@ -2,7 +2,7 @@
 import React from "react";
 import { Stack, Avatar, Box, Typography, Chip } from "@mui/material";
 import { Phone, Email, Store, AccountCircle } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order";
+import type { ListOrdersModel } from "../model/types";
 
 type UserRole = "seller" | "customer";
 

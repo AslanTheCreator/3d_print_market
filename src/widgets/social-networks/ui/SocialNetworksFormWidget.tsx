@@ -21,15 +21,15 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { useDictionary } from "@/entities/dictionary";
 import {
-  useSocialNetworks,
   useCreateSocial,
   useUpdateSocial,
   useDeleteSocial,
-  type SocialNetworkInput,
-} from "@/entities/social-networks";
+} from "../model/useSocialNetworkMutations";
+import type { SocialNetworkInput } from "../model/types";
+import { useSocialNetworks } from "../model/useSocialNetworks";
 import { useNotification } from "@/app/providers";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
-import type { DictionaryItem } from "@/entities/dictionary/model/types";
+import type { DictionaryItem } from "@/entities/dictionary";
 import { SocialNetwork, SocialNetworkType } from "@/shared/types";
 
 // ─────────────────────────────────────────────────────────────────────────────

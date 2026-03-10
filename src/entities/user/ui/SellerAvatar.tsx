@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Avatar, Skeleton } from "@mui/material";
-import { useUserById } from "../hooks/useUserQueries";
+import { useUserById } from "../model/useUserQueries";
 import { useQuery } from "@tanstack/react-query";
 import { imageApi } from "@/shared/api";
 

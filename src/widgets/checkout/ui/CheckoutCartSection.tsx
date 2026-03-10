@@ -10,7 +10,7 @@ import {
   Paper,
 } from "@mui/material";
 import { ProductBasket } from "@/entities/cart";
-import { CheckoutCartItemCard } from "@/entities/cart/ui/CheckoutCartItemCard";
+import { CheckoutCartItemCard } from "@/entities/cart";
 import { useRemoveFromCartFeature } from "@/features/cart";
 import { useCartQuantity } from "@/features/cart/update-quantity";
 import { useAuth } from "@/features/auth";

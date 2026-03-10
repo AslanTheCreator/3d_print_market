@@ -2,8 +2,8 @@
 import React, { useState } from "react";
 import { Box, Button, Collapse, Stack, Typography, Chip } from "@mui/material";
 import { ExpandMore, ExpandLess, History } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order/model/types";
-import { useOrderStatusDictionary } from "@/entities/order/lib/useOrderStatusDictionary";
+import type { ListOrdersModel } from "../model/types";
+import { useOrderStatusDictionary } from "../lib/useOrderStatusDictionary";
 
 interface OrderHistoryProps {
   histories: ListOrdersModel["histories"];

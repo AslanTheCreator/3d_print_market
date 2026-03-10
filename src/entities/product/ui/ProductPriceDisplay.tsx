@@ -3,7 +3,7 @@
 import React from "react";
 import { Typography, Stack, useMediaQuery, useTheme } from "@mui/material";
 import { Star } from "@mui/icons-material";
-import { formatPrice } from "@/shared/lib/utils/formatPrice";
+import { formatPrice } from "@/shared/lib";
 import { Availability } from "@/shared/types";
 
 interface ProductPriceDisplayProps {

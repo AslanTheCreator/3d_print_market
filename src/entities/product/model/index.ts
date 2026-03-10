@@ -1,6 +1,4 @@
-// Экспорт типов
-export type { ProductCreateModel } from "./types";
-
-// Экспорт типов и утилит формы
-export type { ProductFormData } from "./form";
-export { mapFormDataToCreateModel, defaultProductFormValues } from "./form";
+export * from "./queryKeys";
+export * from "./useProductQueries";
+export * from "./useProductMutations";
+export * from "./useProductDetails"; // Re-exporting the existing custom hook

@@ -19,7 +19,7 @@ import {
 import { Inventory } from "@mui/icons-material";
 import { CategoryModel } from "@/shared/types";
 import { Currency } from "@/shared/types";
-import { ProductFormData } from "@/entities/product/model/form";
+import type { ProductFormData } from "../model/form";
 
 interface ProductFormFieldsProps {
   control: Control<ProductFormData>;

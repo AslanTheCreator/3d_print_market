@@ -35,8 +35,8 @@ import { ExtendProductButton } from "@/features/product/extend-product/ui/Extend
 import {
   getExpirationStatus,
   formatExpirationDate,
-} from "@/entities/product/lib/productExpirationUtils";
-import { ProductPriceDisplay } from "@/entities/product/ui/ProductPriceDisplay";
+  ProductPriceDisplay,
+} from "@/entities/product";
 
 interface UserProductCardProps extends Product {
   onCardClick?: (id: string) => void;

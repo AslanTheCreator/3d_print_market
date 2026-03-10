@@ -1,18 +1,18 @@
-// API
+﻿// API
 export { addressApi } from "./api/addressApi";
 
 // Query keys
-export { addressKeys } from "./hooks/queryKeys";
+export { addressKeys } from "./model/queryKeys";
 
 // Queries
-export { useAddresses } from "./hooks/useAddressQueries";
+export { useAddresses } from "./model/useAddressQueries";
 
 // Mutations
 export {
   useCreateAddress,
   useUpdateAddress,
   useDeleteAddress,
-} from "./hooks/useAddressMutations";
+} from "./model/useAddressMutations";
 
 // UI
 export { AddressSelector } from "./ui/AddressSelector";

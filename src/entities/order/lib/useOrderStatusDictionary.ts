@@ -1,12 +1,12 @@
 import { useMemo } from "react";
-import { useDictionary } from "@/entities/dictionary";
+import { useOrderStatusesDictionary } from "@/entities/dictionary/@x/order";
 
 export const useOrderStatusDictionary = () => {
   const {
     data: orderStatuses,
     isLoading,
     error,
-  } = useDictionary("ORDER_STATUS");
+  } = useOrderStatusesDictionary();
 
   const statusMap = useMemo(() => {
     if (!orderStatuses) return new Map<string, string>();

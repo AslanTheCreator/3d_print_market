@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Button, Stack } from "@mui/material";
 import { CheckCircle, LocalShipping, Cancel } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order/model/types";
+import { ListOrdersModel } from "@/entities/order";
 import {
   useConfirmOrderBySeller,
   useConfirmPreOrderBySeller,

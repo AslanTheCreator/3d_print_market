@@ -27,7 +27,7 @@ import {
   Info,
   ContentCopy,
 } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order/model/types";
+import { ListOrdersModel } from "@/entities/order";
 import { useSendOrderBySeller } from "@/entities/order";
 
 interface ShippingDialogProps {

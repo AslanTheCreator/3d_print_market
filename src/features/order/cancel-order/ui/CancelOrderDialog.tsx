@@ -16,9 +16,9 @@ import {
   Chip,
 } from "@mui/material";
 import { Close, Cancel, Warning, Info } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order/model/types";
+import { ListOrdersModel } from "@/entities/order";
 import { useCancelOrder } from "@/entities/order";
-
+import { useNotification } from "@/app/providers";
 type UserRole = "seller" | "customer";
 
 interface CancelOrderDialogProps {
@@ -52,6 +52,7 @@ export const CancelOrderDialog = ({
 }: CancelOrderDialogProps) => {
   const [reason, setReason] = useState("");
   const [comment, setComment] = useState("");
+  const { showNotification } = useNotification();
 
   const cancelOrderMutation = useCancelOrder();
 
@@ -68,7 +69,11 @@ export const CancelOrderDialog = ({
       },
       {
         onSuccess: () => {
+          showNotification("Заказ успешно отменён", "success");
           handleClose();
+        },
+        onError: () => {
+          showNotification("Не удалось отменить заказ", "error");
         },
       },
     );

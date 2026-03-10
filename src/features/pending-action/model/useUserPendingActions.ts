@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/features/auth";
 import { useSellerOrders, useCustomerOrders } from "@/entities/order";
-import { productApi } from "@/entities/product";
-import { getExpirationStatus } from "@/entities/product/lib/productExpirationUtils";
+import { productApi, productKeys } from "@/entities/product";
+import { getExpirationStatus } from "@/entities/product";
 import {
   SELLER_ACTION_STATUSES,
   CUSTOMER_ACTION_STATUSES,
@@ -19,7 +19,7 @@ const useUserProductsForRenewal = () => {
   const { isAuthenticated } = useAuth();
 
   return useQuery({
-    queryKey: ["userProducts", "renewal-check"],
+    queryKey: productKeys.renewalCheck(),
     queryFn: () => productApi.getUserProducts({ size: 100 }),
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
@@ -31,9 +31,11 @@ const useUserProductsForRenewal = () => {
 export const useUserPendingActions = () => {
   const { isAuthenticated } = useAuth();
 
-  const { data: sellerOrders, isLoading: isLoadingSeller } = useSellerOrders();
+  const { data: sellerOrders, isLoading: isLoadingSeller } = useSellerOrders({
+    enabled: isAuthenticated,
+  });
   const { data: customerOrders, isLoading: isLoadingCustomer } =
-    useCustomerOrders();
+    useCustomerOrders({ enabled: isAuthenticated });
   const { data: userProducts, isLoading: isLoadingProducts } =
     useUserProductsForRenewal();
 

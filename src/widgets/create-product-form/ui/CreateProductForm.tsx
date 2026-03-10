@@ -17,17 +17,17 @@ import {
 } from "@mui/material";
 import { ArrowBack, CheckCircle } from "@mui/icons-material";
 
-import { ProductFormFields } from "@/entities/product/ui";
-import { CurrencyField } from "./components/CurrencyField";
-import { MultiImageUpload } from "./components/MultiImageUpload";
-
 import {
+  ProductFormFields,
   ProductFormData,
   mapFormDataToCreateModel,
   defaultProductFormValues,
-} from "@/entities/product/model/form";
+  useCreateProduct,
+} from "@/entities/product";
+import { CurrencyField } from "./components/CurrencyField";
+import { MultiImageUpload } from "./components/MultiImageUpload";
 import { useNotification } from "@/app/providers";
-import { useCreateProduct } from "@/entities/product";
+
 import { useMultipleImageUpload } from "@/features/image-upload";
 import { useCategories } from "@/entities/category";
 import { ApiError, ErrorCodes } from "@/shared/lib/errorHandler";

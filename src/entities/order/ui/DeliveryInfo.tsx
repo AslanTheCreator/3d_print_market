@@ -17,7 +17,7 @@ import {
   CheckCircle,
   OpenInNew,
 } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order";
+import type { ListOrdersModel } from "../model/types";
 
 interface DeliveryInfoProps {
   transfer: ListOrdersModel["transfer"];

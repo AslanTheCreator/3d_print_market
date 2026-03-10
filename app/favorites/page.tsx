@@ -1,7 +1,7 @@
 "use client";
 
 import { Container, Typography, Box, alpha } from "@mui/material";
-import { useFavoritesProducts } from "@/entities/favorites/hooks";
+import { useFavoritesProducts } from "@/entities/favorite";
 import { useAuth } from "@/features/auth";
 import { UnauthorizedState, EmptyPageState } from "@/shared/ui/states";
 import { ProductCatalog } from "@/widgets/product-catalog";

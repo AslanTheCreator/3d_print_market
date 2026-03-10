@@ -1,11 +1,11 @@
-export { orderQueryKeys } from "./hooks/queryKeys";
+﻿export { orderQueryKeys } from "./model/queryKeys";
 
 // Queries
 export {
   useOrderData,
   useSellerOrders,
   useCustomerOrders,
-} from "./hooks/useOrderQueries";
+} from "./model/useOrderQueries";
 
 // Mutations
 export {
@@ -17,7 +17,7 @@ export {
   useConfirmReceiptByCustomer,
   useSendOrderBySeller,
   useCancelOrder,
-} from "./hooks/useOrderMutations";
+} from "./model/useOrderMutations";
 
 // UI Components
 export { OrderHistory } from "./ui/OrderHistory";

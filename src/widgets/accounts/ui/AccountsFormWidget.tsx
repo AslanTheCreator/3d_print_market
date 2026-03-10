@@ -19,7 +19,7 @@ import {
   InfoOutlined,
 } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
-import { useUserAccounts, useSaveAccountsBatch } from "@/entities/accounts";
+import { useUserAccounts, useSaveAccountsBatch } from "@/entities/account";
 import type { AccountsBaseModel } from "@/shared/types";
 import { useNotification } from "@/app/providers";
 import { useDictionary } from "@/entities/dictionary";
