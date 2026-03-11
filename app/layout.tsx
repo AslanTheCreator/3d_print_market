@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { MetrikaHead } from "@/app/analytics/MetrikaHead";
 import { AppProviders } from "@/app/providers/AppProviders";
 import { AppLayout } from "@/app/layouts/AppLayout";
-import { MetrikaHead } from "@/app/MetrikaHead";
 
 export const metadata: Metadata = {
   title: "Figurzilla",
