@@ -6,15 +6,11 @@ import {
   Box,
   CircularProgress,
   Fade,
+  Skeleton,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import {
-  ProductCardSkeleton,
-  ProductGrid,
-  ProductGridItem,
-} from "@/entities/product";
 
 interface InfiniteScrollProps {
   onLoadMore: () => void;
@@ -59,16 +55,28 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
           <Box sx={{ mt: 3 }}>
             {showSkeletons ? (
               // Используем ваши существующие компоненты
-              <ProductGrid isMobile={isMobile}>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: isMobile
+                    ? "repeat(2, minmax(0, 1fr))"
+                    : "repeat(3, minmax(0, 1fr))",
+                  gap: { xs: 1, sm: 2 },
+                }}
+              >
                 {Array.from({ length: getSkeletonCount() }).map((_, index) => (
-                  <ProductGridItem
+                  <Skeleton
                     key={`loading-skeleton-${index}`}
-                    isMobile={isMobile}
-                  >
-                    <ProductCardSkeleton />
-                  </ProductGridItem>
+                    variant="rounded"
+                    animation="wave"
+                    sx={{
+                      width: "100%",
+                      borderRadius: 2,
+                      aspectRatio: isMobile ? "0.72" : "0.7",
+                    }}
+                  />
                 ))}
-              </ProductGrid>
+              </Box>
             ) : (
               // Альтернативный простой спиннер
               <Box

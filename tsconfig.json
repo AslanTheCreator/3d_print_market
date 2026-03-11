@@ -22,6 +22,12 @@
       }
     ],
     "paths": {
+      "@/shared/hooks": [
+        "./src/shared/lib/hooks"
+      ],
+      "@/shared/types": [
+        "./src/shared/model"
+      ],
       "@/*": [
         "./src/*"
       ]
