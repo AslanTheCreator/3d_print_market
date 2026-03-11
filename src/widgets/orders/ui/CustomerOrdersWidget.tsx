@@ -1,13 +1,13 @@
 "use client";
 import { useCustomerOrders } from "@/entities/order";
 import { useAuth } from "@/features/auth";
-import { UnifiedOrdersWidget } from "@/widgets/unified-orders";
+import { OrdersWidget } from "./OrdersWidget";
 
 export const CustomerOrdersWidget = () => {
   const { isAuthenticated } = useAuth();
 
   return (
-    <UnifiedOrdersWidget
+    <OrdersWidget
       query={useCustomerOrders({ enabled: isAuthenticated })}
       userRole="customer"
     />

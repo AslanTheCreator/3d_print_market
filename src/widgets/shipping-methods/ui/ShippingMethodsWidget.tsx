@@ -420,7 +420,7 @@ const TransferForm: React.FC<TransferFormProps> = ({
 // Loader Component (публичный экспорт)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const TransferFormWidget: React.FC = () => {
+export const ShippingMethodsWidget: React.FC = () => {
   const { data: shippingMethods, isLoading: methodsLoading } =
     useDictionary("SHOPPING_METHODS");
   const { data: currencies, isLoading: currenciesLoading } =

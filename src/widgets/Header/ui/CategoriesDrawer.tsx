@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { CategoriesMenu } from "./CategoriesMenu";
-import { LAYOUT } from "@/shared/config/layout";
+import { LAYOUT } from "@/shared/config";
 
 interface CategoriesDrawerProps {
   open: boolean;

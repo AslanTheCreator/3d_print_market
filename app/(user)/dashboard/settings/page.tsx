@@ -15,9 +15,9 @@ import {
 import { LocationOn, LocalShipping, Payment, Share } from "@mui/icons-material";
 import { useSearchParams, useRouter } from "next/navigation";
 
-import { AddressManagerWidget } from "@/widgets/address-manager-widget";
-import { TransferFormWidget } from "@/widgets/transfer";
-import { AccountsFormWidget } from "@/widgets/accounts";
+import { AddressManagerWidget } from "@/widgets/address-manager";
+import { ShippingMethodsWidget } from "@/widgets/shipping-methods";
+import { PaymentAccountsWidget } from "@/widgets/payment-accounts";
 import { SocialNetworksFormWidget } from "@/widgets/social-networks";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -200,11 +200,11 @@ function SettingsContent() {
         </TabPanel>
 
         <TabPanel value={activeTab} index={1}>
-          <TransferFormWidget />
+          <ShippingMethodsWidget />
         </TabPanel>
 
         <TabPanel value={activeTab} index={2}>
-          <AccountsFormWidget />
+          <PaymentAccountsWidget />
         </TabPanel>
 
         <TabPanel value={activeTab} index={3}>

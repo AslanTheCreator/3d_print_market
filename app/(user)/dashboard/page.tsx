@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useCurrentUser } from "@/entities/user";
-import { UserInfoCard } from "@/widgets/user";
+import { UserInfoCard } from "@/widgets/user-info";
 import { DashboardContent } from "@/widgets/dashboard";
 import { DashboardNavigation } from "@/widgets/dashboard";
 import { ProfileForm } from "@/widgets/profile-form";

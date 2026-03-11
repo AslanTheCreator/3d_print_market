@@ -5,9 +5,9 @@ export { CheckoutSummary } from "./ui/CheckoutSummary";
 export { CheckoutResultDialog } from "./ui/CheckoutResultDialog";
 export { CheckoutContent } from "./ui/CheckoutContent";
 
-export { useCheckoutState } from "./hooks/useCheckoutState";
-export { useCheckoutSubmit } from "./hooks/useCheckoutSubmit";
-export { useDeliveryResolver } from "./hooks/useDeliveryResolver";
+export { useCheckoutState } from "./model/useCheckoutState";
+export { useCheckoutSubmit } from "./model/useCheckoutSubmit";
+export { useDeliveryResolver } from "./model/useDeliveryResolver";
 
 export type {
   OrderResult,

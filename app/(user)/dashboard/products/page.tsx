@@ -13,7 +13,7 @@ import {
 import { Add } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { useProfileUser } from "@/entities/user";
-import { UserProductsList } from "@/widgets/user-products-list";
+import { UserProductsList } from "@/widgets/user-products";
 
 export default function UserProductsPage() {
   const theme = useTheme();

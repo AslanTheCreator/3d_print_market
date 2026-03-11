@@ -21,11 +21,10 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { useUserAccounts, useSaveAccountsBatch } from "@/entities/account";
 import type { AccountsBaseModel } from "@/shared/types";
+import { useBatchForm, useFormInitializer } from "@/shared/hooks";
 import { useNotification } from "@/shared/ui/notification";
 import { useDictionary } from "@/entities/dictionary";
-import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card/CollapsibleFormCard";
-import { useBatchForm } from "@/shared/hooks/useBatchForm";
-import { useFormInitializer } from "@/shared/hooks/useFormInitializer";
+import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
 
 interface FormData {
   items: {
@@ -63,7 +62,7 @@ const compareAccountData = (
   );
 };
 
-export const AccountsFormWidget = () => {
+export const PaymentAccountsWidget = () => {
   const { data: paymentMethods, isLoading: methodsLoading } =
     useDictionary("TRANSFER_MONEY");
   const { data: userAccounts = [], isLoading: accountsLoading } =

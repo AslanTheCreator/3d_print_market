@@ -31,7 +31,7 @@ import { useNotification } from "@/shared/ui/notification";
 import { useMultipleImageUpload } from "@/features/image-upload";
 import { useCategories } from "@/entities/category";
 import { ApiError, ErrorCodes } from "@/shared/lib/errorHandler";
-import { AppLink } from "@/shared/ui/app-link/AppLink";
+import { AppLink } from "@/shared/ui/app-link";
 
 export const CreateProductForm = () => {
   const theme = useTheme();

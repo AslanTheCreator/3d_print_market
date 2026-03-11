@@ -9,7 +9,7 @@ import Link from "next/link";
 import site from "@/shared/assets/logo/site.png";
 import { HeaderLogo } from "./HeaderLogo";
 import { useIsMobile, useHideOnScroll } from "@/shared/hooks";
-import { LAYOUT } from "@/shared/config/layout";
+import { LAYOUT } from "@/shared/config";
 import {
   SITE_LOGO_SIZES,
   SCROLL_THRESHOLD,

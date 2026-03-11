@@ -16,16 +16,16 @@ import { ListOrdersModel } from "@/entities/order";
 import { LoadingOrderState } from "@/shared/ui/states";
 import { OrdersEmptyState } from "@/entities/order";
 import { Receipt, Storefront } from "@mui/icons-material";
-import { OrderCard } from "@/widgets/order-card";
+import { OrderCard } from "./OrderCard";
 
 type UserRole = "seller" | "customer";
 
-interface UnifiedOrdersWidgetProps {
+interface OrdersWidgetProps {
   query: UseQueryResult<ListOrdersModel[]>;
   userRole: UserRole;
 }
 
-export const UnifiedOrdersWidget: React.FC<UnifiedOrdersWidgetProps> = ({
+export const OrdersWidget: React.FC<OrdersWidgetProps> = ({
   query,
   userRole,
 }) => {

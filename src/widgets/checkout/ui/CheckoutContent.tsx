@@ -11,7 +11,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { ProductBasket } from "@/entities/cart";
-import { CheckoutState } from "../hooks/useCheckoutState";
+import { CheckoutState } from "../model/useCheckoutState";
 import { CheckoutCartSection } from "./CheckoutCartSection";
 import { DeliveryMethodSelector } from "./DeliveryMethodSelector";
 import { CheckoutSummary } from "./CheckoutSummary";

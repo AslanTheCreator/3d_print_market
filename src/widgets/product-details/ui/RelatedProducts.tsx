@@ -1,15 +1,85 @@
 "use client";
 
-import { Box, Typography, Paper } from "@mui/material";
+import { Box, Typography, Paper, useMediaQuery, useTheme } from "@mui/material";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
-import { useProductsInfinite } from "@/entities/product";
-import { ProductCatalog } from "@/widgets/product-catalog";
+import {
+  ProductCard,
+  ProductCardSkeleton,
+  ProductGrid,
+  ProductGridItem,
+  useProductsInfinite,
+} from "@/entities/product";
+import { useFavoritesChecks } from "@/entities/favorite";
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/features/auth";
+import { AddToCartButton } from "@/features/add-to-cart";
+import { FavoriteButton } from "@/features/toggle-favorite";
+import { Product } from "@/shared/types";
 
 interface RelatedProductsProps {
   categoryId: number;
   excludeProductId: number;
 }
+
+interface RelatedProductsGridProps {
+  products: Product[];
+  isLoading: boolean;
+}
+
+const RelatedProductsGrid = ({
+  products,
+  isLoading,
+}: RelatedProductsGridProps) => {
+  const theme = useTheme();
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+
+  const skeletonCount = isMobile ? 4 : isTablet ? 6 : 8;
+
+  if (isLoading) {
+    return (
+      <ProductGrid isMobile={isMobile}>
+        {Array.from({ length: skeletonCount }).map((_, index) => (
+          <ProductGridItem key={index} isMobile={isMobile}>
+            <ProductCardSkeleton />
+          </ProductGridItem>
+        ))}
+      </ProductGrid>
+    );
+  }
+
+  return (
+    <ProductGrid isMobile={isMobile}>
+      {products.map((product) => (
+        <ProductGridItem key={product.id} isMobile={isMobile}>
+          <Box sx={{ position: "relative" }}>
+            <ProductCard
+              {...product}
+              onCardClick={() => router.push(`/catalog/${product.id}/detail`)}
+              actions={
+                <AddToCartButton
+                  productId={product.id}
+                  availability={product.availability}
+                  productName={product.name}
+                  stockCount={product.count}
+                />
+              }
+            />
+            <FavoriteButton
+              productId={product.id}
+              isFavorite={isProductInFavorites(product.id)}
+              productName={product.name}
+            />
+          </Box>
+        </ProductGridItem>
+      ))}
+    </ProductGrid>
+  );
+};
 
 export function RelatedProducts({
   categoryId,
@@ -55,7 +125,10 @@ export function RelatedProducts({
           hasNextPage={!!hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
         >
-          <ProductCatalog products={filteredProducts} isLoading={isLoading} />
+          <RelatedProductsGrid
+            products={filteredProducts}
+            isLoading={isLoading}
+          />
         </InfiniteScroll>
       </Box>
     </Paper>
