@@ -3,6 +3,7 @@ export { accountsKeys } from "./model/queryKeys";
 export { useUserAccounts, useSellerAccounts } from "./model/useAccountsQueries";
 export {
   useCreateAccount,
+  useUpdateAccount,
   useDeleteAccount,
   useSaveAccountsBatch,
 } from "./model/useAccountsMutations";

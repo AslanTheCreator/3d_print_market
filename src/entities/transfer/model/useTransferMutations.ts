@@ -1,10 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+﻿import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { transferApi } from "../api/transferApi";
 import { transferKeys } from "./queryKeys";
 import type { TransferInput } from "../model/types";
 import { Transfer } from "@/shared/types";
 
-// Создание трансфера
 export const useCreateTransfer = () => {
   const queryClient = useQueryClient();
 
@@ -16,7 +15,6 @@ export const useCreateTransfer = () => {
   });
 };
 
-// Обновление трансфера
 export const useUpdateTransfer = () => {
   const queryClient = useQueryClient();
 
@@ -29,7 +27,6 @@ export const useUpdateTransfer = () => {
   });
 };
 
-// Удаление трансфера
 export const useDeleteTransfer = () => {
   const queryClient = useQueryClient();
 
@@ -42,7 +39,7 @@ export const useDeleteTransfer = () => {
         transferKeys.list(),
       );
 
-      // Оптимистично удаляем из кэша
+      // Optimistically remove the deleted item from cache.
       queryClient.setQueryData<Transfer[]>(transferKeys.list(), (old = []) =>
         old.filter((t) => t.id !== id),
       );

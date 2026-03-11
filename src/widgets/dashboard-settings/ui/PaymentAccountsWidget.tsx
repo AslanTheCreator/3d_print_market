@@ -1,43 +1,49 @@
-"use client";
+﻿"use client";
 
-import React from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Box,
-  TextField,
   Button,
-  Stack,
-  Typography,
+  Chip,
+  CircularProgress,
   FormControl,
   Grid,
-  CircularProgress,
-  Alert,
+  Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
 import {
-  CreditCard,
   AccountBalance,
-  Payments,
+  CreditCard,
   InfoOutlined,
+  Payments,
 } from "@mui/icons-material";
-import { useForm, Controller } from "react-hook-form";
-import { useUserAccounts, useSaveAccountsBatch } from "@/entities/account";
-import type { AccountsBaseModel } from "@/shared/types";
-import { useBatchForm, useFormInitializer } from "@/shared/hooks";
-import { useNotification } from "@/shared/ui/notification";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useDictionary } from "@/entities/dictionary";
+import {
+  useCreateAccount,
+  useDeleteAccount,
+  useUpdateAccount,
+  useUserAccounts,
+} from "@/entities/account";
+import { useNotification } from "@/shared/ui/notification";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
+import type { DictionaryItem } from "@/entities/dictionary";
+import type { AccountsBaseModel, TransferMoney } from "@/shared/types";
 
-interface FormData {
-  items: {
-    [key: string]: {
-      enabled: boolean;
-      username: string;
-      entityValue: string;
-      comment: string;
-    };
-  };
+interface AccountFormItem {
+  enabled: boolean;
+  username: string;
+  entityValue: string;
+  comment: string;
 }
 
-const getPaymentIcon = (value: string) => {
+interface AccountFormData {
+  items: Record<string, AccountFormItem>;
+}
+
+function getPaymentIcon(value: string) {
   switch (value) {
     case "BANK_CARD":
       return <CreditCard />;
@@ -48,113 +54,278 @@ const getPaymentIcon = (value: string) => {
     default:
       return <CreditCard />;
   }
-};
+}
 
-// Функция сравнения для определения изменений
-const compareAccountData = (
-  existing: AccountsBaseModel,
-  formData: any,
-): boolean => {
+function getEntityLabel(value: string) {
+  switch (value) {
+    case "BANK_CARD":
+      return "Номер карты";
+    case "BANK_SBP":
+      return "Номер телефона";
+    case "CASH":
+      return "Способ передачи";
+    default:
+      return "Реквизиты";
+  }
+}
+
+function getEntityPlaceholder(value: string) {
+  switch (value) {
+    case "BANK_CARD":
+      return "0000 0000 0000 0000";
+    case "BANK_SBP":
+      return "+7 (000) 000-00-00";
+    case "CASH":
+      return "Укажите детали";
+    default:
+      return "Введите реквизиты";
+  }
+}
+
+function buildDefaultValues(
+  methods: DictionaryItem[],
+  existing: AccountsBaseModel[],
+): AccountFormData {
+  const byMethod: Record<string, AccountsBaseModel> = {};
+  for (const account of existing) {
+    byMethod[account.transferMoney] = account;
+  }
+
+  const items: Record<string, AccountFormItem> = {};
+  for (const method of methods) {
+    const found = byMethod[method.value];
+    items[method.value] = {
+      enabled: !!found,
+      username: found?.username ?? "",
+      entityValue: found?.entityValue ?? "",
+      comment: found?.comment ?? "",
+    };
+  }
+
+  return { items };
+}
+
+function buildInitialExpanded(
+  methods: DictionaryItem[],
+  existing: AccountsBaseModel[],
+): Set<string> {
+  const existingMethods = new Set(existing.map((account) => account.transferMoney));
+  const expanded = new Set<string>();
+
+  for (const method of methods) {
+    if (existingMethods.has(method.value as TransferMoney)) {
+      expanded.add(method.value);
+    }
+  }
+
+  return expanded;
+}
+
+function trimValue(value: string) {
+  return value.trim();
+}
+
+function getAccountBadge(item?: AccountFormItem) {
+  if (!item?.enabled) {
+    return <Chip size="small" label="Не включен" variant="outlined" />;
+  }
+
+  const entity = trimValue(item.entityValue);
+  const username = trimValue(item.username);
+
+  if (entity) {
+    return <Chip size="small" label={entity} color="primary" variant="outlined" />;
+  }
+
+  if (username) {
+    return <Chip size="small" label={username} color="primary" variant="outlined" />;
+  }
+
   return (
-    existing.username === formData.username &&
-    existing.entityValue === formData.entityValue &&
-    existing.comment === (formData.comment || "")
+    <Chip
+      size="small"
+      label="Нужно заполнить данные"
+      color="warning"
+      variant="outlined"
+    />
   );
-};
+}
 
-export const PaymentAccountsWidget = () => {
-  const { data: paymentMethods, isLoading: methodsLoading } =
-    useDictionary("TRANSFER_MONEY");
-  const { data: userAccounts = [], isLoading: accountsLoading } =
-    useUserAccounts();
-  const { mutateAsync: saveBatch, isPending } = useSaveAccountsBatch();
+interface AccountsFormProps {
+  methods: DictionaryItem[];
+  existing: AccountsBaseModel[];
+}
+
+const AccountsForm: React.FC<AccountsFormProps> = ({ methods, existing }) => {
   const { showNotification } = useNotification();
+  const createMutation = useCreateAccount();
+  const updateMutation = useUpdateAccount();
+  const deleteMutation = useDeleteAccount();
+
+  const isPending =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending;
+
+  const existingByMethod = useMemo(() => {
+    const map: Record<string, AccountsBaseModel> = {};
+    for (const account of existing) {
+      map[account.transferMoney] = account;
+    }
+    return map;
+  }, [existing]);
 
   const {
     control,
     handleSubmit,
-    watch,
-    setValue,
+    reset,
     formState: { errors },
-  } = useForm<FormData>({
-    mode: "onChange",
-    defaultValues: { items: {} },
+  } = useForm<AccountFormData>({
+    mode: "onBlur",
+    reValidateMode: "onChange",
+    defaultValues: buildDefaultValues(methods, existing),
   });
 
-  const { toggleExpanded, isExpanded, computeChanges } = useBatchForm({
-    existingItems: userAccounts,
-    getItemKey: (item) => item.transferMoney,
-    mapToCreateModel: (data, key) => ({
-      transferMoney: key as any,
-      username: data.username,
-      entityValue: data.entityValue,
-      comment: data.comment || "",
-    }),
-    getItemId: (item) => item.id,
-    compareItemData: compareAccountData,
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(() =>
+    buildInitialExpanded(methods, existing),
+  );
+  const [wasSaved, setWasSaved] = useState(false);
+
+  const itemsData = useWatch({
+    control,
+    name: "items",
   });
 
-  useFormInitializer({
-    dictionaryItems: paymentMethods,
-    existingItems: userAccounts,
-    isLoading: accountsLoading,
-    setValue,
-    getDictionaryKey: (item) => item.value,
-    getExistingKey: (item) => item.transferMoney,
-    mapExistingToFormData: (item) => ({
-      username: item.username,
-      entityValue: item.entityValue,
-      comment: item.comment || "",
-    }),
-    getDefaultFormData: () => ({ username: "", entityValue: "", comment: "" }),
-    onInitialized: (expanded) => {
-      expanded.forEach((key) => toggleExpanded(key));
-    },
-  });
+  useEffect(() => {
+    reset(buildDefaultValues(methods, existing));
+    setWasSaved(false);
+  }, [existing, methods, reset]);
 
-  const itemsData = watch("items");
-
-  const onSubmit = async (data: FormData) => {
-    const { toCreate, toDelete, toUpdate } = computeChanges(data.items);
-
-    // Для accounts мы удаляем старые и создаем новые при изменениях
-    const itemsToDelete = [...toDelete];
-    const itemsToCreate = [...toCreate];
-
-    // Добавляем обновленные элементы: удаляем старые, создаем новые
-    toUpdate.forEach(({ id, data }) => {
-      itemsToDelete.push(id);
-      itemsToCreate.push(data);
+  const toggleExpanded = useCallback((key: string) => {
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
     });
+  }, []);
 
-    if (itemsToCreate.length === 0 && itemsToDelete.length === 0) {
-      showNotification("Ничего не изменилось", "info");
-      return;
+  const hasChanges = useMemo(() => {
+    if (!itemsData) return false;
+
+    for (const [method, formItem] of Object.entries(itemsData)) {
+      const prev = existingByMethod[method];
+      const wasEnabled = !!prev;
+      const nowEnabled = !!formItem.enabled;
+
+      if (wasEnabled !== nowEnabled) return true;
+
+      if (wasEnabled && nowEnabled) {
+        if (trimValue(prev.username) !== trimValue(formItem.username)) return true;
+        if (trimValue(prev.entityValue) !== trimValue(formItem.entityValue)) return true;
+        if (trimValue(prev.comment ?? "") !== trimValue(formItem.comment ?? "")) return true;
+      }
     }
 
-    await saveBatch({ toCreate: itemsToCreate, toDelete: itemsToDelete });
-  };
+    return false;
+  }, [itemsData, existingByMethod]);
 
-  if (accountsLoading || methodsLoading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight={200}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const hasBlockingValidationErrors = useMemo(() => {
+    if (!itemsData) return false;
 
-  if (!paymentMethods || !paymentMethods.length) {
-    return (
-      <Alert severity="error" sx={{ borderRadius: 2 }}>
-        Не удалось загрузить способы оплаты. Попробуйте обновить страницу.
-      </Alert>
-    );
-  }
+    return Object.values(itemsData).some((item) => {
+      if (!item.enabled) {
+        return false;
+      }
+
+      return !trimValue(item.username) || !trimValue(item.entityValue);
+    });
+  }, [itemsData]);
+
+  const canSubmit = hasChanges && !hasBlockingValidationErrors && !isPending;
+
+  const statusText = useMemo(() => {
+    if (isPending) {
+      return "Сохраняем изменения...";
+    }
+
+    if (hasBlockingValidationErrors) {
+      return "Заполните обязательные поля, чтобы сохранить изменения.";
+    }
+
+    if (hasChanges) {
+      return "Есть несохраненные изменения.";
+    }
+
+    if (wasSaved) {
+      return "Изменения сохранены.";
+    }
+
+    return "Изменений нет.";
+  }, [hasBlockingValidationErrors, hasChanges, isPending, wasSaved]);
+
+  const onSubmit = useCallback(
+    async (data: AccountFormData) => {
+      const operations: Promise<unknown>[] = [];
+
+      for (const [method, formItem] of Object.entries(data.items)) {
+        const prev = existingByMethod[method];
+        const input = {
+          transferMoney: method as TransferMoney,
+          username: trimValue(formItem.username),
+          entityValue: trimValue(formItem.entityValue),
+          comment: trimValue(formItem.comment),
+        };
+
+        if (formItem.enabled) {
+          if (prev) {
+            const changed =
+              trimValue(prev.username) !== input.username ||
+              trimValue(prev.entityValue) !== input.entityValue ||
+              trimValue(prev.comment ?? "") !== input.comment;
+
+            if (changed) {
+              operations.push(
+                updateMutation.mutateAsync({
+                  id: prev.id,
+                  input,
+                }),
+              );
+            }
+          } else {
+            operations.push(createMutation.mutateAsync(input));
+          }
+        } else if (prev) {
+          operations.push(deleteMutation.mutateAsync(prev.id));
+        }
+      }
+
+      if (operations.length === 0) {
+        showNotification("Нет изменений для сохранения", "info");
+        return;
+      }
+
+      try {
+        await Promise.all(operations);
+        setExpandedItems(new Set());
+        setWasSaved(true);
+        showNotification("Способы оплаты сохранены", "success");
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Не удалось сохранить изменения";
+        showNotification(message, "error");
+      }
+    },
+    [
+      createMutation,
+      deleteMutation,
+      existingByMethod,
+      showNotification,
+      updateMutation,
+    ],
+  );
 
   return (
     <Box>
@@ -169,8 +340,7 @@ export const PaymentAccountsWidget = () => {
           },
         }}
       >
-        Выберите способы оплаты товара и укажите необходимую информацию. Эта
-        информация будет видна покупателям.
+        Выберите способы оплаты товара и укажите необходимую информацию. Эти данные будут видны покупателям.
       </Alert>
 
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
@@ -184,49 +354,62 @@ export const PaymentAccountsWidget = () => {
               color: "text.primary",
             }}
           >
-            Выберите способы оплаты
+            Способы оплаты
           </Typography>
 
           <Stack spacing={2}>
-            {paymentMethods.map((method) => {
-              const isEnabled = itemsData?.[method.value]?.enabled || false;
-              const isExpd = isExpanded(method.value);
+            {methods.map((method) => {
+              const key = method.value;
+              const isEnabled = itemsData?.[key]?.enabled ?? false;
+              const isExpanded = expandedItems.has(key);
 
               return (
                 <Controller
-                  key={method.value}
-                  name={`items.${method.value}.enabled`}
+                  key={key}
+                  name={`items.${key}.enabled`}
                   control={control}
                   render={({ field }) => (
                     <CollapsibleFormCard
-                      value={method.value}
+                      value={key}
                       label={method.description}
-                      icon={getPaymentIcon(method.value)}
-                      isEnabled={field.value || false}
-                      isExpanded={isExpd}
-                      onEnabledChange={field.onChange}
-                      onToggleExpand={() => toggleExpanded(method.value)}
+                      badge={getAccountBadge(itemsData?.[key])}
+                      icon={getPaymentIcon(key)}
+                      isEnabled={field.value ?? false}
+                      isExpanded={isExpanded}
+                      onEnabledChange={(checked) => {
+                        setWasSaved(false);
+                        field.onChange(checked);
+                      }}
+                      onToggleExpand={() => toggleExpanded(key)}
                     >
                       <Grid container spacing={2}>
                         <Grid item xs={12}>
                           <Controller
-                            name={`items.${method.value}.username`}
+                            name={`items.${key}.username`}
                             control={control}
                             rules={{
-                              required: isEnabled
-                                ? "Укажите имя получателя"
-                                : false,
+                              validate: (value) => {
+                                if (!isEnabled) {
+                                  return true;
+                                }
+
+                                return !!trimValue(value ?? "") || "Укажите имя получателя";
+                              },
                             }}
-                            render={({ field }) => (
+                            render={({ field: textField }) => (
                               <TextField
-                                {...field}
+                                {...textField}
+                                onChange={(event) => {
+                                  setWasSaved(false);
+                                  textField.onChange(event);
+                                }}
                                 fullWidth
                                 label="Имя получателя"
                                 placeholder="Иван Иванов"
-                                error={!!errors.items?.[method.value]?.username}
+                                error={!!errors.items?.[key]?.username}
                                 helperText={
-                                  errors.items?.[method.value]?.username
-                                    ?.message
+                                  errors.items?.[key]?.username?.message ??
+                                  "Это имя увидит покупатель"
                                 }
                               />
                             )}
@@ -235,35 +418,31 @@ export const PaymentAccountsWidget = () => {
 
                         <Grid item xs={12}>
                           <Controller
-                            name={`items.${method.value}.entityValue`}
+                            name={`items.${key}.entityValue`}
                             control={control}
                             rules={{
-                              required: isEnabled ? "Укажите реквизиты" : false,
+                              validate: (value) => {
+                                if (!isEnabled) {
+                                  return true;
+                                }
+
+                                return !!trimValue(value ?? "") || "Укажите реквизиты";
+                              },
                             }}
-                            render={({ field }) => (
+                            render={({ field: textField }) => (
                               <TextField
-                                {...field}
+                                {...textField}
+                                onChange={(event) => {
+                                  setWasSaved(false);
+                                  textField.onChange(event);
+                                }}
                                 fullWidth
-                                label={
-                                  method.value === "BANK_CARD"
-                                    ? "Номер карты"
-                                    : method.value === "BANK_SBP"
-                                      ? "Номер телефона"
-                                      : "Способ передачи"
-                                }
-                                placeholder={
-                                  method.value === "BANK_CARD"
-                                    ? "0000 0000 0000 0000"
-                                    : method.value === "BANK_SBP"
-                                      ? "+7 (000) 000-00-00"
-                                      : "Укажите детали"
-                                }
-                                error={
-                                  !!errors.items?.[method.value]?.entityValue
-                                }
+                                label={getEntityLabel(key)}
+                                placeholder={getEntityPlaceholder(key)}
+                                error={!!errors.items?.[key]?.entityValue}
                                 helperText={
-                                  errors.items?.[method.value]?.entityValue
-                                    ?.message
+                                  errors.items?.[key]?.entityValue?.message ??
+                                  "Обязательное поле для включенного способа оплаты"
                                 }
                               />
                             )}
@@ -272,14 +451,19 @@ export const PaymentAccountsWidget = () => {
 
                         <Grid item xs={12}>
                           <Controller
-                            name={`items.${method.value}.comment`}
+                            name={`items.${key}.comment`}
                             control={control}
-                            render={({ field }) => (
+                            render={({ field: textField }) => (
                               <TextField
-                                {...field}
+                                {...textField}
+                                onChange={(event) => {
+                                  setWasSaved(false);
+                                  textField.onChange(event);
+                                }}
                                 fullWidth
-                                label="Комментарий (необязательно)"
+                                label="Комментарий"
                                 placeholder="Дополнительная информация"
+                                helperText="Необязательное поле"
                                 multiline
                                 rows={2}
                               />
@@ -295,17 +479,40 @@ export const PaymentAccountsWidget = () => {
           </Stack>
         </FormControl>
 
-        <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end" }}>
+        <Box
+          sx={{
+            mt: 4,
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: { xs: "stretch", sm: "center" },
+            justifyContent: "space-between",
+            gap: 2,
+          }}
+        >
+          <Typography
+            variant="body2"
+            color={
+              hasBlockingValidationErrors
+                ? "error.main"
+                : hasChanges
+                  ? "text.primary"
+                  : "text.secondary"
+            }
+          >
+            {statusText}
+          </Typography>
+
           <Button
             type="submit"
             variant="contained"
             size="large"
-            disabled={
-              isPending ||
-              !Object.values(itemsData || {}).some((m) => m.enabled)
-            }
+            disabled={!canSubmit}
             sx={{ minWidth: { xs: "100%", sm: 180 } }}
-            startIcon={isPending ? <CircularProgress size={16} /> : undefined}
+            startIcon={
+              isPending ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : undefined
+            }
           >
             {isPending ? "Сохранение..." : "Сохранить"}
           </Button>
@@ -313,4 +520,29 @@ export const PaymentAccountsWidget = () => {
       </Box>
     </Box>
   );
+};
+
+export const PaymentAccountsWidget: React.FC = () => {
+  const { data: paymentMethods, isLoading: methodsLoading } =
+    useDictionary("TRANSFER_MONEY");
+  const { data: userAccounts = [], isLoading: accountsLoading } =
+    useUserAccounts();
+
+  if (methodsLoading || accountsLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!paymentMethods?.length) {
+    return (
+      <Alert severity="error" sx={{ borderRadius: 2 }}>
+        Не удалось загрузить способы оплаты. Попробуйте обновить страницу.
+      </Alert>
+    );
+  }
+
+  return <AccountsForm methods={paymentMethods} existing={userAccounts} />;
 };

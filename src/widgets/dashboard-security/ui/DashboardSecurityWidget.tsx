@@ -32,12 +32,10 @@ export const DashboardSecurityWidget = () => {
         </Box>
         <Box>
           <Typography variant="h5" fontWeight={700}>
-            {"\u0411\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u043e\u0441\u0442\u044c"}
+            Безопасность
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {
-              "\u0423\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435 \u043f\u0430\u0440\u043e\u043b\u0435\u043c \u0438 \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430\u043c\u0438 \u0431\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u043e\u0441\u0442\u0438"
-            }
+            Управление паролем и настройками безопасности
           </Typography>
         </Box>
       </Stack>

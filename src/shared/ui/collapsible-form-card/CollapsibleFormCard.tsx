@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { ReactNode } from "react";
 import {
@@ -14,27 +14,16 @@ import {
 import { ExpandMore, ExpandLess } from "@mui/icons-material";
 
 interface CollapsibleFormCardProps {
-  // Основные props
   value: string;
   label: string;
   description?: string;
   icon?: ReactNode;
-  
-  // Состояние
   isEnabled: boolean;
   isExpanded: boolean;
-  
-  // Обработчики
   onEnabledChange: (checked: boolean) => void;
   onToggleExpand: () => void;
-  
-  // Контент
   children?: ReactNode;
-  
-  // Дополнительные элементы
   badge?: ReactNode;
-  
-  // Стили
   showExpandIcon?: boolean;
 }
 
@@ -63,8 +52,8 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
     e.stopPropagation();
     const checked = e.target.checked;
     onEnabledChange(checked);
-    
-    // Автоматически раскрываем при включении
+
+    // Expand automatically when the item gets enabled.
     if (checked && children && !isExpanded) {
       onToggleExpand();
     }
@@ -92,7 +81,6 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
           "&:last-child": { pb: { xs: 2, sm: 2.5 } },
         }}
       >
-        {/* Header */}
         <Box
           display="flex"
           alignItems="center"
@@ -101,7 +89,6 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
           onClick={handleCardClick}
         >
           <Box display="flex" alignItems="center" gap={2} flex={1}>
-            {/* Checkbox */}
             <FormControlLabel
               control={
                 <Checkbox
@@ -114,7 +101,6 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
               sx={{ m: 0 }}
             />
 
-            {/* Icon */}
             {icon && (
               <Box
                 sx={{
@@ -126,7 +112,6 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
               </Box>
             )}
 
-            {/* Label & Description */}
             <Box flex={1}>
               <Typography
                 variant="body1"
@@ -146,11 +131,9 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
               )}
             </Box>
 
-            {/* Badge */}
             {badge && <Box sx={{ ml: 2 }}>{badge}</Box>}
           </Box>
 
-          {/* Expand Icon */}
           {isEnabled && children && showExpandIcon && (
             <Box sx={{ ml: 1 }}>
               {isExpanded ? <ExpandLess /> : <ExpandMore />}
@@ -158,12 +141,9 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
           )}
         </Box>
 
-        {/* Collapsible Content */}
         {children && (
           <Collapse in={isEnabled && isExpanded} timeout="auto">
-            <Box sx={{ mt: 3, pl: { xs: 0, sm: 7 } }}>
-              {children}
-            </Box>
+            <Box sx={{ mt: 3, pl: { xs: 0, sm: 7 } }}>{children}</Box>
           </Collapse>
         )}
       </CardContent>

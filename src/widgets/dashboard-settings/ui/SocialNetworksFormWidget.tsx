@@ -1,40 +1,37 @@
-"use client";
+﻿"use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Box,
-  TextField,
   Button,
-  Stack,
-  Typography,
+  Chip,
+  CircularProgress,
   FormControl,
   Grid,
-  CircularProgress,
-  Alert,
+  Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
 import {
-  Telegram,
   Facebook,
-  WhatsApp,
   InfoOutlined,
+  Telegram,
+  WhatsApp,
 } from "@mui/icons-material";
-import { useForm, Controller } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useDictionary } from "@/entities/dictionary";
-import {
-  useCreateSocial,
-  useUpdateSocial,
-  useDeleteSocial,
-} from "../model/useSocialNetworkMutations";
-import type { SocialNetworkInput } from "../model/types";
-import { useSocialNetworks } from "../model/useSocialNetworks";
 import { useNotification } from "@/shared/ui/notification";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
 import type { DictionaryItem } from "@/entities/dictionary";
-import { SocialNetwork, SocialNetworkType } from "@/shared/types";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
+import type { SocialNetwork, SocialNetworkType } from "@/shared/types";
+import {
+  useCreateSocial,
+  useDeleteSocial,
+  useUpdateSocial,
+} from "../model/useSocialNetworkMutations";
+import type { SocialNetworkInput } from "../model/types";
+import { useSocialNetworks } from "../model/useSocialNetworks";
 
 interface SocialFormItem {
   enabled: boolean;
@@ -44,10 +41,6 @@ interface SocialFormItem {
 interface SocialFormData {
   items: Record<string, SocialFormItem>;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────────────────
 
 const SOCIAL_ICONS: Record<string, React.ReactNode> = {
   VK: (
@@ -84,14 +77,10 @@ const SOCIAL_LABELS: Record<string, string> = {
 
 const DEFAULT_LABEL = "Имя пользователя";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
+function trimValue(value: string) {
+  return value.trim();
+}
 
-/**
- * Строит начальные значения формы из словаря и существующих данных.
- * Вызывается ОДИН раз перед монтированием формы.
- */
 function buildDefaultValues(
   types: DictionaryItem[],
   existing: SocialNetwork[],
@@ -113,26 +102,41 @@ function buildDefaultValues(
   return { items };
 }
 
-/**
- * Определяет начально раскрытые карточки (те, что enabled).
- */
 function buildInitialExpanded(
   types: DictionaryItem[],
   existing: SocialNetwork[],
 ): Set<string> {
-  const existingTypes = new Set(existing.map((s) => s.type));
+  const existingTypes = new Set(existing.map((item) => item.type));
   const expanded = new Set<string>();
+
   for (const type of types) {
     if (existingTypes.has(type.value as SocialNetworkType)) {
       expanded.add(type.value);
     }
   }
+
   return expanded;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Form Component (рендерится ТОЛЬКО когда данные уже загружены)
-// ─────────────────────────────────────────────────────────────────────────────
+function getSocialBadge(item?: SocialFormItem) {
+  if (!item?.enabled) {
+    return <Chip size="small" label="Не включен" variant="outlined" />;
+  }
+
+  const login = trimValue(item.login);
+  if (login) {
+    return <Chip size="small" label={login} color="primary" variant="outlined" />;
+  }
+
+  return (
+    <Chip
+      size="small"
+      label="Нужно указать логин"
+      color="warning"
+      variant="outlined"
+    />
+  );
+}
 
 interface SocialNetworksFormProps {
   types: DictionaryItem[];
@@ -144,7 +148,6 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
   existing,
 }) => {
   const { showNotification } = useNotification();
-
   const createMutation = useCreateSocial();
   const updateMutation = useUpdateSocial();
   const deleteMutation = useDeleteSocial();
@@ -154,7 +157,6 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
     updateMutation.isPending ||
     deleteMutation.isPending;
 
-  // Маппинг существующих соцсетей по типу — для submit
   const existingByType = useMemo(() => {
     const map: Record<string, SocialNetwork> = {};
     for (const item of existing) {
@@ -163,24 +165,31 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
     return map;
   }, [existing]);
 
-  // defaultValues вычисляются ОДИН раз при создании компонента
-  // (types и existing приходят уже загруженными из родителя)
-  const [defaultValues] = useState(() => buildDefaultValues(types, existing));
-
   const {
     control,
     handleSubmit,
-    watch,
+    reset,
     formState: { errors },
   } = useForm<SocialFormData>({
-    mode: "onChange",
-    defaultValues,
+    mode: "onBlur",
+    reValidateMode: "onChange",
+    defaultValues: buildDefaultValues(types, existing),
   });
 
-  // Раскрытые карточки — локальное состояние
   const [expandedItems, setExpandedItems] = useState<Set<string>>(() =>
     buildInitialExpanded(types, existing),
   );
+  const [wasSaved, setWasSaved] = useState(false);
+
+  const itemsData = useWatch({
+    control,
+    name: "items",
+  });
+
+  useEffect(() => {
+    reset(buildDefaultValues(types, existing));
+    setWasSaved(false);
+  }, [existing, reset, types]);
 
   const toggleExpanded = useCallback((key: string) => {
     setExpandedItems((prev) => {
@@ -191,11 +200,61 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
     });
   }, []);
 
-  const itemsData = watch("items");
+  const hasChanges = useMemo(() => {
+    if (!itemsData) return false;
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Submit
-  // ─────────────────────────────────────────────────────────────────────────
+    for (const [type, formItem] of Object.entries(itemsData)) {
+      const prev = existingByType[type];
+      const wasEnabled = !!prev;
+      const nowEnabled = !!formItem.enabled;
+
+      if (wasEnabled !== nowEnabled) {
+        return true;
+      }
+
+      if (wasEnabled && nowEnabled) {
+        if (trimValue(prev.login) !== trimValue(formItem.login)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }, [existingByType, itemsData]);
+
+  const hasBlockingValidationErrors = useMemo(() => {
+    if (!itemsData) return false;
+
+    return Object.values(itemsData).some((item) => {
+      if (!item.enabled) {
+        return false;
+      }
+
+      return !trimValue(item.login);
+    });
+  }, [itemsData]);
+
+  const canSubmit = hasChanges && !hasBlockingValidationErrors && !isPending;
+
+  const statusText = useMemo(() => {
+    if (isPending) {
+      return "Сохраняем изменения...";
+    }
+
+    if (hasBlockingValidationErrors) {
+      return "Заполните обязательные поля, чтобы сохранить изменения.";
+    }
+
+    if (hasChanges) {
+      return "Есть несохраненные изменения.";
+    }
+
+    if (wasSaved) {
+      return "Изменения сохранены.";
+    }
+
+    return "Изменений нет.";
+  }, [hasBlockingValidationErrors, hasChanges, isPending, wasSaved]);
 
   const onSubmit = useCallback(
     async (data: SocialFormData) => {
@@ -205,22 +264,18 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
         const prev = existingByType[type];
         const input: SocialNetworkInput = {
           type: type as SocialNetworkType,
-          login: formItem.login,
+          login: trimValue(formItem.login),
         };
 
         if (formItem.enabled) {
           if (prev) {
-            // Обновляем только если login изменился
-            if (prev.login !== formItem.login) {
-              operations.push(
-                updateMutation.mutateAsync({ id: prev.id, input }),
-              );
+            if (trimValue(prev.login) !== input.login) {
+              operations.push(updateMutation.mutateAsync({ id: prev.id, input }));
             }
           } else {
             operations.push(createMutation.mutateAsync(input));
           }
         } else if (prev) {
-          // Была включена, теперь выключена → удаляем
           operations.push(deleteMutation.mutateAsync(prev.id));
         }
       }
@@ -232,27 +287,25 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
 
       try {
         await Promise.all(operations);
+        setExpandedItems(new Set());
+        setWasSaved(true);
         showNotification("Социальные сети сохранены", "success");
       } catch (error) {
-        const msg =
+        const message =
           error instanceof Error
             ? error.message
             : "Не удалось сохранить изменения";
-        showNotification(msg, "error");
+        showNotification(message, "error");
       }
     },
     [
-      existingByType,
       createMutation,
-      updateMutation,
       deleteMutation,
+      existingByType,
       showNotification,
+      updateMutation,
     ],
   );
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <Box>
@@ -267,8 +320,7 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
           },
         }}
       >
-        Выберите социальные сети и укажите ваши данные для связи. Эта информация
-        будет видна покупателям.
+        Выберите социальные сети и укажите ваши данные для связи. Эта информация будет видна покупателям.
       </Alert>
 
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
@@ -282,7 +334,7 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
               color: "text.primary",
             }}
           >
-            Выберите социальные сети
+            Социальные сети
           </Typography>
 
           <Stack spacing={2}>
@@ -300,10 +352,14 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
                     <CollapsibleFormCard
                       value={key}
                       label={network.description}
+                      badge={getSocialBadge(itemsData?.[key])}
                       icon={SOCIAL_ICONS[key] ?? <Telegram />}
                       isEnabled={field.value ?? false}
                       isExpanded={isExpanded}
-                      onEnabledChange={field.onChange}
+                      onEnabledChange={(checked) => {
+                        setWasSaved(false);
+                        field.onChange(checked);
+                      }}
                       onToggleExpand={() => toggleExpanded(key)}
                     >
                       <Grid container spacing={2}>
@@ -312,21 +368,30 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
                             name={`items.${key}.login`}
                             control={control}
                             rules={{
-                              required: isEnabled
-                                ? "Укажите имя пользователя"
-                                : false,
+                              validate: (value) => {
+                                if (!isEnabled) {
+                                  return true;
+                                }
+
+                                return !!trimValue(value ?? "") || "Укажите имя пользователя";
+                              },
                             }}
                             render={({ field: loginField }) => (
                               <TextField
                                 {...loginField}
                                 value={loginField.value ?? ""}
+                                onChange={(event) => {
+                                  setWasSaved(false);
+                                  loginField.onChange(event);
+                                }}
                                 fullWidth
                                 label={SOCIAL_LABELS[key] ?? DEFAULT_LABEL}
-                                placeholder={
-                                  SOCIAL_PLACEHOLDERS[key] ?? "Имя пользователя"
-                                }
+                                placeholder={SOCIAL_PLACEHOLDERS[key] ?? "Имя пользователя"}
                                 error={!!errors.items?.[key]?.login}
-                                helperText={errors.items?.[key]?.login?.message}
+                                helperText={
+                                  errors.items?.[key]?.login?.message ??
+                                  "Эти данные будут видны покупателям"
+                                }
                               />
                             )}
                           />
@@ -340,17 +405,40 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
           </Stack>
         </FormControl>
 
-        <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end" }}>
+        <Box
+          sx={{
+            mt: 4,
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: { xs: "stretch", sm: "center" },
+            justifyContent: "space-between",
+            gap: 2,
+          }}
+        >
+          <Typography
+            variant="body2"
+            color={
+              hasBlockingValidationErrors
+                ? "error.main"
+                : hasChanges
+                  ? "text.primary"
+                  : "text.secondary"
+            }
+          >
+            {statusText}
+          </Typography>
+
           <Button
             type="submit"
             variant="contained"
             size="large"
-            disabled={
-              isPending ||
-              !Object.values(itemsData || {}).some((n) => n.enabled)
-            }
+            disabled={!canSubmit}
             sx={{ minWidth: { xs: "100%", sm: 180 } }}
-            startIcon={isPending ? <CircularProgress size={16} /> : undefined}
+            startIcon={
+              isPending ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : undefined
+            }
           >
             {isPending ? "Сохранение..." : "Сохранить"}
           </Button>
@@ -359,10 +447,6 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
     </Box>
   );
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Loader Component (публичный экспорт)
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const SocialNetworksFormWidget: React.FC = () => {
   const { data: socialNetworkTypes, isLoading: typesLoading } =
@@ -374,12 +458,7 @@ export const SocialNetworksFormWidget: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight={200}
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
         <CircularProgress />
       </Box>
     );
@@ -393,9 +472,5 @@ export const SocialNetworksFormWidget: React.FC = () => {
     );
   }
 
-  // Форма рендерится ТОЛЬКО когда данные готовы →
-  // defaultValues вычисляются корректно, без useEffect
-  return (
-    <SocialNetworksForm types={socialNetworkTypes} existing={socialNetworks} />
-  );
+  return <SocialNetworksForm types={socialNetworkTypes} existing={socialNetworks} />;
 };

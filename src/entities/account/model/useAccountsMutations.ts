@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+﻿import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { accountsApi } from "../api/accountsApi";
 import { accountsKeys } from "./queryKeys";
-import type { AccountsCreateModel } from "../model/types";
+import type { AccountsCreateModel } from "./types";
 import { AccountsBaseModel } from "@/shared/types";
 
 export const useCreateAccount = () => {
@@ -37,7 +37,42 @@ export const useCreateAccount = () => {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: accountsKeys.userList() });
+      queryClient.invalidateQueries({ queryKey: accountsKeys.all });
+    },
+  });
+};
+
+export const useUpdateAccount = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: number; input: AccountsCreateModel }) =>
+      accountsApi.update(id, input),
+
+    onMutate: async ({ id, input }) => {
+      await queryClient.cancelQueries({ queryKey: accountsKeys.userList() });
+
+      const previous = queryClient.getQueryData<AccountsBaseModel[]>(
+        accountsKeys.userList(),
+      );
+
+      queryClient.setQueryData<AccountsBaseModel[]>(
+        accountsKeys.userList(),
+        (old = []) =>
+          old.map((account) =>
+            account.id === id ? { ...account, ...input } : account,
+          ),
+      );
+
+      return { previous };
+    },
+
+    onError: (_error, _vars, context) => {
+      queryClient.setQueryData(accountsKeys.userList(), context?.previous);
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: accountsKeys.all });
     },
   });
 };
@@ -67,7 +102,7 @@ export const useDeleteAccount = () => {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: accountsKeys.userList() });
+      queryClient.invalidateQueries({ queryKey: accountsKeys.all });
     },
   });
 };
@@ -121,7 +156,7 @@ export const useSaveAccountsBatch = () => {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: accountsKeys.userList() });
+      queryClient.invalidateQueries({ queryKey: accountsKeys.all });
     },
   });
 };
