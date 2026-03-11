@@ -1,12 +1,9 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import { useCartChecks } from "@/entities/cart";
+import { useFavoritesChecks } from "@/entities/favorite";
 import { useAuth } from "@/features/auth";
-import { useCartChecks } from "@/features/cart/check-cart";
-import {
-  useUserPendingActions,
-  PendingActionsPopover,
-} from "@/features/pending-action";
 import {
   Stack,
   IconButton,
@@ -22,7 +19,8 @@ import Image from "next/image";
 import PersonCustomIcon from "@/shared/assets/icons/userAccount.svg";
 import ShoppingCartCustomIcon from "@/shared/assets/icons/backet.svg";
 import { ICON_SIZES } from "../model/constants";
-import { useFavoritesChecks } from "@/features/favorite/check-favorites";
+import { useUserPendingActions } from "../model/pendingActions";
+import { PendingActionsPopover } from "./PendingActionsPopover";
 
 interface HeaderActionsProps {
   isMobile: boolean;

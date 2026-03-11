@@ -15,3 +15,6 @@ export {
 
 export { useCartQuantityStore } from "./model/cartQuantityStore";
 export type { CartQuantityItem } from "./model/cartQuantityStore";
+export { useCartChecks } from "./model/useCartChecks";
+export { useCartQuantity } from "./model/useCartQuantity";
+export { useCartItemRemoval } from "./model/useCartItemRemoval";

@@ -24,7 +24,7 @@ import {
   type TransferInput,
 } from "@/entities/transfer";
 import { useDictionary } from "@/entities/dictionary";
-import { useNotification } from "@/app/providers";
+import { useNotification } from "@/shared/ui/notification";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
 import type { DictionaryItem } from "@/entities/dictionary";
 import type { Currency, ShippingMethod, Transfer } from "@/shared/types";

@@ -26,7 +26,7 @@ import {
 } from "@/entities/product";
 import { CurrencyField } from "./components/CurrencyField";
 import { MultiImageUpload } from "./components/MultiImageUpload";
-import { useNotification } from "@/app/providers";
+import { useNotification } from "@/shared/ui/notification";
 
 import { useMultipleImageUpload } from "@/features/image-upload";
 import { useCategories } from "@/entities/category";

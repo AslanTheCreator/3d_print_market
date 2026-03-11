@@ -5,10 +5,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/app/store";
 import { useNotification } from "@/app/providers";
-import { PasswordResetDialog } from "@/features/auth";
-import { VerificationCodeDialog } from "@/features/auth";
-import { authApi } from "@/features/auth";
-import { VerificationRequiredError } from "@/features/auth/model/types";
+import {
+  PasswordResetDialog,
+  VerificationCodeDialog,
+  authApi,
+  VerificationRequiredError,
+} from "@/features/auth";
 
 export default function LoginPage() {
   const router = useRouter();

@@ -2,6 +2,12 @@
 
 import { useCallback } from "react";
 import {
+  useCartItemRemoval,
+  useCartQuantity,
+  ProductBasket,
+  CheckoutCartItemCard,
+} from "@/entities/cart";
+import {
   Box,
   Checkbox,
   Typography,
@@ -9,10 +15,6 @@ import {
   alpha,
   Paper,
 } from "@mui/material";
-import { ProductBasket } from "@/entities/cart";
-import { CheckoutCartItemCard } from "@/entities/cart";
-import { useRemoveFromCartFeature } from "@/features/cart";
-import { useCartQuantity } from "@/features/cart/update-quantity";
 import { useAuth } from "@/features/auth";
 
 interface CheckoutCartSectionProps {
@@ -71,7 +73,7 @@ export const CheckoutCartSection = ({
   onToggleSelectAll,
 }: CheckoutCartSectionProps) => {
   const theme = useTheme();
-  const { handleRemoveItem, removingItemIds } = useRemoveFromCartFeature();
+  const { handleRemoveItem, removingItemIds } = useCartItemRemoval();
 
   const handleSelectAll = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect } from "react";
-import { useAuthStore } from "@/app/store";
+import { useAuthStore } from "@/shared/lib/auth";
 import { useTokenRefresh } from "@/shared/lib/token";
 
 interface AuthProviderProps {

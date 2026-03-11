@@ -14,8 +14,8 @@ import {
 import { ImageGallery } from "@/shared/ui/image-gallery";
 import { ProductDetail } from "@/shared/types";
 import { RelatedProducts } from "./RelatedProducts";
-import { AddToCartButton } from "@/features/cart";
-import { FavoriteButton } from "@/features/favorite/toggle-favorite";
+import { AddToCartButton } from "@/features/add-to-cart";
+import { FavoriteButton } from "@/features/toggle-favorite";
 import {
   Verified,
   LocalShipping,
@@ -25,9 +25,9 @@ import {
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { buildCategoryPath } from "@/entities/category";
+import { useFavoritesChecks } from "@/entities/favorite";
 import { SellerAvatar } from "@/entities/user";
 import { useAuth } from "@/features/auth";
-import { useFavoritesChecks } from "@/features/favorite/check-favorites";
 
 interface DesktopProductDetailsProps {
   productCard: ProductDetail;

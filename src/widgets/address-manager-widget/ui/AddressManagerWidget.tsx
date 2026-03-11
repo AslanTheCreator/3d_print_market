@@ -3,7 +3,7 @@
 import React from "react";
 import { Box, Alert, AlertTitle, Card, CardContent } from "@mui/material";
 import { InfoOutlined } from "@mui/icons-material";
-import { AddressManager } from "@/features/address/manage-addresses";
+import { AddressManager } from "./AddressManager";
 import { useAddresses } from "@/entities/address";
 
 export const AddressManagerWidget: React.FC = () => {

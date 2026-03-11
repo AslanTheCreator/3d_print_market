@@ -23,7 +23,8 @@ import {
   DeliveryInfo,
   PaymentProofImages,
 } from "@/entities/order";
-import { CustomerActions, SellerActions } from "@/features/order";
+import { CustomerActions } from "./CustomerActions";
+import { SellerActions } from "./SellerActions";
 
 type UserRole = "seller" | "customer";
 

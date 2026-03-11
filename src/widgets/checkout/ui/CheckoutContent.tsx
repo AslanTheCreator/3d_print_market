@@ -15,7 +15,7 @@ import { CheckoutState } from "../hooks/useCheckoutState";
 import { CheckoutCartSection } from "./CheckoutCartSection";
 import { DeliveryMethodSelector } from "./DeliveryMethodSelector";
 import { CheckoutSummary } from "./CheckoutSummary";
-import { AddressCheckoutSelector } from "@/features/address/select-address";
+import { AddressCheckoutSelector } from "./AddressCheckoutSelector";
 
 interface CheckoutContentProps {
   cartItems: ProductBasket[];

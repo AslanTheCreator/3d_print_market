@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import AuthForm from "@/widgets/auth-form";
-import { authApi } from "@/features/auth";
-import { AuthFormModel } from "@/features/auth/model/types";
+import { authApi, AuthFormModel } from "@/features/auth";
 import { useRouter } from "next/navigation";
 import { VerificationCodeDialog } from "@/features/auth";
 import { useAuthStore } from "@/app/store";

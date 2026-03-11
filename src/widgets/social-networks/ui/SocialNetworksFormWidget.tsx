@@ -27,7 +27,7 @@ import {
 } from "../model/useSocialNetworkMutations";
 import type { SocialNetworkInput } from "../model/types";
 import { useSocialNetworks } from "../model/useSocialNetworks";
-import { useNotification } from "@/app/providers";
+import { useNotification } from "@/shared/ui/notification";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
 import type { DictionaryItem } from "@/entities/dictionary";
 import { SocialNetwork, SocialNetworkType } from "@/shared/types";

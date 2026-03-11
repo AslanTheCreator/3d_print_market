@@ -15,7 +15,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { tokenStorage } from "@/shared/lib";
-import { useAuthStore } from "@/app/store";
+import { useAuthStore } from "@/shared/lib/auth";
 import {
   ApiError,
   BackendErrorResponse,

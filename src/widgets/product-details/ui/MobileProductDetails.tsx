@@ -12,7 +12,7 @@ import {
 import { ImageGallery } from "@/shared/ui/image-gallery";
 import { ProductDetail } from "@/shared/types";
 import { RelatedProducts } from "./RelatedProducts";
-import { AddToCartButton } from "@/features/cart";
+import { AddToCartButton } from "@/features/add-to-cart";
 import {
   Verified,
   Schedule,
@@ -21,10 +21,10 @@ import {
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { buildCategoryPath } from "@/entities/category";
+import { useFavoritesChecks } from "@/entities/favorite";
 import { SellerAvatar } from "@/entities/user";
-import { FavoriteButton } from "@/features/favorite/toggle-favorite";
+import { FavoriteButton } from "@/features/toggle-favorite";
 import { useAuth } from "@/features/auth";
-import { useFavoritesChecks } from "@/features/favorite/check-favorites";
 
 interface MobileProductDetailsProps {
   productCard: ProductDetail;

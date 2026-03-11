@@ -15,7 +15,7 @@ import { ArrowBack } from "@mui/icons-material";
 import { AvatarUpload } from "@/shared/ui/avatar-upload";
 import { useImageUpload } from "@/features/image-upload";
 import { useUpdateUser, UserBaseModel } from "@/entities/user";
-import { useNotification } from "@/app/providers";
+import { useNotification } from "@/shared/ui/notification";
 import { useState, useEffect } from "react";
 
 interface ProfileFormValues {

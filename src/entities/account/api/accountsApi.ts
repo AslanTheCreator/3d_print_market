@@ -21,6 +21,17 @@ export const accountsApi = {
     await authClient.post(API_URL, data);
   },
 
+  update: async (
+    id: number,
+    data: AccountsCreateModel,
+  ): Promise<AccountsBaseModel> => {
+    const { data: response } = await authClient.put<AccountsBaseModel>(
+      `${API_URL}/${id}`,
+      data,
+    );
+    return response;
+  },
+
   delete: async (id: number): Promise<void> => {
     await authClient.delete(`${API_URL}/${id}`);
   },

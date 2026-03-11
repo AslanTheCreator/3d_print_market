@@ -11,7 +11,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useAuthStore } from "@/app/store";
+import { useAuthStore } from "@/shared/lib/auth";
 import { tokenRefreshManager } from "./tokenRefreshManager";
 import { tokenStorage } from "./tokenStorage";
 

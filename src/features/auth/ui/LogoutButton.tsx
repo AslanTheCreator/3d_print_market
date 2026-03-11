@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { Logout as LogoutIcon } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/app/store";
+import { useAuthStore } from "@/shared/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
 
 export const LogoutButton: React.FC = () => {

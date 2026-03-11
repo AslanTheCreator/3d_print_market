@@ -1,4 +1,4 @@
-﻿export { default } from "./ui/Checkout";
+export { default } from "./ui/Checkout";
 export { CheckoutCartSection } from "./ui/CheckoutCartSection";
 export { DeliveryMethodSelector } from "./ui/DeliveryMethodSelector";
 export { CheckoutSummary } from "./ui/CheckoutSummary";
@@ -11,7 +11,8 @@ export { useDeliveryResolver } from "./hooks/useDeliveryResolver";
 
 export type {
   OrderResult,
-  CheckoutResult,
-  SellerDeliveryInfo,
   DeliveryResolution,
+  SellerDeliveryInfo,
+  OrderToCreate,
+  CheckoutResult,
 } from "./model/types";

@@ -4,3 +4,4 @@ export { PasswordResetDialog } from "./ui/PasswordResetDialog";
 
 export { useAuth } from "./model/useAuth";
 export { authApi } from "./api/authApi";
+export * from "./model/types";

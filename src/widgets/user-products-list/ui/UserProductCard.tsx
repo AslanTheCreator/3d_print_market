@@ -31,7 +31,7 @@ import {
   Info,
 } from "@mui/icons-material";
 import { Product } from "@/shared/types";
-import { ExtendProductButton } from "@/features/product/extend-product/ui/ExtendProductButton";
+import { ExtendProductButton } from "./ExtendProductButton";
 import {
   getExpirationStatus,
   formatExpirationDate,

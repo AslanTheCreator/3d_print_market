@@ -22,7 +22,7 @@ import {
   CheckCircleOutline,
 } from "@mui/icons-material";
 import { useChangePassword } from "@/entities/user";
-import { useNotification } from "@/app/providers";
+import { useNotification } from "@/shared/ui/notification";
 
 interface PasswordFormData {
   oldPassword: string;

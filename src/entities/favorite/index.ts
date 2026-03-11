@@ -5,3 +5,4 @@ export {
   useRemoveFromFavorites,
 } from "./model/useFavoritesMutations";
 export { useFavoritesProducts } from "./model/useFavoritesQueries";
+export { useFavoritesChecks } from "./model/useFavoritesChecks";

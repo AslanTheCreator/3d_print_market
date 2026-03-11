@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import Image from "next/image";
 import { Box, Stack, Container, useTheme } from "@mui/material";
 import { HeaderActions } from "./HeaderActions";
-import { SearchForm } from "@/features/search";
+import { SearchForm } from "./SearchForm";
 import Link from "next/link";
 import site from "@/shared/assets/logo/site.png";
 import { HeaderLogo } from "./HeaderLogo";
