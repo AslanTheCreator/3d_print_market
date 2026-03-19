@@ -1,54 +1,65 @@
-"use client";
+﻿"use client";
 
 import {
-  Container,
-  Typography,
-  Grid,
-  Stack,
+  alpha,
   Box,
   Chip,
-  Paper,
+  Container,
   Divider,
-  alpha,
+  Grid,
+  Paper,
+  Stack,
+  Typography,
 } from "@mui/material";
+import {
+  LocalShipping,
+  Schedule,
+  Verified,
+} from "@mui/icons-material";
+import { useRouter } from "next/navigation";
+import { AddToCartButton } from "@/features/add-to-cart";
+import { useAuth } from "@/features/auth";
+import { FavoriteButton } from "@/features/toggle-favorite";
+import { buildCategoryPath } from "@/entities/category";
+import { useFavoritesChecks } from "@/entities/favorite";
 import { ImageGallery } from "@/shared/ui/image-gallery";
 import { ProductDetail } from "@/shared/types";
 import { RelatedProducts } from "./RelatedProducts";
-import { AddToCartButton } from "@/features/add-to-cart";
-import { FavoriteButton } from "@/features/toggle-favorite";
-import {
-  Verified,
-  LocalShipping,
-  Schedule,
-  Star,
-  Inventory2Outlined,
-} from "@mui/icons-material";
-import { useRouter } from "next/navigation";
-import { buildCategoryPath } from "@/entities/category";
-import { useFavoritesChecks } from "@/entities/favorite";
-import { SellerAvatar } from "@/entities/user";
-import { useAuth } from "@/features/auth";
+import { ProductDescription } from "./ProductDescription";
+import { ProductCategoryChips } from "./ProductCategoryChips";
+import { ProductDetailsBreadcrumbs } from "./ProductDetailsBreadcrumbs";
+import { ProductPriceCardContainer } from "./ProductPriceCardContainer";
+import { ProductSellerCard } from "./ProductSellerCard";
+import { ProductStockIndicator } from "./ProductStockIndicator";
+import { ProductTitle } from "./ProductTitle";
+import { formatMoney } from "./productDetailsFormatters";
 
 interface DesktopProductDetailsProps {
   productCard: ProductDetail;
   allImages: string[];
 }
 
-// Компонент информации о цене
+const formatReviewsLabel = (count: number): string => {
+  if (count === 1) return "1 отзыв";
+  if (count >= 2 && count <= 4) return `${count} отзыва`;
+  return `${count} отзывов`;
+};
+
 const PriceSection = ({
   price,
   prepaymentAmount,
   availability,
   stockCount,
+  currency,
 }: {
   price: number;
   prepaymentAmount: number;
-  availability: string;
+  availability: ProductDetail["availability"];
   stockCount: number | null;
+  currency: ProductDetail["currency"];
 }) => {
   const isPreorder = availability === "PREORDER";
 
-  // Форматирование остатка товара
   const formatStockCount = (count: number | null): string => {
     if (count === null) return "∞ в наличии";
     if (count === 0) return "Нет в наличии";
@@ -56,29 +67,13 @@ const PriceSection = ({
     return `${count} шт. в наличии`;
   };
 
-  // Определяем цвет для остатка
-  const getStockColor = (
-    count: number | null,
-  ): "success" | "warning" | "error" => {
-    if (count === null) return "success";
-    if (count === 0) return "error";
-    if (count <= 3) return "warning";
-    return "success";
-  };
-
   return (
-    <Paper
+    <ProductPriceCardContainer
       elevation={0}
+      isPreorder={isPreorder}
       sx={{
         p: 3,
         borderRadius: 3,
-        background: (theme) =>
-          `linear-gradient(135deg, ${alpha(
-            theme.palette.primary.main,
-            0.05,
-          )} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
-        border: "2px solid",
-        borderColor: isPreorder ? "preorder.main" : "primary.main",
         position: "relative",
         overflow: "hidden",
       }}
@@ -108,14 +103,14 @@ const PriceSection = ({
                 color="text.secondary"
                 sx={{ fontWeight: 600 }}
               >
-                Предоплата сейчас
+                К оплате сейчас
               </Typography>
               <Typography
                 variant="h3"
                 color="preorder.main"
                 sx={{ fontWeight: 800, lineHeight: 1 }}
               >
-                {prepaymentAmount.toLocaleString("ru-RU")} ₽
+                {formatMoney(prepaymentAmount, currency)}
               </Typography>
             </Box>
 
@@ -134,11 +129,11 @@ const PriceSection = ({
                 color="text.primary"
                 sx={{ fontWeight: 700 }}
               >
-                {price.toLocaleString("ru-RU")} ₽
+                {formatMoney(price, currency)}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Оплата при получении:{" "}
-                {(price - prepaymentAmount).toLocaleString("ru-RU")} ₽
+                Остаток после предоплаты:{" "}
+                {formatMoney(price - prepaymentAmount, currency)}
               </Typography>
             </Box>
           </>
@@ -156,35 +151,25 @@ const PriceSection = ({
               color="primary.main"
               sx={{ fontWeight: 800, lineHeight: 1 }}
             >
-              {price.toLocaleString("ru-RU")} ₽
+              {formatMoney(price, currency)}
             </Typography>
           </Box>
         )}
 
-        {/* Остаток товара */}
         <Divider />
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Inventory2Outlined
-            sx={{ fontSize: 20 }}
-            color={getStockColor(stockCount)}
-          />
-          <Typography
-            variant="body2"
-            fontWeight={600}
-            color={`${getStockColor(stockCount)}.main`}
-          >
-            {formatStockCount(stockCount)}
-          </Typography>
-        </Stack>
+
+        <ProductStockIndicator
+          stockCount={stockCount}
+          label={formatStockCount(stockCount)}
+          iconSize={20}
+          textVariant="body2"
+        />
       </Stack>
-    </Paper>
+    </ProductPriceCardContainer>
   );
 };
 
-// Компонент информационных бейджей
 const InfoBadges = ({ product }: { product: ProductDetail }) => {
-  const isPreorder = product.availability === "PREORDER";
-
   return (
     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
       <Chip
@@ -217,127 +202,71 @@ export function DesktopProductDetails({
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Хлебные крошки */}
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Главная / {productCard.categories.map((c) => c.name).join(", ")}
-      </Typography>
+      <ProductDetailsBreadcrumbs
+        productName={productCard.name}
+        categories={productCard.categories}
+      />
 
-      {/* Заголовок */}
-      <Typography
+      <ProductTitle
+        title={productCard.name}
         variant="h3"
         fontWeight={800}
         sx={{
           mb: 4,
-          background: (theme) =>
-            `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          backgroundClip: "text",
         }}
-      >
-        {productCard.name}
-      </Typography>
+      />
 
       <Grid container spacing={4}>
-        {/* Левая колонка - Галерея */}
         <Grid item xs={12} lg={7}>
           <Box sx={{ position: "sticky", top: 24 }}>
             <ImageGallery images={allImages} alt={productCard.name} />
           </Box>
         </Grid>
 
-        {/* Правая колонка - Информация */}
         <Grid item xs={12} lg={5}>
           <Stack spacing={3}>
-            {/* Информационные бейджи */}
             <InfoBadges product={productCard} />
 
-            {/* Категории */}
-            {productCard.categories.length > 0 && (
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {productCard.categories.map((category) => (
-                  <Chip
-                    key={category.id}
-                    label={category.name}
-                    size="small"
-                    variant="outlined"
-                    color="secondary"
-                    clickable
-                    onClick={() => router.push(buildCategoryPath([], category))}
-                    sx={{
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      "&:hover": {
-                        bgcolor: "secondary.main",
-                        color: "secondary.contrastText",
-                      },
-                    }}
-                  />
-                ))}
-              </Stack>
-            )}
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <ProductCategoryChips
+                categories={productCard.categories}
+                onCategoryClick={(category) =>
+                  router.push(buildCategoryPath([], category))
+                }
+              />
+            </Stack>
 
-            {/* Цена и остаток */}
             <PriceSection
               price={productCard.price}
               prepaymentAmount={productCard.prepaymentAmount}
               availability={productCard.availability}
               stockCount={productCard.count}
+              currency={productCard.currency}
             />
 
-            {/* Информация о продавце */}
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2.5,
-                borderRadius: 2,
-                border: "1px solid",
-                borderColor: "divider",
+            <ProductSellerCard
+              participantId={productCard.participantId}
+              sellerLogin={productCard.sellerLogin}
+              displayName={productCard.sellerLogin || "Продавец"}
+              hasRating={productCard.totalReviews > 0}
+              ratingLabel={
+                productCard.totalReviews > 0
+                  ? `${productCard.sellerRating.toFixed(1)}`
+                  : "Без оценок"
+              }
+              reviewsLabel={
+                productCard.totalReviews > 0
+                  ? formatReviewsLabel(productCard.totalReviews)
+                  : "нет отзывов"
+              }
+              avatarSize={44}
+              paperSx={{
+                p: 2,
+                borderRadius: 2.5,
+                background: (theme) => alpha(theme.palette.primary.main, 0.025),
               }}
-            >
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <SellerAvatar
-                  participantId={productCard.participantId}
-                  sellerLogin={productCard.sellerLogin}
-                  size={48}
-                />
-                <Box flex={1}>
-                  <Typography variant="subtitle1" fontWeight={700}>
-                    {productCard.sellerLogin || "Продавец"}
-                  </Typography>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    {productCard.sellerRating > 0 &&
-                    productCard.totalReviews > 0 ? (
-                      <>
-                        <Star sx={{ fontSize: 16, color: "warning.main" }} />
-                        <Typography variant="body2" fontWeight={600}>
-                          {productCard.sellerRating.toFixed(1)}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          •
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {productCard.totalReviews === 1
-                            ? "1 оценка"
-                            : productCard.totalReviews < 5
-                              ? `${productCard.totalReviews} оценки`
-                              : `${productCard.totalReviews} оценок`}
-                        </Typography>
-                      </>
-                    ) : (
-                      <>
-                        <Star sx={{ fontSize: 16, color: "grey.400" }} />
-                        <Typography variant="body2" color="text.secondary">
-                          Нет оценок
-                        </Typography>
-                      </>
-                    )}
-                  </Stack>
-                </Box>
-              </Stack>
-            </Paper>
+            />
 
-            {/* Кнопки действий */}
             <Stack spacing={2}>
               <AddToCartButton
                 productId={productCard.id}
@@ -355,7 +284,6 @@ export function DesktopProductDetails({
               />
             </Stack>
 
-            {/* Описание */}
             <Paper
               elevation={0}
               sx={{
@@ -366,47 +294,16 @@ export function DesktopProductDetails({
                 borderColor: "divider",
               }}
             >
-              <Typography variant="h6" fontWeight={700} gutterBottom>
-                Описание
-              </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{
-                  lineHeight: 1.8,
-                  whiteSpace: "pre-line",
-                }}
-              >
-                {productCard.description || "Описание отсутствует"}
-              </Typography>
+              <ProductDescription
+                description={productCard.description}
+                titleVariant="h6"
+                collapsedLines={5}
+              />
             </Paper>
-
-            {/* Преимущества */}
-            {/* <Paper
-              elevation={0}
-              sx={{
-                p: 3,
-                borderRadius: 2,
-                bgcolor: alpha("#4caf50", 0.05),
-                border: "1px solid",
-                borderColor: alpha("#4caf50", 0.2),
-              }}
-            >
-              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                ✓ Гарантия подлинности
-              </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                ✓ Бесплатная доставка от 3000 ₽
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                ✓ Возврат в течение 14 дней
-              </Typography>
-            </Paper> */}
           </Stack>
         </Grid>
       </Grid>
 
-      {/* Похожие товары */}
       <Box sx={{ mt: 6 }}>
         <RelatedProducts
           categoryId={productCard.categories[0]?.id}

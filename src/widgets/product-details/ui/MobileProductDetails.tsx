@@ -1,85 +1,161 @@
-"use client";
+﻿"use client";
 
 import {
-  Box,
-  Typography,
-  Stack,
-  Chip,
-  Paper,
-  Divider,
   alpha,
+  Box,
+  Chip,
+  Divider,
+  IconButton,
+  Paper,
+  Stack,
+  Typography,
 } from "@mui/material";
+import { ArrowBackIosNew, Schedule, Verified } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
+import { AddToCartButton } from "@/features/add-to-cart";
+import { useAuth } from "@/features/auth";
+import { useFavoritesChecks } from "@/entities/favorite";
+import { buildCategoryPath } from "@/entities/category";
+import { FavoriteButton } from "@/features/toggle-favorite";
 import { ImageGallery } from "@/shared/ui/image-gallery";
 import { ProductDetail } from "@/shared/types";
 import { RelatedProducts } from "./RelatedProducts";
-import { AddToCartButton } from "@/features/add-to-cart";
-import {
-  Verified,
-  Schedule,
-  Star,
-  Inventory2Outlined,
-} from "@mui/icons-material";
-import { useRouter } from "next/navigation";
-import { buildCategoryPath } from "@/entities/category";
-import { useFavoritesChecks } from "@/entities/favorite";
-import { SellerAvatar } from "@/entities/user";
-import { FavoriteButton } from "@/features/toggle-favorite";
-import { useAuth } from "@/features/auth";
+import { ProductDescription } from "./ProductDescription";
+import { ProductCategoryChips } from "./ProductCategoryChips";
+import { ProductPriceCardContainer } from "./ProductPriceCardContainer";
+import { ProductSellerCard } from "./ProductSellerCard";
+import { ProductStockIndicator } from "./ProductStockIndicator";
+import { ProductTitle } from "./ProductTitle";
+import { formatMoney } from "./productDetailsFormatters";
 
 interface MobileProductDetailsProps {
   productCard: ProductDetail;
   allImages: string[];
 }
 
-// Компактная версия цены для мобильных
+const formatReviewsLabel = (count: number): string => {
+  if (count === 1) return "1 отзыв";
+  if (count >= 2 && count <= 4) return `${count} отзыва`;
+  return `${count} отзывов`;
+};
+
+const formatStockCount = (count: number | null): string => {
+  if (count === null) return "∞ в наличии";
+  if (count === 0) return "Нет в наличии";
+  if (count === 1) return "1 шт.";
+  return `${count} шт.`;
+};
+
+const MobileBottomBar = ({
+  productId,
+  availability,
+  productName,
+  stockCount,
+  price,
+  prepaymentAmount,
+  currency,
+}: {
+  productId: number;
+  availability: ProductDetail["availability"];
+  productName: string;
+  stockCount: number | null;
+  price: number;
+  prepaymentAmount: number;
+  currency: ProductDetail["currency"];
+}) => {
+  const isPreorder = availability === "PREORDER";
+  const priceValue = isPreorder ? prepaymentAmount : price;
+
+  return (
+    <Paper
+      elevation={8}
+      sx={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        px: 2,
+        pt: 1.25,
+        pb: "calc(env(safe-area-inset-bottom, 0px) + 16px)",
+        zIndex: 1000,
+        borderRadius: "24px 24px 0 0",
+        background: (theme) => theme.palette.background.paper,
+        boxShadow: "0 -10px 32px rgba(15, 23, 42, 0.12)",
+        borderTop: "1px solid",
+        borderColor: "divider",
+      }}
+    >
+      <Stack spacing={1.25}>
+        <Box minWidth={0}>
+          {isPreorder && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontWeight: 600 }}
+            >
+              Предоплата сейчас
+            </Typography>
+          )}
+          <Typography
+            variant="h5"
+            sx={{
+              mt: isPreorder ? 0.25 : 0,
+              fontWeight: 800,
+              lineHeight: 1.1,
+              color: isPreorder ? "preorder.main" : "primary.main",
+            }}
+          >
+            {formatMoney(priceValue, currency)}
+          </Typography>
+          {isPreorder && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block", mt: 0.5 }}
+            >
+              Полная стоимость: {formatMoney(price, currency)}
+            </Typography>
+          )}
+        </Box>
+
+        <AddToCartButton
+          productId={productId}
+          availability={availability}
+          variant="detailed"
+          productName={productName}
+          stockCount={stockCount}
+        />
+      </Stack>
+    </Paper>
+  );
+};
+
 const MobilePriceCard = ({
   price,
   prepaymentAmount,
   availability,
   stockCount,
+  currency,
 }: {
   price: number;
   prepaymentAmount: number;
-  availability: string;
+  availability: ProductDetail["availability"];
   stockCount: number | null;
+  currency: ProductDetail["currency"];
 }) => {
   const isPreorder = availability === "PREORDER";
 
-  // Форматирование остатка товара
-  const formatStockCount = (count: number | null): string => {
-    if (count === null) return "∞ в наличии";
-    if (count === 0) return "Нет в наличии";
-    if (count === 1) return "1 шт.";
-    return `${count} шт.`;
-  };
-
-  // Определяем цвет для остатка
-  const getStockColor = (
-    count: number | null,
-  ): "success" | "warning" | "error" => {
-    if (count === null) return "success";
-    if (count === 0) return "error";
-    if (count <= 3) return "warning";
-    return "success";
-  };
-
   return (
-    <Paper
+    <ProductPriceCardContainer
       elevation={3}
+      isPreorder={isPreorder}
       sx={{
         p: 2,
         borderRadius: 2.5,
-        background: (theme) =>
-          `linear-gradient(135deg, ${alpha(
-            theme.palette.primary.main,
-            0.08,
-          )} 0%, ${alpha(theme.palette.secondary.main, 0.08)} 100%)`,
-        border: "2px solid",
-        borderColor: isPreorder ? "preorder.main" : "primary.main",
       }}
     >
       {isPreorder ? (
-        <Stack spacing={1}>
+        <Stack spacing={1.25}>
           <Stack
             direction="row"
             justifyContent="space-between"
@@ -90,7 +166,7 @@ const MobilePriceCard = ({
               color="text.secondary"
               sx={{ fontWeight: 600 }}
             >
-              Предоплата
+              К оплате сейчас
             </Typography>
             <Chip
               icon={<Schedule sx={{ fontSize: 14 }} />}
@@ -100,39 +176,30 @@ const MobilePriceCard = ({
               sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }}
             />
           </Stack>
+
           <Typography
             variant="h4"
             color="preorder.main"
             sx={{ fontWeight: 800, lineHeight: 1 }}
           >
-            {prepaymentAmount.toLocaleString("ru-RU")} ₽
+            {formatMoney(prepaymentAmount, currency)}
+          </Typography>
+
+          <Typography variant="body2" color="text.secondary">
+            Полная цена: <strong>{formatMoney(price, currency)}</strong>
           </Typography>
 
           <Divider />
 
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              Полная цена: <strong>{price.toLocaleString("ru-RU")} ₽</strong>
-            </Typography>
-          </Box>
-
-          {/* Остаток товара */}
-          <Stack direction="row" spacing={0.5} alignItems="center">
-            <Inventory2Outlined
-              sx={{ fontSize: 16 }}
-              color={getStockColor(stockCount)}
-            />
-            <Typography
-              variant="caption"
-              fontWeight={600}
-              color={`${getStockColor(stockCount)}.main`}
-            >
-              {formatStockCount(stockCount)}
-            </Typography>
-          </Stack>
+          <ProductStockIndicator
+            stockCount={stockCount}
+            label={formatStockCount(stockCount)}
+            iconSize={16}
+            textVariant="caption"
+          />
         </Stack>
       ) : (
-        <Stack spacing={1}>
+        <Stack spacing={1.25}>
           <Typography
             variant="caption"
             color="text.secondary"
@@ -145,26 +212,18 @@ const MobilePriceCard = ({
             color="primary.main"
             sx={{ fontWeight: 800, lineHeight: 1 }}
           >
-            {price.toLocaleString("ru-RU")} ₽
+            {formatMoney(price, currency)}
           </Typography>
 
-          {/* Остаток товара */}
-          <Stack direction="row" spacing={0.5} alignItems="center">
-            <Inventory2Outlined
-              sx={{ fontSize: 16 }}
-              color={getStockColor(stockCount)}
-            />
-            <Typography
-              variant="caption"
-              fontWeight={600}
-              color={`${getStockColor(stockCount)}.main`}
-            >
-              {formatStockCount(stockCount)}
-            </Typography>
-          </Stack>
+          <ProductStockIndicator
+            stockCount={stockCount}
+            label={formatStockCount(stockCount)}
+            iconSize={16}
+            textVariant="caption"
+          />
         </Stack>
       )}
-    </Paper>
+    </ProductPriceCardContainer>
   );
 };
 
@@ -175,52 +234,72 @@ export function MobileProductDetails({
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
+
   return (
-    <Box sx={{ pb: 12 }}>
-      {/* Галерея */}
-      <Box sx={{ mb: 2 }}>
+    <Box sx={{ pb: 24 }}>
+      <Box sx={{ mb: 2, position: "relative" }}>
         <ImageGallery images={allImages} alt={productCard.name} />
+
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{
+            position: "absolute",
+            top: 16,
+            left: 16,
+            right: 16,
+            zIndex: 2,
+          }}
+        >
+          <IconButton
+            onClick={() => router.back()}
+            aria-label="Назад"
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 2.5,
+              bgcolor: (theme) => alpha(theme.palette.background.paper, 0.92),
+              backdropFilter: "blur(10px)",
+              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)",
+              border: "1px solid",
+              borderColor: (theme) => alpha(theme.palette.common.black, 0.08),
+              color: "text.primary",
+              "&:hover": {
+                bgcolor: (theme) => alpha(theme.palette.background.paper, 0.98),
+              },
+            }}
+          >
+            <ArrowBackIosNew sx={{ fontSize: 18 }} />
+          </IconButton>
+
+          <FavoriteButton
+            productId={productCard.id}
+            isFavorite={isProductInFavorites(productCard.id)}
+            productName={productCard.name}
+            variant="overlay"
+          />
+        </Stack>
       </Box>
 
-      {/* Основной контент */}
       <Box sx={{ px: 2 }}>
-        {/* Заголовок */}
-        <Typography
+        <ProductTitle
           variant="h5"
           fontWeight={800}
           sx={{
             mb: 2,
-            background: (theme) =>
-              `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
             lineHeight: 1.3,
           }}
-        >
-          {productCard.name}
-        </Typography>
+          title={productCard.name}
+        />
 
-        {/* Категория и бейджи */}
         <Stack direction="row" spacing={1} mb={2} flexWrap="wrap" useFlexGap>
-          {productCard.categories.map((category) => (
-            <Chip
-              key={category.id}
-              label={category.name}
-              size="small"
-              variant="outlined"
-              color="secondary"
-              clickable
-              onClick={() => router.push(buildCategoryPath([], category))}
-              sx={{
-                fontWeight: 600,
-                "&:hover": {
-                  bgcolor: "secondary.main",
-                  color: "secondary.contrastText",
-                },
-              }}
-            />
-          ))}
+          <ProductCategoryChips
+            categories={productCard.categories}
+            onCategoryClick={(category) =>
+              router.push(buildCategoryPath([], category))
+            }
+          />
           <Chip
             icon={<Verified sx={{ fontSize: 14 }} />}
             label={productCard.originality}
@@ -231,68 +310,39 @@ export function MobileProductDetails({
           />
         </Stack>
 
-        {/* Цена и остаток */}
         <MobilePriceCard
           price={productCard.price}
           prepaymentAmount={productCard.prepaymentAmount}
           availability={productCard.availability}
           stockCount={productCard.count}
+          currency={productCard.currency}
         />
 
-        {/* Продавец */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: 2,
-            borderRadius: 2,
-            border: "1px solid",
-            borderColor: "divider",
+        <ProductSellerCard
+          participantId={productCard.participantId}
+          sellerLogin={productCard.sellerLogin}
+          displayName={productCard.sellerLogin || "Продавец"}
+          hasRating={productCard.totalReviews > 0}
+          ratingLabel={
+            productCard.totalReviews > 0
+              ? `${productCard.sellerRating.toFixed(1)}`
+              : "Без оценок"
+          }
+          reviewsLabel={
+            productCard.totalReviews > 0
+              ? formatReviewsLabel(productCard.totalReviews)
+              : "нет отзывов"
+          }
+          avatarSize={40}
+          rootSpacing={1.25}
+          paperSx={{
+            p: 1.5,
             mt: 2,
+            borderRadius: 2.5,
+            background: (theme) => alpha(theme.palette.primary.main, 0.025),
           }}
-        >
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <SellerAvatar
-              participantId={productCard.participantId}
-              sellerLogin={productCard.sellerLogin}
-              size={48}
-            />
-            <Box flex={1}>
-              <Typography variant="subtitle2" fontWeight={700}>
-                {productCard.sellerLogin || "Продавец"}
-              </Typography>
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                {productCard.sellerRating > 0 &&
-                productCard.totalReviews > 0 ? (
-                  <>
-                    <Star sx={{ fontSize: 14, color: "warning.main" }} />
-                    <Typography variant="caption" fontWeight={600}>
-                      {productCard.sellerRating.toFixed(1)}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      •
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {productCard.totalReviews === 1
-                        ? "1 оценка"
-                        : productCard.totalReviews < 5
-                          ? `${productCard.totalReviews} оценки`
-                          : `${productCard.totalReviews} оценок`}
-                    </Typography>
-                  </>
-                ) : (
-                  <>
-                    <Star sx={{ fontSize: 14, color: "grey.400" }} />
-                    <Typography variant="caption" color="text.secondary">
-                      Нет оценок
-                    </Typography>
-                  </>
-                )}
-              </Stack>
-            </Box>
-          </Stack>
-        </Paper>
+        />
 
-        {/* Описание */}
         <Paper
           elevation={0}
           sx={{
@@ -304,55 +354,13 @@ export function MobileProductDetails({
             mt: 2,
           }}
         >
-          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-            Описание
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{
-              lineHeight: 1.7,
-              whiteSpace: "pre-line",
-            }}
-          >
-            {productCard.description || "Описание отсутствует"}
-          </Typography>
+          <ProductDescription
+            description={productCard.description}
+            titleVariant="subtitle2"
+            collapsedLines={4}
+          />
         </Paper>
 
-        {/* Преимущества */}
-        {/* <Paper
-          elevation={0}
-          sx={{
-            p: 2,
-            borderRadius: 2,
-            bgcolor: alpha("#4caf50", 0.05),
-            border: "1px solid",
-            borderColor: alpha("#4caf50", 0.2),
-            mt: 2,
-          }}
-        >
-          <Typography
-            variant="caption"
-            fontWeight={700}
-            display="block"
-            gutterBottom
-          >
-            ✓ Гарантия подлинности
-          </Typography>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            display="block"
-            gutterBottom
-          >
-            ✓ Бесплатная доставка от 3000 ₽
-          </Typography>
-          <Typography variant="caption" color="text.secondary" display="block">
-            ✓ Возврат в течение 14 дней
-          </Typography>
-        </Paper> */}
-
-        {/* Похожие товары */}
         <Box sx={{ mt: 3 }}>
           <RelatedProducts
             categoryId={productCard.categories[0]?.id}
@@ -361,40 +369,14 @@ export function MobileProductDetails({
         </Box>
       </Box>
 
-      {/* Фиксированная нижняя панель */}
-      <Paper
-        elevation={8}
-        sx={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          p: 2,
-          zIndex: 1000,
-          borderRadius: "20px 20px 0 0",
-          background: (theme) => theme.palette.background.paper,
-          boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.1)",
-        }}
-      >
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Box sx={{ flex: 1 }}>
-            <AddToCartButton
-              productId={productCard.id}
-              availability={productCard.availability}
-              variant="detailed"
-              productName={productCard.name}
-              stockCount={productCard.count}
-            />
-          </Box>
-        </Stack>
-      </Paper>
-
-      {/* Кнопка избранного */}
-      <FavoriteButton
+      <MobileBottomBar
         productId={productCard.id}
-        isFavorite={isProductInFavorites(productCard.id)}
+        availability={productCard.availability}
         productName={productCard.name}
-        variant="fab"
+        stockCount={productCard.count}
+        price={productCard.price}
+        prepaymentAmount={productCard.prepaymentAmount}
+        currency={productCard.currency}
       />
     </Box>
   );

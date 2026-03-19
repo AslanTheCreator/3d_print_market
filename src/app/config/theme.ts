@@ -5,7 +5,6 @@ import { alpha } from "@mui/material/styles";
 
 const montserrat = Montserrat({
   subsets: ["cyrillic"],
-  variable: "--font-montserrat",
   weight: ["400", "500", "600", "700", "800", "900"],
 });
 

@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { Avatar, Skeleton } from "@mui/material";
-import { useUserById } from "../model/useUserQueries";
 import { useQuery } from "@tanstack/react-query";
 import { imageApi } from "@/shared/api";
+import { useUserById } from "../model/useUserQueries";
 
 interface SellerAvatarProps {
   participantId: number;

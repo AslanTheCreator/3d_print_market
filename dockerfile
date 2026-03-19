@@ -1,17 +1,17 @@
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 # Копируем package files
 COPY package.json package-lock.json ./
-RUN npm ci --frozen-lockfile
+RUN npm ci --no-audit --no-fund
 
 # Копируем исходники и собираем
 COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 
 WORKDIR /app
 
@@ -22,9 +22,6 @@ ENV PORT=3000
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-
-# Копируем package.json (если нужен для standalone)
-COPY --from=builder /app/package.json ./
 
 EXPOSE 3000
 

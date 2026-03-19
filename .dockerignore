@@ -18,5 +18,7 @@ src/features/product-creation/test/
 .DS_Store
 
 # Docker файлы
-Dockerfile
+dockerfile
 .dockerignore
+
+README.md

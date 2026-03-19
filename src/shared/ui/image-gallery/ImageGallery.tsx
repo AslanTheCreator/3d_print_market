@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Box, Paper, IconButton, alpha, useTheme } from "@mui/material";
-import { Fullscreen, ChevronLeft, ChevronRight } from "@mui/icons-material";
+import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { MainImage } from "./MainImage";
 import { ThumbnailList } from "./ThumbnailList";
 import { FullscreenImageViewer } from "./FullscreenImageViewer";
@@ -45,7 +45,6 @@ export function ImageGallery({
       // Не открываем fullscreen при клике на навигационные элементы
       if (
         target.closest(".gallery-nav-button") ||
-        target.closest(".fullscreen-button") ||
         target.closest(".swiper-pagination")
       ) {
         return;
@@ -93,10 +92,6 @@ export function ImageGallery({
             transition: "all 0.3s ease",
             "&:hover": {
               boxShadow: theme.shadows[4],
-              "& .fullscreen-button": {
-                opacity: 1,
-                transform: "translate(0, 0)",
-              },
               "& .gallery-nav-button": {
                 opacity: 1,
               },
@@ -104,37 +99,6 @@ export function ImageGallery({
           }}
           onClick={handleImageClick}
         >
-          {/* Кнопка полноэкранного просмотра */}
-          <IconButton
-            className="fullscreen-button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleOpenFullscreen();
-            }}
-            sx={{
-              position: "absolute",
-              top: { xs: 8, sm: 12, md: 16 },
-              right: { xs: 8, sm: 12, md: 16 },
-              zIndex: 2,
-              bgcolor: alpha(theme.palette.background.paper, 0.8),
-              backdropFilter: "blur(8px)",
-              opacity: { xs: 1, sm: 0 },
-              transform: {
-                xs: "translate(0, 0)",
-                sm: "translate(8px, -8px)",
-              },
-              transition: "all 0.3s ease",
-              "&:hover": {
-                bgcolor: theme.palette.background.paper,
-                transform: "translate(0, 0) scale(1.1)",
-              },
-            }}
-            aria-label="Открыть полноэкранный просмотр"
-          >
-            <Fullscreen />
-          </IconButton>
-
-          {/* Кастомные стрелки навигации */}
           {showNavigation && (
             <>
               <IconButton
@@ -236,7 +200,6 @@ export function ImageGallery({
         )}
       </Box>
 
-      {/* Полноэкранный просмотр */}
       <FullscreenImageViewer
         images={images}
         initialIndex={currentIndex}

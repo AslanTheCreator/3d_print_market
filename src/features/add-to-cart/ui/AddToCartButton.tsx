@@ -1,26 +1,23 @@
-import React, { useEffect } from "react";
+﻿import React, { useEffect } from "react";
 import {
+  Box,
   Button,
+  Stack,
+  Tooltip,
   useMediaQuery,
   useTheme,
-  Box,
-  Tooltip,
-  Stack,
 } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useRouter } from "next/navigation";
-import {
-  useCartItemRemoval,
-  useCartQuantity,
-} from "@/entities/cart";
+import { useCartItemRemoval, useCartQuantity } from "@/entities/cart";
 import { useAuth } from "@/shared/lib/auth";
 import { useAuthRequired } from "@/shared/hooks";
 import { AuthRequiredDialog } from "@/shared/ui/auth-required-dialog";
 import { CartCounter } from "@/shared/ui/cart-counter";
-import { useAddToCartFeature } from "../model/useAddToCartFeature";
 import { useNotification } from "@/shared/ui/notification";
 import { Availability } from "@/shared/types";
+import { useAddToCartFeature } from "../model/useAddToCartFeature";
 
 interface AddToCartButtonProps {
   productId: number;
@@ -29,7 +26,7 @@ interface AddToCartButtonProps {
   size?: "small" | "medium" | "large";
   fullWidth?: boolean;
   productName?: string;
-  stockCount?: number | null; // Количество товара в наличии (null = неограниченно)
+  stockCount?: number | null;
 }
 
 export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
@@ -80,7 +77,6 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   const isOutOfStock =
     stockCount !== null && stockCount !== undefined && stockCount <= 0;
 
-  // Автоматически корректируем количество при изменении stockCount
   useEffect(() => {
     if (inCart) {
       adjustQuantityToMax();
@@ -101,7 +97,6 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
 
   const handleDecrementWithRemove = () => {
     if (quantity <= 1) {
-      // Удаляем товар из корзины при нажатии минус когда quantity = 1
       handleRemoveItem(productId);
       handleSetQuantity(0);
     } else {
@@ -111,10 +106,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
 
   const handleIncrementClick = () => {
     if (!canIncrement) {
-      showNotification(
-        `Максимальное количество: ${maxQuantity} шт.`,
-        "warning",
-      );
+      showNotification(`Максимальное количество: ${maxQuantity} шт.`, "warning");
       return;
     }
     handleIncrement();
@@ -162,13 +154,13 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
           bgcolor: theme.palette.preorder.dark,
         },
       };
-    } else {
-      return {
-        "&:hover": {
-          bgcolor: theme.palette.primary.dark,
-        },
-      };
     }
+
+    return {
+      "&:hover": {
+        bgcolor: theme.palette.primary.dark,
+      },
+    };
   };
 
   const getButtonText = () => {
@@ -181,14 +173,12 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     return variant === "detailed" ? "Добавить в корзину" : "Купить";
   };
 
-  // Показываем CartCounter если товар в корзине
   if (inCart && !isOutOfStock) {
-    // Вариант detailed — счётчик + кнопка «В корзине»
     if (variant === "detailed") {
       const detailedContent = (
         <Stack
           direction="row"
-          spacing={2}
+          spacing={isMobile ? 1 : 2}
           alignItems="center"
           onClick={(e) => {
             e.preventDefault();
@@ -196,31 +186,38 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
           }}
           sx={{ width: fullWidth ? "100%" : "auto" }}
         >
-          <CartCounter
-            value={quantity}
-            onIncrement={handleIncrementClick}
-            onDecrement={handleDecrementWithRemove}
-            disabled={isPending || isRemoving}
-            isAtMax={isAtMaxQuantity}
-            size="large"
-          />
+          <Box sx={{ flexShrink: 0, minWidth: isMobile ? 132 : 156 }}>
+            <CartCounter
+              value={quantity}
+              onIncrement={handleIncrementClick}
+              onDecrement={handleDecrementWithRemove}
+              disabled={isPending || isRemoving}
+              isAtMax={isAtMaxQuantity}
+              size="large"
+            />
+          </Box>
 
           <Button
             variant="contained"
             onClick={() => router.push("/checkout")}
-            endIcon={<ChevronRightIcon />}
+            endIcon={isMobile ? undefined : <ChevronRightIcon />}
             fullWidth
             sx={{
+              minWidth: 0,
               borderRadius: 3,
-              fontSize: "16px",
+              fontSize: isMobile ? "14px" : "16px",
               fontWeight: 600,
-              height: 48,
+              height: isMobile ? 44 : 48,
+              px: isMobile ? 1.5 : 2,
+              whiteSpace: "nowrap",
+              textOverflow: "ellipsis",
+              overflow: "hidden",
               "&:hover": {
                 bgcolor: "primary.dark",
               },
             }}
           >
-            В корзине
+            {isMobile ? "Оформить" : "В корзине"}
           </Button>
         </Stack>
       );
@@ -240,7 +237,6 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       return detailedContent;
     }
 
-    // Вариант default — компактный CartCounter
     const counterContent = (
       <Box
         sx={{
