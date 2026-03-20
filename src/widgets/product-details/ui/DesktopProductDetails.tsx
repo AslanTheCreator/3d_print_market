@@ -29,21 +29,16 @@ import { ProductDescription } from "./ProductDescription";
 import { ProductCategoryChips } from "./ProductCategoryChips";
 import { ProductDetailsBreadcrumbs } from "./ProductDetailsBreadcrumbs";
 import { ProductPriceCardContainer } from "./ProductPriceCardContainer";
+import { ProductReviewsSection } from "./ProductReviewsSection";
 import { ProductSellerCard } from "./ProductSellerCard";
 import { ProductStockIndicator } from "./ProductStockIndicator";
 import { ProductTitle } from "./ProductTitle";
-import { formatMoney } from "./productDetailsFormatters";
+import { formatMoney, formatReviewsLabel } from "./productDetailsFormatters";
 
 interface DesktopProductDetailsProps {
   productCard: ProductDetail;
   allImages: string[];
 }
-
-const formatReviewsLabel = (count: number): string => {
-  if (count === 1) return "1 отзыв";
-  if (count >= 2 && count <= 4) return `${count} отзыва`;
-  return `${count} отзывов`;
-};
 
 const PriceSection = ({
   price,
@@ -199,13 +194,11 @@ export function DesktopProductDetails({
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
+  const primaryCategoryId = productCard.categories[0]?.id;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <ProductDetailsBreadcrumbs
-        productName={productCard.name}
-        categories={productCard.categories}
-      />
+      <ProductDetailsBreadcrumbs categories={productCard.categories} />
 
       <ProductTitle
         title={productCard.name}
@@ -298,18 +291,24 @@ export function DesktopProductDetails({
                 description={productCard.description}
                 titleVariant="h6"
                 collapsedLines={5}
-              />
-            </Paper>
-          </Stack>
+                />
+              </Paper>
+            </Stack>
+          </Grid>
         </Grid>
-      </Grid>
 
       <Box sx={{ mt: 6 }}>
-        <RelatedProducts
-          categoryId={productCard.categories[0]?.id}
-          excludeProductId={productCard.id}
-        />
+        <ProductReviewsSection reviews={productCard.reviews} />
       </Box>
+
+      {primaryCategoryId ? (
+        <Box sx={{ mt: 6 }}>
+          <RelatedProducts
+            categoryId={primaryCategoryId}
+            excludeProductId={productCard.id}
+          />
+        </Box>
+      ) : null}
     </Container>
   );
 }

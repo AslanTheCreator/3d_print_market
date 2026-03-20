@@ -7,13 +7,11 @@ import { buildCategoryPath } from "@/entities/category";
 import { CategoryModel } from "@/shared/types";
 
 interface ProductDetailsBreadcrumbsProps {
-  productName: string;
   categories: CategoryModel[];
   mb?: number;
 }
 
 export function ProductDetailsBreadcrumbs({
-  productName,
   categories,
   mb = 2,
 }: ProductDetailsBreadcrumbsProps) {

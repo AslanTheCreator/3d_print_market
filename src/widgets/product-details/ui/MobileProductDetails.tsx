@@ -26,18 +26,12 @@ import { ProductPriceCardContainer } from "./ProductPriceCardContainer";
 import { ProductSellerCard } from "./ProductSellerCard";
 import { ProductStockIndicator } from "./ProductStockIndicator";
 import { ProductTitle } from "./ProductTitle";
-import { formatMoney } from "./productDetailsFormatters";
+import { formatMoney, formatReviewsLabel } from "./productDetailsFormatters";
 
 interface MobileProductDetailsProps {
   productCard: ProductDetail;
   allImages: string[];
 }
-
-const formatReviewsLabel = (count: number): string => {
-  if (count === 1) return "1 отзыв";
-  if (count >= 2 && count <= 4) return `${count} отзыва`;
-  return `${count} отзывов`;
-};
 
 const formatStockCount = (count: number | null): string => {
   if (count === null) return "∞ в наличии";
@@ -234,6 +228,15 @@ export function MobileProductDetails({
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
+  const primaryCategoryId = productCard.categories[0]?.id;
+  const handleBackClick = () => {
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.push("/");
+  };
 
   return (
     <Box sx={{ pb: 24 }}>
@@ -253,7 +256,7 @@ export function MobileProductDetails({
           }}
         >
           <IconButton
-            onClick={() => router.back()}
+            onClick={handleBackClick}
             aria-label="Назад"
             sx={{
               width: 44,
@@ -361,12 +364,14 @@ export function MobileProductDetails({
           />
         </Paper>
 
-        <Box sx={{ mt: 3 }}>
-          <RelatedProducts
-            categoryId={productCard.categories[0]?.id}
-            excludeProductId={productCard.id}
-          />
-        </Box>
+        {primaryCategoryId ? (
+          <Box sx={{ mt: 3 }}>
+            <RelatedProducts
+              categoryId={primaryCategoryId}
+              excludeProductId={productCard.id}
+            />
+          </Box>
+        ) : null}
       </Box>
 
       <MobileBottomBar

@@ -18,3 +18,18 @@ export const getStockColor = (
   if (count <= 3) return "warning";
   return "success";
 };
+
+export const formatReviewsLabel = (count: number): string => {
+  if (count === 1) return "1 отзыв";
+  if (count >= 2 && count <= 4) return `${count} отзыва`;
+  return `${count} отзывов`;
+};
+
+export const formatAverageRating = (value: number): string =>
+  value.toFixed(1).replace(".", ",");
+
+export const formatReviewDate = (value: string): string =>
+  new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "long",
+  }).format(new Date(value));
