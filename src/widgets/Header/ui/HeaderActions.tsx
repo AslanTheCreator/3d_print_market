@@ -47,19 +47,20 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
     renewalGroup,
     isLoading: isPendingLoading,
   } = useUserPendingActions();
+  const hasPendingActions = isAuthenticated && pendingActionsCount > 0;
+  const profileUrl = isAuthenticated ? "/dashboard" : "/auth/login";
+  const profileBadge = hasPendingActions ? pendingActionsCount : undefined;
 
-  // Popover state
   const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
   const isPopoverOpen = Boolean(popoverAnchor);
 
   const handleProfileClick = useCallback(
     (event: React.MouseEvent<HTMLElement>) => {
-      if (!isAuthenticated) return;
-      if (pendingActionsCount === 0) return;
+      if (!hasPendingActions) return;
       event.preventDefault();
       setPopoverAnchor(event.currentTarget);
     },
-    [isAuthenticated, pendingActionsCount],
+    [hasPendingActions],
   );
 
   const handlePopoverClose = useCallback(() => {
@@ -67,8 +68,6 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
   }, []);
 
   const iconSize = isMobile ? ICON_SIZES.mobile : ICON_SIZES.desktop;
-
-  const profileUrl = isAuthenticated ? "/dashboard" : "/auth/login";
 
   const headerIcons: HeaderIconConfig[] = [
     {
@@ -96,7 +95,7 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
         />
       ),
       label: "Профиль",
-      badge: isAuthenticated ? pendingActionsCount : undefined,
+      badge: profileBadge,
       onClick: handleProfileClick,
     },
     {
@@ -132,7 +131,6 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
         ))}
       </Stack>
 
-      {/* Popover с действиями профиля */}
       <PendingActionsPopover
         anchorEl={popoverAnchor}
         open={isPopoverOpen}
@@ -196,7 +194,8 @@ const HeaderActionItem = ({
             }),
           },
           "&:hover img": {
-            filter: `brightness(0) invert(1) drop-shadow(0px 0px 4px rgba(247, 110, 160, 0.6))`,
+            filter:
+              "brightness(0) invert(1) drop-shadow(0px 0px 4px rgba(247, 110, 160, 0.6))",
             transform: "scale(1.1)",
           },
         }}

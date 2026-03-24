@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Stack, Box } from "@mui/material";
@@ -14,10 +14,7 @@ interface HeaderLogoProps {
 }
 
 export const HeaderLogo: React.FC<HeaderLogoProps> = ({ isMobile }) => {
-  const logoSize = useMemo(
-    () => (isMobile ? LOGO_SIZES.mobile : LOGO_SIZES.desktop),
-    [isMobile],
-  );
+  const logoSize = isMobile ? LOGO_SIZES.mobile : LOGO_SIZES.desktop;
 
   if (!isMobile) {
     return (

@@ -21,11 +21,11 @@ export const useSearch = (): UseSearchReturn => {
   const handleSearchSubmit = useCallback(() => {
     const trimmedQuery = searchQuery.trim();
 
-    if (trimmedQuery) {
-      const encodedQuery = encodeURIComponent(trimmedQuery);
-      router.push(`/catalog/search?query=${encodedQuery}`);
-      setSearchQuery("");
-    }
+    if (!trimmedQuery) return;
+
+    const encodedQuery = encodeURIComponent(trimmedQuery);
+    router.push(`/catalog/search?query=${encodedQuery}`);
+    setSearchQuery("");
   }, [searchQuery, router]);
 
   const handleClearSearch = useCallback(() => {

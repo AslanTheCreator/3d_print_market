@@ -75,7 +75,7 @@ export const SearchForm = ({
           color: theme.palette.text.primary,
           "& .MuiInputBase-input": {
             padding: isMobile ? "8px 0" : "10px 0",
-            fontSize: isMobile ? "0.875rem" : "1rem", // Используем rem вместо px
+            fontSize: isMobile ? "0.875rem" : "1rem",
             "&::placeholder": {
               color: theme.palette.text.secondary,
               opacity: 1,
@@ -97,7 +97,7 @@ export const SearchForm = ({
                     ["color", "background-color"],
                     {
                       duration: theme.transitions.duration.shorter,
-                    }
+                    },
                   ),
                   "&:hover": {
                     color: theme.palette.text.primary,

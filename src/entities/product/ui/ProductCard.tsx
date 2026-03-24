@@ -47,19 +47,26 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       sx={{
         maxWidth: "100%",
         width: "100%",
-        borderRadius: { xs: 1.5, sm: 2 },
-        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
+        borderRadius: { xs: 2, sm: 2.5 },
+        border: "1px solid",
+        borderColor: "divider",
+        boxShadow: "0 2px 10px rgba(15, 23, 42, 0.04)",
         overflow: "hidden",
         position: "relative",
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        transition: "transform 0.2s, box-shadow 0.2s",
+        transition:
+          "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
         "&:hover": {
           transform: { xs: "none", sm: "translateY(-4px)" },
           boxShadow: {
-            xs: "0 2px 8px rgba(0, 0, 0, 0.06)",
-            sm: "0 8px 16px rgba(0, 0, 0, 0.1)",
+            xs: "0 2px 10px rgba(15, 23, 42, 0.04)",
+            sm: "0 12px 24px rgba(15, 23, 42, 0.08)",
+          },
+          borderColor: alpha(theme.palette.primary.main, 0.18),
+          "& .product-card-image": {
+            transform: "scale(1.03)",
           },
         },
         bgcolor: "background.paper",
@@ -82,7 +89,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             width: "100%",
             aspectRatio: isMobile ? "1/1.2" : "1/1.33",
             overflow: "hidden",
-            backgroundColor: alpha(theme.palette.primary.main, 0.05),
+            backgroundColor: alpha(theme.palette.primary.main, 0.04),
           }}
         >
           {image && image[0]?.imageData ? (
@@ -102,10 +109,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 fill
                 sizes="(max-width: 600px) 50vw, 33vw"
                 loading="lazy"
+                className="product-card-image"
                 style={{
                   objectFit: "cover",
                   opacity: isImageLoaded ? 1 : 0,
-                  transition: "opacity 0.3s",
+                  transition: "opacity 0.3s ease, transform 0.25s ease",
                 }}
                 onLoad={() => setIsImageLoaded(true)}
               />
@@ -134,15 +142,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               size="small"
               sx={{
                 position: "absolute",
-                top: 8,
-                left: 8,
-                bgcolor: alpha(theme.palette.preorder.main, 0.95),
+                top: 10,
+                left: 10,
+                bgcolor: alpha(theme.palette.preorder.main, 0.92),
                 color: theme.palette.preorder.contrastText,
                 fontWeight: 700,
                 fontSize: isMobile ? "0.65rem" : "0.7rem",
                 height: isMobile ? 22 : 24,
+                borderRadius: 1.5,
                 backdropFilter: "blur(4px)",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                boxShadow: "0 4px 12px rgba(15, 23, 42, 0.12)",
               }}
             />
           )}
@@ -151,15 +160,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Контент карточки */}
         <CardContent
           sx={{
-            p: { xs: "8px", sm: "12px" },
-            "&:last-child": { pb: { xs: 1.5, sm: 2 } },
+            p: { xs: 1.25, sm: 1.5 },
+            "&:last-child": { pb: { xs: 1.5, sm: 1.75 } },
             flexGrow: 1,
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
           }}
         >
-          <Stack spacing={0.5}>
+          <Stack spacing={0.75}>
             {categories?.[0]?.name && (
               <Typography
                 variant="caption"
@@ -169,8 +178,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   textOverflow: "ellipsis",
                   overflow: "hidden",
                   whiteSpace: "nowrap",
-                  fontSize: isMobile ? "0.625rem" : "0.75rem",
+                  fontSize: isMobile ? "0.625rem" : "0.7rem",
                   fontWeight: 500,
+                  letterSpacing: "0.02em",
                 }}
               >
                 {categories[0].name}
@@ -178,7 +188,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )}
 
             <Typography
-              fontSize={isMobile ? "0.8rem" : "0.9rem"}
+              fontSize={isMobile ? "0.82rem" : "0.92rem"}
               fontWeight={600}
               color="text.primary"
               noWrap
@@ -188,8 +198,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </Typography>
           </Stack>
 
-          {/* Цена и рейтинг */}
-          <Box sx={{ mt: 0.5 }}>
+          <Box sx={{ mt: 0.75 }}>
             <ProductPriceDisplay
               price={price}
               prepaymentAmount={prepaymentAmount}
@@ -205,8 +214,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {actions && (
         <Box
           sx={{
-            px: { xs: 1, sm: 1.5 },
-            pb: { xs: 1.5, sm: 2 },
+            px: { xs: 1.25, sm: 1.5 },
+            pb: { xs: 1.5, sm: 1.75 },
           }}
           onClick={(e) => e.preventDefault()}
         >

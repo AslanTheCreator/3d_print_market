@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import Image from "next/image";
 import { Box, Stack, Container, useTheme } from "@mui/material";
 import { HeaderActions } from "./HeaderActions";
@@ -19,17 +19,20 @@ import {
 export const Header = () => {
   const theme = useTheme();
   const isMobile = useIsMobile();
+  const siteLogoSize = isMobile ? SITE_LOGO_SIZES.mobile : SITE_LOGO_SIZES.desktop;
 
   const isVisible = useHideOnScroll({
     enabled: isMobile,
     scrollThreshold: SCROLL_THRESHOLD,
     throttleDelay: THROTTLE_DELAY,
   });
-
-  const siteLogoSize = useMemo(
-    () => (isMobile ? SITE_LOGO_SIZES.mobile : SITE_LOGO_SIZES.desktop),
-    [isMobile],
-  );
+  const headerTop = isMobile ? (isVisible ? 0 : `-${LAYOUT.HEADER_HEIGHT_PX}`) : 0;
+  const headerTransition = isMobile
+    ? theme.transitions.create(["top"], {
+        duration: theme.transitions.duration.standard,
+        easing: theme.transitions.easing.easeInOut,
+      })
+    : "none";
 
   return (
     <Box
@@ -37,13 +40,8 @@ export const Header = () => {
       sx={{
         position: "fixed",
         width: "100%",
-        top: isMobile ? (isVisible ? 0 : `-${LAYOUT.HEADER_HEIGHT_PX}`) : 0,
-        transition: isMobile
-          ? theme.transitions.create(["top"], {
-              duration: theme.transitions.duration.standard,
-              easing: theme.transitions.easing.easeInOut,
-            })
-          : "none",
+        top: headerTop,
+        transition: headerTransition,
         backgroundColor: theme.palette.secondary.main,
         zIndex: theme.zIndex.appBar,
         border: `2px solid ${theme.palette.secondary.main}`,
