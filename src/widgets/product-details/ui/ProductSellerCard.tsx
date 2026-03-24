@@ -33,6 +33,8 @@ export function ProductSellerCard({
       sx={{
         border: "1px solid",
         borderColor: "divider",
+        bgcolor: "background.paper",
+        boxShadow: "0 4px 16px rgba(15, 23, 42, 0.04)",
         ...paperSx,
       }}
     >
@@ -57,9 +59,18 @@ export function ProductSellerCard({
               icon={<Star sx={{ fontSize: 14 }} />}
               label={ratingLabel}
               size="small"
-              color={hasRating ? "warning" : "default"}
-              variant={hasRating ? "filled" : "outlined"}
-              sx={{ height: 24, fontWeight: 700 }}
+              color="default"
+              variant="outlined"
+              sx={{
+                height: 24,
+                fontWeight: 700,
+                borderColor: hasRating ? "warning.light" : "divider",
+                color: hasRating ? "text.primary" : "text.secondary",
+                bgcolor: "background.paper",
+                "& .MuiChip-icon": {
+                  color: hasRating ? "warning.main" : "text.secondary",
+                },
+              }}
             />
 
             <Chip
@@ -67,7 +78,13 @@ export function ProductSellerCard({
               label={reviewsLabel}
               size="small"
               variant="outlined"
-              sx={{ height: 24, fontWeight: 600 }}
+              sx={{
+                height: 24,
+                fontWeight: 600,
+                borderColor: "divider",
+                color: "text.secondary",
+                bgcolor: "background.paper",
+              }}
             />
           </Stack>
         </Box>

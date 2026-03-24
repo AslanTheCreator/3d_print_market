@@ -24,15 +24,18 @@ export function ProductCategoryChips({
           label={category.name}
           size="small"
           variant="outlined"
-          color="secondary"
+          color="default"
           clickable
           onClick={() => onCategoryClick(category)}
           sx={{
             fontWeight: 600,
             cursor: "pointer",
+            bgcolor: "background.paper",
+            borderColor: "divider",
+            color: "text.secondary",
             "&:hover": {
-              bgcolor: "secondary.main",
-              color: "secondary.contrastText",
+              bgcolor: "action.hover",
+              color: "text.primary",
             },
           }}
         />

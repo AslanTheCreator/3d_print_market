@@ -145,31 +145,40 @@ export function ProductReviewsSection({
     <Box>
       <Stack
         direction="row"
-        alignItems="center"
+        alignItems="flex-start"
         justifyContent="space-between"
         spacing={3}
         sx={{ mb: 3 }}
       >
-        <Stack direction="row" alignItems="center" spacing={2} flexWrap="wrap">
+        <Box>
           <Typography variant="h4" fontWeight={800}>
             Отзывы
           </Typography>
 
-          <Typography variant="h3" fontWeight={800} sx={{ lineHeight: 1 }}>
-            {formatAverageRating(averageRating)}
-          </Typography>
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={2}
+            flexWrap="wrap"
+            useFlexGap
+            sx={{ mt: 1 }}
+          >
+            <Typography variant="h3" fontWeight={800} sx={{ lineHeight: 1 }}>
+              {formatAverageRating(averageRating)}
+            </Typography>
 
-          <Rating
-            value={averageRating}
-            precision={0.1}
-            readOnly
-            sx={{ color: "warning.main" }}
-          />
+            <Rating
+              value={averageRating}
+              precision={0.1}
+              readOnly
+              sx={{ color: "warning.main" }}
+            />
 
-          <Typography variant="h6" color="text.secondary" fontWeight={600}>
-            {formatReviewsLabel(reviewsCount)}
-          </Typography>
-        </Stack>
+            <Typography variant="h6" color="text.secondary" fontWeight={600}>
+              {formatReviewsLabel(reviewsCount)}
+            </Typography>
+          </Stack>
+        </Box>
 
         {showSliderControls ? (
           <Stack direction="row" spacing={1}>

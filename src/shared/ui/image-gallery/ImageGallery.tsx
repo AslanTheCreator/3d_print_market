@@ -3,13 +3,12 @@
 import { useState, useCallback } from "react";
 import { Box, Paper, IconButton, alpha, useTheme } from "@mui/material";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
-import { MainImage } from "./MainImage";
-import { ThumbnailList } from "./ThumbnailList";
-import { FullscreenImageViewer } from "./FullscreenImageViewer";
-
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
+import { MainImage } from "./MainImage";
+import { ThumbnailList } from "./ThumbnailList";
+import { FullscreenImageViewer } from "./FullscreenImageViewer";
 
 interface ImageGalleryProps {
   images: string[];
@@ -42,7 +41,6 @@ export function ImageGallery({
     (e: React.MouseEvent<HTMLDivElement>) => {
       const target = e.target as HTMLElement;
 
-      // Не открываем fullscreen при клике на навигационные элементы
       if (
         target.closest(".gallery-nav-button") ||
         target.closest(".swiper-pagination")
@@ -51,6 +49,16 @@ export function ImageGallery({
       }
 
       handleOpenFullscreen();
+    },
+    [handleOpenFullscreen],
+  );
+
+  const handleImageKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleOpenFullscreen();
+      }
     },
     [handleOpenFullscreen],
   );
@@ -71,8 +79,10 @@ export function ImageGallery({
     <>
       <Box
         component="section"
-        role="img"
+        role="button"
+        tabIndex={0}
         aria-label="Галерея изображений товара"
+        onKeyDown={handleImageKeyDown}
       >
         <Paper
           elevation={0}
@@ -99,7 +109,7 @@ export function ImageGallery({
           }}
           onClick={handleImageClick}
         >
-          {showNavigation && (
+          {showNavigation ? (
             <>
               <IconButton
                 className="gallery-nav-button"
@@ -163,7 +173,7 @@ export function ImageGallery({
                 <ChevronRight sx={{ fontSize: { xs: 22, sm: 24, md: 26 } }} />
               </IconButton>
             </>
-          )}
+          ) : null}
 
           <Swiper
             modules={[Pagination]}
@@ -190,14 +200,14 @@ export function ImageGallery({
           </Swiper>
         </Paper>
 
-        {images.length > 1 && (
+        {images.length > 1 ? (
           <ThumbnailList
             images={images}
             currentIndex={currentIndex}
             onImageSelect={handleImageSelect}
             alt={alt}
           />
-        )}
+        ) : null}
       </Box>
 
       <FullscreenImageViewer

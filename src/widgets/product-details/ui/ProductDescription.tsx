@@ -17,6 +17,7 @@ export function ProductDescription({
   collapsedLines = 5,
 }: ProductDescriptionProps) {
   const [expanded, setExpanded] = React.useState(false);
+  const descriptionId = React.useId();
 
   const text = description?.trim() || "Описание отсутствует";
   const canCollapse =
@@ -30,6 +31,7 @@ export function ProductDescription({
       </Typography>
 
       <Typography
+        id={descriptionId}
         variant="body2"
         color="text.secondary"
         sx={{
@@ -53,12 +55,20 @@ export function ProductDescription({
         <Button
           variant="text"
           onClick={() => setExpanded((prev) => !prev)}
+          aria-expanded={expanded}
+          aria-controls={descriptionId}
           sx={{
             alignSelf: "flex-start",
             px: 0,
             minWidth: 0,
             fontWeight: 700,
             textTransform: "none",
+            color: "text.primary",
+            borderRadius: 0,
+            "&:hover": {
+              bgcolor: "transparent",
+              color: "primary.main",
+            },
           }}
         >
           {expanded ? "Свернуть" : "Показать полностью"}

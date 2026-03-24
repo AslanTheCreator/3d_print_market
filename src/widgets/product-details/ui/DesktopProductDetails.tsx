@@ -11,11 +11,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import {
-  LocalShipping,
-  Schedule,
-  Verified,
-} from "@mui/icons-material";
+import { Schedule } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { AddToCartButton } from "@/features/add-to-cart";
 import { useAuth } from "@/features/auth";
@@ -33,7 +29,11 @@ import { ProductReviewsSection } from "./ProductReviewsSection";
 import { ProductSellerCard } from "./ProductSellerCard";
 import { ProductStockIndicator } from "./ProductStockIndicator";
 import { ProductTitle } from "./ProductTitle";
-import { formatMoney, formatReviewsLabel } from "./productDetailsFormatters";
+import {
+  formatMoney,
+  formatStockCount,
+  getSellerCardMeta,
+} from "./productDetailsFormatters";
 
 interface DesktopProductDetailsProps {
   productCard: ProductDetail;
@@ -55,20 +55,13 @@ const PriceSection = ({
 }) => {
   const isPreorder = availability === "PREORDER";
 
-  const formatStockCount = (count: number | null): string => {
-    if (count === null) return "∞ в наличии";
-    if (count === 0) return "Нет в наличии";
-    if (count === 1) return "1 шт. в наличии";
-    return `${count} шт. в наличии`;
-  };
-
   return (
     <ProductPriceCardContainer
       elevation={0}
       isPreorder={isPreorder}
       sx={{
-        p: 3,
-        borderRadius: 3,
+        p: 2.5,
+        borderRadius: 2.5,
         position: "relative",
         overflow: "hidden",
       }}
@@ -103,7 +96,7 @@ const PriceSection = ({
               <Typography
                 variant="h3"
                 color="preorder.main"
-                sx={{ fontWeight: 800, lineHeight: 1 }}
+                sx={{ fontWeight: 800, lineHeight: 1.05, mt: 0.5 }}
               >
                 {formatMoney(prepaymentAmount, currency)}
               </Typography>
@@ -120,13 +113,13 @@ const PriceSection = ({
                 Полная стоимость
               </Typography>
               <Typography
-                variant="h5"
+                variant="h6"
                 color="text.primary"
-                sx={{ fontWeight: 700 }}
+                sx={{ fontWeight: 700, mt: 0.5 }}
               >
                 {formatMoney(price, currency)}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
                 Остаток после предоплаты:{" "}
                 {formatMoney(price - prepaymentAmount, currency)}
               </Typography>
@@ -144,7 +137,7 @@ const PriceSection = ({
             <Typography
               variant="h3"
               color="primary.main"
-              sx={{ fontWeight: 800, lineHeight: 1 }}
+              sx={{ fontWeight: 800, lineHeight: 1.05, mt: 0.5 }}
             >
               {formatMoney(price, currency)}
             </Typography>
@@ -164,29 +157,6 @@ const PriceSection = ({
   );
 };
 
-const InfoBadges = ({ product }: { product: ProductDetail }) => {
-  return (
-    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-      <Chip
-        icon={<Verified sx={{ fontSize: 18 }} />}
-        label={product.originality}
-        size="small"
-        variant="outlined"
-        color="success"
-        sx={{ fontWeight: 600 }}
-      />
-
-      <Chip
-        icon={<LocalShipping sx={{ fontSize: 18 }} />}
-        label="Доставка по РФ"
-        size="small"
-        variant="outlined"
-        sx={{ fontWeight: 600 }}
-      />
-    </Stack>
-  );
-};
-
 export function DesktopProductDetails({
   productCard,
   allImages,
@@ -195,9 +165,13 @@ export function DesktopProductDetails({
   const { isAuthenticated } = useAuth();
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
   const primaryCategoryId = productCard.categories[0]?.id;
+  const sellerCardMeta = getSellerCardMeta(
+    productCard.totalReviews,
+    productCard.sellerRating,
+  );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 3 }}>
       <ProductDetailsBreadcrumbs categories={productCard.categories} />
 
       <ProductTitle
@@ -205,11 +179,12 @@ export function DesktopProductDetails({
         variant="h3"
         fontWeight={800}
         sx={{
-          mb: 4,
+          mb: 3,
+          lineHeight: 1.15,
         }}
       />
 
-      <Grid container spacing={4}>
+      <Grid container spacing={3}>
         <Grid item xs={12} lg={7}>
           <Box sx={{ position: "sticky", top: 24 }}>
             <ImageGallery images={allImages} alt={productCard.name} />
@@ -217,9 +192,7 @@ export function DesktopProductDetails({
         </Grid>
 
         <Grid item xs={12} lg={5}>
-          <Stack spacing={3}>
-            <InfoBadges product={productCard} />
-
+          <Stack spacing={2.5}>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               <ProductCategoryChips
                 categories={productCard.categories}
@@ -241,26 +214,16 @@ export function DesktopProductDetails({
               participantId={productCard.participantId}
               sellerLogin={productCard.sellerLogin}
               displayName={productCard.sellerLogin || "Продавец"}
-              hasRating={productCard.totalReviews > 0}
-              ratingLabel={
-                productCard.totalReviews > 0
-                  ? `${productCard.sellerRating.toFixed(1)}`
-                  : "Без оценок"
-              }
-              reviewsLabel={
-                productCard.totalReviews > 0
-                  ? formatReviewsLabel(productCard.totalReviews)
-                  : "нет отзывов"
-              }
+              {...sellerCardMeta}
               avatarSize={44}
               paperSx={{
-                p: 2,
+                p: 1.75,
                 borderRadius: 2.5,
-                background: (theme) => alpha(theme.palette.primary.main, 0.025),
+                background: "background.paper",
               }}
             />
 
-            <Stack spacing={2}>
+            <Stack spacing={1.5}>
               <AddToCartButton
                 productId={productCard.id}
                 availability={productCard.availability}
@@ -280,7 +243,7 @@ export function DesktopProductDetails({
             <Paper
               elevation={0}
               sx={{
-                p: 3,
+                p: 2.5,
                 borderRadius: 2,
                 bgcolor: "background.paper",
                 border: "1px solid",
@@ -291,18 +254,18 @@ export function DesktopProductDetails({
                 description={productCard.description}
                 titleVariant="h6"
                 collapsedLines={5}
-                />
-              </Paper>
-            </Stack>
-          </Grid>
+              />
+            </Paper>
+          </Stack>
         </Grid>
+      </Grid>
 
-      <Box sx={{ mt: 6 }}>
+      <Box sx={{ mt: 5 }}>
         <ProductReviewsSection reviews={productCard.reviews} />
       </Box>
 
       {primaryCategoryId ? (
-        <Box sx={{ mt: 6 }}>
+        <Box sx={{ mt: 5 }}>
           <RelatedProducts
             categoryId={primaryCategoryId}
             excludeProductId={productCard.id}

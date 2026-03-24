@@ -10,7 +10,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { ArrowBackIosNew, Schedule, Verified } from "@mui/icons-material";
+import { ArrowBackIosNew, Schedule } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { AddToCartButton } from "@/features/add-to-cart";
 import { useAuth } from "@/features/auth";
@@ -23,22 +23,20 @@ import { RelatedProducts } from "./RelatedProducts";
 import { ProductDescription } from "./ProductDescription";
 import { ProductCategoryChips } from "./ProductCategoryChips";
 import { ProductPriceCardContainer } from "./ProductPriceCardContainer";
+import { MobileProductReviewsSection } from "./MobileProductReviewsSection";
 import { ProductSellerCard } from "./ProductSellerCard";
 import { ProductStockIndicator } from "./ProductStockIndicator";
 import { ProductTitle } from "./ProductTitle";
-import { formatMoney, formatReviewsLabel } from "./productDetailsFormatters";
+import {
+  formatMoney,
+  formatStockCount,
+  getSellerCardMeta,
+} from "./productDetailsFormatters";
 
 interface MobileProductDetailsProps {
   productCard: ProductDetail;
   allImages: string[];
 }
-
-const formatStockCount = (count: number | null): string => {
-  if (count === null) return "∞ в наличии";
-  if (count === 0) return "Нет в наличии";
-  if (count === 1) return "1 шт.";
-  return `${count} шт.`;
-};
 
 const MobileBottomBar = ({
   productId,
@@ -69,17 +67,17 @@ const MobileBottomBar = ({
         left: 0,
         right: 0,
         px: 2,
-        pt: 1.25,
-        pb: "calc(env(safe-area-inset-bottom, 0px) + 16px)",
+        pt: 1,
+        pb: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
         zIndex: 1000,
-        borderRadius: "24px 24px 0 0",
+        borderRadius: "20px 20px 0 0",
         background: (theme) => theme.palette.background.paper,
-        boxShadow: "0 -10px 32px rgba(15, 23, 42, 0.12)",
+        boxShadow: "0 -8px 24px rgba(15, 23, 42, 0.10)",
         borderTop: "1px solid",
         borderColor: "divider",
       }}
     >
-      <Stack spacing={1.25}>
+      <Stack spacing={1}>
         <Box minWidth={0}>
           {isPreorder && (
             <Typography
@@ -144,7 +142,7 @@ const MobilePriceCard = ({
       elevation={3}
       isPreorder={isPreorder}
       sx={{
-        p: 2,
+        p: 1.75,
         borderRadius: 2.5,
       }}
     >
@@ -174,7 +172,7 @@ const MobilePriceCard = ({
           <Typography
             variant="h4"
             color="preorder.main"
-            sx={{ fontWeight: 800, lineHeight: 1 }}
+            sx={{ fontWeight: 800, lineHeight: 1.05 }}
           >
             {formatMoney(prepaymentAmount, currency)}
           </Typography>
@@ -187,7 +185,7 @@ const MobilePriceCard = ({
 
           <ProductStockIndicator
             stockCount={stockCount}
-            label={formatStockCount(stockCount)}
+            label={formatStockCount(stockCount, "compact")}
             iconSize={16}
             textVariant="caption"
           />
@@ -204,14 +202,14 @@ const MobilePriceCard = ({
           <Typography
             variant="h4"
             color="primary.main"
-            sx={{ fontWeight: 800, lineHeight: 1 }}
+            sx={{ fontWeight: 800, lineHeight: 1.05 }}
           >
             {formatMoney(price, currency)}
           </Typography>
 
           <ProductStockIndicator
             stockCount={stockCount}
-            label={formatStockCount(stockCount)}
+            label={formatStockCount(stockCount, "compact")}
             iconSize={16}
             textVariant="caption"
           />
@@ -229,6 +227,10 @@ export function MobileProductDetails({
   const { isAuthenticated } = useAuth();
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
   const primaryCategoryId = productCard.categories[0]?.id;
+  const sellerCardMeta = getSellerCardMeta(
+    productCard.totalReviews,
+    productCard.sellerRating,
+  );
   const handleBackClick = () => {
     if (window.history.length > 1) {
       router.back();
@@ -240,7 +242,7 @@ export function MobileProductDetails({
 
   return (
     <Box sx={{ pb: 24 }}>
-      <Box sx={{ mb: 2, position: "relative" }}>
+      <Box sx={{ mb: 1.5, position: "relative" }}>
         <ImageGallery images={allImages} alt={productCard.name} />
 
         <Stack
@@ -290,26 +292,18 @@ export function MobileProductDetails({
           variant="h5"
           fontWeight={800}
           sx={{
-            mb: 2,
+            mb: 1.5,
             lineHeight: 1.3,
           }}
           title={productCard.name}
         />
 
-        <Stack direction="row" spacing={1} mb={2} flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={1} mb={1.5} flexWrap="wrap" useFlexGap>
           <ProductCategoryChips
             categories={productCard.categories}
             onCategoryClick={(category) =>
               router.push(buildCategoryPath([], category))
             }
-          />
-          <Chip
-            icon={<Verified sx={{ fontSize: 14 }} />}
-            label={productCard.originality}
-            size="small"
-            variant="outlined"
-            color="success"
-            sx={{ fontWeight: 600 }}
           />
         </Stack>
 
@@ -325,24 +319,14 @@ export function MobileProductDetails({
           participantId={productCard.participantId}
           sellerLogin={productCard.sellerLogin}
           displayName={productCard.sellerLogin || "Продавец"}
-          hasRating={productCard.totalReviews > 0}
-          ratingLabel={
-            productCard.totalReviews > 0
-              ? `${productCard.sellerRating.toFixed(1)}`
-              : "Без оценок"
-          }
-          reviewsLabel={
-            productCard.totalReviews > 0
-              ? formatReviewsLabel(productCard.totalReviews)
-              : "нет отзывов"
-          }
+          {...sellerCardMeta}
           avatarSize={40}
           rootSpacing={1.25}
           paperSx={{
             p: 1.5,
-            mt: 2,
+            mt: 1.5,
             borderRadius: 2.5,
-            background: (theme) => alpha(theme.palette.primary.main, 0.025),
+            background: "background.paper",
           }}
         />
 
@@ -354,7 +338,7 @@ export function MobileProductDetails({
             bgcolor: "background.paper",
             border: "1px solid",
             borderColor: "divider",
-            mt: 2,
+            mt: 1.5,
           }}
         >
           <ProductDescription
@@ -364,8 +348,10 @@ export function MobileProductDetails({
           />
         </Paper>
 
+        <MobileProductReviewsSection reviews={productCard.reviews} />
+
         {primaryCategoryId ? (
-          <Box sx={{ mt: 3 }}>
+          <Box sx={{ mt: 2.5 }}>
             <RelatedProducts
               categoryId={primaryCategoryId}
               excludeProductId={productCard.id}

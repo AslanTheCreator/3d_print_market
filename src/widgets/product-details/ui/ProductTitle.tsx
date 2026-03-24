@@ -11,11 +11,7 @@ export function ProductTitle({ title, sx, ...typographyProps }: ProductTitleProp
     <Typography
       {...typographyProps}
       sx={{
-        background: (theme) =>
-          `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-        WebkitBackgroundClip: "text",
-        WebkitTextFillColor: "transparent",
-        backgroundClip: "text",
+        color: "text.primary",
         overflowWrap: "anywhere",
         wordBreak: "break-word",
         ...sx,
