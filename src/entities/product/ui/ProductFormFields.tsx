@@ -19,7 +19,15 @@ import {
 import { Inventory } from "@mui/icons-material";
 import { CategoryModel } from "@/shared/types";
 import { Currency } from "@/shared/types";
-import type { ProductFormData } from "../model/form";
+import {
+  getCurrencySymbol,
+  productCategoryRules,
+  productCountRules,
+  productDescriptionRules,
+  productNameRules,
+  productPrepaymentRules,
+  type ProductFormData,
+} from "../model/form";
 
 interface ProductFormFieldsProps {
   control: Control<ProductFormData>;
@@ -29,15 +37,6 @@ interface ProductFormFieldsProps {
   currentCurrency: Currency;
 }
 
-const currencies: { code: Currency; symbol: string }[] = [
-  { code: "RUB", symbol: "₽" },
-  { code: "USD", symbol: "$" },
-  { code: "EUR", symbol: "€" },
-  { code: "GBP", symbol: "£" },
-  { code: "JPY", symbol: "¥" },
-  { code: "CNY", symbol: "¥" },
-];
-
 export const ProductFormFields = ({
   control,
   errors,
@@ -45,8 +44,7 @@ export const ProductFormFields = ({
   isPreorder,
   currentCurrency,
 }: ProductFormFieldsProps) => {
-  const currentSymbol =
-    currencies.find((c) => c.code === currentCurrency)?.symbol || "₽";
+  const currentSymbol = getCurrencySymbol(currentCurrency);
 
   return (
     <>
@@ -55,11 +53,7 @@ export const ProductFormFields = ({
         <Controller
           name="categoryIds"
           control={control}
-          rules={{
-            required: "Выберите хотя бы одну категорию",
-            validate: (value) =>
-              value.length > 0 || "Необходимо выбрать хотя бы одну категорию",
-          }}
+          rules={productCategoryRules}
           render={({ field }) => (
             <FormControl fullWidth error={!!errors.categoryIds}>
               <InputLabel id="category-label">Категории</InputLabel>
@@ -108,17 +102,7 @@ export const ProductFormFields = ({
         <Controller
           name="name"
           control={control}
-          rules={{
-            required: "Введите название товара",
-            minLength: {
-              value: 3,
-              message: "Минимальная длина названия 3 символа",
-            },
-            maxLength: {
-              value: 100,
-              message: "Максимальная длина названия 100 символов",
-            },
-          }}
+          rules={productNameRules}
           render={({ field }) => (
             <TextField
               fullWidth
@@ -138,26 +122,7 @@ export const ProductFormFields = ({
         <Controller
           name="count"
           control={control}
-          rules={{
-            required: "Введите количество товара",
-            pattern: {
-              value: /^\d+$/,
-              message: "Количество должно быть целым числом",
-            },
-            validate: (value) => {
-              const numValue = parseInt(value, 10);
-              if (isNaN(numValue)) {
-                return "Введите корректное число";
-              }
-              if (numValue < 1) {
-                return "Количество должно быть больше 0";
-              }
-              if (numValue > 999999) {
-                return "Максимальное количество: 999999";
-              }
-              return true;
-            },
-          }}
+          rules={productCountRules}
           render={({ field }) => (
             <TextField
               fullWidth
@@ -214,15 +179,7 @@ export const ProductFormFields = ({
           <Controller
             name="prepaymentAmount"
             control={control}
-            rules={{
-              required: "Введите сумму предоплаты",
-              pattern: {
-                value: /^\d+(\.\d{1,2})?$/,
-                message: "Введите корректную сумму",
-              },
-              validate: (value) =>
-                parseFloat(value) > 0 || "Сумма должна быть больше нуля",
-            }}
+            rules={productPrepaymentRules}
             render={({ field }) => (
               <TextField
                 fullWidth
@@ -251,12 +208,7 @@ export const ProductFormFields = ({
         <Controller
           name="description"
           control={control}
-          rules={{
-            maxLength: {
-              value: 1000,
-              message: "Максимальная длина описания 1000 символов",
-            },
-          }}
+          rules={productDescriptionRules}
           render={({ field }) => (
             <TextField
               fullWidth

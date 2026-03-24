@@ -1,6 +1,6 @@
 "use client";
 
-import { Controller, Control } from "react-hook-form";
+import { Controller, Control, FieldError } from "react-hook-form";
 import {
   TextField,
   FormControl,
@@ -11,21 +11,19 @@ import {
   InputAdornment,
   Grid,
 } from "@mui/material";
+import {
+  getCurrencySymbol,
+  productCurrencies,
+  productCurrencyRules,
+  productPriceRules,
+  type ProductFormData,
+} from "../model/form";
 import { Currency } from "@/shared/types";
 
-const currencies: { code: Currency; symbol: string }[] = [
-  { code: "RUB", symbol: "₽" },
-  { code: "USD", symbol: "$" },
-  { code: "EUR", symbol: "€" },
-  { code: "GBP", symbol: "£" },
-  { code: "JPY", symbol: "¥" },
-  { code: "CNY", symbol: "¥" },
-];
-
 interface CurrencyFieldProps {
-  control: Control<any>;
-  priceError?: any;
-  currencyError?: any;
+  control: Control<ProductFormData>;
+  priceError?: FieldError;
+  currencyError?: FieldError;
   currentCurrency: Currency;
 }
 
@@ -35,8 +33,7 @@ export const CurrencyField = ({
   currencyError,
   currentCurrency,
 }: CurrencyFieldProps) => {
-  const currentSymbol =
-    currencies.find((c) => c.code === currentCurrency)?.symbol || "₽";
+  const currentSymbol = getCurrencySymbol(currentCurrency);
 
   return (
     <>
@@ -44,15 +41,7 @@ export const CurrencyField = ({
         <Controller
           name="price"
           control={control}
-          rules={{
-            required: "Введите цену товара",
-            pattern: {
-              value: /^\d+(\.\d{1,2})?$/,
-              message: "Введите корректную цену",
-            },
-            validate: (value) =>
-              parseFloat(value) > 0 || "Цена должна быть больше нуля",
-          }}
+          rules={productPriceRules}
           render={({ field }) => (
             <TextField
               fullWidth
@@ -79,7 +68,7 @@ export const CurrencyField = ({
         <Controller
           name="currency"
           control={control}
-          rules={{ required: "Выберите валюту" }}
+          rules={productCurrencyRules}
           render={({ field }) => (
             <FormControl fullWidth error={!!currencyError}>
               <InputLabel id="currency-label">Валюта</InputLabel>
@@ -89,7 +78,7 @@ export const CurrencyField = ({
                 label="Валюта"
                 {...field}
               >
-                {currencies.map((currency) => (
+                {productCurrencies.map((currency) => (
                   <MenuItem key={currency.code} value={currency.code}>
                     {currency.code} ({currency.symbol})
                   </MenuItem>

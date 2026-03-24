@@ -9,6 +9,7 @@ Rules:
 - Reuse existing patterns.
 - Prefer simple production-ready solutions.
 - Do not add dependencies without strong reason.
+- Do not touch the Russian encoding or comments.
 
 Architecture:
 
