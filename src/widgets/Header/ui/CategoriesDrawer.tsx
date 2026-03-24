@@ -39,7 +39,8 @@ export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
             maxWidth: "100vw",
             boxSizing: "border-box",
             backgroundColor: theme.palette.background.paper,
-            borderRight: `1px solid ${theme.palette.divider}`,
+            backgroundImage:
+              "linear-gradient(180deg, rgba(248,250,252,0.96) 0%, rgba(255,255,255,1) 180px)",
           },
         }}
         ModalProps={{
@@ -95,11 +96,14 @@ export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
           position: "fixed",
           top: topOffset,
           left: 0,
-          width: "320px",
+          width: "340px",
           height: `calc(100vh - ${LAYOUT.HEADER_HEIGHT_PX})`,
           backgroundColor: theme.palette.background.paper,
-          borderRight: `1px solid ${theme.palette.divider}`,
-          boxShadow: theme.shadows[8],
+          backgroundImage:
+            "linear-gradient(180deg, rgba(248,250,252,0.96) 0%, rgba(255,255,255,1) 180px)",
+          borderTopRightRadius: 16,
+          borderBottomRightRadius: 16,
+          boxShadow: theme.shadows[12],
           zIndex: theme.zIndex.drawer,
           transform: open ? "translateX(0)" : "translateX(-100%)",
           transition: theme.transitions.create(["transform"], {

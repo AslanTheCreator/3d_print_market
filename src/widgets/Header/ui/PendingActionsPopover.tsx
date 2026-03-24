@@ -2,7 +2,7 @@
 
 import React from "react";
 import {
-  Popover,
+  Popper,
   Box,
   Typography,
   Stack,
@@ -11,7 +11,7 @@ import {
   useTheme,
   alpha,
   CircularProgress,
-  Button,
+  Paper,
 } from "@mui/material";
 import {
   Storefront,
@@ -31,6 +31,11 @@ interface PendingActionsPopoverProps {
   renewalGroup: PendingActionGroup | null;
   totalCount: number;
   isLoading: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: (event: React.MouseEvent<HTMLElement>) => void;
+  onFocus?: (event: React.FocusEvent<HTMLElement>) => void;
+  onBlur?: (event: React.FocusEvent<HTMLElement>) => void;
+  paperRef?: React.Ref<HTMLDivElement>;
 }
 
 export const PendingActionsPopover: React.FC<PendingActionsPopoverProps> = ({
@@ -42,132 +47,131 @@ export const PendingActionsPopover: React.FC<PendingActionsPopoverProps> = ({
   renewalGroup,
   totalCount,
   isLoading,
+  onMouseEnter,
+  onMouseLeave,
+  onFocus,
+  onBlur,
+  paperRef,
 }) => {
   const theme = useTheme();
 
   return (
-    <Popover
+    <Popper
       open={open}
       anchorEl={anchorEl}
-      onClose={onClose}
-      anchorOrigin={{
-        vertical: "bottom",
-        horizontal: "center",
-      }}
-      transformOrigin={{
-        vertical: "top",
-        horizontal: "center",
-      }}
-      slotProps={{
-        paper: {
-          sx: {
-            mt: 1.5,
+      placement="bottom"
+      sx={{ zIndex: theme.zIndex.modal }}
+      modifiers={[
+        {
+          name: "offset",
+          options: {
+            offset: [0, 8],
+          },
+        },
+      ]}
+    >
+      <Box
+        ref={paperRef}
+        tabIndex={-1}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        sx={{
+          position: "relative",
+          display: "inline-block",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: -8,
+            left: 0,
+            right: 0,
+            height: 8,
+          },
+        }}
+      >
+        <Paper
+          sx={{
             borderRadius: 2,
             minWidth: 280,
             maxWidth: 340,
             boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
             border: `1px solid ${theme.palette.divider}`,
-          },
-        },
-      }}
-    >
-      {/* Заголовок */}
-      <Box
-        sx={{
-          px: 2.5,
-          py: 2,
-          bgcolor: alpha(theme.palette.primary.main, 0.04),
-        }}
-      >
-        <Typography variant="subtitle1" fontWeight={700}>
-          Требуют внимания
-        </Typography>
-        {totalCount > 0 && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-            {totalCount}{" "}
-            {getDeclension(totalCount, ["действие", "действия", "действий"])}
-          </Typography>
-        )}
-      </Box>
-
-      <Divider />
-
-      {/* Контент */}
-      <Box sx={{ py: 1 }}>
-        {isLoading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-            <CircularProgress size={28} />
+            bgcolor: theme.palette.background.paper,
+          }}
+        >
+          <Box
+            sx={{
+              px: 2.5,
+              py: 2,
+              bgcolor: alpha(theme.palette.primary.main, 0.04),
+            }}
+          >
+            <Typography variant="subtitle1" fontWeight={700}>
+              Требуют внимания
+            </Typography>
+            {totalCount > 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                {totalCount}{" "}
+                {getDeclension(totalCount, ["действие", "действия", "действий"])}
+              </Typography>
+            )}
           </Box>
-        ) : totalCount === 0 ? (
-          <EmptyState />
-        ) : (
-          <Stack spacing={0}>
-            {/* Продажи */}
-            {sellerActionGroups.length > 0 && (
-              <ActionSection
-                title="Продажи"
-                icon={<Storefront sx={{ fontSize: 16 }} />}
-                groups={sellerActionGroups}
-                onClose={onClose}
-              />
-            )}
 
-            {/* Покупки */}
-            {customerActionGroups.length > 0 && (
-              <>
-                {sellerActionGroups.length > 0 && <Divider sx={{ mx: 2 }} />}
-                <ActionSection
-                  title="Покупки"
-                  icon={<Receipt sx={{ fontSize: 16 }} />}
-                  groups={customerActionGroups}
-                  onClose={onClose}
-                />
-              </>
-            )}
-
-            {/* Продление товаров */}
-            {renewalGroup && (
-              <>
-                {(sellerActionGroups.length > 0 ||
-                  customerActionGroups.length > 0) && (
-                  <Divider sx={{ mx: 2 }} />
-                )}
-                <ActionSection
-                  title="Мои товары"
-                  icon={<Update sx={{ fontSize: 16 }} />}
-                  groups={[renewalGroup]}
-                  onClose={onClose}
-                />
-              </>
-            )}
-          </Stack>
-        )}
-      </Box>
-
-      {/* Футер */}
-      {totalCount > 0 && (
-        <>
           <Divider />
-          <Box sx={{ p: 1.5 }}>
-            <Button
-              component={Link}
-              href="/dashboard"
-              fullWidth
-              size="small"
-              variant="text"
-              onClick={onClose}
-              sx={{ textTransform: "none", fontWeight: 600 }}
-            >
-              Перейти в личный кабинет
-            </Button>
+
+          <Box sx={{ py: 1 }}>
+            {isLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+                <CircularProgress size={28} />
+              </Box>
+            ) : totalCount === 0 ? (
+              <EmptyState />
+            ) : (
+              <Stack spacing={0}>
+                {sellerActionGroups.length > 0 && (
+                  <ActionSection
+                    title="Продажи"
+                    icon={<Storefront sx={{ fontSize: 16 }} />}
+                    groups={sellerActionGroups}
+                    onClose={onClose}
+                  />
+                )}
+
+                {customerActionGroups.length > 0 && (
+                  <>
+                    {sellerActionGroups.length > 0 && <Divider sx={{ mx: 2 }} />}
+                    <ActionSection
+                      title="Покупки"
+                      icon={<Receipt sx={{ fontSize: 16 }} />}
+                      groups={customerActionGroups}
+                      onClose={onClose}
+                    />
+                  </>
+                )}
+
+                {renewalGroup && (
+                  <>
+                    {(sellerActionGroups.length > 0 ||
+                      customerActionGroups.length > 0) && (
+                      <Divider sx={{ mx: 2 }} />
+                    )}
+                    <ActionSection
+                      title="Мои товары"
+                      icon={<Update sx={{ fontSize: 16 }} />}
+                      groups={[renewalGroup]}
+                      onClose={onClose}
+                    />
+                  </>
+                )}
+              </Stack>
+            )}
           </Box>
-        </>
-      )}
-    </Popover>
+        </Paper>
+      </Box>
+    </Popper>
   );
 };
-
-// --- Вспомогательные компоненты ---
 
 interface ActionSectionProps {
   title: string;
@@ -278,8 +282,6 @@ const EmptyState: React.FC = () => (
     </Typography>
   </Box>
 );
-
-// --- Утилиты ---
 
 function getDeclension(n: number, forms: [string, string, string]): string {
   const abs = Math.abs(n) % 100;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Box,
   List,
@@ -55,7 +55,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
 
   const handleCategoryClick = () => {
     if (hasChildren) {
-      setIsExpanded(!isExpanded);
+      setIsExpanded((prev) => !prev);
     } else {
       router.replace(categoryPath);
       onClose();
@@ -68,18 +68,53 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
         disablePadding
         divider={level === 0}
         sx={{
-          pl: level * 2,
+          px: 1,
+          pt: 0.25,
+          pb: level === 0 ? 0.75 : 0.25,
         }}
       >
         <ListItemButton
           onClick={handleCategoryClick}
           sx={{
-            py: 1.5,
-            pl: 2,
-            minHeight: 48,
+            position: "relative",
+            overflow: "hidden",
+            py: level === 0 ? 1.5 : 1.1,
+            pl: 2 + level * 1.5,
+            pr: 1.5,
+            minHeight: level === 0 ? 56 : 48,
+            borderRadius: 3,
+            backgroundColor: isExpanded
+              ? (theme) => alpha(theme.palette.primary.main, 0.08)
+              : "transparent",
+            transition: (theme) =>
+              theme.transitions.create(
+                ["background-color", "transform", "box-shadow"],
+                {
+                  duration: theme.transitions.duration.shorter,
+                },
+              ),
+            "&::before": level
+              ? {
+                  content: '""',
+                  position: "absolute",
+                  left: 16 + (level - 1) * 12,
+                  top: 8,
+                  bottom: 8,
+                  width: "1px",
+                  backgroundColor: (theme) =>
+                    alpha(theme.palette.primary.main, 0.12),
+                }
+              : undefined,
             "&:hover": {
               backgroundColor: (theme) =>
-                alpha(theme.palette.primary.main, 0.04),
+                alpha(theme.palette.primary.main, 0.06),
+              transform: "translateX(2px)",
+            },
+            "&.Mui-focusVisible": {
+              backgroundColor: (theme) =>
+                alpha(theme.palette.primary.main, 0.1),
+              boxShadow: (theme) =>
+                `0 0 0 2px ${alpha(theme.palette.primary.main, 0.16)}`,
             },
           }}
         >
@@ -87,6 +122,9 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
             sx={{
               minWidth: 40,
               color: level === 0 ? "primary.main" : "text.secondary",
+              "& svg": {
+                fontSize: level === 0 ? 22 : 20,
+              },
             }}
           >
             <Icon />
@@ -94,30 +132,45 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
           <ListItemText
             primary={category.name}
             primaryTypographyProps={{
-              fontWeight: level === 0 ? 500 : 400,
+              fontWeight: level === 0 ? 600 : 500,
               fontSize: level === 0 ? "1rem" : "0.875rem",
               color: level === 0 ? "text.primary" : "text.secondary",
+              lineHeight: 1.3,
             }}
           />
-          {hasChildren ? (
-            isExpanded ? (
-              <ExpandLessIcon sx={{ color: "action.active", opacity: 0.7 }} />
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 30,
+              height: 30,
+              borderRadius: "50%",
+              backgroundColor: (theme) => alpha(theme.palette.common.black, 0.04),
+              color: "action.active",
+            }}
+          >
+            {hasChildren ? (
+              isExpanded ? (
+                <ExpandLessIcon sx={{ opacity: 0.8 }} />
+              ) : (
+                <ExpandMoreIcon sx={{ opacity: 0.8 }} />
+              )
             ) : (
-              <ExpandMoreIcon sx={{ color: "action.active", opacity: 0.7 }} />
-            )
-          ) : (
-            <ChevronRightIcon
-              sx={{
-                color: "action.active",
-                opacity: 0.7,
-              }}
-            />
-          )}
+              <ChevronRightIcon sx={{ opacity: 0.7 }} />
+            )}
+          </Box>
         </ListItemButton>
       </ListItem>
       {hasChildren && (
         <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
+          <List
+            component="div"
+            disablePadding
+            sx={{
+              pb: 0.5,
+            }}
+          >
             {category.childs.map((childCategory) => (
               <CategoryItem
                 key={childCategory.id}
@@ -135,7 +188,29 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
 };
 
 export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
-  const { data: categories = [], isLoading, error, refetch } = useCategories();
+  const { data: categories = [], isLoading, error } = useCategories();
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleScroll = () => {
+    setIsScrolling(true);
+
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsScrolling(false);
+    }, 700);
+  };
 
   return (
     <Box
@@ -144,36 +219,57 @@ export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
         maxHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        overflowX: "hidden",
-        overflowY: "auto",
-        "&::-webkit-scrollbar": {
-          width: "8px",
-          display: "none",
-        },
-        "&:hover::-webkit-scrollbar": {
-          display: "block",
-        },
-        "&::-webkit-scrollbar-track": {
-          background: "transparent",
-        },
-        "&::-webkit-scrollbar-thumb": {
-          backgroundColor: (theme) => alpha(theme.palette.secondary.main, 0.3),
-          borderRadius: "4px",
-        },
-        "&::-webkit-scrollbar-thumb:hover": {
-          backgroundColor: (theme) => alpha(theme.palette.secondary.main, 0.5),
-        },
+        position: "relative",
       }}
     >
+      <Box
+        onScroll={handleScroll}
+        sx={{
+          width: "100%",
+          maxHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          background:
+            "linear-gradient(180deg, rgba(248,250,252,0.96) 0%, rgba(255,255,255,1) 140px)",
+          overflowX: "hidden",
+          overflowY: "auto",
+          scrollbarWidth: "thin",
+          scrollbarColor: isScrolling
+            ? `rgba(148, 163, 184, 0.9) transparent`
+            : "transparent transparent",
+          msOverflowStyle: "auto",
+          "&::-webkit-scrollbar": {
+            width: "4px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: isScrolling
+              ? "rgba(148, 163, 184, 0.9)"
+              : "transparent",
+            borderRadius: "999px",
+          },
+          "&::-webkit-scrollbar-corner": {
+            background: "transparent",
+          },
+        }}
+      >
       {/* Header with Figurzilla title */}
       <Box
         sx={{
+          position: "sticky",
+          top: 0,
+          zIndex: 1,
           display: "flex",
           alignItems: "center",
-          height: "57px",
+          justifyContent: "space-between",
+          minHeight: 68,
           px: 2,
-          py: 2,
-          borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+          py: 1.5,
+          borderBottom: (theme) => `1px solid ${alpha(theme.palette.divider, 0.9)}`,
+          backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.92),
+          backdropFilter: "blur(10px)",
         }}
       >
         <Typography
@@ -196,17 +292,34 @@ export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            minHeight: "200px",
+            minHeight: "220px",
+            px: 3,
           }}
         >
-          <CircularProgress size={40} />
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <CircularProgress size={40} />
+          </Box>
         </Box>
       )}
 
       {/* Error state */}
       {error && !isLoading && (
         <Box sx={{ p: 2 }}>
-          <Alert severity="error" sx={{ borderRadius: 2 }}>
+          <Alert
+            severity="error"
+            sx={{
+              borderRadius: 3,
+              boxShadow: (theme) =>
+                `0 12px 24px ${alpha(theme.palette.error.main, 0.12)}`,
+            }}
+          >
             {error.message}
           </Alert>
         </Box>
@@ -214,7 +327,14 @@ export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
 
       {/* Categories list */}
       {!isLoading && !error && categories.length > 0 && (
-        <List sx={{ width: "100%", p: 0, mt: 0 }}>
+        <List
+          sx={{
+            width: "100%",
+            p: 1,
+            pt: 1.25,
+            pb: 2,
+          }}
+        >
           {categories.map((category) => (
             <CategoryItem
               key={category.id}
@@ -233,22 +353,35 @@ export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            minHeight: "200px",
-            px: 2,
+            minHeight: "220px",
+            px: 3,
           }}
         >
-          <CategoryIcon
+          <Box
             sx={{
-              fontSize: 48,
-              color: "text.secondary",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 72,
+              height: 72,
+              borderRadius: "50%",
+              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.06),
               mb: 2,
             }}
-          />
+          >
+            <CategoryIcon
+              sx={{
+                fontSize: 36,
+                color: "text.secondary",
+              }}
+            />
+          </Box>
           <Typography variant="body2" color="text.secondary" textAlign="center">
             Категории не найдены
           </Typography>
         </Box>
       )}
+      </Box>
     </Box>
   );
 };
