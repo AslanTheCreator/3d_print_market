@@ -7,16 +7,20 @@ import {
   Paper,
   Grid,
   CircularProgress,
-  Divider,
   useTheme,
 } from "@mui/material";
+import {
+  CategoryOutlined,
+  ImageOutlined,
+  SellOutlined,
+} from "@mui/icons-material";
 
 import { CurrencyField, ProductFormFields } from "@/entities/product";
 import { ErrorState } from "@/shared/ui/states";
 import { MultiImageUpload } from "./components/MultiImageUpload";
 import { CreateProductFormActions } from "./components/CreateProductFormActions";
 import { CreateProductFormHeader } from "./components/CreateProductFormHeader";
-import { CreateProductFormHelp } from "./components/CreateProductFormHelp";
+import { CreateProductFormSection } from "./components/CreateProductFormSection";
 import { useCreateProductForm } from "../model";
 
 export const CreateProductForm = () => {
@@ -35,6 +39,7 @@ export const CreateProductForm = () => {
     isPending,
     isPreorder,
     isSubmitting,
+    publishRequirements,
     resetForm,
     retryLoadCategories,
   } = useCreateProductForm();
@@ -84,14 +89,24 @@ export const CreateProductForm = () => {
           noValidate
           sx={{ p: { xs: 2, sm: 3, md: 4 } }}
         >
-          <Grid container spacing={3}>
+          <Grid container spacing={2.5}>
+            <Grid item xs={12}>
+              <CreateProductFormSection
+                icon={<ImageOutlined />}
+                title="Фотографии"
+              />
+            </Grid>
+
             {/* Images Section */}
             <Grid item xs={12}>
               <MultiImageUpload uploadState={imageUploadState} maxImages={3} />
             </Grid>
 
             <Grid item xs={12}>
-              <Divider />
+              <CreateProductFormSection
+                icon={<CategoryOutlined />}
+                title="Основная информация"
+              />
             </Grid>
 
             {/* Product Fields */}
@@ -104,7 +119,10 @@ export const CreateProductForm = () => {
             />
 
             <Grid item xs={12}>
-              <Divider />
+              <CreateProductFormSection
+                icon={<SellOutlined />}
+                title="Цена и публикация"
+              />
             </Grid>
 
             {/* Price and Currency */}
@@ -121,12 +139,12 @@ export const CreateProductForm = () => {
               isPending={isPending}
               isSubmitting={isSubmitting}
               isUploadingImages={imageUploadState.isUploading}
+              publishRequirements={publishRequirements}
               onReset={resetForm}
             />
           </Grid>
         </Box>
 
-        <CreateProductFormHelp />
       </>
     );
   };

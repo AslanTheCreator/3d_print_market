@@ -6,20 +6,16 @@ import {
   Stack,
   Typography,
   alpha,
-  useMediaQuery,
   useTheme,
 } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 
-interface CreateProductFormHeaderProps {
+interface ProfileFormHeaderProps {
   onBack: () => void;
 }
 
-export const CreateProductFormHeader = ({
-  onBack,
-}: CreateProductFormHeaderProps) => {
+export const ProfileFormHeader = ({ onBack }: ProfileFormHeaderProps) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
     <Box
@@ -46,16 +42,11 @@ export const CreateProductFormHeader = ({
             component="h1"
             sx={{
               fontWeight: 700,
-              fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
+              fontSize: { xs: "1.2rem", sm: "1.5rem", md: "1.75rem" },
             }}
           >
-            Новый товар
+            Профиль
           </Typography>
-          {!isMobile && (
-            <Typography variant="body2" color="text.secondary">
-              Добавьте фото, описание и цену
-            </Typography>
-          )}
         </Box>
       </Stack>
     </Box>

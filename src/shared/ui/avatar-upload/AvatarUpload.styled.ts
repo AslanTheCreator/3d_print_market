@@ -4,8 +4,8 @@ export const AvatarUploadContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  gap: theme.spacing(2),
-  padding: theme.spacing(3),
+  gap: theme.spacing(1.5),
+  padding: theme.spacing(2.5),
   border: `2px dashed ${theme.palette.divider}`,
   borderRadius: theme.shape.borderRadius * 2,
   backgroundColor: theme.palette.background.paper,
@@ -20,6 +20,11 @@ export const AvatarUploadContainer = styled(Box)(({ theme }) => ({
     borderColor: theme.palette.primary.main,
     backgroundColor: theme.palette.primary.light + "10",
   },
+  [theme.breakpoints.down("sm")]: {
+    gap: theme.spacing(1),
+    padding: theme.spacing(2),
+    borderRadius: theme.shape.borderRadius * 1.5,
+  },
 }));
 
 export const AvatarPreview = styled(Avatar)(({ theme }) => ({
@@ -30,6 +35,12 @@ export const AvatarPreview = styled(Avatar)(({ theme }) => ({
   fontSize: "3rem",
   "& .MuiAvatar-img": {
     objectFit: "cover",
+  },
+  [theme.breakpoints.down("sm")]: {
+    width: 96,
+    height: 96,
+    borderWidth: 3,
+    fontSize: "2.5rem",
   },
 }));
 
@@ -46,8 +57,11 @@ export const AvatarOverlay = styled(Box)(({ theme }) => ({
   justifyContent: "center",
   opacity: 0,
   transition: "opacity 0.3s ease",
-  ".avatar-upload:hover &": {
+  ".avatar-upload:hover &, .avatar-upload:focus-within &": {
     opacity: 1,
+  },
+  [theme.breakpoints.down("sm")]: {
+    borderRadius: theme.shape.borderRadius * 1.5,
   },
 }));
 

@@ -12,8 +12,10 @@ import {
   alpha,
   useTheme,
   Stack,
+  Chip,
+  useMediaQuery,
 } from "@mui/material";
-import { CloudUpload, Delete, Image, CheckCircle } from "@mui/icons-material";
+import { CloudUpload, Delete, CheckCircle } from "@mui/icons-material";
 import { UseMultipleImageUploadReturn } from "@/features/image-upload";
 
 interface MultiImageUploadProps {
@@ -26,13 +28,14 @@ export const MultiImageUpload = ({
   maxImages = 3,
 }: MultiImageUploadProps) => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { images, isUploading, hasError, addImage, removeImage } = uploadState;
+  const { images, hasError, addImage, removeImage } = uploadState;
 
   const handleFileSelect = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = Array.from(event.target.files || []);
 
@@ -91,6 +94,10 @@ export const MultiImageUpload = ({
   };
 
   const canAddMore = images.length < maxImages;
+  const isEmpty = images.length === 0;
+  const infoChips = isMobile
+    ? [`До ${maxImages} фото`, "1-е главное"]
+    : [`До ${maxImages} фото`, "JPG, PNG, WebP", "До 5 МБ", "1-е фото — главное"];
 
   return (
     <Box>
@@ -103,16 +110,49 @@ export const MultiImageUpload = ({
         style={{ display: "none" }}
       />
 
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-        <Typography variant="subtitle1" fontWeight={600}>
-          Изображения товара
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          ({images.length}/{maxImages})
-        </Typography>
+      <Stack spacing={{ xs: 1, sm: 1.5 }} sx={{ mb: { xs: 1.5, sm: 2.5 } }}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          alignItems={{ xs: "flex-start", sm: "center" }}
+          justifyContent="space-between"
+          spacing={0.75}
+        >
+          <Box>
+            <Typography
+              variant={isMobile ? "body2" : "subtitle1"}
+              fontWeight={700}
+            >
+              Изображения товара
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {isMobile
+                ? "Первое фото станет обложкой."
+                : "Покажите товар с разных ракурсов. Первое фото станет обложкой в каталоге."}
+            </Typography>
+          </Box>
+          <Chip
+            label={`${images.length}/${maxImages} фото`}
+            color={images.length > 0 ? "primary" : "default"}
+            variant={images.length > 0 ? "filled" : "outlined"}
+            size="small"
+            sx={{ fontWeight: 700, height: isMobile ? 24 : 28 }}
+          />
+        </Stack>
+
+        <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+          {infoChips.map((item) => (
+            <Chip
+              key={item}
+              label={item}
+              size="small"
+              variant="outlined"
+              sx={{ height: isMobile ? 22 : 24 }}
+            />
+          ))}
+        </Stack>
       </Stack>
 
-      <Grid container spacing={2}>
+      <Grid container spacing={{ xs: 1.25, sm: 2 }}>
         {images.map((image, index) => (
           <Grid item xs={6} sm={4} key={index}>
             <Paper
@@ -120,16 +160,20 @@ export const MultiImageUpload = ({
               sx={{
                 position: "relative",
                 paddingTop: "100%",
-                borderRadius: 2,
+                borderRadius: { xs: 2, sm: 2.5 },
                 overflow: "hidden",
                 border: `2px solid ${
                   image.error
                     ? theme.palette.error.main
                     : image.id
-                    ? theme.palette.success.main
-                    : theme.palette.divider
+                      ? theme.palette.success.main
+                      : theme.palette.divider
                 }`,
                 transition: "all 0.2s ease",
+                boxShadow:
+                  index === 0 && image.id
+                    ? `0 8px 24px ${alpha(theme.palette.primary.main, 0.16)}`
+                    : "none",
               }}
             >
               <Box
@@ -142,11 +186,11 @@ export const MultiImageUpload = ({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  bgcolor: alpha(theme.palette.background.paper, 0.9),
+                  bgcolor: alpha(theme.palette.background.paper, 0.92),
                 }}
               >
                 {image.isUploading ? (
-                  <CircularProgress size={32} />
+                  <CircularProgress size={isMobile ? 28 : 32} />
                 ) : image.error ? (
                   <Typography
                     variant="caption"
@@ -174,16 +218,18 @@ export const MultiImageUpload = ({
                     position: "absolute",
                     top: 8,
                     left: 8,
-                    bgcolor: alpha(theme.palette.success.main, 0.9),
+                    bgcolor: alpha(theme.palette.success.main, 0.92),
                     borderRadius: "50%",
-                    width: 24,
-                    height: 24,
+                    width: isMobile ? 22 : 24,
+                    height: isMobile ? 22 : 24,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <CheckCircle sx={{ fontSize: 16, color: "white" }} />
+                  <CheckCircle
+                    sx={{ fontSize: isMobile ? 14 : 16, color: "white" }}
+                  />
                 </Box>
               )}
 
@@ -197,6 +243,7 @@ export const MultiImageUpload = ({
                   right: 8,
                   bgcolor: alpha(theme.palette.error.main, 0.9),
                   color: "white",
+                  p: isMobile ? 0.5 : undefined,
                   "&:hover": {
                     bgcolor: theme.palette.error.dark,
                   },
@@ -205,7 +252,7 @@ export const MultiImageUpload = ({
                   },
                 }}
               >
-                <Delete sx={{ fontSize: 16 }} />
+                <Delete sx={{ fontSize: isMobile ? 15 : 16 }} />
               </IconButton>
 
               {index === 0 && (
@@ -214,16 +261,16 @@ export const MultiImageUpload = ({
                     position: "absolute",
                     bottom: 8,
                     left: 8,
-                    bgcolor: alpha(theme.palette.primary.main, 0.9),
+                    bgcolor: alpha(theme.palette.primary.main, 0.94),
                     color: "white",
-                    px: 1,
-                    py: 0.5,
-                    borderRadius: 1,
-                    fontSize: "0.625rem",
-                    fontWeight: 600,
+                    px: isMobile ? 1 : 1.25,
+                    py: 0.4,
+                    borderRadius: 1.5,
+                    fontSize: isMobile ? "0.58rem" : "0.625rem",
+                    fontWeight: 700,
                   }}
                 >
-                  Главное
+                  {isMobile ? "Обложка" : "Главное фото"}
                 </Box>
               )}
             </Paper>
@@ -231,7 +278,7 @@ export const MultiImageUpload = ({
         ))}
 
         {canAddMore && (
-          <Grid item xs={6} sm={4}>
+          <Grid item xs={isEmpty ? 12 : 6} sm={isEmpty ? 12 : 4}>
             <Paper
               elevation={0}
               onClick={handleUploadClick}
@@ -240,8 +287,10 @@ export const MultiImageUpload = ({
               onDrop={handleDrop}
               sx={{
                 position: "relative",
-                paddingTop: "100%",
-                borderRadius: 2,
+                paddingTop: isEmpty
+                  ? { xs: "34%", sm: "28%" }
+                  : "100%",
+                borderRadius: { xs: 2, sm: 2.5 },
                 border: `2px dashed ${
                   isDragOver
                     ? theme.palette.primary.main
@@ -250,11 +299,11 @@ export const MultiImageUpload = ({
                 cursor: "pointer",
                 transition: "all 0.2s ease",
                 bgcolor: isDragOver
-                  ? alpha(theme.palette.primary.main, 0.05)
-                  : "transparent",
+                  ? alpha(theme.palette.primary.main, 0.06)
+                  : alpha(theme.palette.primary.main, 0.02),
                 "&:hover": {
                   borderColor: theme.palette.primary.main,
-                  bgcolor: alpha(theme.palette.primary.main, 0.05),
+                  bgcolor: alpha(theme.palette.primary.main, 0.06),
                 },
               }}
             >
@@ -269,39 +318,60 @@ export const MultiImageUpload = ({
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 1,
+                  gap: isMobile ? 0.5 : 1,
+                  px: isMobile ? 1.5 : 2,
+                  textAlign: "center",
                 }}
               >
                 <CloudUpload
                   sx={{
-                    fontSize: 40,
+                    fontSize: isEmpty
+                      ? isMobile
+                        ? 32
+                        : 44
+                      : isMobile
+                        ? 28
+                        : 36,
                     color: isDragOver
                       ? theme.palette.primary.main
                       : theme.palette.text.secondary,
                   }}
                 />
                 <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ textAlign: "center", px: 1 }}
+                  variant={isEmpty ? (isMobile ? "caption" : "body2") : "caption"}
+                  fontWeight={700}
                 >
-                  {isDragOver ? "Отпустите" : "Добавить фото"}
+                  {isDragOver
+                    ? isMobile
+                      ? "Отпустите для загрузки"
+                      : "Отпустите файлы, чтобы загрузить"
+                    : isEmpty
+                      ? isMobile
+                        ? "Нажмите или перетащите фото"
+                        : "Перетащите фото сюда или нажмите для выбора"
+                      : "Добавить фото"}
                 </Typography>
+                {isEmpty && !isMobile && (
+                  <Typography variant="caption" color="text.secondary">
+                    Подойдут изображения товара на светлом фоне, детали и несколько ракурсов.
+                  </Typography>
+                )}
               </Box>
             </Paper>
           </Grid>
         )}
       </Grid>
 
-      <Alert severity="info" sx={{ mt: 2 }}>
+      <Alert severity="info" sx={{ mt: { xs: 1.5, sm: 2 }, py: isMobile ? 0 : undefined }}>
         <Typography variant="caption">
-          Первое изображение будет использовано как главное. Поддерживаются JPG,
-          PNG, WebP. Максимум {maxImages} фото до 5 МБ каждое.
+          {isMobile
+            ? "Хорошие фото заметно повышают шанс продажи."
+            : "Чем лучше фотографии, тем выше шанс, что товар откроют и добавят в заказ."}
         </Typography>
       </Alert>
 
       {hasError && (
-        <Alert severity="error" sx={{ mt: 2 }}>
+        <Alert severity="error" sx={{ mt: { xs: 1.5, sm: 2 }, py: isMobile ? 0 : undefined }}>
           Некоторые изображения не удалось загрузить. Попробуйте еще раз.
         </Alert>
       )}

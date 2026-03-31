@@ -4,19 +4,25 @@ import { useForm, Controller } from "react-hook-form";
 import {
   Paper,
   Box,
-  IconButton,
-  Typography,
   Grid,
   TextField,
   Button,
   CircularProgress,
+  Divider,
+  useTheme,
+  useMediaQuery,
+  Typography,
+  alpha,
+  Stack,
 } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
+import { BadgeOutlined, PersonOutline } from "@mui/icons-material";
 import { AvatarUpload } from "@/shared/ui/avatar-upload";
 import { useImageUpload } from "@/features/image-upload";
 import { useUpdateUser, UserBaseModel } from "@/entities/user";
 import { useNotification } from "@/shared/ui/notification";
 import { useState, useEffect } from "react";
+import { ProfileFormHeader } from "./components/ProfileFormHeader";
+import { ProfileFormSection } from "./components/ProfileFormSection";
 
 interface ProfileFormValues {
   fullName: string;
@@ -35,6 +41,8 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
   onBack,
   onSuccess,
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { mutateAsync, isPending } = useUpdateUser();
   const { showNotification } = useNotification();
   const [hasImageChanged, setHasImageChanged] = useState(false);
@@ -49,7 +57,6 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     resetImageState,
   } = useImageUpload("PARTICIPANT");
 
-  // Получаем текущее изображение пользователя для preview
   const existingImage = initialData?.image?.[0];
   const existingImagePreview = existingImage
     ? `data:${existingImage.contentType};base64,${existingImage.imageData}`
@@ -67,7 +74,6 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     },
   });
 
-  // Обновляем ID изображения при загрузке нового
   useEffect(() => {
     if (imageIds.length > 0) {
       setCurrentImageId(imageIds[0]);
@@ -87,9 +93,9 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
 
   const isFormChanged = isDirty || hasImageChanged;
   const isLoading = isPending || isUploading;
-
-  // Используем новое изображение если оно загружено, иначе существующее
-  const displayImagePreview = imagePreview || existingImagePreview;
+  const displayImagePreview = hasImageChanged
+    ? imagePreview
+    : imagePreview || existingImagePreview;
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {
@@ -110,27 +116,40 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     }
   };
 
+  const statusText = isUploading
+    ? "Сначала дождитесь загрузки фото."
+    : isFormChanged
+      ? "Изменения готовы к сохранению."
+      : "Изменений пока нет.";
+
   return (
     <Paper
-      elevation={2}
+      elevation={0}
       sx={{
-        p: { xs: 2, sm: 3, md: 4 },
         borderRadius: 3,
+        overflow: "hidden",
+        border: `1px solid ${theme.palette.divider}`,
         mx: "auto",
         maxWidth: 640,
+        mb: { xs: 3, sm: 4 },
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-        <IconButton onClick={onBack} edge="start" sx={{ mr: 1 }}>
-          <ArrowBack />
-        </IconButton>
-        <Typography variant="h4" component="h1" fontWeight={700}>
-          Личные данные
-        </Typography>
-      </Box>
+      <ProfileFormHeader onBack={onBack} />
 
-      <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Grid container spacing={{ xs: 2, md: 3 }}>
+      <Box
+        component="form"
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
+        sx={{ p: { xs: 2, sm: 3, md: 4 } }}
+      >
+        <Grid container spacing={{ xs: 2, sm: 2.5 }}>
+          <Grid item xs={12}>
+            <ProfileFormSection
+              icon={<BadgeOutlined />}
+              title="Фото профиля"
+            />
+          </Grid>
+
           <Grid item xs={12}>
             <AvatarUpload
               imagePreview={displayImagePreview}
@@ -138,6 +157,17 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
               isUploading={isUploading}
               onImageChange={handleImageChangeWrapper}
               onDeleteImage={handleResetImage}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Divider />
+          </Grid>
+
+          <Grid item xs={12}>
+            <ProfileFormSection
+              icon={<PersonOutline />}
+              title="Основные данные"
             />
           </Grid>
 
@@ -206,7 +236,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                 <TextField
                   {...field}
                   fullWidth
-                  label="Номер телефона"
+                  label="Телефон"
                   placeholder="+7 (999) 123-45-67"
                   error={!!errors.phoneNumber}
                   helperText={errors.phoneNumber?.message}
@@ -218,23 +248,49 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
           </Grid>
 
           <Grid item xs={12}>
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              size="large"
-              disabled={isLoading || !isFormChanged}
-              sx={{ mt: 2, py: 1.75, fontWeight: 700 }}
+            <Box
+              sx={{
+                mt: 0.5,
+                p: { xs: 1.5, sm: 2 },
+                borderRadius: 2,
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                bgcolor: alpha(theme.palette.primary.main, 0.035),
+              }}
             >
-              {isLoading ? (
-                <>
-                  <CircularProgress size={24} sx={{ mr: 1 }} color="inherit" />
-                  {isUploading ? "Загружаем фото..." : "Сохраняем..."}
-                </>
-              ) : (
-                "Сохранить изменения"
-              )}
-            </Button>
+              <Stack spacing={1.5}>
+                <Typography
+                  variant={isMobile ? "caption" : "body2"}
+                  color="text.secondary"
+                >
+                  {statusText}
+                </Typography>
+
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  disabled={isLoading || !isFormChanged}
+                  sx={{
+                    py: { xs: 1.3, sm: 1.6 },
+                    fontWeight: 700,
+                  }}
+                >
+                  {isLoading ? (
+                    <>
+                      <CircularProgress
+                        size={22}
+                        sx={{ mr: 1 }}
+                        color="inherit"
+                      />
+                      {isUploading ? "Загружаем фото..." : "Сохраняем..."}
+                    </>
+                  ) : (
+                    "Сохранить изменения"
+                  )}
+                </Button>
+              </Stack>
+            </Box>
           </Grid>
         </Grid>
       </Box>

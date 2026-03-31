@@ -4,6 +4,8 @@ import {
   IconButton,
   CircularProgress,
   Alert,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { PhotoCamera, Delete } from "@mui/icons-material";
 import { useState, useRef } from "react";
@@ -29,6 +31,8 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   onImageChange,
   onDeleteImage,
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -72,12 +76,8 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   };
 
   return (
-    <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-      <Box sx={{ textAlign: "center" }}>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-          Фото профиля
-        </Typography>
-
+    <Box sx={{ display: "flex", justifyContent: "center" }}>
+      <Box sx={{ width: "100%", textAlign: "center" }}>
         <AvatarUploadContainer
           className={`avatar-upload ${isDragOver ? "dragover" : ""}`}
           onClick={handleAvatarClick}
@@ -94,58 +94,67 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
           />
 
           {imagePreview ? (
-            <Box sx={{ position: "relative" }}>
-              <AvatarPreview src={imagePreview} />
-              <AvatarOverlay>
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <IconButton
-                    size="small"
-                    sx={{
-                      color: "white",
-                      backgroundColor: "rgba(255, 255, 255, 0.2)",
-                      "&:hover": {
-                        backgroundColor: "rgba(255, 255, 255, 0.3)",
-                      },
-                    }}
-                  >
-                    <PhotoCamera />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={handleDeleteAvatar}
-                    sx={{
-                      color: "white",
-                      backgroundColor: "rgba(255, 255, 255, 0.2)",
-                      "&:hover": {
-                        backgroundColor: "rgba(255, 255, 255, 0.3)",
-                      },
-                    }}
-                  >
-                    <Delete />
-                  </IconButton>
-                </Box>
-              </AvatarOverlay>
-            </Box>
+            <>
+              <Box sx={{ position: "relative" }}>
+                <AvatarPreview src={imagePreview} />
+                <AvatarOverlay>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <IconButton
+                      size="small"
+                      sx={{
+                        color: "white",
+                        backgroundColor: "rgba(255, 255, 255, 0.2)",
+                        "&:hover": {
+                          backgroundColor: "rgba(255, 255, 255, 0.3)",
+                        },
+                      }}
+                    >
+                      <PhotoCamera />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={handleDeleteAvatar}
+                      sx={{
+                        color: "white",
+                        backgroundColor: "rgba(255, 255, 255, 0.2)",
+                        "&:hover": {
+                          backgroundColor: "rgba(255, 255, 255, 0.3)",
+                        },
+                      }}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </Box>
+                </AvatarOverlay>
+              </Box>
+              <Typography variant="caption" color="text.secondary">
+                {isMobile
+                  ? "Нажмите, чтобы обновить фото"
+                  : "Нажмите или перетащите новое фото, чтобы обновить аватар"}
+              </Typography>
+            </>
           ) : (
             <>
               <AvatarPreview>
                 {isUploading ? (
-                  <CircularProgress size={40} />
+                  <CircularProgress size={isMobile ? 34 : 40} />
                 ) : (
                   <PhotoCamera
-                    sx={{ fontSize: "3rem", color: "text.secondary" }}
+                    sx={{ fontSize: isMobile ? "2.4rem" : "3rem", color: "text.secondary" }}
                   />
                 )}
               </AvatarPreview>
               <Box sx={{ textAlign: "center" }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                <Typography
+                  variant={isMobile ? "body2" : "subtitle1"}
+                  sx={{ fontWeight: 700, mb: 0.25 }}
+                >
                   {isUploading ? "Загрузка..." : "Загрузить фото"}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Перетащите файл сюда или нажмите для выбора
-                </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Поддерживаются форматы: JPG, PNG, WEBP (макс. 5MB)
+                  {isMobile
+                    ? "JPG, PNG, WEBP до 5 МБ"
+                    : "Перетащите файл сюда или нажмите для выбора. JPG, PNG, WEBP до 5 МБ"}
                 </Typography>
               </Box>
             </>
@@ -153,7 +162,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
         </AvatarUploadContainer>
 
         {imageError && (
-          <Alert severity="error" sx={{ mt: 2, textAlign: "left" }}>
+          <Alert severity="error" sx={{ mt: 1.5, textAlign: "left" }}>
             {imageError}
           </Alert>
         )}

@@ -40,6 +40,16 @@ export const useCreateProductForm = () => {
 
   const isPreorder = watch("isPreorder");
   const currentCurrency = watch("currency");
+  const categoryIds = watch("categoryIds");
+  const name = watch("name");
+  const price = watch("price");
+
+  const publishRequirements = {
+    hasImages: imageUploadState.imageIds.length > 0,
+    hasCategories: categoryIds.length > 0,
+    hasName: name.trim().length > 0,
+    hasPrice: price.trim().length > 0,
+  };
 
   const resetForm = () => {
     reset(defaultProductFormValues);
@@ -82,7 +92,14 @@ export const useCreateProductForm = () => {
     });
   };
 
-  const isFormValid = !imageUploadState.isUploading && isDirty;
+  const isReadyForPrimaryAction =
+    publishRequirements.hasImages &&
+    publishRequirements.hasCategories &&
+    publishRequirements.hasName &&
+    publishRequirements.hasPrice;
+
+  const isFormValid =
+    !imageUploadState.isUploading && isDirty && isReadyForPrimaryAction;
   const isSubmitting = isPending || imageUploadState.isUploading;
 
   return {
@@ -99,6 +116,7 @@ export const useCreateProductForm = () => {
     isPending,
     isPreorder,
     isSubmitting,
+    publishRequirements,
     resetForm,
     retryLoadCategories,
   };

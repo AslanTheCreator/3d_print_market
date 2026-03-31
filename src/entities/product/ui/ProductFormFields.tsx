@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Controller, Control, FieldErrors } from "react-hook-form";
 import {
   TextField,
@@ -15,6 +16,10 @@ import {
   Chip,
   Box,
   OutlinedInput,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { Inventory } from "@mui/icons-material";
 import { CategoryModel } from "@/shared/types";
@@ -37,6 +42,13 @@ interface ProductFormFieldsProps {
   currentCurrency: Currency;
 }
 
+type FocusField =
+  | "categoryIds"
+  | "name"
+  | "count"
+  | "prepaymentAmount"
+  | "description";
+
 export const ProductFormFields = ({
   control,
   errors,
@@ -44,27 +56,50 @@ export const ProductFormFields = ({
   isPreorder,
   currentCurrency,
 }: ProductFormFieldsProps) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const currentSymbol = getCurrencySymbol(currentCurrency);
+  const [focusedField, setFocusedField] = useState<FocusField | null>(null);
+
+  const getHelperText = (
+    field: FocusField,
+    errorMessage: string | undefined,
+    defaultMessage: string,
+  ) => {
+    if (errorMessage) {
+      return errorMessage;
+    }
+
+    if (!isMobile || focusedField === field) {
+      return defaultMessage;
+    }
+
+    return undefined;
+  };
 
   return (
     <>
-      {/* Multiple Category Selection */}
       <Grid item xs={12}>
         <Controller
           name="categoryIds"
           control={control}
           rules={productCategoryRules}
           render={({ field }) => (
-            <FormControl fullWidth error={!!errors.categoryIds}>
-              <InputLabel id="category-label">Категории</InputLabel>
+            <FormControl
+              fullWidth
+              error={!!errors.categoryIds}
+              onFocus={() => setFocusedField("categoryIds")}
+              onBlur={() => setFocusedField((prev) => (prev === "categoryIds" ? null : prev))}
+            >
+              <InputLabel id="category-label">Категории товара</InputLabel>
               <Select
                 labelId="category-label"
                 id="categoryIds"
                 multiple
-                label="Категории"
+                label="Категории товара"
                 value={field.value}
                 onChange={field.onChange}
-                input={<OutlinedInput label="Категории" />}
+                input={<OutlinedInput label="Категории товара" />}
                 renderValue={(selected) => (
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                     {selected.map((categoryId) => {
@@ -89,15 +124,18 @@ export const ProductFormFields = ({
                   </MenuItem>
                 ))}
               </Select>
-              {errors.categoryIds && (
-                <FormHelperText>{errors.categoryIds.message}</FormHelperText>
-              )}
+              <FormHelperText>
+                {getHelperText(
+                  "categoryIds",
+                  errors.categoryIds?.message,
+                  "Можно выбрать несколько категорий.",
+                )}
+              </FormHelperText>
             </FormControl>
           )}
         />
       </Grid>
 
-      {/* Product Name */}
       <Grid item xs={12}>
         <Controller
           name="name"
@@ -105,19 +143,27 @@ export const ProductFormFields = ({
           rules={productNameRules}
           render={({ field }) => (
             <TextField
+              {...field}
               fullWidth
               id="name"
               label="Название товара"
-              placeholder="Введите название товара"
+              placeholder="Например: Подставка для телефона из PLA"
               error={!!errors.name}
-              helperText={errors.name?.message}
-              {...field}
+              helperText={getHelperText(
+                "name",
+                errors.name?.message,
+                "Короткое и понятное название помогает быстрее найти товар.",
+              )}
+              onFocus={() => setFocusedField("name")}
+              onBlur={(event) => {
+                field.onBlur();
+                setFocusedField((prev) => (prev === "name" ? null : prev));
+              }}
             />
           )}
         />
       </Grid>
 
-      {/* Product Count */}
       <Grid item xs={12} sm={6}>
         <Controller
           name="count"
@@ -125,16 +171,23 @@ export const ProductFormFields = ({
           rules={productCountRules}
           render={({ field }) => (
             <TextField
+              {...field}
               fullWidth
               id="count"
-              label="Количество товара"
+              label="Количество в наличии"
               type="number"
-              placeholder="Введите количество"
+              placeholder="Например: 5"
               error={!!errors.count}
-              helperText={
-                errors.count?.message ||
-                "Укажите количество доступных единиц товара"
-              }
+              helperText={getHelperText(
+                "count",
+                errors.count?.message,
+                "Сколько единиц готовы продать сейчас.",
+              )}
+              onFocus={() => setFocusedField("count")}
+              onBlur={(event) => {
+                field.onBlur();
+                setFocusedField((prev) => (prev === "count" ? null : prev));
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -147,33 +200,37 @@ export const ProductFormFields = ({
                   step: 1,
                 },
               }}
-              {...field}
             />
           )}
         />
       </Grid>
 
-      {/* Preorder Checkbox */}
-      <Grid item xs={12} sm={6} sx={{ display: "flex", alignItems: "center" }}>
-        <Controller
-          name="isPreorder"
-          control={control}
-          render={({ field }) => (
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={field.value}
-                  onChange={field.onChange}
-                  color="primary"
-                />
-              }
-              label="Предзаказ"
-            />
+      <Grid item xs={12} sm={6}>
+        <Stack spacing={0.5} sx={{ height: "100%", justifyContent: "center" }}>
+          <Controller
+            name="isPreorder"
+            control={control}
+            render={({ field }) => (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={field.value}
+                    onChange={field.onChange}
+                    color="primary"
+                  />
+                }
+                label="Оформлять как предзаказ"
+              />
+            )}
+          />
+          {!isMobile && (
+            <Typography variant="caption" color="text.secondary">
+              Включите, если товар изготавливается после заказа.
+            </Typography>
           )}
-        />
+        </Stack>
       </Grid>
 
-      {/* Prepayment Amount (показывается только если выбран предзаказ) */}
       {isPreorder && (
         <Grid item xs={12} sm={6}>
           <Controller
@@ -182,13 +239,27 @@ export const ProductFormFields = ({
             rules={productPrepaymentRules}
             render={({ field }) => (
               <TextField
+                {...field}
                 fullWidth
                 id="prepaymentAmount"
                 label="Сумма предоплаты"
                 type="number"
-                placeholder="0.00"
+                placeholder="Например: 500"
                 error={!!errors.prepaymentAmount}
-                helperText={errors.prepaymentAmount?.message}
+                helperText={getHelperText(
+                  "prepaymentAmount",
+                  errors.prepaymentAmount?.message,
+                  "Сумма, которую покупатель платит сразу.",
+                )}
+                onFocus={() => setFocusedField("prepaymentAmount")}
+                onBlur={() =>
+                  {
+                    field.onBlur();
+                    setFocusedField((prev) =>
+                      prev === "prepaymentAmount" ? null : prev,
+                    );
+                  }
+                }
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -196,14 +267,12 @@ export const ProductFormFields = ({
                     </InputAdornment>
                   ),
                 }}
-                {...field}
               />
             )}
           />
         </Grid>
       )}
 
-      {/* Description */}
       <Grid item xs={12}>
         <Controller
           name="description"
@@ -211,15 +280,24 @@ export const ProductFormFields = ({
           rules={productDescriptionRules}
           render={({ field }) => (
             <TextField
+              {...field}
               fullWidth
               id="description"
-              label="Описание товара"
+              label="Описание и детали"
               multiline
               rows={4}
-              placeholder="Опишите ваш товар подробнее"
+              placeholder="Материал, размеры, цвет, срок изготовления..."
               error={!!errors.description}
-              helperText={errors.description?.message}
-              {...field}
+              helperText={getHelperText(
+                "description",
+                errors.description?.message,
+                "Материал, размер и важные детали для покупателя.",
+              )}
+              onFocus={() => setFocusedField("description")}
+              onBlur={(event) => {
+                field.onBlur();
+                setFocusedField((prev) => (prev === "description" ? null : prev));
+              }}
             />
           )}
         />

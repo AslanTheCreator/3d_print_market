@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Controller, Control, FieldError } from "react-hook-form";
 import {
   TextField,
@@ -10,6 +11,8 @@ import {
   FormHelperText,
   InputAdornment,
   Grid,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   getCurrencySymbol,
@@ -27,13 +30,34 @@ interface CurrencyFieldProps {
   currentCurrency: Currency;
 }
 
+type FocusField = "price" | "currency";
+
 export const CurrencyField = ({
   control,
   priceError,
   currencyError,
   currentCurrency,
 }: CurrencyFieldProps) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const currentSymbol = getCurrencySymbol(currentCurrency);
+  const [focusedField, setFocusedField] = useState<FocusField | null>(null);
+
+  const getHelperText = (
+    field: FocusField,
+    errorMessage: string | undefined,
+    defaultMessage: string,
+  ) => {
+    if (errorMessage) {
+      return errorMessage;
+    }
+
+    if (!isMobile || focusedField === field) {
+      return defaultMessage;
+    }
+
+    return undefined;
+  };
 
   return (
     <>
@@ -44,13 +68,23 @@ export const CurrencyField = ({
           rules={productPriceRules}
           render={({ field }) => (
             <TextField
+              {...field}
               fullWidth
               id="price"
-              label="Цена"
+              label="Цена продажи"
               type="number"
-              placeholder="0.00"
+              placeholder="Например: 1490"
               error={!!priceError}
-              helperText={priceError?.message}
+              helperText={getHelperText(
+                "price",
+                priceError?.message,
+                "Итоговая цена за одну единицу.",
+              )}
+              onFocus={() => setFocusedField("price")}
+              onBlur={(event) => {
+                field.onBlur();
+                setFocusedField((prev) => (prev === "price" ? null : prev));
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -58,7 +92,6 @@ export const CurrencyField = ({
                   </InputAdornment>
                 ),
               }}
-              {...field}
             />
           )}
         />
@@ -70,7 +103,12 @@ export const CurrencyField = ({
           control={control}
           rules={productCurrencyRules}
           render={({ field }) => (
-            <FormControl fullWidth error={!!currencyError}>
+            <FormControl
+              fullWidth
+              error={!!currencyError}
+              onFocus={() => setFocusedField("currency")}
+              onBlur={() => setFocusedField((prev) => (prev === "currency" ? null : prev))}
+            >
               <InputLabel id="currency-label">Валюта</InputLabel>
               <Select
                 labelId="currency-label"
@@ -84,9 +122,13 @@ export const CurrencyField = ({
                   </MenuItem>
                 ))}
               </Select>
-              {currencyError && (
-                <FormHelperText>{currencyError.message}</FormHelperText>
-              )}
+              <FormHelperText>
+                {getHelperText(
+                  "currency",
+                  currencyError?.message,
+                  "В этой валюте покупатель увидит цену.",
+                )}
+              </FormHelperText>
             </FormControl>
           )}
         />
