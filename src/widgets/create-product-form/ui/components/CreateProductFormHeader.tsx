@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Box,
@@ -13,10 +13,14 @@ import { ArrowBack } from "@mui/icons-material";
 
 interface CreateProductFormHeaderProps {
   onBack: () => void;
+  title?: string;
+  subtitle?: string;
 }
 
 export const CreateProductFormHeader = ({
   onBack,
+  title = "Новый товар",
+  subtitle = "Добавьте фото, описание и цену",
 }: CreateProductFormHeaderProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -49,11 +53,11 @@ export const CreateProductFormHeader = ({
               fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
             }}
           >
-            Новый товар
+            {title}
           </Typography>
           {!isMobile && (
             <Typography variant="body2" color="text.secondary">
-              Добавьте фото, описание и цену
+              {subtitle}
             </Typography>
           )}
         </Box>

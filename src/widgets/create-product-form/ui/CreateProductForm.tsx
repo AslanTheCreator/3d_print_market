@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Box,
@@ -21,9 +21,17 @@ import { MultiImageUpload } from "./components/MultiImageUpload";
 import { CreateProductFormActions } from "./components/CreateProductFormActions";
 import { CreateProductFormHeader } from "./components/CreateProductFormHeader";
 import { CreateProductFormSection } from "./components/CreateProductFormSection";
-import { useCreateProductForm } from "../model";
+import { useProductForm } from "../model";
 
-export const CreateProductForm = () => {
+interface CreateProductFormProps {
+  mode?: "create" | "edit";
+  productId?: string;
+}
+
+export const CreateProductForm = ({
+  mode = "create",
+  productId,
+}: CreateProductFormProps) => {
   const theme = useTheme();
   const {
     categories,
@@ -35,17 +43,21 @@ export const CreateProductForm = () => {
     imageUploadState,
     isCategoriesError,
     isCategoriesLoading,
+    isEditMode,
     isFormValid,
     isPending,
     isPreorder,
+    isProductError,
+    isProductLoading,
     isSubmitting,
     publishRequirements,
     resetForm,
     retryLoadCategories,
-  } = useCreateProductForm();
+    retryLoadProduct,
+  } = useProductForm({ mode, productId });
 
   const renderContent = () => {
-    if (isCategoriesLoading) {
+    if (isProductLoading || isCategoriesLoading) {
       return (
         <Box
           sx={{
@@ -59,9 +71,25 @@ export const CreateProductForm = () => {
         >
           <CircularProgress />
           <Typography variant="body2" color="text.secondary">
-            Загружаем категории для нового товара...
+            {isEditMode ? "Загружаем товар для редактирования..." : "Загружаем категории для нового товара..."}
           </Typography>
         </Box>
+      );
+    }
+
+    if (isProductError) {
+      return (
+        <ErrorState
+          type="products"
+          title="Не удалось загрузить товар"
+          description="Попробуйте обновить данные и открыть форму редактирования снова."
+          onRetry={() => {
+            void retryLoadProduct();
+          }}
+          retryText="Повторить"
+          minHeight={320}
+          useContainer={false}
+        />
       );
     }
 
@@ -70,7 +98,7 @@ export const CreateProductForm = () => {
         <ErrorState
           type="products"
           title="Не удалось загрузить категории"
-          description="Форма создания товара требует список категорий. Попробуйте обновить данные и открыть форму снова."
+          description="Форма товара требует список категорий. Попробуйте обновить данные и открыть форму снова."
           onRetry={() => {
             void retryLoadCategories();
           }}
@@ -82,70 +110,64 @@ export const CreateProductForm = () => {
     }
 
     return (
-      <>
-        <Box
-          component="form"
-          onSubmit={handleFormSubmit}
-          noValidate
-          sx={{ p: { xs: 2, sm: 3, md: 4 } }}
-        >
-          <Grid container spacing={2.5}>
-            <Grid item xs={12}>
-              <CreateProductFormSection
-                icon={<ImageOutlined />}
-                title="Фотографии"
-              />
-            </Grid>
-
-            {/* Images Section */}
-            <Grid item xs={12}>
-              <MultiImageUpload uploadState={imageUploadState} maxImages={3} />
-            </Grid>
-
-            <Grid item xs={12}>
-              <CreateProductFormSection
-                icon={<CategoryOutlined />}
-                title="Основная информация"
-              />
-            </Grid>
-
-            {/* Product Fields */}
-            <ProductFormFields
-              control={control}
-              errors={errors}
-              categories={categories}
-              isPreorder={isPreorder}
-              currentCurrency={currentCurrency}
-            />
-
-            <Grid item xs={12}>
-              <CreateProductFormSection
-                icon={<SellOutlined />}
-                title="Цена и публикация"
-              />
-            </Grid>
-
-            {/* Price and Currency */}
-            <CurrencyField
-              control={control}
-              priceError={errors.price}
-              currencyError={errors.currency}
-              currentCurrency={currentCurrency}
-            />
-
-            {/* Submit Buttons */}
-            <CreateProductFormActions
-              isFormValid={isFormValid}
-              isPending={isPending}
-              isSubmitting={isSubmitting}
-              isUploadingImages={imageUploadState.isUploading}
-              publishRequirements={publishRequirements}
-              onReset={resetForm}
+      <Box
+        component="form"
+        onSubmit={handleFormSubmit}
+        noValidate
+        sx={{ p: { xs: 2, sm: 3, md: 4 } }}
+      >
+        <Grid container spacing={2.5}>
+          <Grid item xs={12}>
+            <CreateProductFormSection
+              icon={<ImageOutlined />}
+              title="Фотографии"
             />
           </Grid>
-        </Box>
 
-      </>
+          <Grid item xs={12}>
+            <MultiImageUpload uploadState={imageUploadState} maxImages={3} />
+          </Grid>
+
+          <Grid item xs={12}>
+            <CreateProductFormSection
+              icon={<CategoryOutlined />}
+              title="Основная информация"
+            />
+          </Grid>
+
+          <ProductFormFields
+            control={control}
+            errors={errors}
+            categories={categories}
+            isPreorder={isPreorder}
+            currentCurrency={currentCurrency}
+          />
+
+          <Grid item xs={12}>
+            <CreateProductFormSection
+              icon={<SellOutlined />}
+              title="Цена и публикация"
+            />
+          </Grid>
+
+          <CurrencyField
+            control={control}
+            priceError={errors.price}
+            currencyError={errors.currency}
+            currentCurrency={currentCurrency}
+          />
+
+          <CreateProductFormActions
+            mode={mode}
+            isFormValid={isFormValid}
+            isPending={isPending}
+            isSubmitting={isSubmitting}
+            isUploadingImages={imageUploadState.isUploading}
+            publishRequirements={publishRequirements}
+            onReset={resetForm}
+          />
+        </Grid>
+      </Box>
     );
   };
 
@@ -159,8 +181,15 @@ export const CreateProductForm = () => {
           border: `1px solid ${theme.palette.divider}`,
         }}
       >
-        {/* Header */}
-        <CreateProductFormHeader onBack={handleBack} />
+        <CreateProductFormHeader
+          onBack={handleBack}
+          title={isEditMode ? "Редактирование товара" : "Новый товар"}
+          subtitle={
+            isEditMode
+              ? "Обновите фотографии, описание и цену товара"
+              : "Добавьте фото, описание и цену"
+          }
+        />
 
         {renderContent()}
       </Paper>

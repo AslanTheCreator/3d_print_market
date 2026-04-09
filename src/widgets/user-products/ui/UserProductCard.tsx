@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -19,15 +20,12 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
-  Divider,
 } from "@mui/material";
 import {
   MoreVert,
   Edit,
   Delete,
-  Visibility,
   CalendarMonth,
-  TrendingUp,
   Info,
 } from "@mui/icons-material";
 import { Product } from "@/shared/types";
@@ -38,8 +36,13 @@ import {
   ProductPriceDisplay,
 } from "@/entities/product";
 
+interface DeleteProductPayload {
+  id: number;
+  name: string;
+}
+
 interface UserProductCardProps extends Product {
-  onCardClick?: (id: string) => void;
+  onDeleteClick?: (product: DeleteProductPayload) => void;
 }
 
 export const UserProductCard: React.FC<UserProductCardProps> = ({
@@ -54,11 +57,12 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
   expirationDate,
   sellerRating,
   totalReviews,
-  onCardClick,
+  onDeleteClick,
 }) => {
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const theme = useTheme();
+  const router = useRouter();
 
   const expirationStatus = getExpirationStatus(expirationDate);
 
@@ -72,14 +76,33 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
     setAnchorEl(null);
   };
 
+  const handleEditClick = () => {
+    handleMenuClose();
+    router.push(`/dashboard/products/${id}/edit`);
+  };
+
+  const handleDeleteClick = () => {
+    handleMenuClose();
+    onDeleteClick?.({ id, name });
+  };
+
   const getAvailabilityConfig = () => {
     switch (availability) {
       case "PURCHASABLE":
-        return { color: "success" as const, label: "В наличии" };
+        return {
+          color: "success",
+          label: "В наличии",
+        } as const;
       case "PREORDER":
-        return { color: "warning" as const, label: "Предзаказ" };
+        return {
+          color: "warning",
+          label: "Предзаказ",
+        } as const;
       default:
-        return { color: "info" as const, label: "Внешний" };
+        return {
+          color: "info",
+          label: "Внешний",
+        } as const;
     }
   };
 
@@ -122,7 +145,6 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
           flexGrow: 1,
         }}
       >
-        {/* Блок с изображением */}
         <Box
           sx={{
             position: "relative",
@@ -173,7 +195,6 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
             </Box>
           )}
 
-          {/* Badges сверху */}
           <Stack
             direction="row"
             spacing={0.5}
@@ -195,27 +216,8 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
               }}
             />
           </Stack>
-
-          {/* Меню действий */}
-          <IconButton
-            size="small"
-            onClick={handleMenuOpen}
-            sx={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              zIndex: 2,
-              bgcolor: alpha(theme.palette.background.paper, 0.9),
-              "&:hover": {
-                bgcolor: theme.palette.background.paper,
-              },
-            }}
-          >
-            <MoreVert fontSize="small" />
-          </IconButton>
         </Box>
 
-        {/* Контент карточки */}
         <CardContent
           sx={{
             p: { xs: "8px", sm: "12px" },
@@ -261,7 +263,6 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
               {name}
             </Typography>
 
-            {/* Цена - используем общий компонент */}
             <ProductPriceDisplay
               price={price}
               prepaymentAmount={prepaymentAmount}
@@ -270,7 +271,6 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
               reviewCount={totalReviews}
             />
 
-            {/* Количество */}
             {count > 0 && (
               <Chip
                 label={`${count} шт`}
@@ -284,7 +284,6 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
               />
             )}
 
-            {/* Статус истечения */}
             <Tooltip
               title={`Истекает: ${formatExpirationDate(expirationDate)}`}
               arrow
@@ -310,12 +309,11 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
             </Tooltip>
           </Stack>
 
-          {/* Кнопка продления */}
           {expirationStatus.shouldShowExtendButton && (
             <Box
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
               }}
             >
               <ExtendProductButton
@@ -330,7 +328,24 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
         </CardContent>
       </Link>
 
-      {/* Меню */}
+      <IconButton
+        size="small"
+        aria-label="product actions"
+        onClick={handleMenuOpen}
+        sx={{
+          position: "absolute",
+          top: 8,
+          right: 8,
+          zIndex: 2,
+          bgcolor: alpha(theme.palette.background.paper, 0.9),
+          "&:hover": {
+            bgcolor: theme.palette.background.paper,
+          },
+        }}
+      >
+        <MoreVert fontSize="small" />
+      </IconButton>
+
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -338,31 +353,13 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
         transformOrigin={{ horizontal: "right", vertical: "top" }}
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
-        <MenuItem
-          onClick={() => {
-            handleMenuClose();
-            window.open(`/catalog/${id}/detail`, "_blank");
-          }}
-        >
-          <ListItemIcon>
-            <Visibility fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Посмотреть</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
+        <MenuItem onClick={handleEditClick}>
           <ListItemIcon>
             <Edit fontSize="small" />
           </ListItemIcon>
           <ListItemText>Редактировать</ListItemText>
         </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
-          <ListItemIcon>
-            <TrendingUp fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Статистика</ListItemText>
-        </MenuItem>
-        <Divider />
-        <MenuItem onClick={handleMenuClose} sx={{ color: "error.main" }}>
+        <MenuItem onClick={handleDeleteClick} sx={{ color: "error.main" }}>
           <ListItemIcon>
             <Delete fontSize="small" color="error" />
           </ListItemIcon>

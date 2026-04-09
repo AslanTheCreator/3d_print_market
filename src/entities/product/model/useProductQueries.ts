@@ -5,9 +5,9 @@ import { ProductDetail } from "@/shared/types";
 import { ProductFilter, SortBy } from "@/shared/types";
 import { useInfiniteProducts } from "@/shared/hooks";
 
-export const useProductById = (id: string) => {
+export const useProductById = (id?: string) => {
   return useQuery<ProductDetail>({
-    queryKey: productKeys.detail(id),
+    queryKey: productKeys.detail(id ?? 0),
     queryFn: () => productApi.getProductById(Number(id)),
     enabled: Boolean(id),
     staleTime: 5 * 60 * 1000,

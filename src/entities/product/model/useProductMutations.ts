@@ -14,6 +14,26 @@ export const useCreateProduct = () => {
   });
 };
 
+export const useUpdateProduct = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      productId,
+      data,
+    }: {
+      productId: number;
+      data: Parameters<typeof productApi.updateProduct>[1];
+    }) => productApi.updateProduct(productId, data),
+    onSuccess: async (_, { productId }) => {
+      await queryClient.invalidateQueries({ queryKey: productKeys.userAll() });
+      await queryClient.invalidateQueries({
+        queryKey: productKeys.detail(productId),
+      });
+    },
+  });
+};
+
 export const useExtendProductExpiration = () => {
   const queryClient = useQueryClient();
 
@@ -26,6 +46,21 @@ export const useExtendProductExpiration = () => {
     },
     onError: (error) => {
       console.error("Failed to extend product expiration:", error);
+    },
+  });
+};
+
+export const useDeleteProduct = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (productId: number) => productApi.deleteProduct(productId),
+    onSuccess: async (_, productId) => {
+      await queryClient.invalidateQueries({ queryKey: productKeys.userAll() });
+      await queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) });
+    },
+    onError: (error) => {
+      console.error("Failed to delete product:", error);
     },
   });
 };

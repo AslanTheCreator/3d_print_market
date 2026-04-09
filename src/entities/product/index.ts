@@ -14,6 +14,7 @@ export {
   defaultProductFormValues,
   getCurrencySymbol,
   mapFormDataToCreateModel,
+  mapProductDetailToFormData,
   productCategoryRules,
   productCountRules,
   productCurrencies,

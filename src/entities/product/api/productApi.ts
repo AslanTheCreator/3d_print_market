@@ -50,6 +50,14 @@ export const productApi = {
     await authClient.post(`${API_URL}`, data);
   },
 
+  updateProduct: async (id: number, data: ProductCreateModel) => {
+    await authClient.put(`${API_URL_PRODUCT}/${id}`, data);
+  },
+
+  deleteProduct: async (id: number) => {
+    await authClient.delete(`${API_URL_PRODUCT}/${id}`);
+  },
+
   extendProductExpiration: async (productId: number) => {
     await authClient.post(`${API_URL}/extend/${productId}`);
   },

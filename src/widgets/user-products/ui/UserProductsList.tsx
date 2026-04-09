@@ -1,40 +1,45 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Grid,
   Box,
   Button,
   CircularProgress,
   Alert,
-  useTheme,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Typography,
-  Stack,
-  Paper,
 } from "@mui/material";
-import { Refresh, TrendingUp, Inventory } from "@mui/icons-material";
+import { Refresh } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import {
   ProductCardSkeleton,
+  useDeleteProduct,
   useUserProductsInfinite,
 } from "@/entities/product";
+import { useNotification } from "@/shared/ui/notification";
 import { EmptyCatalogState } from "@/shared/ui/states";
 import { UserProductCard } from "./UserProductCard";
-import { ProductFilter, SortBy } from "@/shared/types";
+import { SortBy } from "@/shared/types";
 
-interface UserProductsListProps {
-  participantId?: number;
+interface ProductToDelete {
+  id: number;
+  name: string;
 }
 
-export const UserProductsList: React.FC<UserProductsListProps> = ({
-  participantId,
-}) => {
-  const theme = useTheme();
+export const UserProductsList: React.FC = () => {
   const router = useRouter();
+  const { showNotification } = useNotification();
+  const { mutateAsync: deleteProduct, isPending: isDeleting } =
+    useDeleteProduct();
+  const [productToDelete, setProductToDelete] = useState<ProductToDelete | null>(
+    null,
+  );
 
   const [sortBy] = React.useState<SortBy>("DATE_DESC");
-
-  const filters: ProductFilter = participantId ? { participantId } : {};
 
   const {
     data,
@@ -46,7 +51,7 @@ export const UserProductsList: React.FC<UserProductsListProps> = ({
     error,
     refetch,
     isRefetching,
-  } = useUserProductsInfinite(12, filters, sortBy);
+  } = useUserProductsInfinite(12, undefined, sortBy);
 
   const products = data?.pages.flat() ?? [];
 
@@ -56,8 +61,26 @@ export const UserProductsList: React.FC<UserProductsListProps> = ({
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const handleCardClick = (productId: number) => {
-    router.push(`/catalog/${productId}/detail`);
+  const handleOpenDeleteDialog = (product: ProductToDelete) => {
+    setProductToDelete(product);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    if (!isDeleting) {
+      setProductToDelete(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+
+    try {
+      await deleteProduct(productToDelete.id);
+      showNotification("Товар успешно удалён", "success");
+      handleCloseDeleteDialog();
+    } catch {
+      showNotification("Не удалось удалить товар", "error");
+    }
   };
 
   // Loading state
@@ -107,93 +130,32 @@ export const UserProductsList: React.FC<UserProductsListProps> = ({
 
   return (
     <Box>
-      {/* Statistics */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: 2,
-          mb: 3,
-          borderRadius: 2,
-          border: `1px solid ${theme.palette.divider}`,
-          bgcolor: theme.palette.background.paper,
-        }}
-      >
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          justifyContent="space-between"
-          alignItems={{ xs: "flex-start", sm: "center" }}
-        >
-          <Stack direction="row" spacing={3} alignItems="center">
-            <Box>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Inventory color="primary" />
-                <Typography variant="h6" fontWeight={600}>
-                  {products.length}
-                </Typography>
-              </Stack>
-              <Typography variant="caption" color="text.secondary">
-                Товаров
-              </Typography>
-            </Box>
-
-            <Box>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <TrendingUp color="success" />
-                <Typography variant="h6" fontWeight={600}>
-                  {
-                    products.filter((p) => p.availability === "PURCHASABLE")
-                      .length
-                  }
-                </Typography>
-              </Stack>
-              <Typography variant="caption" color="text.secondary">
-                В наличии
-              </Typography>
-            </Box>
-
-            <Box>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <TrendingUp color="warning" />
-                <Typography variant="h6" fontWeight={600}>
-                  {products.filter((p) => p.availability === "PREORDER").length}
-                </Typography>
-              </Stack>
-              <Typography variant="caption" color="text.secondary">
-                Предзаказ
-              </Typography>
-            </Box>
-          </Stack>
-
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => refetch()}
-            disabled={isRefetching}
-            startIcon={
-              isRefetching ? <CircularProgress size={16} /> : <Refresh />
-            }
-          >
-            Обновить
-          </Button>
-        </Stack>
-      </Paper>
-
       {/* Products Grid */}
       <Grid container spacing={{ xs: 1, sm: 2, md: 2.5 }}>
         {products.map((product) => (
           <Grid item xs={6} sm={4} md={3} lg={2} key={product.id}>
             <UserProductCard
               {...product}
-              onCardClick={() => handleCardClick(product.id)}
+              onDeleteClick={handleOpenDeleteDialog}
             />
           </Grid>
         ))}
       </Grid>
 
-      {/* Load More Button */}
-      {hasNextPage && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+      {/* List Actions */}
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 4, gap: 2 }}>
+        <Button
+          variant="outlined"
+          onClick={() => refetch()}
+          disabled={isRefetching}
+          startIcon={
+            isRefetching ? <CircularProgress size={16} /> : <Refresh />
+          }
+        >
+          Обновить
+        </Button>
+
+        {hasNextPage && (
           <Button
             variant="outlined"
             onClick={handleLoadMore}
@@ -207,8 +169,43 @@ export const UserProductsList: React.FC<UserProductsListProps> = ({
               "Загрузить ещё"
             )}
           </Button>
-        </Box>
-      )}
+        )}
+      </Box>
+
+      <Dialog
+        open={Boolean(productToDelete)}
+        onClose={handleCloseDeleteDialog}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 600 }}>Удалить товар?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 1.5 }}>
+            {productToDelete?.name}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Это действие нельзя отменить.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={handleCloseDeleteDialog}
+            variant="outlined"
+            disabled={isDeleting}
+          >
+            Отмена
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            disabled={isDeleting}
+            startIcon={isDeleting ? <CircularProgress size={18} /> : undefined}
+          >
+            {isDeleting ? "Удаление..." : "Удалить"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

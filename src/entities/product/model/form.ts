@@ -1,5 +1,6 @@
 import type { RegisterOptions } from "react-hook-form";
 import { Currency, Availability } from "@/shared/types";
+import type { ProductDetail } from "@/shared/types";
 import { ProductCreateModel } from "./types";
 
 /**
@@ -140,6 +141,22 @@ export const mapFormDataToCreateModel = (
     externalUrl: "", // Можно настроить позже, если потребуется
   };
 };
+
+export const mapProductDetailToFormData = (
+  product: ProductDetail,
+): ProductFormData => ({
+  categoryIds: product.categories.map((category) => category.id),
+  name: product.name,
+  price: String(product.price),
+  currency: product.currency,
+  description: product.description,
+  isPreorder: product.availability === "PREORDER",
+  prepaymentAmount:
+    product.availability === "PREORDER" && product.prepaymentAmount > 0
+      ? String(product.prepaymentAmount)
+      : "",
+  count: product.count > 0 ? String(product.count) : "",
+});
 
 /**
  * Значения по умолчанию для формы

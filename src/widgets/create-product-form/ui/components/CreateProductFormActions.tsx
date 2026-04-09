@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Box,
@@ -20,6 +20,7 @@ interface CreateProductFormActionsProps {
   isPending: boolean;
   isSubmitting: boolean;
   isUploadingImages: boolean;
+  mode?: "create" | "edit";
   onReset: () => void;
   publishRequirements: {
     hasImages: boolean;
@@ -34,15 +35,17 @@ export const CreateProductFormActions = ({
   isPending,
   isSubmitting,
   isUploadingImages,
+  mode = "create",
   onReset,
   publishRequirements,
 }: CreateProductFormActionsProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isEditMode = mode === "edit";
 
   const requirementItems = [
     {
-      label: isMobile ? "Фото" : "Фото",
+      label: "Фото",
       done: publishRequirements.hasImages,
     },
     {
@@ -64,14 +67,20 @@ export const CreateProductFormActions = ({
   const statusText = isUploadingImages
     ? isMobile
       ? "Сначала дождитесь загрузки фото."
-      : "Дождитесь завершения загрузки изображений, затем товар можно будет разместить."
+      : isEditMode
+        ? "Дождитесь завершения загрузки изображений, затем изменения можно будет сохранить."
+        : "Дождитесь завершения загрузки изображений, затем товар можно будет разместить."
     : allRequirementsDone
       ? isMobile
         ? "Все обязательное заполнено."
-        : "Основные данные заполнены. Можно переходить к публикации."
+        : isEditMode
+          ? "Основные данные заполнены. Можно переходить к сохранению изменений."
+          : "Основные данные заполнены. Можно переходить к публикации."
       : isMobile
         ? "Заполните обязательные пункты ниже."
-        : "Для публикации заполните обязательные пункты ниже.";
+        : isEditMode
+          ? "Для сохранения заполните обязательные пункты ниже."
+          : "Для публикации заполните обязательные пункты ниже.";
 
   return (
     <Grid item xs={12}>
@@ -91,7 +100,7 @@ export const CreateProductFormActions = ({
               variant={isMobile ? "body2" : "subtitle1"}
               fontWeight={700}
             >
-              Готовность к публикации
+              {isEditMode ? "Готовность к сохранению" : "Готовность к публикации"}
             </Typography>
             <Typography
               variant={isMobile ? "caption" : "body2"}
@@ -171,10 +180,14 @@ export const CreateProductFormActions = ({
               }}
             >
               {isPending
-                ? "Создание..."
+                ? isEditMode
+                  ? "Сохранение..."
+                  : "Создание..."
                 : isUploadingImages
                   ? "Загрузка фото..."
-                  : "Разместить товар"}
+                  : isEditMode
+                    ? "Сохранить изменения"
+                    : "Разместить товар"}
             </Button>
 
             <Button
@@ -189,7 +202,13 @@ export const CreateProductFormActions = ({
                 minWidth: { sm: 180 },
               }}
             >
-              {isMobile ? "Очистить" : "Очистить форму"}
+              {isMobile
+                ? isEditMode
+                  ? "Сбросить"
+                  : "Очистить"
+                : isEditMode
+                  ? "Сбросить изменения"
+                  : "Очистить форму"}
             </Button>
           </Stack>
         </Stack>

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   revokeImagePreview,
   createImagePreview,
@@ -8,11 +8,16 @@ import { ImageTag } from "@/shared/types";
 import { imageApi } from "@/shared/api";
 
 interface ImageUploadState {
-  file: File;
+  file: File | null;
   preview: string;
   id: number | null;
   isUploading: boolean;
   error: string | null;
+}
+
+export interface InitialImageUploadState {
+  id: number;
+  preview: string;
 }
 
 export interface UseMultipleImageUploadReturn {
@@ -22,7 +27,8 @@ export interface UseMultipleImageUploadReturn {
   hasError: boolean;
   addImage: (file: File) => Promise<void>;
   removeImage: (index: number) => void;
-  resetImages: () => void;
+  resetImages: (nextImages?: InitialImageUploadState[]) => void;
+  setInitialImages: (nextImages: InitialImageUploadState[]) => void;
 }
 
 export const useMultipleImageUpload = (
@@ -30,17 +36,40 @@ export const useMultipleImageUpload = (
   maxImages: number = 3,
 ): UseMultipleImageUploadReturn => {
   const [images, setImages] = useState<ImageUploadState[]>([]);
+  const imagesRef = useRef<ImageUploadState[]>([]);
+
+  const revokePreviewIfNeeded = useCallback((url: string) => {
+    if (url.startsWith("blob:")) {
+      revokeImagePreview(url);
+    }
+  }, []);
+
+  const mapInitialImages = useCallback(
+    (nextImages: InitialImageUploadState[]): ImageUploadState[] =>
+      nextImages.map((image) => ({
+        file: null,
+        preview: image.preview,
+        id: image.id,
+        isUploading: false,
+        error: null,
+      })),
+    [],
+  );
 
   // Очистка previews при размонтировании
   useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
+
+  useEffect(() => {
     return () => {
-      images.forEach((img) => {
+      imagesRef.current.forEach((img) => {
         if (img.preview) {
-          revokeImagePreview(img.preview);
+          revokePreviewIfNeeded(img.preview);
         }
       });
     };
-  }, []);
+  }, [revokePreviewIfNeeded]);
 
   const addImage = useCallback(
     async (file: File): Promise<void> => {
@@ -98,20 +127,33 @@ export const useMultipleImageUpload = (
     setImages((prev) => {
       const imageToRemove = prev[index];
       if (imageToRemove?.preview) {
-        revokeImagePreview(imageToRemove.preview);
+        revokePreviewIfNeeded(imageToRemove.preview);
       }
       return prev.filter((_, i) => i !== index);
     });
-  }, []);
+  }, [revokePreviewIfNeeded]);
 
-  const resetImages = useCallback(() => {
-    images.forEach((img) => {
-      if (img.preview) {
-        revokeImagePreview(img.preview);
-      }
-    });
-    setImages([]);
-  }, [images]);
+  const resetImages = useCallback(
+    (nextImages: InitialImageUploadState[] = []) => {
+      setImages((prev) => {
+        prev.forEach((img) => {
+          if (img.preview) {
+            revokePreviewIfNeeded(img.preview);
+          }
+        });
+
+        return mapInitialImages(nextImages);
+      });
+    },
+    [mapInitialImages, revokePreviewIfNeeded],
+  );
+
+  const setInitialImages = useCallback(
+    (nextImages: InitialImageUploadState[]) => {
+      resetImages(nextImages);
+    },
+    [resetImages],
+  );
 
   const imageIds = images
     .filter((img) => img.id !== null)
@@ -128,5 +170,6 @@ export const useMultipleImageUpload = (
     addImage,
     removeImage,
     resetImages,
+    setInitialImages,
   };
 };
