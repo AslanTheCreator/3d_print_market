@@ -4,12 +4,12 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
   Button,
   Stack,
   IconButton,
   Typography,
+  Paper,
 } from "@mui/material";
 import { Close, CheckCircle } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order";
@@ -158,9 +158,21 @@ export const ConfirmationDialog = ({
       </DialogTitle>
 
       <DialogContent>
-        <DialogContentText>
+        <Paper variant="outlined" sx={{ p: 2, mb: 2.5, bgcolor: "grey.50" }}>
+          <Typography variant="subtitle2" gutterBottom>
+            Заказ #{order.orderId}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            {order.product.name}
+          </Typography>
+          <Typography variant="h6" color="primary.main" fontWeight={600}>
+            {order.totalPrice} {order.product.currency}
+          </Typography>
+        </Paper>
+
+        <Typography variant="body2" color="text.secondary">
           {config.description.replace("{orderId}", order.orderId.toString())}
-        </DialogContentText>
+        </Typography>
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>

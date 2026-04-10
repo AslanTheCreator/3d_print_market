@@ -12,7 +12,6 @@ import {
 } from "@mui/material";
 import {
   LocationOn,
-  LocalShipping,
   ContentCopy,
   CheckCircle,
   OpenInNew,
@@ -44,44 +43,29 @@ export const DeliveryInfo: React.FC<DeliveryInfoProps> = ({
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        spacing={0.75}
-        alignItems="center"
-        sx={{ mb: 0.75 }}
-      >
-        <LocalShipping sx={{ fontSize: 16, color: "text.secondary" }} />
-        <Typography
-          variant="caption"
-          fontWeight={600}
-          sx={{ fontSize: { xs: "0.7rem", sm: "0.75rem" } }}
-        >
-          Доставка
-        </Typography>
-        <Chip
-          label={
-            transfer.price === 0
-              ? "Бесплатно"
-              : `${transfer.price} ${transfer.currency}`
-          }
-          size="small"
-          color={transfer.price === 0 ? "success" : "default"}
-          sx={{ height: 18, fontSize: "0.65rem" }}
-        />
-      </Stack>
-
-      <Stack direction="row" spacing={0.75} alignItems="flex-start">
-        <LocationOn sx={{ fontSize: 16, color: "text.secondary", mt: 0.25 }} />
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{
-            fontSize: { xs: "0.7rem", sm: "0.75rem" },
-            lineHeight: 1.4,
-          }}
-        >
-          {transfer.address}
-        </Typography>
+      <Stack direction="row" spacing={1} alignItems="flex-start">
+        <LocationOn sx={{ fontSize: 16, color: "text.secondary", mt: 0.1 }} />
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography
+            variant="body2"
+            sx={{
+              lineHeight: 1.4,
+              mb: 0.75,
+            }}
+          >
+            {transfer.address}
+          </Typography>
+          <Chip
+            label={
+              transfer.price === 0
+                ? "Бесплатная доставка"
+                : `Доставка ${transfer.price} ${transfer.currency}`
+            }
+            size="small"
+            color={transfer.price === 0 ? "success" : "default"}
+            sx={{ height: 20, fontSize: "0.7rem" }}
+          />
+        </Box>
       </Stack>
 
       {/* Ссылка для отслеживания */}
@@ -89,8 +73,8 @@ export const DeliveryInfo: React.FC<DeliveryInfoProps> = ({
         <Paper
           variant="outlined"
           sx={{
-            mt: 1.5,
-            p: 1.5,
+            mt: 1.25,
+            p: 1.25,
             borderColor: "info.main",
             borderLeftWidth: 3,
             bgcolor: "background.paper",
@@ -118,7 +102,7 @@ export const DeliveryInfo: React.FC<DeliveryInfoProps> = ({
                 underline="hover"
                 sx={{
                   display: "block",
-                  fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                  fontSize: { xs: "0.68rem", sm: "0.72rem" },
                   fontFamily: "monospace",
                   wordBreak: "break-all",
                   lineHeight: 1.4,

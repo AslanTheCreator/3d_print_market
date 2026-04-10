@@ -36,6 +36,7 @@ export {
   shouldShowTrackingForRole,
   shouldShowOrderProgress,
   getOrderProgressSteps,
+  getOrderStatusActionHint,
   getCustomerOrderActionFlags,
   getSellerOrderActionFlags,
 } from "./lib/orderStatusMeta";

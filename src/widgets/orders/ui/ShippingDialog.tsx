@@ -9,7 +9,6 @@ import {
   Typography,
   TextField,
   Box,
-  Alert,
   Stack,
   IconButton,
   Paper,
@@ -24,7 +23,6 @@ import {
   LocalShipping,
   Link as LinkIcon,
   CheckCircle,
-  Info,
   ContentCopy,
 } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order";
@@ -152,12 +150,12 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
 
       <DialogContent>
         {/* Информация о заказе */}
-        <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: "grey.50" }}>
+        <Paper variant="outlined" sx={{ p: 2, mb: 2.5, bgcolor: "grey.50" }}>
           <Stack
             direction="row"
             justifyContent="space-between"
             alignItems="flex-start"
-            sx={{ mb: 2 }}
+            sx={{ mb: 1.5 }}
           >
             <Box>
               <Typography variant="subtitle2" gutterBottom>
@@ -173,16 +171,8 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
             </Typography>
           </Stack>
 
-          <Box sx={{ p: 2, bgcolor: "background.paper", borderRadius: 1 }}>
-            <Typography
-              variant="subtitle2"
-              gutterBottom
-              sx={{ display: "flex", alignItems: "center", gap: 1 }}
-            >
-              <Info sx={{ fontSize: 16 }} />
-              Адрес доставки
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
+          <Box sx={{ p: 1.5, bgcolor: "background.paper", borderRadius: 1 }}>
+            <Typography variant="body2" sx={{ mb: 0.75 }}>
               {order.transfer.address}
             </Typography>
             <Stack
@@ -260,12 +250,10 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
 
         {/* Предпросмотр ссылки */}
         {deliveryUrl && (
-          <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: "success.50" }}>
+          <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: "success.50" }}>
             <Stack direction="row" alignItems="center" spacing={1}>
               <CheckCircle color="success" sx={{ fontSize: 16 }} />
-              <Typography variant="body2">
-                Покупатель получит ссылку:
-              </Typography>
+              <Typography variant="body2">Ссылка уйдёт покупателю</Typography>
             </Stack>
             <Typography
               variant="body2"
@@ -286,21 +274,13 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
         <TextField
           fullWidth
           multiline
-          rows={3}
+          rows={2}
           label="Комментарий (необязательно)"
           placeholder="Дополнительная информация о доставке..."
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          sx={{ mb: 2 }}
+          sx={{ mb: 1 }}
         />
-
-        {/* Инструкция */}
-        <Alert severity="info">
-          <Typography variant="body2">
-            После отправки покупатель получит уведомление с информацией о
-            доставке и сможет отследить посылку по предоставленной ссылке.
-          </Typography>
-        </Alert>
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>

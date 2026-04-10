@@ -6,9 +6,11 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
   Stack,
+  Box,
+  Typography,
+  Paper,
 } from "@mui/material";
 import { Payment, ThumbUp, Cancel, RateReview } from "@mui/icons-material";
 import {
@@ -56,22 +58,21 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
     );
   };
 
-  return (
-    <>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-        {canPay && (
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<Payment />}
-            onClick={paymentAction.open}
-            size="small"
-            fullWidth={true}
-          >
-            Подтвердить оплату
-          </Button>
-        )}
-        {canPrePay && (
+  const primaryAction = canPay
+    ? (
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<Payment />}
+          onClick={paymentAction.open}
+          size="small"
+          fullWidth={true}
+        >
+          Подтвердить оплату
+        </Button>
+      )
+    : canPrePay
+      ? (
           <Button
             variant="contained"
             color="primary"
@@ -82,46 +83,73 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
           >
             Подтвердить предоплату
           </Button>
-        )}
-        {canConfirmReceipt && (
-          <Button
-            variant="contained"
-            color="success"
-            startIcon={<ThumbUp />}
-            onClick={receiptAction.open}
-            disabled={receiptAction.mutation.isPending}
-            size="small"
-            fullWidth={true}
-          >
-            {receiptAction.mutation.isPending
-              ? "Подтверждение..."
-              : "Подтвердить получение"}
-          </Button>
-        )}
-        {canCancel && (
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<Cancel />}
-            onClick={() => setCancelDialogOpen(true)}
-            size="small"
-            fullWidth={true}
-          >
-            Отменить
-          </Button>
-        )}
+        )
+      : canConfirmReceipt
+        ? (
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<ThumbUp />}
+              onClick={receiptAction.open}
+              disabled={receiptAction.mutation.isPending}
+              size="small"
+              fullWidth={true}
+            >
+              {receiptAction.mutation.isPending
+                ? "Подтверждение..."
+                : "Подтвердить получение"}
+            </Button>
+          )
+        : canLeaveReview
+          ? (
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<RateReview />}
+                onClick={() => setReviewDialogOpen(true)}
+                size="small"
+                fullWidth={true}
+              >
+                Оставить отзыв
+              </Button>
+            )
+          : null;
 
-        {canLeaveReview && (
-          <Button
-            variant="outlined"
-            color="primary"
-            startIcon={<RateReview />}
-            onClick={() => setReviewDialogOpen(true)}
-            size="small"
-            fullWidth={true}
-          >
-            Оставить отзыв
-          </Button>
+  return (
+    <>
+      <Stack spacing={0.75}>
+        {primaryAction}
+
+        {(canCancel || (canLeaveReview && !primaryAction)) && (
+          <Box>
+            <Stack direction="row" spacing={0.5} flexWrap="wrap">
+              {canCancel && (
+                <Button
+                  variant="text"
+                  color="error"
+                  startIcon={<Cancel />}
+                  onClick={() => setCancelDialogOpen(true)}
+                  size="small"
+                  sx={{ px: 0.5 }}
+                >
+                  Отменить
+                </Button>
+              )}
+
+              {canLeaveReview && !primaryAction && (
+                <Button
+                  variant="text"
+                  color="primary"
+                  startIcon={<RateReview />}
+                  onClick={() => setReviewDialogOpen(true)}
+                  size="small"
+                  sx={{ px: 0.5 }}
+                >
+                  Оставить отзыв
+                </Button>
+              )}
+            </Stack>
+          </Box>
         )}
       </Stack>
 
@@ -146,15 +174,29 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
         onClose={receiptAction.close}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 },
+        }}
       >
         <DialogTitle>Подтвердить получение заказа</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Вы уверены, что получили заказ #{order.orderId} и он соответствует
-            описанию? После подтверждения заказ будет считаться завершенным.
-          </DialogContentText>
+          <Paper variant="outlined" sx={{ p: 2, mb: 2.5, bgcolor: "grey.50" }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Заказ #{order.orderId}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {order.product.name}
+            </Typography>
+            <Typography variant="h6" color="primary.main" fontWeight={600}>
+              {order.totalPrice} {order.product.currency}
+            </Typography>
+          </Paper>
+
+          <Typography variant="body2" color="text.secondary">
+            Подтвердите получение, если заказ доставлен и всё в порядке.
+          </Typography>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button
             onClick={receiptAction.close}
             disabled={receiptAction.mutation.isPending}

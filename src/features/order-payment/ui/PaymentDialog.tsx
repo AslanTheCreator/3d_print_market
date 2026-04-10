@@ -9,7 +9,6 @@ import {
   Typography,
   TextField,
   Box,
-  Alert,
   Stack,
   IconButton,
   Paper,
@@ -57,20 +56,12 @@ const paymentConfig = {
     title: "Подтверждение оплаты",
     buttonText: "Подтвердить оплату",
     buttonLoadingText: "Подтверждение...",
-    instruction:
-      "Выберите способ оплаты, переведите указанную сумму по реквизитам и загрузите скриншот или фото чека.",
-    warning:
-      "Убедитесь, что сумма и реквизиты верны. После подтверждения оплаты изменить данные будет невозможно.",
     amountLabel: "К оплате:",
   },
   prepayment: {
     title: "Подтверждение предоплаты",
     buttonText: "Подтвердить предоплату",
     buttonLoadingText: "Подтверждение...",
-    instruction:
-      "Выберите способ оплаты, переведите указанную сумму предоплаты по реквизитам и загрузите скриншот или фото чека.",
-    warning:
-      "Убедитесь, что сумма и реквизиты верны. После подтверждения предоплаты изменить данные будет невозможно.",
     amountLabel: "К предоплате:",
   },
 };
@@ -231,7 +222,7 @@ export const PaymentDialog = ({
 
       <DialogContent>
         {/* Информация о заказе */}
-        <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: "grey.50" }}>
+        <Paper variant="outlined" sx={{ p: 2, mb: 2.5, bgcolor: "grey.50" }}>
           <Typography variant="subtitle2" gutterBottom>
             Заказ #{order.orderId}
           </Typography>
@@ -243,10 +234,13 @@ export const PaymentDialog = ({
           </Typography>
         </Paper>
 
-        {/* Инструкция */}
-        <Alert severity="info" sx={{ mb: 3 }}>
-          <Typography variant="body2">{config.instruction}</Typography>
-        </Alert>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", mb: 2.5 }}
+        >
+          Выберите реквизиты продавца и загрузите чек или скриншот перевода.
+        </Typography>
 
         {/* ── Реквизиты продавца (список с выбором) ── */}
         <SellerPaymentDetails
@@ -260,8 +254,7 @@ export const PaymentDialog = ({
         {/* Загрузка чека */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle2" gutterBottom>
-            Подтверждение {paymentType === "payment" ? "оплаты" : "предоплаты"}{" "}
-            *
+            Чек или скриншот *
           </Typography>
 
           <input
@@ -340,21 +333,16 @@ export const PaymentDialog = ({
         <TextField
           fullWidth
           multiline
-          rows={3}
+          rows={2}
           label="Комментарий (необязательно)"
           placeholder={`Добавьте комментарий к ${
             paymentType === "payment" ? "оплате" : "предоплате"
           }...`}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          sx={{ mb: 2 }}
+          sx={{ mb: 1 }}
           disabled={isUploadingImage}
         />
-
-        {/* Предупреждение */}
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          <Typography variant="body2">{config.warning}</Typography>
-        </Alert>
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>

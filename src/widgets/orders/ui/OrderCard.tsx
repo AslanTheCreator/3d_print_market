@@ -5,12 +5,13 @@ import {
   CardContent,
   Stack,
   Typography,
-  Divider,
   Box,
+  Button,
+  LinearProgress,
   useTheme,
   useMediaQuery,
   Collapse,
-  IconButton,
+  Paper,
 } from "@mui/material";
 import { ExpandMore } from "@mui/icons-material";
 import {
@@ -26,6 +27,8 @@ import {
   shouldShowOrderProgress,
   shouldShowPaymentProofForRole,
   shouldShowTrackingForRole,
+  getOrderProgressSteps,
+  getOrderStatusActionHint,
 } from "@/entities/order";
 import { CustomerActions } from "./CustomerActions";
 import { SellerActions } from "./SellerActions";
@@ -47,9 +50,33 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, userRole }) => {
   const showPaymentProof =
     shouldShowPaymentProofForRole(order.actualStatus, userRole) &&
     order.images.length > 0;
+  const showOrderProgress = shouldShowOrderProgress(
+    order.actualStatus,
+    isPreorder,
+  );
   const trackingUrl = shouldShowTrackingForRole(order.actualStatus, userRole)
     ? order.deliveryUrl
     : undefined;
+  const progressSteps = getOrderProgressSteps(isPreorder);
+  const currentStepIndex = progressSteps.findIndex(
+    (step) => step.key === order.actualStatus,
+  );
+  const currentStepNumber = currentStepIndex >= 0 ? currentStepIndex + 1 : 1;
+  const progressValue =
+    progressSteps.length > 1
+      ? ((currentStepNumber - 1) / (progressSteps.length - 1)) * 100
+      : 0;
+  const actionHint = getOrderStatusActionHint(order.actualStatus, userRole);
+  const counterpartyLabel = userRole === "seller" ? "Покупатель" : "Продавец";
+  const deliverySummary =
+    order.transfer.price === 0
+      ? "Бесплатно"
+      : `${order.transfer.price} ${order.transfer.currency}`;
+  const detailsCardSx = {
+    p: 1.25,
+    borderRadius: 1.5,
+    bgcolor: "grey.50",
+  } as const;
 
   return (
     <Card
@@ -87,8 +114,8 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, userRole }) => {
           <OrderStatusChip status={order.actualStatus} />
         </Stack>
 
-        {/* Прогресс заказа - скрыт на мобильных */}
-        {!isMobile && shouldShowOrderProgress(order.actualStatus, isPreorder) && (
+        {/* Прогресс заказа */}
+        {!isMobile && showOrderProgress && (
           <Box sx={{ mb: 2 }}>
             <OrderProgress
               status={order.actualStatus}
@@ -100,6 +127,87 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, userRole }) => {
 
         {/* Информация о продукте */}
         <ProductInfo product={order.product} />
+
+        <Box
+          sx={{
+            mt: 1.5,
+            p: 1.25,
+            borderRadius: 1.5,
+            bgcolor: needsAttention ? "warning.50" : "grey.50",
+            border: 1,
+            borderColor: needsAttention ? "warning.200" : "divider",
+          }}
+        >
+          <Stack spacing={1}>
+            {isMobile && showOrderProgress && (
+              <Box>
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  sx={{ mb: 0.75 }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    Этап {currentStepNumber} из {progressSteps.length}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    fontWeight={600}
+                    color={needsAttention ? "warning.dark" : "text.primary"}
+                  >
+                    {progressSteps[Math.max(currentStepIndex, 0)]?.label}
+                  </Typography>
+                </Stack>
+                <LinearProgress
+                  variant="determinate"
+                  value={progressValue}
+                  color={needsAttention ? "warning" : "primary"}
+                  sx={{ height: 6, borderRadius: 999 }}
+                />
+              </Box>
+            )}
+
+            {actionHint && (
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Следующий шаг
+                </Typography>
+                <Typography
+                  variant="body2"
+                  fontWeight={needsAttention ? 600 : 500}
+                  color={needsAttention ? "warning.dark" : "text.primary"}
+                >
+                  {actionHint}
+                </Typography>
+              </Box>
+            )}
+
+            {!expanded && (
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={{ xs: 0.75, sm: 2 }}
+              >
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    {counterpartyLabel}
+                  </Typography>
+                  <Typography variant="body2" fontWeight={500} noWrap>
+                    {order.userInfo.login}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Доставка
+                  </Typography>
+                  <Typography variant="body2" noWrap>
+                    {deliverySummary}
+                  </Typography>
+                </Box>
+              </Stack>
+            )}
+          </Stack>
+        </Box>
 
         {/* Expandable секция */}
         <Box>
@@ -118,59 +226,78 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, userRole }) => {
               {order.totalPrice} {order.product.currency}
             </Typography>
 
-            <IconButton
+            <Button
               size="small"
               onClick={() => setExpanded(!expanded)}
+              endIcon={
+                <ExpandMore
+                  sx={{
+                    transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.3s",
+                  }}
+                />
+              }
               sx={{
-                transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-                transition: "transform 0.3s",
+                minWidth: "auto",
+                px: 1,
               }}
             >
-              <ExpandMore />
-            </IconButton>
+              {expanded ? "Скрыть" : "Детали"}
+            </Button>
           </Stack>
 
           <Collapse in={expanded} timeout="auto" mountOnEnter unmountOnExit>
             <Stack spacing={1.5}>
-              <Divider />
+              <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
+                <Paper variant="outlined" sx={{ ...detailsCardSx, flex: 1 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block", mb: 1 }}
+                  >
+                    {counterpartyLabel}
+                  </Typography>
+                  <UserInfo
+                    userInfo={order.userInfo}
+                    userRole={userRole === "seller" ? "customer" : "seller"}
+                  />
+                </Paper>
 
-              {/* Информация о пользователе */}
-              <UserInfo
-                userInfo={order.userInfo}
-                userRole={userRole === "seller" ? "customer" : "seller"}
-              />
-
-              <Divider />
-
-              {/* Информация о доставке + ссылка отслеживания */}
-              <DeliveryInfo
-                transfer={order.transfer}
-                deliveryUrl={trackingUrl}
-              />
+                <Paper variant="outlined" sx={{ ...detailsCardSx, flex: 1 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block", mb: 1 }}
+                  >
+                    Доставка
+                  </Typography>
+                  <DeliveryInfo
+                    transfer={order.transfer}
+                    deliveryUrl={trackingUrl}
+                  />
+                </Paper>
+              </Stack>
 
               {/* Скриншоты оплаты (только для продавца) */}
               {showPaymentProof && (
-                <>
-                  <Divider />
+                <Paper variant="outlined" sx={detailsCardSx}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block", mb: 1 }}
+                  >
+                    Подтверждение оплаты
+                  </Typography>
                   <PaymentProofImages imageIds={order.images} />
-                </>
+                </Paper>
               )}
 
-              <Divider />
-
               {/* История заказа */}
-              <OrderHistory histories={order.histories} />
-
-              <Divider />
-
-              {/* Дата создания */}
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ fontSize: { xs: "0.7rem", sm: "0.75rem" } }}
-              >
-                Создан: {new Date(order.createdAt).toLocaleString("ru-RU")}
-              </Typography>
+              {order.histories.length > 0 && (
+                <Paper variant="outlined" sx={detailsCardSx}>
+                  <OrderHistory histories={order.histories} />
+                </Paper>
+              )}
             </Stack>
           </Collapse>
         </Box>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Stack } from "@mui/material";
+import { Button, Stack, Box } from "@mui/material";
 import { CheckCircle, LocalShipping, Cancel } from "@mui/icons-material";
 import { ListOrdersModel, getSellerOrderActionFlags } from "@/entities/order";
 import {
@@ -25,26 +25,24 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
   const { canConfirmOrder, canConfirmPreOrder, canShipOrder, canCancel } =
     getSellerOrderActionFlags(order.actualStatus);
 
-  return (
-    <>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-        {canConfirmOrder && (
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<CheckCircle />}
-            onClick={confirmationAction.open}
-            disabled={confirmationAction.mutation.isPending}
-            size="small"
-            fullWidth={true}
-          >
-            {confirmationAction.mutation.isPending
-              ? "Подтверждение..."
-              : "Подтвердить заказ"}
-          </Button>
-        )}
-
-        {canConfirmPreOrder && (
+  const primaryAction = canConfirmOrder
+    ? (
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<CheckCircle />}
+          onClick={confirmationAction.open}
+          disabled={confirmationAction.mutation.isPending}
+          size="small"
+          fullWidth={true}
+        >
+          {confirmationAction.mutation.isPending
+            ? "Подтверждение..."
+            : "Подтвердить заказ"}
+        </Button>
+      )
+    : canConfirmPreOrder
+      ? (
           <Button
             variant="contained"
             color="primary"
@@ -58,32 +56,40 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
               ? "Подтверждение..."
               : "Подтвердить предзаказ"}
           </Button>
-        )}
+        )
+      : canShipOrder
+        ? (
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<LocalShipping />}
+              onClick={() => setShippingDialogOpen(true)}
+              size="small"
+              fullWidth={true}
+            >
+              Отправить товар
+            </Button>
+          )
+        : null;
 
-        {canShipOrder && (
-          <Button
-            variant="contained"
-            color="secondary"
-            startIcon={<LocalShipping />}
-            onClick={() => setShippingDialogOpen(true)}
-            size="small"
-            fullWidth={true}
-          >
-            Отправить товар
-          </Button>
-        )}
+  return (
+    <>
+      <Stack spacing={0.75}>
+        {primaryAction}
 
         {canCancel && (
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<Cancel />}
-            onClick={() => setCancelDialogOpen(true)}
-            size="small"
-            fullWidth={true}
-          >
-            Отменить
-          </Button>
+          <Box>
+            <Button
+              variant="text"
+              color="error"
+              startIcon={<Cancel />}
+              onClick={() => setCancelDialogOpen(true)}
+              size="small"
+              sx={{ px: 0.5 }}
+            >
+              Отменить
+            </Button>
+          </Box>
         )}
       </Stack>
 

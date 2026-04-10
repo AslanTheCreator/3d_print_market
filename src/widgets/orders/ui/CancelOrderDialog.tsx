@@ -15,7 +15,7 @@ import {
   Paper,
   Chip,
 } from "@mui/material";
-import { Close, Cancel, Warning, Info } from "@mui/icons-material";
+import { Close, Cancel, Warning } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order";
 import { useOrderCancelAction } from "@/features/order-cancel";
 type UserRole = "seller" | "customer";
@@ -76,11 +76,6 @@ export const CancelOrderDialog = ({
 
   const canCancel = reason.trim().length >= 3 && !cancelOrderAction.isPending;
 
-  const roleLabels = {
-    customer: "покупателя",
-    seller: "продавца",
-  };
-
   return (
     <Dialog
       open={open}
@@ -124,8 +119,7 @@ export const CancelOrderDialog = ({
         {/* Предупреждение */}
         <Alert severity="warning" icon={<Warning />} sx={{ mb: 3 }}>
           <Typography variant="body2">
-            Вы собираетесь отменить заказ. Это действие необратимо. Вторая
-            сторона будет уведомлена об отмене.
+            Отмена необратима. Вторая сторона увидит причину отмены.
           </Typography>
         </Alert>
 
@@ -171,22 +165,14 @@ export const CancelOrderDialog = ({
         <TextField
           fullWidth
           multiline
-          rows={3}
+          rows={2}
           label="Дополнительный комментарий (необязательно)"
           placeholder="Можете добавить пояснения..."
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          sx={{ mb: 2 }}
+          sx={{ mb: 1 }}
           disabled={cancelOrderAction.isPending}
         />
-
-        {/* Информационное сообщение */}
-        <Alert severity="info" icon={<Info />}>
-          <Typography variant="body2">
-            После отмены заказ перейдёт в статус «Отклонён». Информация об
-            отмене будет сохранена в истории заказа.
-          </Typography>
-        </Alert>
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>

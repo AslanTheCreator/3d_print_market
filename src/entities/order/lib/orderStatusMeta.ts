@@ -173,6 +173,48 @@ export const getOrderProgressSteps = (isPreorder: boolean) => {
   return isPreorder ? PREORDER_PROGRESS_STEPS : REGULAR_PROGRESS_STEPS;
 };
 
+export const getOrderStatusActionHint = (
+  status: OrderStatus,
+  userRole: OrderUserRole,
+) => {
+  switch (status) {
+    case "BOOKED":
+      return userRole === "seller"
+        ? "Подтвердите заказ, чтобы покупатель смог перейти к оплате"
+        : "Ожидайте подтверждения заказа продавцом";
+    case "AWAITING_PREPAYMENT":
+      return userRole === "customer"
+        ? "Подтвердите предоплату, чтобы продавец начал обработку"
+        : "Ожидайте предоплату от покупателя";
+    case "AWAITING_PREPAYMENT_APPROVAL":
+      return userRole === "seller"
+        ? "Проверьте предоплату и подтвердите предзаказ"
+        : "Ожидайте подтверждения предоплаты продавцом";
+    case "AWAITING_PAYMENT":
+      return userRole === "customer"
+        ? "Подтвердите оплату, чтобы продавец начал сборку"
+        : "Ожидайте оплату от покупателя";
+    case "ASSEMBLING":
+      return userRole === "seller"
+        ? "Отправьте товар после завершения сборки"
+        : "Продавец готовит заказ к отправке";
+    case "ON_THE_WAY":
+      return userRole === "customer"
+        ? "Подтвердите получение после доставки заказа"
+        : "Заказ в пути, ожидайте подтверждения получения";
+    case "COMPLETED":
+      return userRole === "customer"
+        ? "Заказ завершён, при необходимости можно оставить отзыв"
+        : "Заказ завершён";
+    case "FAILED":
+      return "Заказ отменён";
+    case "DISPUTED":
+      return "По заказу открыт спор";
+    default:
+      return undefined;
+  }
+};
+
 export const getCustomerOrderActionFlags = (status: OrderStatus) => {
   return {
     canPay: status === "AWAITING_PAYMENT",

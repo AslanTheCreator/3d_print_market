@@ -11,7 +11,7 @@ import {
   Paper,
   alpha,
 } from "@mui/material";
-import { Close, Receipt, ZoomIn } from "@mui/icons-material";
+import { Close, ZoomIn } from "@mui/icons-material";
 import { useImagesQuery } from "@/shared/api";
 import { ImageResponse } from "@/shared/types";
 
@@ -106,18 +106,6 @@ export const PaymentProofImages: React.FC<PaymentProofImagesProps> = ({
   return (
     <>
       <Box>
-        <Stack
-          direction="row"
-          alignItems="center"
-          spacing={0.75}
-          sx={{ mb: 1 }}
-        >
-          <Receipt sx={{ fontSize: 18, color: "text.secondary" }} />
-          <Typography variant="subtitle2" color="text.primary">
-            Подтверждение оплаты
-          </Typography>
-        </Stack>
-
         {isLoading ? (
           <Stack direction="row" spacing={1}>
             {imageIds.map((_, i) => (
