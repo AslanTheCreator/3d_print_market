@@ -96,6 +96,10 @@ export function RelatedProducts({
     [data, excludeProductId],
   );
 
+  if (!isLoading && filteredProducts.length === 0) {
+    return null;
+  }
+
   return (
     <Paper
       elevation={0}
@@ -120,24 +124,6 @@ export function RelatedProducts({
 
         {isLoading ? (
           <RelatedProductsGrid products={[]} isLoading />
-        ) : filteredProducts.length === 0 ? (
-          <Paper
-            elevation={0}
-            sx={{
-              p: { xs: 2.5, sm: 3 },
-              borderRadius: 2.5,
-              border: "1px solid",
-              borderColor: "divider",
-              bgcolor: "background.default",
-            }}
-          >
-            <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 0.75 }}>
-              Похожие товары пока не найдены
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Для этого товара ещё нет похожих предложений в выбранной категории.
-            </Typography>
-          </Paper>
         ) : (
           <InfiniteScroll
             onLoadMore={fetchNextPage}

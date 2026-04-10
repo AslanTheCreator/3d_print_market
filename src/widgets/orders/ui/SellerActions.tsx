@@ -3,13 +3,13 @@
 import React, { useState } from "react";
 import { Button, Stack } from "@mui/material";
 import { CheckCircle, LocalShipping, Cancel } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order";
+import { ListOrdersModel, getSellerOrderActionFlags } from "@/entities/order";
 import {
-  useConfirmOrderBySeller,
-  useConfirmPreOrderBySeller,
-} from "@/entities/order";
+  ConfirmationDialog,
+  useOrderConfirmationAction,
+  useOrderPreOrderConfirmationAction,
+} from "@/features/order-confirmation";
 import { CancelOrderDialog } from "./CancelOrderDialog";
-import { ConfirmationDialog } from "./ConfirmationDialog";
 import ShippingDialog from "./ShippingDialog";
 
 interface SellerActionsProps {
@@ -17,22 +17,13 @@ interface SellerActionsProps {
 }
 
 export const SellerActions = ({ order }: SellerActionsProps) => {
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [preOrderConfirmDialogOpen, setPreOrderConfirmDialogOpen] =
-    useState(false);
   const [shippingDialogOpen, setShippingDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
-  const confirmOrderMutation = useConfirmOrderBySeller();
-  const confirmPreOrderMutation = useConfirmPreOrderBySeller();
-
-  const canConfirmOrder = order.actualStatus === "BOOKED";
-  const canConfirmPreOrder =
-    order.actualStatus === "AWAITING_PREPAYMENT_APPROVAL";
-  const canShipOrder = order.actualStatus === "ASSEMBLING";
-  const canCancel = !["COMPLETED", "FAILED", "DISPUTED"].includes(
-    order.actualStatus,
-  );
+  const confirmationAction = useOrderConfirmationAction();
+  const preOrderConfirmationAction = useOrderPreOrderConfirmationAction();
+  const { canConfirmOrder, canConfirmPreOrder, canShipOrder, canCancel } =
+    getSellerOrderActionFlags(order.actualStatus);
 
   return (
     <>
@@ -42,12 +33,12 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
             variant="contained"
             color="primary"
             startIcon={<CheckCircle />}
-            onClick={() => setConfirmDialogOpen(true)}
-            disabled={confirmOrderMutation.isPending}
+            onClick={confirmationAction.open}
+            disabled={confirmationAction.mutation.isPending}
             size="small"
             fullWidth={true}
           >
-            {confirmOrderMutation.isPending
+            {confirmationAction.mutation.isPending
               ? "Подтверждение..."
               : "Подтвердить заказ"}
           </Button>
@@ -58,12 +49,12 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
             variant="contained"
             color="primary"
             startIcon={<CheckCircle />}
-            onClick={() => setPreOrderConfirmDialogOpen(true)}
-            disabled={confirmPreOrderMutation.isPending}
+            onClick={preOrderConfirmationAction.open}
+            disabled={preOrderConfirmationAction.mutation.isPending}
             size="small"
             fullWidth={true}
           >
-            {confirmPreOrderMutation.isPending
+            {preOrderConfirmationAction.mutation.isPending
               ? "Подтверждение..."
               : "Подтвердить предзаказ"}
           </Button>
@@ -97,19 +88,19 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
       </Stack>
 
       <ConfirmationDialog
-        open={confirmDialogOpen}
-        onClose={() => setConfirmDialogOpen(false)}
+        open={confirmationAction.isOpen}
+        onClose={confirmationAction.close}
         order={order}
         confirmationType="order"
-        confirmationMutation={confirmOrderMutation as any}
+        confirmationMutation={confirmationAction.mutation}
       />
 
       <ConfirmationDialog
-        open={preOrderConfirmDialogOpen}
-        onClose={() => setPreOrderConfirmDialogOpen(false)}
+        open={preOrderConfirmationAction.isOpen}
+        onClose={preOrderConfirmationAction.close}
         order={order}
         confirmationType="preorder"
-        confirmationMutation={confirmPreOrderMutation}
+        confirmationMutation={preOrderConfirmationAction.mutation}
       />
 
       <ShippingDialog

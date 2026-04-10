@@ -28,8 +28,20 @@ export { ProductInfo } from "./ui/ProductInfo";
 export { DeliveryInfo } from "./ui/DeliveryInfo";
 export { OrdersEmptyState } from "./ui/OrdersEmptyState";
 export { PaymentProofImages } from "./ui/PaymentProofImages";
+export {
+  getOrderStatusMeta,
+  orderNeedsAttention,
+  isActiveOrderStatus,
+  shouldShowPaymentProofForRole,
+  shouldShowTrackingForRole,
+  shouldShowOrderProgress,
+  getOrderProgressSteps,
+  getCustomerOrderActionFlags,
+  getSellerOrderActionFlags,
+} from "./lib/orderStatusMeta";
 
 // Types
-export type { ListOrdersModel, OrderCancel } from "./model/types";
+export type { ListOrdersModel, OrderCancel, OrderStatus } from "./model/types";
+export type { OrderProgressStep, OrderUserRole } from "./lib/orderStatusMeta";
 
 export { orderApi } from "./api/orderApi";

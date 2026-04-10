@@ -1,6 +1,6 @@
 import { Currency, Address, Product, Transfer } from "@/shared/types";
 
-type OrderStatus =
+export type OrderStatus =
   | "BOOKED"
   | "AWAITING_PREPAYMENT"
   | "AWAITING_PREPAYMENT_APPROVAL"

@@ -44,13 +44,15 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
   // Вычисляем итоги
   const { itemsCount, subtotal } = React.useMemo(() => {
     let total = 0;
+    let totalItemsCount = 0;
 
     for (const item of cartItems) {
       const quantity = getQuantity(item.product.id);
       total += item.product.price * quantity;
+      totalItemsCount += quantity;
     }
 
-    return { itemsCount: cartItems.length, subtotal: total };
+    return { itemsCount: totalItemsCount, subtotal: total };
   }, [cartItems, getQuantity, items]); // items в зависимостях для реактивности
 
   // Плюрализация

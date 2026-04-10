@@ -1,270 +1,213 @@
 import React from "react";
+import Link from "next/link";
 import {
   Box,
-  Typography,
   Card,
   CardContent,
   Grid,
-  Avatar,
-  Divider,
+  Typography,
+  alpha,
+  useTheme,
 } from "@mui/material";
 import {
-  ShoppingBag,
-  TrendingUp,
-  ArrowForward,
-  Timeline,
-  Receipt,
-  Inventory,
+  FavoriteRounded,
+  ShoppingBagRounded,
+  TrendingUpRounded,
 } from "@mui/icons-material";
+import { useFavoritesProducts } from "@/entities/favorite";
 import { UserBaseModel } from "@/entities/user";
-import Link from "next/link";
 
 interface DashboardContentProps {
   user: UserBaseModel;
 }
 
-// Статистические карточки
-const StatCard = ({
-  title,
-  value,
-  icon,
-  color,
-  link,
-}: {
+interface DashboardShortcutCardProps {
   title: string;
-  value: string | number;
+  subtitle: string;
+  href: string;
   icon: React.ReactNode;
-  color: string;
-  link?: string;
-}) => (
-  <Card
-    sx={{
-      height: "100%",
-      position: "relative",
-      overflow: "visible",
-      "&:hover": {
-        transform: "translateY(-4px)",
-        boxShadow: 3,
-      },
-      transition: "all 0.3s ease-in-out",
-      cursor: link ? "pointer" : "default",
-    }}
-    component={link ? Link : "div"}
-    href={link || ""}
-  >
-    <CardContent sx={{ p: 3 }}>
-      <Box
+}
+
+const getProductWord = (count: number) => {
+  const lastTwoDigits = count % 100;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+    return "товаров";
+  }
+
+  const lastDigit = count % 10;
+
+  if (lastDigit === 1) {
+    return "товар";
+  }
+
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return "товара";
+  }
+
+  return "товаров";
+};
+
+const DashboardShortcutCard = ({
+  title,
+  subtitle,
+  href,
+  icon,
+}: DashboardShortcutCardProps) => {
+  const theme = useTheme();
+
+  return (
+    <Card
+      component={Link}
+      href={href}
+      sx={{
+        display: "block",
+        width: "100%",
+        height: "100%",
+        borderRadius: 3,
+        backgroundColor: theme.palette.common.white,
+        border: `1px solid ${alpha(theme.palette.common.black, 0.08)}`,
+        boxShadow: "0 6px 18px rgba(15, 23, 42, 0.04)",
+        textDecoration: "none",
+        transition:
+          "transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          borderColor: alpha(theme.palette.primary.main, 0.18),
+          boxShadow: "0 10px 22px rgba(15, 23, 42, 0.08)",
+        },
+      }}
+    >
+      <CardContent
         sx={{
+          p: { xs: 2.5, sm: 3 },
+          minHeight: 112,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          gap: 2,
         }}
       >
         <Box>
-          <Typography color="text.secondary" gutterBottom variant="h6">
+          <Typography
+            variant="h5"
+            component="h2"
+            sx={{
+              mb: 0.5,
+              fontWeight: 700,
+              color: "text.primary",
+              fontSize: { xs: "1rem", sm: "1.125rem" },
+              lineHeight: 1.2,
+            }}
+          >
             {title}
           </Typography>
-          <Typography variant="h4" component="div" sx={{ fontWeight: 700 }}>
-            {value}
+          <Typography
+            variant="body1"
+            sx={{
+              color: "text.secondary",
+              fontSize: { xs: "0.95rem", sm: "1rem" },
+              lineHeight: 1.2,
+            }}
+          >
+            {subtitle}
           </Typography>
         </Box>
+
         <Box
           sx={{
-            width: 60,
-            height: 60,
-            borderRadius: "50%",
-            backgroundColor: `${color}15`,
+            color: "primary.main",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: color,
+            flexShrink: 0,
+            "& .MuiSvgIcon-root": {
+              fontSize: 34,
+            },
           }}
         >
           {icon}
         </Box>
-      </Box>
-      {link && (
-        <Box sx={{ mt: 2, display: "flex", alignItems: "center" }}>
-          <Typography variant="body2" color="primary">
-            Подробнее
-          </Typography>
-          <ArrowForward sx={{ ml: 1, fontSize: 16 }} />
-        </Box>
-      )}
-    </CardContent>
-  </Card>
-);
-
-// Быстрые действия
-const QuickAction = ({
-  title,
-  description,
-  icon,
-  link,
-  color = "primary",
-}: {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  link: string;
-  color?: "primary" | "secondary" | "success" | "warning";
-}) => (
-  <Card
-    sx={{
-      height: "100%",
-      cursor: "pointer",
-      "&:hover": {
-        transform: "translateY(-2px)",
-        boxShadow: 2,
-      },
-      transition: "all 0.2s ease-in-out",
-    }}
-    component={Link}
-    href={link}
-  >
-    <CardContent sx={{ p: 3, textAlign: "center" }}>
-      <Avatar
-        sx={{
-          width: 56,
-          height: 56,
-          mx: "auto",
-          mb: 2,
-          bgcolor: `${color}.main`,
-        }}
-      >
-        {icon}
-      </Avatar>
-      <Typography variant="h6" gutterBottom>
-        {title}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        {description}
-      </Typography>
-    </CardContent>
-  </Card>
-);
-
-export const DashboardContent: React.FC<DashboardContentProps> = ({ user }) => {
-  const displayName = user.fullName?.trim() ? user.fullName : user.login;
-
-  return (
-    <Card sx={{ minHeight: 600 }}>
-      {" "}
-      <CardContent sx={{ p: 4 }}>
-        <Box>
-          {/* Заголовок */}
-          <Box sx={{ mb: 4 }}>
-            <Typography
-              variant="h4"
-              component="h1"
-              gutterBottom
-              sx={{ fontWeight: 700 }}
-            >
-              Добро пожаловать, {displayName}!
-            </Typography>
-            <Typography variant="h6" color="text.secondary">
-              Управляйте вашими заказами и настройками через личный кабинет
-            </Typography>
-          </Box>
-
-          {/* Статистика */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Покупки"
-                value="0"
-                icon={<ShoppingBag />}
-                color="#2196f3"
-                link="/dashboard/purchase"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Продажи"
-                value="0"
-                icon={<TrendingUp />}
-                color="#4caf50"
-                link="/dashboard/sales"
-              />
-            </Grid>
-            {/* <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Предзаказы"
-                value="0"
-                icon={<Timeline />}
-                color="#ff9800"
-                link="/dashboard/pre-orders"
-              />
-            </Grid> */}
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Товары"
-                value="0"
-                icon={<Inventory />}
-                color="#9c27b0"
-                link="/dashboard/products"
-              />
-            </Grid>
-          </Grid>
-
-          {/* Быстрые действия */}
-          <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
-            Быстрые действия
-          </Typography>
-
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} sm={6} md={4}>
-              <QuickAction
-                title="Мои покупки"
-                description="Просмотр истории заказов и их статусов"
-                icon={<Receipt />}
-                link="/dashboard/purchase"
-                color="primary"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <QuickAction
-                title="Мои продажи"
-                description="Управление продажами и заказами"
-                icon={<TrendingUp />}
-                link="/dashboard/sales"
-                color="success"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <QuickAction
-                title="Мои товары"
-                description="Добавление и редактирование товаров"
-                icon={<Inventory />}
-                link="/dashboard/products"
-                color="secondary"
-              />
-            </Grid>
-          </Grid>
-
-          {/* Последние активности */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                Последние активности
-              </Typography>
-              <Divider sx={{ mb: 3 }} />
-
-              <Box sx={{ textAlign: "center", py: 6 }}>
-                <Timeline
-                  sx={{ fontSize: 64, color: "text.disabled", mb: 2 }}
-                />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  Нет активности
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  Ваши последние действия будут отображаться здесь
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Box>
       </CardContent>
     </Card>
+  );
+};
+
+export const DashboardContent: React.FC<DashboardContentProps> = ({ user }) => {
+  const theme = useTheme();
+  const displayName = user.fullName?.trim() ? user.fullName : user.login;
+  const { data: favorites = [], isLoading: isFavoritesLoading } =
+    useFavoritesProducts();
+
+  const favoriteSubtitle = isFavoritesLoading
+    ? "Загрузка..."
+    : `${favorites.length} ${getProductWord(favorites.length)}`;
+
+  const cards = [
+    {
+      title: "Избранное",
+      subtitle: favoriteSubtitle,
+      href: "/favorites",
+      icon: <FavoriteRounded />,
+    },
+    {
+      title: "Покупки",
+      subtitle: "Смотреть",
+      href: "/dashboard/purchase",
+      icon: <ShoppingBagRounded />,
+    },
+    {
+      title: "Продажи",
+      subtitle: "Смотреть",
+      href: "/dashboard/sales",
+      icon: <TrendingUpRounded />,
+    },
+  ];
+
+  return (
+    <Box>
+      <Card
+        sx={{
+          mb: 2,
+          borderRadius: 3,
+          backgroundColor: theme.palette.common.white,
+          border: `1px solid ${alpha(theme.palette.common.black, 0.08)}`,
+          boxShadow: "0 6px 18px rgba(15, 23, 42, 0.04)",
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              fontWeight: 700,
+              lineHeight: 1.2,
+              fontSize: { xs: "1.25rem", sm: "1.5rem" },
+            }}
+          >
+            Добро пожаловать, {displayName}!
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              mt: 0.75,
+              color: "text.secondary",
+              fontSize: { xs: "0.95rem", sm: "1rem" },
+              lineHeight: 1.4,
+            }}
+          >
+            Управляйте избранным, покупками и продажами в одном месте.
+          </Typography>
+        </CardContent>
+      </Card>
+
+      <Grid container spacing={2}>
+        {cards.map((card) => (
+          <Grid item key={card.title} xs={12} md={4}>
+            <DashboardShortcutCard {...card} />
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
   );
 };

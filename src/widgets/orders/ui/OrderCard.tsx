@@ -22,6 +22,10 @@ import {
   ProductInfo,
   DeliveryInfo,
   PaymentProofImages,
+  orderNeedsAttention,
+  shouldShowOrderProgress,
+  shouldShowPaymentProofForRole,
+  shouldShowTrackingForRole,
 } from "@/entities/order";
 import { CustomerActions } from "./CustomerActions";
 import { SellerActions } from "./SellerActions";
@@ -33,65 +37,19 @@ interface OrderCardProps {
   userRole: UserRole;
 }
 
-/**
- * Статусы, при которых покупатель уже загрузил скриншот оплаты
- * и продавцу есть что смотреть.
- */
-const STATUSES_WITH_PAYMENT_PROOF = [
-  "AWAITING_PREPAYMENT_APPROVAL",
-  "AWAITING_PAYMENT",
-  "ASSEMBLING",
-  "ON_THE_WAY",
-  "COMPLETED",
-  "DISPUTED",
-];
-
-/**
- * Статусы, при которых посылка уже отправлена
- * и покупателю доступна ссылка отслеживания.
- */
-const STATUSES_WITH_TRACKING = ["ON_THE_WAY", "COMPLETED"];
-
 export const OrderCard: React.FC<OrderCardProps> = ({ order, userRole }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [expanded, setExpanded] = React.useState(false);
 
   const isPreorder = order.product.availability === "PREORDER";
-
-  // Проверка на необходимость действия
-  const needsAttention =
-    (userRole === "seller" &&
-      ["BOOKED", "AWAITING_PREPAYMENT_APPROVAL", "ASSEMBLING"].includes(
-        order.actualStatus,
-      )) ||
-    (userRole === "customer" &&
-      ["AWAITING_PREPAYMENT", "AWAITING_PAYMENT", "ON_THE_WAY"].includes(
-        order.actualStatus,
-      ));
-
-  // Фильтрация статусов для не-предзаказов
-  const shouldShowProgress = () => {
-    if (isPreorder) return true;
-
-    return !["AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL"].includes(
-      order.actualStatus,
-    );
-  };
-
-  // Скриншоты оплаты — только для продавца
+  const needsAttention = orderNeedsAttention(order.actualStatus, userRole);
   const showPaymentProof =
-    userRole === "seller" &&
-    order.images.length > 0 &&
-    STATUSES_WITH_PAYMENT_PROOF.includes(order.actualStatus);
-
-  // Ссылка отслеживания — только для покупателя, когда посылка отправлена
-  const trackingUrl =
-    userRole === "customer" &&
-    order.deliveryUrl &&
-    STATUSES_WITH_TRACKING.includes(order.actualStatus)
-      ? order.deliveryUrl
-      : undefined;
+    shouldShowPaymentProofForRole(order.actualStatus, userRole) &&
+    order.images.length > 0;
+  const trackingUrl = shouldShowTrackingForRole(order.actualStatus, userRole)
+    ? order.deliveryUrl
+    : undefined;
 
   return (
     <Card
@@ -130,9 +88,13 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, userRole }) => {
         </Stack>
 
         {/* Прогресс заказа - скрыт на мобильных */}
-        {!isMobile && shouldShowProgress() && (
+        {!isMobile && shouldShowOrderProgress(order.actualStatus, isPreorder) && (
           <Box sx={{ mb: 2 }}>
-            <OrderProgress status={order.actualStatus} userRole={userRole} />
+            <OrderProgress
+              status={order.actualStatus}
+              userRole={userRole}
+              isPreorder={isPreorder}
+            />
           </Box>
         )}
 
@@ -168,7 +130,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, userRole }) => {
             </IconButton>
           </Stack>
 
-          <Collapse in={expanded} timeout="auto">
+          <Collapse in={expanded} timeout="auto" mountOnEnter unmountOnExit>
             <Stack spacing={1.5}>
               <Divider />
 

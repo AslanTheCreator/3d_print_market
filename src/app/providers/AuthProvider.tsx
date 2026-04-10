@@ -9,15 +9,15 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const checkAuth = useAuthStore((state) => state.checkAuthStatus);
+  const initializeAuth = useAuthStore((state) => state.initializeAuth);
 
   // Инициализируем автоматическое обновление токенов
   useTokenRefresh();
 
   // Проверяем авторизацию при монтировании
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    void initializeAuth();
+  }, [initializeAuth]);
 
   return <>{children}</>;
 }

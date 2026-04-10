@@ -1,39 +1,16 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Stack, Box, Typography, Skeleton, Chip } from "@mui/material";
 import type { ListOrdersModel } from "../model/types";
-import { ImageResponse } from "@/shared/types";
-import { imageApi } from "@/shared/api";
+import { useImagesQuery } from "@/shared/api";
 
 interface ProductInfoProps {
   product: ListOrdersModel["product"];
 }
 
 export const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
-  const [image, setImage] = useState<ImageResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const loadImage = async () => {
-      if (!product.imageId || product.imageId === 0) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const images = await imageApi.getImages(product.imageId);
-        if (images && images.length > 0) {
-          setImage(images[0]);
-        }
-      } catch (error) {
-        console.error("Ошибка загрузки изображения:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadImage();
-  }, [product.imageId]);
+  const { data: images, isLoading } = useImagesQuery(product.imageId);
+  const image = images?.[0] ?? null;
 
   const imageSrc = image
     ? `data:${image.contentType};base64,${image.imageData}`

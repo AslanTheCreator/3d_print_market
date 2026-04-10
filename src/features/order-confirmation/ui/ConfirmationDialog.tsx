@@ -32,26 +32,50 @@ interface PreOrderConfirmationParams {
 }
 
 // Юнион тип для всех возможных параметров
-type ConfirmationMutationParams =
-  | OrderConfirmationParams
-  | PreOrderConfirmationParams;
-
-// Интерфейс для пропсов компонента
-interface ConfirmationDialogProps {
+interface BaseConfirmationDialogProps {
   open: boolean;
   onClose: () => void;
   order: ListOrdersModel;
-  confirmationType: ConfirmationType;
+}
+
+interface OrderConfirmationDialogProps extends BaseConfirmationDialogProps {
+  confirmationType: "order";
   confirmationMutation: UseMutationResult<
-    any,
-    Error,
-    ConfirmationMutationParams,
+    number,
+    unknown,
+    OrderConfirmationParams,
     unknown
   >;
 }
 
-// Конфигурация для разных типов подтверждения
-const confirmationConfig = {
+interface PreOrderConfirmationDialogProps extends BaseConfirmationDialogProps {
+  confirmationType: "preorder";
+  confirmationMutation: UseMutationResult<
+    number,
+    unknown,
+    PreOrderConfirmationParams,
+    unknown
+  >;
+}
+
+type ConfirmationDialogProps =
+  | OrderConfirmationDialogProps
+  | PreOrderConfirmationDialogProps;
+
+// Интерфейс для пропсов компонента
+interface ConfirmationConfig {
+  title: string;
+  description: string;
+  buttonText: string;
+  buttonLoadingText: string;
+}
+
+interface ConfirmationConfigMap {
+  order: ConfirmationConfig;
+  preorder: ConfirmationConfig;
+}
+
+const confirmationConfig: ConfirmationConfigMap = {
   order: {
     title: "Подтвердить заказ",
     description:
@@ -85,24 +109,24 @@ export const ConfirmationDialog = ({
         {
           orderId: order.orderId,
           accountId: order.userInfo.id,
-        } as OrderConfirmationParams,
+        },
         {
           onSuccess: () => {
             onClose();
           },
-        }
+        },
       );
     } else {
       // Для предзаказа accountId не нужен
       confirmationMutation.mutate(
         {
           orderId: order.orderId,
-        } as PreOrderConfirmationParams,
+        },
         {
           onSuccess: () => {
             onClose();
           },
-        }
+        },
       );
     }
   };

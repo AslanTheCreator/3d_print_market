@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -12,7 +12,7 @@ import {
   alpha,
 } from "@mui/material";
 import { Close, Receipt, ZoomIn } from "@mui/icons-material";
-import { imageApi } from "@/shared/api";
+import { useImagesQuery } from "@/shared/api";
 import { ImageResponse } from "@/shared/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -97,29 +97,8 @@ const Thumbnail: React.FC<ThumbnailProps> = ({ image, index, onZoom }) => {
 export const PaymentProofImages: React.FC<PaymentProofImagesProps> = ({
   imageIds,
 }) => {
-  const [images, setImages] = useState<ImageResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [zoomedSrc, setZoomedSrc] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadImages = async () => {
-      if (!imageIds.length) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await imageApi.getImages(imageIds);
-        setImages(data);
-      } catch (error) {
-        console.error("Ошибка загрузки изображений оплаты:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadImages();
-  }, [imageIds]);
+  const { data: images = [], isLoading } = useImagesQuery(imageIds);
 
   // Не рендерим ничего, если нет изображений
   if (!imageIds.length) return null;

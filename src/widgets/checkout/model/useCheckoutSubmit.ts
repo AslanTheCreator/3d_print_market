@@ -2,11 +2,22 @@
 
 import { useState, useCallback } from "react";
 import { ProductBasket, useCartQuantityStore } from "@/entities/cart";
-import { orderApi, orderQueryKeys } from "@/entities/order";
-import { useQueryClient } from "@tanstack/react-query";
-import { cartKeys } from "@/entities/cart";
+import { orderApi } from "@/entities/order";
 import { CheckoutState } from "./useCheckoutState";
 import { OrderResult, CheckoutResult, OrderToCreate } from "../model/types";
+import { useCheckoutSubmitSideEffects } from "./useCheckoutSubmitSideEffects";
+import {
+  buildOrderToCreate,
+  getFailedCartItems,
+} from "./checkoutSubmitOrders";
+import {
+  buildCheckoutResult,
+  mergeCheckoutResults,
+} from "./checkoutSubmitResult";
+
+const UNKNOWN_ERROR_MESSAGE = "Неизвестная ошибка";
+const UNKNOWN_PRODUCT_NAME = "Неизвестный товар";
+const NETWORK_ERROR_MESSAGE = "Ошибка сети";
 
 interface UseCheckoutSubmitProps {
   cartItems: ProductBasket[] | undefined;
@@ -25,10 +36,72 @@ export const useCheckoutSubmit = ({
 }: UseCheckoutSubmitProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<CheckoutResult | null>(null);
+  const { getQuantity } = useCartQuantityStore();
+  const { syncAfterSubmit, notifySubmitResult } =
+    useCheckoutSubmitSideEffects({
+      onSuccess,
+      onPartialSuccess,
+      onError,
+    });
 
-  const queryClient = useQueryClient();
-  const { getQuantity, removeItem: removeQuantityItem } =
-    useCartQuantityStore();
+  const createOrderPayload = useCallback(
+    (item: ProductBasket): OrderToCreate => {
+      return buildOrderToCreate({
+        item,
+        quantity: getQuantity(item.product.id),
+        addressId: checkoutState.selectedAddress?.id || 0,
+        transferId: checkoutState.getTransferIdForSeller(item.product.sellerId),
+        comment: checkoutState.comment,
+      });
+    },
+    [checkoutState, getQuantity],
+  );
+
+  const submitSingleOrder = useCallback(
+    async (order: OrderToCreate): Promise<OrderResult> => {
+      try {
+        await orderApi.createOrder([
+          {
+            productId: order.productId,
+            count: order.count,
+            addressId: order.addressId,
+            transferId: order.transferId,
+            comment: order.comment,
+          },
+        ]);
+
+        return {
+          productId: order.productId,
+          productName: order.productName,
+          status: "success",
+        };
+      } catch (error) {
+        return {
+          productId: order.productId,
+          productName: order.productName,
+          status: "error",
+          errorMessage:
+            error instanceof Error ? error.message : UNKNOWN_ERROR_MESSAGE,
+        };
+      }
+    },
+    [],
+  );
+
+  const executeOrders = useCallback(
+    async (ordersToCreate: OrderToCreate[]): Promise<CheckoutResult> => {
+      const results = await Promise.allSettled(
+        ordersToCreate.map((order) => submitSingleOrder(order)),
+      );
+
+      return buildCheckoutResult(results, {
+        totalCount: ordersToCreate.length,
+        unknownProductName: UNKNOWN_PRODUCT_NAME,
+        networkErrorMessage: NETWORK_ERROR_MESSAGE,
+      });
+    },
+    [submitSingleOrder],
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!cartItems?.length || !checkoutState.isReadyToSubmit) {
@@ -38,224 +111,60 @@ export const useCheckoutSubmit = ({
     setIsSubmitting(true);
     setSubmitResult(null);
 
-    // Формируем список заказов для создания
-    // ProductBasket имеет структуру { product: Product, count: number }
-    // Используем getQuantity для актуального количества из UI
-    const ordersToCreate: OrderToCreate[] = cartItems.map((item) => {
-      const transferId = checkoutState.getTransferIdForSeller(
-        item.product.sellerId,
-      );
-      const quantity = getQuantity(item.product.id);
+    try {
+      const ordersToCreate = cartItems.map(createOrderPayload);
+      const checkoutResult = await executeOrders(ordersToCreate);
 
-      return {
-        productId: item.product.id,
-        productName: item.product.name,
-        count: quantity,
-        addressId: checkoutState.selectedAddress?.id || 0,
-        transferId: transferId || 0,
-        sellerId: item.product.sellerId,
-        comment: checkoutState.comment,
-      };
-    });
+      setSubmitResult(checkoutResult);
+      await syncAfterSubmit(checkoutResult.success);
+      notifySubmitResult(checkoutResult);
 
-    // Создаём промисы для всех заказов
-    const orderPromises = ordersToCreate.map(
-      async (order): Promise<OrderResult> => {
-        try {
-          // API ожидает массив, оборачиваем объект в массив
-          await orderApi.createOrder([
-            {
-              productId: order.productId,
-              count: order.count,
-              addressId: order.addressId,
-              transferId: order.transferId,
-              comment: order.comment,
-            },
-          ]);
-
-          return {
-            productId: order.productId,
-            productName: order.productName,
-            status: "success",
-          };
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "Неизвестная ошибка";
-          return {
-            productId: order.productId,
-            productName: order.productName,
-            status: "error",
-            errorMessage,
-          };
-        }
-      },
-    );
-
-    const results = await Promise.allSettled(orderPromises);
-
-    const successResults: OrderResult[] = [];
-    const failedResults: OrderResult[] = [];
-
-    results.forEach((result) => {
-      if (result.status === "fulfilled") {
-        const orderResult = result.value;
-        if (orderResult.status === "success") {
-          successResults.push(orderResult);
-        } else {
-          failedResults.push(orderResult);
-        }
-      } else {
-        // rejected (хотя мы ловим ошибки внутри)
-        failedResults.push({
-          productId: 0,
-          productName: "Неизвестный товар",
-          status: "error",
-          errorMessage: result.reason?.message || "Ошибка сети",
-        });
-      }
-    });
-
-    const checkoutResult: CheckoutResult = {
-      success: successResults,
-      failed: failedResults,
-      totalCount: ordersToCreate.length,
-      successCount: successResults.length,
-    };
-
-    setSubmitResult(checkoutResult);
-
-    // Очищаем успешные товары из корзины и quantity store
-    for (const successOrder of successResults) {
-      removeQuantityItem(successOrder.productId);
+      return checkoutResult;
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Инвалидируем кэши
-    await queryClient.invalidateQueries({ queryKey: cartKeys.all });
-    await queryClient.invalidateQueries({
-      queryKey: orderQueryKeys.customerOrders(),
-    });
-
-    setIsSubmitting(false);
-
-    // Вызываем соответствующий колбэк
-    if (successResults.length === ordersToCreate.length) {
-      onSuccess(checkoutResult);
-    } else if (successResults.length > 0) {
-      onPartialSuccess(checkoutResult);
-    } else {
-      onError(checkoutResult);
-    }
-
-    return checkoutResult;
   }, [
     cartItems,
-    checkoutState,
-    getQuantity,
-    removeQuantityItem,
-    queryClient,
-    onSuccess,
-    onPartialSuccess,
-    onError,
+    checkoutState.isReadyToSubmit,
+    createOrderPayload,
+    executeOrders,
+    syncAfterSubmit,
+    notifySubmitResult,
   ]);
 
-  // Функция для повторной отправки неудачных заказов
   const retryFailed = useCallback(async () => {
-    if (!submitResult || submitResult.failed.length === 0) return;
+    if (!submitResult || submitResult.failed.length === 0) {
+      return;
+    }
 
-    const failedProductIds = submitResult.failed.map((f) => f.productId);
-    const failedItems = cartItems?.filter((item) =>
-      failedProductIds.includes(item.product.id),
-    );
+    const failedItems = getFailedCartItems(cartItems, submitResult.failed);
 
-    if (!failedItems?.length) return;
+    if (failedItems.length === 0) {
+      return;
+    }
 
     setIsSubmitting(true);
 
-    const retryPromises = failedItems.map(
-      async (item): Promise<OrderResult> => {
-        try {
-          const transferId = checkoutState.getTransferIdForSeller(
-            item.product.sellerId,
-          );
-          const quantity = getQuantity(item.product.id);
+    try {
+      const retryOrders = failedItems.map(createOrderPayload);
+      const retryResult = await executeOrders(retryOrders);
+      const updatedResult = mergeCheckoutResults(submitResult, retryResult);
 
-          // API ожидает массив, оборачиваем объект в массив
-          await orderApi.createOrder([
-            {
-              productId: item.product.id,
-              count: quantity,
-              addressId: checkoutState.selectedAddress?.id || 0,
-              transferId: transferId || 0,
-              comment: checkoutState.comment,
-            },
-          ]);
+      setSubmitResult(updatedResult);
+      await syncAfterSubmit(retryResult.success);
+      notifySubmitResult(updatedResult);
 
-          return {
-            productId: item.product.id,
-            productName: item.product.name,
-            status: "success",
-          };
-        } catch (error) {
-          return {
-            productId: item.product.id,
-            productName: item.product.name,
-            status: "error",
-            errorMessage:
-              error instanceof Error ? error.message : "Неизвестная ошибка",
-          };
-        }
-      },
-    );
-
-    const results = await Promise.allSettled(retryPromises);
-
-    const newSuccessResults: OrderResult[] = [];
-    const stillFailedResults: OrderResult[] = [];
-
-    results.forEach((result) => {
-      if (result.status === "fulfilled") {
-        const orderResult = result.value;
-        if (orderResult.status === "success") {
-          newSuccessResults.push(orderResult);
-          removeQuantityItem(orderResult.productId);
-        } else {
-          stillFailedResults.push(orderResult);
-        }
-      }
-    });
-
-    // Обновляем результат
-    const updatedResult: CheckoutResult = {
-      success: [...submitResult.success, ...newSuccessResults],
-      failed: stillFailedResults,
-      totalCount: submitResult.totalCount,
-      successCount: submitResult.successCount + newSuccessResults.length,
-    };
-
-    setSubmitResult(updatedResult);
-
-    // Инвалидируем кэши
-    await queryClient.invalidateQueries({ queryKey: cartKeys.all });
-    await queryClient.invalidateQueries({
-      queryKey: orderQueryKeys.customerOrders(),
-    });
-
-    setIsSubmitting(false);
-
-    if (stillFailedResults.length === 0) {
-      onSuccess(updatedResult);
-    } else {
-      onPartialSuccess(updatedResult);
+      return updatedResult;
+    } finally {
+      setIsSubmitting(false);
     }
   }, [
     submitResult,
     cartItems,
-    checkoutState,
-    getQuantity,
-    removeQuantityItem,
-    queryClient,
-    onSuccess,
-    onPartialSuccess,
+    createOrderPayload,
+    executeOrders,
+    syncAfterSubmit,
+    notifySubmitResult,
   ]);
 
   return {

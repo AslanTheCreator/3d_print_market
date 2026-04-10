@@ -41,8 +41,8 @@ interface PaymentDialogProps {
   order: ListOrdersModel;
   paymentType: PaymentType;
   paymentMutation: UseMutationResult<
-    any,
-    Error,
+    number,
+    unknown,
     PaymentMutationParams,
     unknown
   >;
@@ -79,7 +79,7 @@ const paymentConfig = {
 // Компонент
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PaymentDialog = ({
+export const PaymentDialog = ({
   open,
   onClose,
   order,
@@ -97,6 +97,7 @@ const PaymentDialog = ({
   );
 
   const config = paymentConfig[paymentType];
+  const fileInputId = `payment-proof-upload-${paymentType}-${order.orderId}`;
 
   // ──────────────────────────────────────────────────────────────────────────
   // Загрузка всех счетов продавца
@@ -163,8 +164,6 @@ const PaymentDialog = ({
   // ──────────────────────────────────────────────────────────────────────────
 
   const handleConfirmPayment = () => {
-    if (!selectedAccountId) return;
-
     if (!imageId) {
       setImageError(
         `Пожалуйста, загрузите подтверждение ${
@@ -200,8 +199,7 @@ const PaymentDialog = ({
   };
 
   const canConfirmPayment =
-    selectedAccountId &&
-    imageId &&
+    !!imageId &&
     !paymentMutation.isPending &&
     !isUploadingImage;
 
@@ -269,13 +267,13 @@ const PaymentDialog = ({
           <input
             accept="image/*"
             style={{ display: "none" }}
-            id="payment-proof-upload"
+            id={fileInputId}
             type="file"
             onChange={handleImageUpload}
             disabled={isUploadingImage}
           />
 
-          <label htmlFor="payment-proof-upload">
+          <label htmlFor={fileInputId}>
             <Paper
               variant="outlined"
               sx={{
@@ -380,5 +378,3 @@ const PaymentDialog = ({
     </Dialog>
   );
 };
-
-export default PaymentDialog;

@@ -36,7 +36,6 @@ export interface OrderToCreate {
   count: number;
   addressId: number;
   transferId: number;
-  sellerId: number;
   comment: string;
 }
 

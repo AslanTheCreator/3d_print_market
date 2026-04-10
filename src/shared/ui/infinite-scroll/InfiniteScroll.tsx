@@ -7,7 +7,6 @@ import {
   CircularProgress,
   Fade,
   Skeleton,
-  Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
@@ -41,20 +40,18 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
   }, [entry, hasNextPage, isFetchingNextPage, onLoadMore]);
 
   const getSkeletonCount = () => {
-    if (isMobile) return 4; // 2x2 на мобильных
-    return 6; // 6 товаров на десктопе
+    if (isMobile) return 4;
+    return 6;
   };
 
   return (
     <div>
       {children}
 
-      {/* Визуальный индикатор загрузки */}
       {isFetchingNextPage && (
-        <Fade in={true} timeout={300}>
+        <Fade in timeout={300}>
           <Box sx={{ mt: 3 }}>
             {showSkeletons ? (
-              // Используем ваши существующие компоненты
               <Box
                 sx={{
                   display: "grid",
@@ -78,70 +75,27 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
                 ))}
               </Box>
             ) : (
-              // Альтернативный простой спиннер
               <Box
                 sx={{
                   display: "flex",
-                  flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
                   py: { xs: 3, sm: 4 },
-                  gap: 2,
                 }}
               >
                 <CircularProgress
                   size={32}
                   thickness={4}
                   sx={{
-                    color: (theme) => theme.palette.primary.main,
+                    color: (paletteTheme) => paletteTheme.palette.primary.main,
                   }}
                 />
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    fontSize: { xs: "0.875rem", sm: "1rem" },
-                    fontWeight: 500,
-                  }}
-                >
-                  Загружаем товары...
-                </Typography>
               </Box>
             )}
           </Box>
         </Fade>
       )}
 
-      {/* Сообщение о том, что товары закончились */}
-      {!hasNextPage && !isFetchingNextPage && (
-        <Fade in={true} timeout={500}>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              py: { xs: 3, sm: 4 },
-              gap: 1,
-              mt: 2,
-            }}
-          >
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                fontSize: { xs: "0.875rem", sm: "1rem" },
-                fontWeight: 500,
-                textAlign: "center",
-              }}
-            >
-              Вы просмотрели все товары
-            </Typography>
-          </Box>
-        </Fade>
-      )}
-
-      {/* Невидимый триггер для intersection observer */}
       <div
         ref={ref}
         style={{

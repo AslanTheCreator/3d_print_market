@@ -18,7 +18,6 @@ import {
 import { Warning, CheckCircle, InfoOutlined } from "@mui/icons-material";
 import { getDeliveryIcon } from "@/entities/transfer";
 import { useDictionary } from "@/entities/dictionary";
-import { AppLink } from "@/shared/ui/app-link";
 import { ShippingMethod } from "@/shared/types";
 
 interface DeliveryMethodSelectorProps {
@@ -31,6 +30,14 @@ interface DeliveryMethodSelectorProps {
   fallbackMessages?: string[];
   hasFallbacks?: boolean;
 }
+
+const DELIVERY_TITLE = "Способ доставки";
+const SELECTED_LABEL = "Выбрано";
+const DELIVERY_ERROR_FALLBACK = "Не удалось загрузить способы доставки";
+const DELIVERY_ERROR_DESCRIPTION =
+  "Способы доставки для товара настраивает продавец. Попробуйте изменить состав заказа или повторите позже.";
+const NO_METHODS_DESCRIPTION =
+  "Для выбранных товаров нет доступных способов доставки. Их настраивает продавец, поэтому попробуйте изменить состав заказа.";
 
 export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
   availableMethods,
@@ -61,7 +68,7 @@ export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
         }}
       >
         <Typography variant="h6" fontWeight={600} gutterBottom>
-          Способ доставки
+          {DELIVERY_TITLE}
         </Typography>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           {[1, 2, 3].map((i) => (
@@ -88,20 +95,10 @@ export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
         }}
       >
         <Typography variant="h6" fontWeight={600} gutterBottom>
-          Способ доставки
+          {DELIVERY_TITLE}
         </Typography>
         <Alert severity="info" icon={<InfoOutlined />}>
-          {errorMessage || "Не удалось загрузить способы доставки"}. Добавьте
-          способ доставки в{" "}
-          <AppLink
-            href="/dashboard/settings?tab=shipping"
-            color="primary"
-            underline="hover"
-            sx={{ fontWeight: 600 }}
-          >
-            настройках профиля
-          </AppLink>
-          .
+          {`${errorMessage || DELIVERY_ERROR_FALLBACK}. ${DELIVERY_ERROR_DESCRIPTION}`}
         </Alert>
       </Paper>
     );
@@ -118,11 +115,9 @@ export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
         }}
       >
         <Typography variant="h6" fontWeight={600} gutterBottom>
-          Способ доставки
+          {DELIVERY_TITLE}
         </Typography>
-        <Alert severity="warning">
-          Нет доступных способов доставки для выбранных товаров.
-        </Alert>
+        <Alert severity="warning">{NO_METHODS_DESCRIPTION}</Alert>
       </Paper>
     );
   }
@@ -146,12 +141,12 @@ export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
         }}
       >
         <Typography variant="h6" fontWeight={600}>
-          Способ доставки
+          {DELIVERY_TITLE}
         </Typography>
         {selectedMethod && !hasFallbacks && (
           <Chip
             icon={<CheckCircle sx={{ fontSize: 16 }} />}
-            label="Выбрано"
+            label={SELECTED_LABEL}
             size="small"
             color="success"
             variant="outlined"
@@ -159,7 +154,6 @@ export const DeliveryMethodSelector: React.FC<DeliveryMethodSelectorProps> = ({
         )}
       </Box>
 
-      {/* Предупреждения о fallback */}
       <Collapse in={hasFallbacks && fallbackMessages.length > 0}>
         <Alert severity="warning" icon={<Warning />} sx={{ mb: 2 }}>
           <Box>

@@ -12,7 +12,7 @@ import { CheckoutContent } from "./CheckoutContent";
 import { OrderSuccessState } from "@/shared/ui/states";
 import { CheckoutResult } from "../model/types";
 import { EmptyPageState } from "@/shared/ui/states";
-import { useAuth } from "@/features/auth";
+import { ErrorState } from "@/shared/ui/states";
 import {
   ShoppingCartOutlined,
   StorefrontOutlined,
@@ -21,10 +21,12 @@ import {
 
 const Checkout = () => {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
-  const { data: cartItems, isLoading: isCartLoading } = useCartProducts({
-    enabled: isAuthenticated,
-  });
+  const {
+    data: cartItems,
+    isLoading: isCartLoading,
+    isError: isCartError,
+    refetch: refetchCart,
+  } = useCartProducts();
 
   const checkoutState = useCheckoutState({ cartItems });
 
@@ -71,6 +73,10 @@ const Checkout = () => {
   };
 
   // Загрузка корзины
+  if (isCartError) {
+    return <ErrorState type="cart" onRetry={() => void refetchCart()} />;
+  }
+
   if (isCartLoading || cartItems === undefined) {
     return (
       <Box

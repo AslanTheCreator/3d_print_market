@@ -1,12 +1,29 @@
 "use client";
 
-import { Container } from "@mui/material";
+import { Box, CircularProgress, Container } from "@mui/material";
 import { useAuth } from "@/features/auth";
 import { UnauthorizedState } from "@/shared/ui/states";
 import Checkout from "@/widgets/checkout";
 
 export default function CheckoutPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isInitialized } = useAuth();
+
+  if (!isInitialized) {
+    return (
+      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 400,
+          }}
+        >
+          <CircularProgress size={40} />
+        </Box>
+      </Container>
+    );
+  }
 
   if (!isAuthenticated) {
     return <UnauthorizedState type="checkout" />;

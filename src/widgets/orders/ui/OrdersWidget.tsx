@@ -12,7 +12,11 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { UseQueryResult } from "@tanstack/react-query";
-import { ListOrdersModel } from "@/entities/order";
+import {
+  ListOrdersModel,
+  isActiveOrderStatus,
+  orderNeedsAttention,
+} from "@/entities/order";
 import { LoadingOrderState } from "@/shared/ui/states";
 import { OrdersEmptyState } from "@/entities/order";
 import { Receipt, Storefront } from "@mui/icons-material";
@@ -43,45 +47,40 @@ export const OrdersWidget: React.FC<OrdersWidgetProps> = ({
   );
 
   // Подсчет заказов, требующих внимания
-  const ordersNeedingAttention = useMemo(() => {
-    return ordersList.filter((order) => {
-      if (userRole === "seller") {
-        return [
-          "BOOKED",
-          "AWAITING_PREPAYMENT_APPROVAL",
-          "ASSEMBLING",
-        ].includes(order.actualStatus);
-      }
-      return ["AWAITING_PREPAYMENT", "AWAITING_PAYMENT", "ON_THE_WAY"].includes(
-        order.actualStatus,
-      );
-    });
-  }, [ordersList, userRole]);
+  const preparedOrders = useMemo(
+    () =>
+      ordersList.map((order) => ({
+        order,
+        needsAttention: orderNeedsAttention(order.actualStatus, userRole),
+      })),
+    [ordersList, userRole],
+  );
+
+  const ordersNeedingAttentionCount = useMemo(() => {
+    return preparedOrders.filter((item) => item.needsAttention).length;
+  }, [preparedOrders]);
 
   // Сортировка: важные → по дате
   const sortedOrders = useMemo(() => {
-    return [...ordersList].sort((a, b) => {
-      const aNeedsAttention = ordersNeedingAttention.includes(a);
-      const bNeedsAttention = ordersNeedingAttention.includes(b);
+    return [...preparedOrders]
+      .sort((a, b) => {
+        if (a.needsAttention !== b.needsAttention) {
+          return a.needsAttention ? -1 : 1;
+        }
 
-      if (aNeedsAttention && !bNeedsAttention) return -1;
-      if (!aNeedsAttention && bNeedsAttention) return 1;
-
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  }, [ordersList, ordersNeedingAttention]);
+        return (
+          new Date(b.order.createdAt).getTime() -
+          new Date(a.order.createdAt).getTime()
+        );
+      })
+      .map((item) => item.order);
+  }, [preparedOrders]);
 
   // Статистика
   const stats = useMemo(() => {
     const total = ordersList.length;
     const active = ordersList.filter((o) =>
-      [
-        "BOOKED",
-        "AWAITING_PREPAYMENT",
-        "AWAITING_PAYMENT",
-        "ASSEMBLING",
-        "ON_THE_WAY",
-      ].includes(o.actualStatus),
+      isActiveOrderStatus(o.actualStatus),
     ).length;
     const completed = ordersList.filter(
       (o) => o.actualStatus === "COMPLETED",
@@ -196,10 +195,10 @@ export const OrdersWidget: React.FC<OrdersWidgetProps> = ({
             </Typography>
           </Box>
 
-          {ordersNeedingAttention.length > 0 && (
+          {ordersNeedingAttentionCount > 0 && (
             <Box sx={{ display: "flex", alignItems: "center" }}>
               <Chip
-                label={`Требует действия: ${ordersNeedingAttention.length}`}
+                label={`Требует действия: ${ordersNeedingAttentionCount}`}
                 color="warning"
                 size="small"
                 variant="outlined"

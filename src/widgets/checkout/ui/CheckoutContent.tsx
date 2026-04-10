@@ -41,8 +41,10 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
           <AddressCheckoutSelector
             addresses={checkoutState.addresses}
             isLoading={checkoutState.isLoadingAddresses}
+            isError={checkoutState.isAddressesError}
             selectedAddressId={checkoutState.selectedAddress?.id}
             onAddressSelect={checkoutState.setSelectedAddress}
+            onRetry={() => void checkoutState.refetchAddresses()}
           />
 
           {/* Способ доставки */}

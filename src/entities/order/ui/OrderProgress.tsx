@@ -3,20 +3,17 @@ import React, { useMemo } from "react";
 import { Box, Stack, Typography, Skeleton, Tooltip } from "@mui/material";
 import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
 import { useOrderStatusDictionary } from "../lib/useOrderStatusDictionary";
-
-type UserRole = "seller" | "customer";
+import type { OrderStatus } from "../model/types";
+import {
+  getOrderProgressSteps,
+  type OrderProgressStep,
+  type OrderUserRole,
+} from "../lib/orderStatusMeta";
 
 interface OrderProgressProps {
-  status: string;
-  userRole: UserRole;
+  status: OrderStatus;
+  userRole: OrderUserRole;
   isPreorder?: boolean;
-}
-
-interface StepConfig {
-  key: string;
-  label: string;
-  sellerAction?: boolean;
-  customerAction?: boolean;
 }
 
 export const OrderProgress: React.FC<OrderProgressProps> = ({
@@ -26,37 +23,10 @@ export const OrderProgress: React.FC<OrderProgressProps> = ({
 }) => {
   const { getStatusDescription, isLoading } = useOrderStatusDictionary();
 
-  // Конфигурация шагов для обычных товаров
-  const regularSteps: StepConfig[] = useMemo(
-    () => [
-      { key: "BOOKED", label: "Забронирован", sellerAction: true },
-      { key: "AWAITING_PAYMENT", label: "Оплата", customerAction: true },
-      { key: "ASSEMBLING", label: "Сборка", sellerAction: true },
-      { key: "ON_THE_WAY", label: "В пути", customerAction: true },
-      { key: "COMPLETED", label: "Завершен" },
-    ],
-    []
+  const steps: readonly OrderProgressStep[] = useMemo(
+    () => getOrderProgressSteps(isPreorder),
+    [isPreorder],
   );
-
-  // Конфигурация шагов для предзаказов
-  const preorderSteps: StepConfig[] = useMemo(
-    () => [
-      { key: "BOOKED", label: "Забронирован", sellerAction: true },
-      { key: "AWAITING_PREPAYMENT", label: "Предоплата", customerAction: true },
-      {
-        key: "AWAITING_PREPAYMENT_APPROVAL",
-        label: "Подтверждение",
-        sellerAction: true,
-      },
-      { key: "AWAITING_PAYMENT", label: "Оплата", customerAction: true },
-      { key: "ASSEMBLING", label: "Сборка", sellerAction: true },
-      { key: "ON_THE_WAY", label: "В пути", customerAction: true },
-      { key: "COMPLETED", label: "Завершен" },
-    ],
-    []
-  );
-
-  const steps = isPreorder ? preorderSteps : regularSteps;
 
   const currentStepIndex = steps.findIndex((step) => step.key === status);
 
@@ -138,10 +108,10 @@ export const OrderProgress: React.FC<OrderProgressProps> = ({
                     bgcolor: isCompleted
                       ? "success.main"
                       : isActive
-                      ? needsAction
-                        ? "warning.main"
-                        : "primary.main"
-                      : "grey.300",
+                        ? needsAction
+                          ? "warning.main"
+                          : "primary.main"
+                        : "grey.300",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",

@@ -3,6 +3,23 @@ import { OrderCreateModel, OrderCancel } from "../model/types";
 import { orderApi } from "../api/orderApi";
 import { orderQueryKeys } from "./queryKeys";
 
+const invalidateOrdersLists = (
+  queryClient: ReturnType<typeof useQueryClient>,
+) => {
+  queryClient.invalidateQueries({
+    queryKey: orderQueryKeys.sellerOrders(),
+  });
+  queryClient.invalidateQueries({
+    queryKey: orderQueryKeys.customerOrders(),
+  });
+};
+
+const logMutationError = (message: string) => {
+  return (error: unknown) => {
+    console.error(message, error);
+  };
+};
+
 // Хук для создания заказа
 export const useCreateOrder = () => {
   const queryClient = useQueryClient();
@@ -18,9 +35,7 @@ export const useCreateOrder = () => {
         queryKey: orderQueryKeys.customerOrders(),
       });
     },
-    onError: (error) => {
-      console.error("Ошибка создания заказа:", error);
-    },
+    onError: logMutationError("Ошибка создания заказа:"),
   });
 };
 
@@ -38,17 +53,8 @@ export const useConfirmOrderBySeller = () => {
       accountId: number;
       comment?: string;
     }) => orderApi.confirmOrderBySeller(orderId, accountId, comment),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.sellerOrders(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.customerOrders(),
-      });
-    },
-    onError: (error) => {
-      console.error("Ошибка подтверждения заказа продавцом:", error);
-    },
+    onSuccess: () => invalidateOrdersLists(queryClient),
+    onError: logMutationError("Ошибка подтверждения заказа продавцом:"),
   });
 };
 
@@ -64,17 +70,8 @@ export const useConfirmPreOrderBySeller = () => {
       orderId: number;
       comment?: string;
     }) => orderApi.confirmPreOrderBySeller(orderId, comment),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.sellerOrders(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.customerOrders(),
-      });
-    },
-    onError: (error) => {
-      console.error("Ошибка подтверждения предзаказа продавцом:", error);
-    },
+    onSuccess: () => invalidateOrdersLists(queryClient),
+    onError: logMutationError("Ошибка подтверждения предзаказа продавцом:"),
   });
 };
 
@@ -92,17 +89,8 @@ export const useConfirmPrepaymentByCustomer = () => {
       imageId: number;
       comment?: string;
     }) => orderApi.confirmPrepaymentByCustomer(orderId, imageId, comment),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.customerOrders(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.sellerOrders(),
-      });
-    },
-    onError: (error) => {
-      console.error("Ошибка подтверждения предоплаты:", error);
-    },
+    onSuccess: () => invalidateOrdersLists(queryClient),
+    onError: logMutationError("Ошибка подтверждения предоплаты:"),
   });
 };
 
@@ -120,17 +108,8 @@ export const useConfirmPaymentByCustomer = () => {
       imageId: number;
       comment?: string;
     }) => orderApi.confirmPaymentByCustomer(orderId, imageId, comment),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.customerOrders(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.sellerOrders(),
-      });
-    },
-    onError: (error) => {
-      console.error("Ошибка подтверждения оплаты:", error);
-    },
+    onSuccess: () => invalidateOrdersLists(queryClient),
+    onError: logMutationError("Ошибка подтверждения оплаты:"),
   });
 };
 
@@ -146,17 +125,8 @@ export const useConfirmReceiptByCustomer = () => {
       orderId: number;
       comment?: string;
     }) => orderApi.confirmReceiptByCustomer(orderId, comment),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.customerOrders(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.sellerOrders(),
-      });
-    },
-    onError: (error) => {
-      console.error("Ошибка подтверждения получения заказа:", error);
-    },
+    onSuccess: () => invalidateOrdersLists(queryClient),
+    onError: logMutationError("Ошибка подтверждения получения заказа:"),
   });
 };
 
@@ -174,17 +144,8 @@ export const useSendOrderBySeller = () => {
       deliveryUrl: string;
       comment?: string;
     }) => orderApi.sendOrderBySeller(orderId, deliveryUrl, comment),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.sellerOrders(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.customerOrders(),
-      });
-    },
-    onError: (error) => {
-      console.error("Ошибка отправки заказа:", error);
-    },
+    onSuccess: () => invalidateOrdersLists(queryClient),
+    onError: logMutationError("Ошибка отправки заказа:"),
   });
 };
 
@@ -194,16 +155,7 @@ export const useCancelOrder = () => {
 
   return useMutation({
     mutationFn: (orderData: OrderCancel) => orderApi.cancelOrder(orderData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.sellerOrders(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.customerOrders(),
-      });
-    },
-    onError: (error) => {
-      console.error("Ошибка отмены заказа:", error);
-    },
+    onSuccess: () => invalidateOrdersLists(queryClient),
+    onError: logMutationError("Ошибка отмены заказа:"),
   });
 };

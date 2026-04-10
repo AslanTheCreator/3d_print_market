@@ -28,7 +28,7 @@ import {
   ContentCopy,
 } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order";
-import { useSendOrderBySeller } from "@/entities/order";
+import { useOrderShippingAction } from "@/features/order-shipping";
 
 interface ShippingDialogProps {
   open: boolean;
@@ -41,8 +41,6 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
   const [comment, setComment] = useState("");
   const [deliveryService, setDeliveryService] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
-
-  const sendOrderMutation = useSendOrderBySeller();
 
   const deliveryServices = [
     {
@@ -99,17 +97,12 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
       return;
     }
 
-    sendOrderMutation.mutate(
+    shippingAction.sendOrder(
       {
         orderId: order.orderId,
         deliveryUrl: deliveryUrl.trim(),
         comment: comment.trim(),
       },
-      {
-        onSuccess: () => {
-          handleClose();
-        },
-      }
     );
   };
 
@@ -121,11 +114,15 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
     onClose();
   };
 
+  const shippingAction = useOrderShippingAction({
+    onSuccess: handleClose,
+  });
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
 
-  const canSendOrder = deliveryUrl.trim() && !sendOrderMutation.isPending;
+  const canSendOrder = deliveryUrl.trim() && !shippingAction.isPending;
 
   return (
     <Dialog
@@ -307,16 +304,16 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button onClick={handleClose} disabled={sendOrderMutation.isPending}>
+        <Button onClick={handleClose} disabled={shippingAction.isPending}>
           Отмена
         </Button>
         <Button
           onClick={handleSendOrder}
           variant="contained"
           disabled={!canSendOrder}
-          startIcon={sendOrderMutation.isPending ? null : <LocalShipping />}
+          startIcon={shippingAction.isPending ? null : <LocalShipping />}
         >
-          {sendOrderMutation.isPending ? "Отправка..." : "Отправить товар"}
+          {shippingAction.isPending ? "Отправка..." : "Отправить товар"}
         </Button>
       </DialogActions>
     </Dialog>

@@ -248,17 +248,11 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
             )}
 
             <Typography
-              fontSize="0.75rem"
-              sx={{
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                minHeight: "32px",
-                lineHeight: 1.3,
-                mb: 0.5,
-              }}
+              fontSize="0.875rem"
+              fontWeight={600}
+              color="text.primary"
+              noWrap
+              sx={{ lineHeight: 1.3 }}
             >
               {name}
             </Typography>

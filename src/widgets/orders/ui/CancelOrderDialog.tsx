@@ -17,8 +17,7 @@ import {
 } from "@mui/material";
 import { Close, Cancel, Warning, Info } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order";
-import { useCancelOrder } from "@/entities/order";
-import { useNotification } from "@/shared/ui/notification";
+import { useOrderCancelAction } from "@/features/order-cancel";
 type UserRole = "seller" | "customer";
 
 interface CancelOrderDialogProps {
@@ -52,32 +51,6 @@ export const CancelOrderDialog = ({
 }: CancelOrderDialogProps) => {
   const [reason, setReason] = useState("");
   const [comment, setComment] = useState("");
-  const { showNotification } = useNotification();
-
-  const cancelOrderMutation = useCancelOrder();
-
-  const handleQuickReasonClick = (quickReason: string) => {
-    setReason(quickReason);
-  };
-
-  const handleCancel = () => {
-    cancelOrderMutation.mutate(
-      {
-        orderId: order.orderId,
-        closureReason: reason.trim(),
-        comment: comment.trim(),
-      },
-      {
-        onSuccess: () => {
-          showNotification("Заказ успешно отменён", "success");
-          handleClose();
-        },
-        onError: () => {
-          showNotification("Не удалось отменить заказ", "error");
-        },
-      },
-    );
-  };
 
   const handleClose = () => {
     setReason("");
@@ -85,7 +58,23 @@ export const CancelOrderDialog = ({
     onClose();
   };
 
-  const canCancel = reason.trim().length >= 3 && !cancelOrderMutation.isPending;
+  const cancelOrderAction = useOrderCancelAction({
+    onSuccess: handleClose,
+  });
+
+  const handleQuickReasonClick = (quickReason: string) => {
+    setReason(quickReason);
+  };
+
+  const handleCancel = () => {
+    cancelOrderAction.cancelOrder({
+      orderId: order.orderId,
+      closureReason: reason.trim(),
+      comment: comment.trim(),
+    });
+  };
+
+  const canCancel = reason.trim().length >= 3 && !cancelOrderAction.isPending;
 
   const roleLabels = {
     customer: "покупателя",
@@ -175,7 +164,7 @@ export const CancelOrderDialog = ({
               ? "Минимум 3 символа"
               : "Обязательное поле"
           }
-          disabled={cancelOrderMutation.isPending}
+          disabled={cancelOrderAction.isPending}
         />
 
         {/* Дополнительный комментарий */}
@@ -188,7 +177,7 @@ export const CancelOrderDialog = ({
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           sx={{ mb: 2 }}
-          disabled={cancelOrderMutation.isPending}
+          disabled={cancelOrderAction.isPending}
         />
 
         {/* Информационное сообщение */}
@@ -201,7 +190,7 @@ export const CancelOrderDialog = ({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button onClick={handleClose} disabled={cancelOrderMutation.isPending}>
+        <Button onClick={handleClose} disabled={cancelOrderAction.isPending}>
           Назад
         </Button>
         <Button
@@ -209,9 +198,9 @@ export const CancelOrderDialog = ({
           variant="contained"
           color="error"
           disabled={!canCancel}
-          startIcon={cancelOrderMutation.isPending ? null : <Cancel />}
+          startIcon={cancelOrderAction.isPending ? null : <Cancel />}
         >
-          {cancelOrderMutation.isPending ? "Отмена..." : "Отменить заказ"}
+          {cancelOrderAction.isPending ? "Отмена..." : "Отменить заказ"}
         </Button>
       </DialogActions>
     </Dialog>

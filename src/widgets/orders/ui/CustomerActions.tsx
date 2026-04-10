@@ -11,14 +11,17 @@ import {
   Stack,
 } from "@mui/material";
 import { Payment, ThumbUp, Cancel, RateReview } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order";
 import {
-  useConfirmPaymentByCustomer,
-  useConfirmPrepaymentByCustomer,
-  useConfirmReceiptByCustomer,
+  ListOrdersModel,
+  getCustomerOrderActionFlags,
 } from "@/entities/order";
+import {
+  PaymentDialog,
+  useOrderPaymentAction,
+  useOrderPrepaymentAction,
+} from "@/features/order-payment";
+import { useOrderReceiptAction } from "@/features/order-receipt";
 import { CancelOrderDialog } from "./CancelOrderDialog";
-import PaymentDialog from "./PaymentDialog";
 import { LeaveReviewDialog } from "./LeaveReviewDialog";
 
 interface CustomerActionsProps {
@@ -26,34 +29,32 @@ interface CustomerActionsProps {
 }
 
 export const CustomerActions = ({ order }: CustomerActionsProps) => {
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [prepaymentDialogOpen, setPrepaymentDialogOpen] = useState(false);
-  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
-  const canLeaveReview = order.actualStatus === "COMPLETED";
-  const confirmReceiptMutation = useConfirmReceiptByCustomer();
+  const paymentAction = useOrderPaymentAction();
+  const prepaymentAction = useOrderPrepaymentAction();
+  const receiptAction = useOrderReceiptAction();
+  const {
+    canPay,
+    canPrePay,
+    canConfirmReceipt,
+    canCancel,
+    canLeaveReview,
+  } = getCustomerOrderActionFlags(order.actualStatus);
 
   const handleConfirmReceipt = () => {
-    confirmReceiptMutation.mutate(
+    receiptAction.mutation.mutate(
       {
         orderId: order.orderId,
       },
       {
         onSuccess: () => {
-          setReceiptDialogOpen(false);
+          receiptAction.close();
         },
       },
     );
   };
-
-  const canPay = order.actualStatus === "AWAITING_PAYMENT";
-  const canPrePay = order.actualStatus === "AWAITING_PREPAYMENT";
-  const canConfirmReceipt = order.actualStatus === "ON_THE_WAY";
-  const canCancel = !["COMPLETED", "FAILED", "DISPUTED"].includes(
-    order.actualStatus,
-  );
 
   return (
     <>
@@ -63,7 +64,7 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
             variant="contained"
             color="primary"
             startIcon={<Payment />}
-            onClick={() => setPaymentDialogOpen(true)}
+            onClick={paymentAction.open}
             size="small"
             fullWidth={true}
           >
@@ -75,7 +76,7 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
             variant="contained"
             color="primary"
             startIcon={<Payment />}
-            onClick={() => setPrepaymentDialogOpen(true)}
+            onClick={prepaymentAction.open}
             size="small"
             fullWidth={true}
           >
@@ -87,12 +88,12 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
             variant="contained"
             color="success"
             startIcon={<ThumbUp />}
-            onClick={() => setReceiptDialogOpen(true)}
-            disabled={confirmReceiptMutation.isPending}
+            onClick={receiptAction.open}
+            disabled={receiptAction.mutation.isPending}
             size="small"
             fullWidth={true}
           >
-            {confirmReceiptMutation.isPending
+            {receiptAction.mutation.isPending
               ? "Подтверждение..."
               : "Подтвердить получение"}
           </Button>
@@ -125,24 +126,24 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
       </Stack>
 
       <PaymentDialog
-        open={paymentDialogOpen}
-        onClose={() => setPaymentDialogOpen(false)}
+        open={paymentAction.isOpen}
+        onClose={paymentAction.close}
         order={order}
         paymentType="payment"
-        paymentMutation={useConfirmPaymentByCustomer()}
+        paymentMutation={paymentAction.mutation}
       />
 
       <PaymentDialog
-        open={prepaymentDialogOpen}
-        onClose={() => setPrepaymentDialogOpen(false)}
+        open={prepaymentAction.isOpen}
+        onClose={prepaymentAction.close}
         order={order}
         paymentType="prepayment"
-        paymentMutation={useConfirmPrepaymentByCustomer()}
+        paymentMutation={prepaymentAction.mutation}
       />
 
       <Dialog
-        open={receiptDialogOpen}
-        onClose={() => setReceiptDialogOpen(false)}
+        open={receiptAction.isOpen}
+        onClose={receiptAction.close}
         maxWidth="sm"
         fullWidth
       >
@@ -155,8 +156,8 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
         </DialogContent>
         <DialogActions>
           <Button
-            onClick={() => setReceiptDialogOpen(false)}
-            disabled={confirmReceiptMutation.isPending}
+            onClick={receiptAction.close}
+            disabled={receiptAction.mutation.isPending}
           >
             Отмена
           </Button>
@@ -164,7 +165,7 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
             onClick={handleConfirmReceipt}
             variant="contained"
             color="success"
-            disabled={confirmReceiptMutation.isPending}
+            disabled={receiptAction.mutation.isPending}
           >
             Подтвердить получение
           </Button>
