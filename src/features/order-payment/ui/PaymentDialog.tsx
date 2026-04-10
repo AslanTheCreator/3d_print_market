@@ -291,6 +291,7 @@ export const PaymentDialog = ({
                 </Stack>
               ) : imagePreview ? (
                 <Box>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imagePreview}
                     alt={`Подтверждение ${

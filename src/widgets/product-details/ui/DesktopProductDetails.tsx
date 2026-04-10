@@ -260,9 +260,11 @@ export function DesktopProductDetails({
         </Grid>
       </Grid>
 
-      <Box sx={{ mt: 5 }}>
-        <ProductReviewsSection reviews={productCard.reviews} />
-      </Box>
+      {productCard.reviews.length > 0 ? (
+        <Box sx={{ mt: 5 }}>
+          <ProductReviewsSection reviews={productCard.reviews} />
+        </Box>
+      ) : null}
 
       {primaryCategoryId ? (
         <Box sx={{ mt: 5 }}>

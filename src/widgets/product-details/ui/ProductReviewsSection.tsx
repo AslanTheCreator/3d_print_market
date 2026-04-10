@@ -88,9 +88,7 @@ function ReviewCard({ review }: ReviewCardProps) {
   );
 }
 
-export function ProductReviewsSection({
-  reviews,
-}: ProductReviewsSectionProps) {
+export function ProductReviewsSection({ reviews }: ProductReviewsSectionProps) {
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(reviews.length <= 3);
@@ -112,34 +110,6 @@ export function ProductReviewsSection({
   }, [reviews]);
 
   const showSliderControls = reviews.length > 3;
-
-  if (reviewsCount === 0) {
-    return (
-      <Box>
-        <Typography variant="h4" fontWeight={800} sx={{ mb: 3 }}>
-          Отзывы
-        </Typography>
-
-        <Paper
-          elevation={0}
-          sx={{
-            p: 4,
-            borderRadius: 3,
-            border: "1px solid",
-            borderColor: "divider",
-            background: (theme) => alpha(theme.palette.primary.main, 0.02),
-          }}
-        >
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
-            Отзывов пока нет
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Этот товар ещё не оценили покупатели.
-          </Typography>
-        </Paper>
-      </Box>
-    );
-  }
 
   return (
     <Box>
@@ -230,24 +200,24 @@ export function ProductReviewsSection({
         }}
       >
         <Swiper
-        slidesPerView="auto"
-        slidesPerGroup={1}
-        spaceBetween={16}
-        onSwiper={(swiper) => {
-          setSwiperInstance(swiper);
-          setIsBeginning(swiper.isBeginning);
-          setIsEnd(swiper.isEnd);
-        }}
-        onSlideChange={(swiper) => {
-          setIsBeginning(swiper.isBeginning);
-          setIsEnd(swiper.isEnd);
-        }}
-      >
-        {reviews.map((review) => (
-          <SwiperSlide key={review.id}>
-            <ReviewCard review={review} />
-          </SwiperSlide>
-        ))}
+          slidesPerView="auto"
+          slidesPerGroup={1}
+          spaceBetween={16}
+          onSwiper={(swiper) => {
+            setSwiperInstance(swiper);
+            setIsBeginning(swiper.isBeginning);
+            setIsEnd(swiper.isEnd);
+          }}
+          onSlideChange={(swiper) => {
+            setIsBeginning(swiper.isBeginning);
+            setIsEnd(swiper.isEnd);
+          }}
+        >
+          {reviews.map((review) => (
+            <SwiperSlide key={review.id}>
+              <ReviewCard review={review} />
+            </SwiperSlide>
+          ))}
         </Swiper>
       </Box>
     </Box>

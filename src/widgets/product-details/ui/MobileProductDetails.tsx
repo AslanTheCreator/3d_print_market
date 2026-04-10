@@ -348,7 +348,9 @@ export function MobileProductDetails({
           />
         </Paper>
 
-        <MobileProductReviewsSection reviews={productCard.reviews} />
+        {productCard.reviews.length > 0 ? (
+          <MobileProductReviewsSection reviews={productCard.reviews} />
+        ) : null}
 
         {primaryCategoryId ? (
           <Box sx={{ mt: 2.5 }}>

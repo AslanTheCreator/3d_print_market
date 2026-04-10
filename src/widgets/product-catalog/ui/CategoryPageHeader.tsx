@@ -1,12 +1,20 @@
-import { Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { CategoryBreadcrumbs, type CategoryPath } from "@/entities/category";
+import type { PriceRange } from "@/shared/types";
+import { PriceRangeFilter } from "./PriceRangeFilter";
 
 interface CategoryPageHeaderProps {
   categoryPath: CategoryPath;
+  priceRange?: PriceRange;
+  availablePriceRange?: PriceRange;
+  onPriceRangeApply: (value?: PriceRange) => void;
 }
 
 export const CategoryPageHeader = ({
   categoryPath,
+  priceRange,
+  availablePriceRange,
+  onPriceRangeApply,
 }: CategoryPageHeaderProps) => {
   return (
     <>
@@ -24,6 +32,21 @@ export const CategoryPageHeader = ({
       >
         {categoryPath.title}
       </Typography>
+
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 1.5,
+          mb: 3,
+        }}
+      >
+        <PriceRangeFilter
+          value={priceRange}
+          availableRange={availablePriceRange}
+          onApply={onPriceRangeApply}
+        />
+      </Box>
     </>
   );
 };
