@@ -39,21 +39,23 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
 
   // Подписываемся на items для реактивного обновления при изменении количества
   const items = useCartQuantityStore((state) => state.items);
-  const { getQuantity } = useCartQuantityStore();
 
   // Вычисляем итоги
   const { itemsCount, subtotal } = React.useMemo(() => {
+    const quantitiesByProductId = new Map(
+      items.map((item) => [item.productId, item.quantity]),
+    );
     let total = 0;
     let totalItemsCount = 0;
 
     for (const item of cartItems) {
-      const quantity = getQuantity(item.product.id);
+      const quantity = quantitiesByProductId.get(item.product.id) ?? 1;
       total += item.product.price * quantity;
       totalItemsCount += quantity;
     }
 
     return { itemsCount: totalItemsCount, subtotal: total };
-  }, [cartItems, getQuantity, items]); // items в зависимостях для реактивности
+  }, [cartItems, items]);
 
   // Плюрализация
   const getItemsWord = (count: number): string => {

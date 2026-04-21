@@ -1,11 +1,15 @@
 import { CreateProductForm } from "@/widgets/create-product-form";
 
 interface EditProductPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function EditProductPage({ params }: EditProductPageProps) {
-  return <CreateProductForm mode="edit" productId={params.id} />;
+export default async function EditProductPage({
+  params,
+}: EditProductPageProps) {
+  const { id } = await params;
+
+  return <CreateProductForm mode="edit" productId={id} />;
 }

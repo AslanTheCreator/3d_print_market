@@ -33,6 +33,16 @@ export const useImageUpload = (tag: ImageTag): UseImageUploadReturn => {
     };
   }, [imagePreview]);
 
+  const resetImageState = useCallback(() => {
+    if (imagePreview) {
+      revokeImagePreview(imagePreview);
+    }
+    setImage(null);
+    setImagePreview(null);
+    setImageIds([]);
+    setImageError(null);
+  }, [imagePreview]);
+
   const handleImageChange = useCallback(
     async (file: File): Promise<void> => {
       const validation = validateImage(file);
@@ -66,18 +76,8 @@ export const useImageUpload = (tag: ImageTag): UseImageUploadReturn => {
         setIsUploading(false);
       }
     },
-    [tag, imagePreview],
+    [tag, imagePreview, resetImageState],
   );
-
-  const resetImageState = useCallback(() => {
-    if (imagePreview) {
-      revokeImagePreview(imagePreview);
-    }
-    setImage(null);
-    setImagePreview(null);
-    setImageIds([]);
-    setImageError(null);
-  }, [imagePreview]);
 
   return {
     image,

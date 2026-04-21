@@ -40,7 +40,7 @@ export default function CategoryPage() {
     refetch,
   } = useProductsInfinite(20, filters);
 
-  const products = data?.pages.flat() ?? [];
+  const products = useMemo(() => data?.pages.flat() ?? [], [data?.pages]);
   const availablePriceRange = useMemo<PriceRange | undefined>(() => {
     if (products.length === 0) {
       return undefined;

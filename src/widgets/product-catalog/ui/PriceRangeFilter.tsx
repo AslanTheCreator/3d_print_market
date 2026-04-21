@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
@@ -189,26 +189,25 @@ export const PriceRangeFilter = ({
   ) =>
     relatedTarget instanceof Node && Boolean(element?.contains(relatedTarget));
 
-  const syncDraftValues = () => {
+  const syncDraftValues = useCallback(() => {
     setMinPriceInput(
       formatInputValue(availableRange?.minPrice ?? value?.minPrice),
     );
     setMaxPriceInput(
       formatInputValue(availableRange?.maxPrice ?? value?.maxPrice),
     );
-  };
+  }, [
+    availableRange?.maxPrice,
+    availableRange?.minPrice,
+    value?.maxPrice,
+    value?.minPrice,
+  ]);
 
   useEffect(() => {
     if (!isOpen) {
       syncDraftValues();
     }
-  }, [
-    availableRange?.maxPrice,
-    availableRange?.minPrice,
-    isOpen,
-    value?.maxPrice,
-    value?.minPrice,
-  ]);
+  }, [isOpen, syncDraftValues]);
 
   const closeDesktopPopover = () => {
     setIsTriggerHovered(false);

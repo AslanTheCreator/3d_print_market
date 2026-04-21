@@ -13,9 +13,9 @@ import {
   Badge,
   alpha,
 } from "@mui/material";
-import { FavoriteBorderOutlined } from "@mui/icons-material";
 import Link from "next/link";
 import Image from "next/image";
+import FavoritesCustomIcon from "@/shared/assets/icons/favorites.png";
 import PersonCustomIcon from "@/shared/assets/icons/userAccount.svg";
 import ShoppingCartCustomIcon from "@/shared/assets/icons/backet.svg";
 import { ICON_SIZES } from "../model/constants";
@@ -168,11 +168,12 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
     {
       url: "/favorites",
       icon: (
-        <FavoriteBorderOutlined
-          sx={{
-            fontSize: iconSize,
-            color: theme.palette.common.white,
-          }}
+        <Image
+          src={FavoritesCustomIcon}
+          alt="Избранное"
+          width={iconSize}
+          height={iconSize}
+          style={{ objectFit: "contain" }}
         />
       ),
       label: "Избранное",
