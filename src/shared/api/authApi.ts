@@ -1,4 +1,4 @@
-import { AxiosError } from "axios";
+import { AxiosError, AxiosRequestConfig } from "axios";
 import { publicClient } from "./axios/instances";
 import { tokenStorage } from "@/shared/lib";
 import {
@@ -13,6 +13,14 @@ import {
 
 const API_URL_REGISTER = `/participant`;
 const API_URL_AUTH = `/auth`;
+
+interface AuthRequestConfig extends AxiosRequestConfig {
+  _skipErrorTransform?: boolean;
+}
+
+const skipErrorTransformConfig: AuthRequestConfig = {
+  _skipErrorTransform: true,
+};
 
 export const authApi = {
   async registerUser({
@@ -42,6 +50,7 @@ export const authApi = {
           mail,
           password,
         },
+        skipErrorTransformConfig,
       );
 
       tokenStorage.saveTokens({
@@ -75,6 +84,7 @@ export const authApi = {
         `${API_URL_AUTH}/verification/resend`,
         {},
         {
+          ...skipErrorTransformConfig,
           params: { email },
         },
       );

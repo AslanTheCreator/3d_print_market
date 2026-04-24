@@ -23,6 +23,7 @@ import {
   logApiError,
   ErrorCodes,
 } from "@/shared/lib/errorHandler";
+import { getServerApiBaseUrl } from "@/shared/config/env";
 // Импорт tokenRefreshManager (добавить в shared/lib/index.ts)
 import { tokenRefreshManager } from "@/shared/lib/token/tokenRefreshManager";
 
@@ -136,23 +137,36 @@ const getApiBaseUrl = async (): Promise<string> => {
   }
 
   if (typeof window === "undefined") {
-    const apiUrl = process.env.API_BASE_URL || "http://localhost:8081";
+    const apiUrl = getServerApiBaseUrl();
     cachedApiUrl = apiUrl;
     return apiUrl;
   }
 
   try {
     const response = await fetch("/api/config");
+    if (!response.ok) {
+      throw new Error(`Failed to load API config: ${response.status}`);
+    }
+
     const config = await response.json();
-    const apiUrl = config.apiUrl || "http://localhost:8081";
+    if (!config.apiUrl) {
+      throw new Error("API URL is missing in /api/config response");
+    }
+
+    const apiUrl = config.apiUrl;
     cachedApiUrl = apiUrl;
     log("API URL loaded", apiUrl);
     return apiUrl;
   } catch (error) {
     logError("Failed to load API config", error);
-    const fallbackUrl = "http://localhost:8081";
-    cachedApiUrl = fallbackUrl;
-    return fallbackUrl;
+
+    if (process.env.NODE_ENV !== "production") {
+      const fallbackUrl = getServerApiBaseUrl();
+      cachedApiUrl = fallbackUrl;
+      return fallbackUrl;
+    }
+
+    throw error;
   }
 };
 

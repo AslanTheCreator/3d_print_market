@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
+import { getClientApiBaseUrl } from "@/shared/config/env";
 
 export async function GET() {
-  const serverApiUrl = process.env.API_BASE_URL || "http://localhost:8081";
-
-  const clientApiUrl =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
-
   return NextResponse.json({
-    apiUrl: clientApiUrl,
+    apiUrl: getClientApiBaseUrl(),
   });
 }
 

@@ -1,12 +1,9 @@
 "use client";
-import { Montserrat } from "next/font/google";
 import { createTheme, responsiveFontSizes, Theme } from "@mui/material/styles";
 import { alpha } from "@mui/material/styles";
 
-const montserrat = Montserrat({
-  subsets: ["cyrillic"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-});
+const appFontFamily =
+  'var(--font-montserrat), "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif';
 
 // Создаем основные и вторичные цвета для более комплексной палитры
 const primaryColor = {
@@ -37,7 +34,7 @@ let theme = createTheme({
     borderRadius: 8, // Более современные скругленные углы по умолчанию
   },
   typography: {
-    fontFamily: montserrat.style.fontFamily,
+    fontFamily: appFontFamily,
     fontWeightLight: 400,
     fontWeightRegular: 500,
     fontWeightMedium: 600,

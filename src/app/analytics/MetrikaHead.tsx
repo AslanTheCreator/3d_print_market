@@ -29,6 +29,7 @@ export function MetrikaHead() {
       {/* noscript — тоже в head, но после основного скрипта */}
       <noscript>
         <div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="https://mc.yandex.ru/watch/105318220"
             style={{ position: "absolute", left: "-9999px" }}

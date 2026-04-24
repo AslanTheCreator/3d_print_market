@@ -18,9 +18,9 @@ export const buildProductRequest = (
   return {
     pageable: {
       size,
-      ...(lastCreatedAt && { lastCreatedAt }),
-      ...(lastPrice && { lastPrice }),
-      ...(lastId && { lastId }),
+      ...(lastCreatedAt !== undefined ? { lastCreatedAt } : {}),
+      ...(lastPrice !== undefined ? { lastPrice } : {}),
+      ...(lastId !== undefined ? { lastId } : {}),
       sortBy,
     },
     ...filters,

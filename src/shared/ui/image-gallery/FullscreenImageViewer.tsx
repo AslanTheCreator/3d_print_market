@@ -59,34 +59,6 @@ export function FullscreenImageViewer({
   }, [open, initialIndex]);
 
   // Навигация клавиатурой
-  useEffect(() => {
-    if (!open) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case "ArrowLeft":
-          handlePrevious();
-          break;
-        case "ArrowRight":
-          handleNext();
-          break;
-        case "Escape":
-          onClose();
-          break;
-        case "+":
-        case "=":
-          handleZoomIn();
-          break;
-        case "-":
-          handleZoomOut();
-          break;
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, currentIndex, images.length]);
-
   const handlePrevious = useCallback(() => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
   }, [images.length]);
@@ -166,6 +138,34 @@ export function FullscreenImageViewer({
   const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case "ArrowLeft":
+          handlePrevious();
+          break;
+        case "ArrowRight":
+          handleNext();
+          break;
+        case "Escape":
+          onClose();
+          break;
+        case "+":
+        case "=":
+          handleZoomIn();
+          break;
+        case "-":
+          handleZoomOut();
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, handlePrevious, handleNext, handleZoomIn, handleZoomOut, onClose]);
 
   if (!images.length) return null;
 

@@ -3,6 +3,7 @@ import "./globals.css";
 import { MetrikaHead } from "@/app/analytics/MetrikaHead";
 import { AppProviders } from "@/app/providers/AppProviders";
 import { AppLayout } from "@/app/layouts/AppLayout";
+import { montserrat } from "@/app/config/fonts";
 
 export const metadata: Metadata = {
   title: "Figurzilla — маркетплейс коллекционных фигурок и 3D-печати",
@@ -17,7 +18,7 @@ export default async function RootLayout({
       <head>
         <MetrikaHead />
       </head>
-      <body>
+      <body className={montserrat.variable}>
         <AppProviders>
           <AppLayout>{children}</AppLayout>
         </AppProviders>
