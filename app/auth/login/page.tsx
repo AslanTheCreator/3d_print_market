@@ -50,10 +50,7 @@ export default function LoginPage() {
 
           if (result.success && result.userId) {
             setUserId(result.userId);
-            showNotification(
-              "Код верификации отправлен на почту",
-              "info",
-            );
+            showNotification("Код верификации отправлен на почту", "info");
           } else if (result.retryAfterSec) {
             showNotification(
               `Код уже был отправлен. Повторная отправка через ${result.retryAfterSec} сек.`,
@@ -97,10 +94,7 @@ export default function LoginPage() {
       if (isVerificationSuccessful) {
         setAuthenticated();
         setIsVerificationOpen(false);
-        showNotification(
-          "Email успешно подтвержден!",
-          "success",
-        );
+        showNotification("Email успешно подтвержден!", "success");
         router.push("/");
       }
     } catch (error) {
@@ -150,10 +144,7 @@ export default function LoginPage() {
   const handlePasswordReset = async (email: string) => {
     try {
       await authApi.passwordReset(email);
-      showNotification(
-        "Временный пароль отправлен на вашу почту",
-        "success",
-      );
+      showNotification("Временный пароль отправлен на вашу почту", "success");
     } catch (error) {
       console.error("Password reset failed:", error);
       throw error;
