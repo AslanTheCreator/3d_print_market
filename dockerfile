@@ -26,7 +26,8 @@ COPY --from=builder /app/.next/static ./.next/static
 EXPOSE 3000
 
 # Переменная окружения по умолчанию (DevOps переопределит)
-ENV API_BASE_URL=http://localhost:8081
+ENV API_BASE_URL=
+ENV NEXT_PUBLIC_API_URL=
 
 # Запускаем напрямую через node
 CMD ["node", "server.js"]

@@ -122,6 +122,7 @@ export default function RegisterPage() {
         buttonTitle="Зарегистрироваться"
         onSubmit={handleRegister}
         isLoading={isLoading}
+        passwordAutoComplete="new-password"
       />
 
       <VerificationCodeDialog

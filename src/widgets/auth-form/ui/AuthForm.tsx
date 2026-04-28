@@ -27,7 +27,10 @@ interface IAuthForm {
   onSubmit?: (email: string, password: string) => Promise<void>;
   isLoading?: boolean;
   onForgotPassword?: () => void;
+  passwordAutoComplete?: "current-password" | "new-password";
 }
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const AuthForm: React.FC<IAuthForm> = ({
   title,
@@ -38,6 +41,7 @@ const AuthForm: React.FC<IAuthForm> = ({
   onSubmit,
   isLoading = false,
   onForgotPassword,
+  passwordAutoComplete = "current-password",
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -45,6 +49,7 @@ const AuthForm: React.FC<IAuthForm> = ({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -54,12 +59,28 @@ const AuthForm: React.FC<IAuthForm> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const normalizedEmail = email.trim();
+    const nextEmailError = !normalizedEmail
+      ? "Введите email"
+      : EMAIL_PATTERN.test(normalizedEmail)
+        ? ""
+        : "Введите корректный email";
+    const nextPasswordError = password ? "" : "Введите пароль";
+
+    setEmailError(nextEmailError);
+    setPasswordError(nextPasswordError);
+
+    if (nextEmailError || nextPasswordError) {
+      return;
+    }
+
+    setEmail(normalizedEmail);
     setPasswordError("");
 
     if (onSubmit) {
       try {
         setIsSubmitting(true);
-        await onSubmit(email, password);
+        await onSubmit(normalizedEmail, password);
       } catch (error) {
         console.error("Authentication error:", error);
       } finally {
@@ -120,6 +141,7 @@ const AuthForm: React.FC<IAuthForm> = ({
 
       <Box
         component="form"
+        noValidate
         onSubmit={handleSubmit}
         display="flex"
         flexDirection="column"
@@ -132,9 +154,16 @@ const AuthForm: React.FC<IAuthForm> = ({
             <TextField
               fullWidth
               placeholder="Email"
-              type="text"
+              type="email"
+              name="email"
+              autoComplete="email"
+              required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError("");
+              }}
+              error={!!emailError}
               InputProps={{
                 sx: {
                   borderRadius: theme.shape.borderRadius,
@@ -142,6 +171,18 @@ const AuthForm: React.FC<IAuthForm> = ({
                 },
               }}
             />
+            {emailError && (
+              <FormHelperText
+                error
+                sx={{
+                  ml: 1.5,
+                  mt: 0.5,
+                  fontSize: "0.75rem",
+                }}
+              >
+                {emailError}
+              </FormHelperText>
+            )}
           </Box>
 
           <Box>
@@ -149,8 +190,14 @@ const AuthForm: React.FC<IAuthForm> = ({
               fullWidth
               placeholder="Пароль"
               type={showPassword ? "text" : "password"}
+              name="password"
+              autoComplete={passwordAutoComplete}
+              required
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setPasswordError("");
+              }}
               error={!!passwordError}
               InputProps={{
                 endAdornment: (
