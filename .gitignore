@@ -24,9 +24,23 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+*.log
 
 # local env files
+.env
+.env.*
+!.env.example
 .env*.local
+
+# cache
+.eslintcache
+.cache/
+.turbo/
+
+# test artifacts
+playwright-report/
+test-results/
 
 # vercel
 .vercel
