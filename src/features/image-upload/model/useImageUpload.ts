@@ -48,8 +48,8 @@ export const useImageUpload = (tag: ImageTag): UseImageUploadReturn => {
       const validation = validateImage(file);
 
       if (!validation.isValid) {
-        setImageError(validation.error!);
         resetImageState();
+        setImageError(validation.error ?? "Invalid image");
         return;
       }
 

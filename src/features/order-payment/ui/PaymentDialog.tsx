@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -19,6 +19,11 @@ import { Close, CloudUpload, Payment, CheckCircle } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order";
 import { useSellerAccounts } from "@/entities/account";
 import { imageApi } from "@/shared/api";
+import {
+  createImagePreview,
+  revokeImagePreview,
+  validateImage,
+} from "@/shared/lib";
 import { UseMutationResult } from "@tanstack/react-query";
 import { SellerPaymentDetails } from "./SellerPaymentDetails";
 
@@ -101,23 +106,17 @@ export const PaymentDialog = ({
     isError: isAccountsError,
   } = useSellerAccounts(open ? order.userInfo.id : undefined);
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        revokeImagePreview(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
   // ──────────────────────────────────────────────────────────────────────────
   // Обработчики изображения
   // ──────────────────────────────────────────────────────────────────────────
-
-  const validateImage = (file: File): boolean => {
-    if (file.size > 10 * 1024 * 1024) {
-      setImageError("Размер файла не должен превышать 10 МБ");
-      resetImageState();
-      return false;
-    }
-    if (!file.type.startsWith("image/")) {
-      setImageError("Пожалуйста, загрузите изображение");
-      resetImageState();
-      return false;
-    }
-    return true;
-  };
 
   const resetImageState = () => {
     setSelectedImage(null);
@@ -131,11 +130,19 @@ export const PaymentDialog = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!validateImage(file)) return;
+    const validation = validateImage(file);
+
+    if (!validation.isValid) {
+      resetImageState();
+      setImageError(validation.error ?? "Invalid image");
+      event.target.value = "";
+      return;
+    }
 
     setImageError(null);
+    resetImageState();
     setSelectedImage(file);
-    setImagePreview(URL.createObjectURL(file));
+    setImagePreview(createImagePreview(file));
 
     try {
       setIsUploadingImage(true);
@@ -258,7 +265,7 @@ export const PaymentDialog = ({
           </Typography>
 
           <input
-            accept="image/*"
+            accept=".jpg,.jpeg,.png,.webp"
             style={{ display: "none" }}
             id={fileInputId}
             type="file"
@@ -316,7 +323,7 @@ export const PaymentDialog = ({
                     Нажмите, чтобы загрузить чек или скриншот
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Поддерживаются: JPG, PNG, GIF (до 10MB)
+                    Поддерживаются: JPG, PNG, WebP (до 5 МБ)
                   </Typography>
                 </Stack>
               )}

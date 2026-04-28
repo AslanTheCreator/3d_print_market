@@ -33,12 +33,13 @@ export const MultiImageUpload = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { images, hasError, addImage, removeImage } = uploadState;
+  const { images, hasError, uploadError, addImage, removeImage } = uploadState;
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const files = Array.from(event.target.files || []);
+    const availableSlots = maxImages - images.length;
+    const files = Array.from(event.target.files || []).slice(0, availableSlots);
 
     for (const file of files) {
       if (images.length >= maxImages) {
@@ -78,7 +79,8 @@ export const MultiImageUpload = ({
     event.preventDefault();
     setIsDragOver(false);
 
-    const files = Array.from(event.dataTransfer.files);
+    const availableSlots = maxImages - images.length;
+    const files = Array.from(event.dataTransfer.files).slice(0, availableSlots);
 
     for (const file of files) {
       if (images.length >= maxImages) {
@@ -374,6 +376,12 @@ export const MultiImageUpload = ({
       {hasError && (
         <Alert severity="error" sx={{ mt: { xs: 1.5, sm: 2 }, py: isMobile ? 0 : undefined }}>
           Некоторые изображения не удалось загрузить. Попробуйте еще раз.
+        </Alert>
+      )}
+
+      {uploadError && (
+        <Alert severity="error" sx={{ mt: { xs: 1.5, sm: 2 }, py: isMobile ? 0 : undefined }}>
+          {uploadError}
         </Alert>
       )}
     </Box>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { ProductBasket, useCartQuantityStore } from "@/entities/cart";
 import { orderApi } from "@/entities/order";
 import { CheckoutState } from "./useCheckoutState";
@@ -36,6 +36,7 @@ export const useCheckoutSubmit = ({
 }: UseCheckoutSubmitProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<CheckoutResult | null>(null);
+  const isSubmittingRef = useRef(false);
   const { getQuantity } = useCartQuantityStore();
   const { syncAfterSubmit, notifySubmitResult } =
     useCheckoutSubmitSideEffects({
@@ -104,10 +105,15 @@ export const useCheckoutSubmit = ({
   );
 
   const handleSubmit = useCallback(async () => {
-    if (!cartItems?.length || !checkoutState.isReadyToSubmit) {
+    if (
+      isSubmittingRef.current ||
+      !cartItems?.length ||
+      !checkoutState.isReadyToSubmit
+    ) {
       return;
     }
 
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
     setSubmitResult(null);
 
@@ -121,6 +127,7 @@ export const useCheckoutSubmit = ({
 
       return checkoutResult;
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   }, [
@@ -133,7 +140,11 @@ export const useCheckoutSubmit = ({
   ]);
 
   const retryFailed = useCallback(async () => {
-    if (!submitResult || submitResult.failed.length === 0) {
+    if (
+      isSubmittingRef.current ||
+      !submitResult ||
+      submitResult.failed.length === 0
+    ) {
       return;
     }
 
@@ -143,6 +154,7 @@ export const useCheckoutSubmit = ({
       return;
     }
 
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -156,6 +168,7 @@ export const useCheckoutSubmit = ({
 
       return updatedResult;
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   }, [

@@ -25,6 +25,7 @@ export interface UseMultipleImageUploadReturn {
   imageIds: number[];
   isUploading: boolean;
   hasError: boolean;
+  uploadError: string | null;
   addImage: (file: File) => Promise<void>;
   removeImage: (index: number) => void;
   resetImages: (nextImages?: InitialImageUploadState[]) => void;
@@ -36,6 +37,7 @@ export const useMultipleImageUpload = (
   maxImages: number = 3,
 ): UseMultipleImageUploadReturn => {
   const [images, setImages] = useState<ImageUploadState[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const imagesRef = useRef<ImageUploadState[]>([]);
 
   const revokePreviewIfNeeded = useCallback((url: string) => {
@@ -73,14 +75,20 @@ export const useMultipleImageUpload = (
 
   const addImage = useCallback(
     async (file: File): Promise<void> => {
-      if (images.length >= maxImages) {
-        throw new Error(`Максимум ${maxImages} изображений`);
+      if (imagesRef.current.length >= maxImages) {
+        const errorMessage = `Максимум ${maxImages} изображений`;
+        setUploadError(errorMessage);
+        throw new Error(errorMessage);
       }
 
       const validation = validateImage(file);
       if (!validation.isValid) {
-        throw new Error(validation.error);
+        const errorMessage = validation.error ?? "Invalid image";
+        setUploadError(errorMessage);
+        throw new Error(errorMessage);
       }
+
+      setUploadError(null);
 
       const preview = createImagePreview(file);
       const tempImage: ImageUploadState = {
@@ -91,23 +99,28 @@ export const useMultipleImageUpload = (
         error: null,
       };
 
-      setImages((prev) => [...prev, tempImage]);
+      const nextImages = [...imagesRef.current, tempImage];
+      imagesRef.current = nextImages;
+      setImages(nextImages);
 
       try {
         const response = await imageApi.saveImage(file, tag);
         const imageId = response[0];
 
-        setImages((prev) =>
-          prev.map((img) =>
+        setImages((prev) => {
+          const next = prev.map((img) =>
             img.preview === preview
               ? { ...img, id: imageId, isUploading: false }
               : img,
-          ),
-        );
+          );
+          imagesRef.current = next;
+          return next;
+        });
       } catch (error) {
         console.error("Ошибка загрузки изображения:", error);
-        setImages((prev) =>
-          prev.map((img) =>
+        setUploadError("Не удалось загрузить изображение");
+        setImages((prev) => {
+          const next = prev.map((img) =>
             img.preview === preview
               ? {
                   ...img,
@@ -115,26 +128,32 @@ export const useMultipleImageUpload = (
                   error: "Не удалось загрузить изображение",
                 }
               : img,
-          ),
-        );
+          );
+          imagesRef.current = next;
+          return next;
+        });
         throw error;
       }
     },
-    [images.length, maxImages, tag],
+    [maxImages, tag],
   );
 
   const removeImage = useCallback((index: number) => {
+    setUploadError(null);
     setImages((prev) => {
       const imageToRemove = prev[index];
       if (imageToRemove?.preview) {
         revokePreviewIfNeeded(imageToRemove.preview);
       }
-      return prev.filter((_, i) => i !== index);
+      const next = prev.filter((_, i) => i !== index);
+      imagesRef.current = next;
+      return next;
     });
   }, [revokePreviewIfNeeded]);
 
   const resetImages = useCallback(
     (nextImages: InitialImageUploadState[] = []) => {
+      setUploadError(null);
       setImages((prev) => {
         prev.forEach((img) => {
           if (img.preview) {
@@ -142,7 +161,9 @@ export const useMultipleImageUpload = (
           }
         });
 
-        return mapInitialImages(nextImages);
+        const next = mapInitialImages(nextImages);
+        imagesRef.current = next;
+        return next;
       });
     },
     [mapInitialImages, revokePreviewIfNeeded],
@@ -167,6 +188,7 @@ export const useMultipleImageUpload = (
     imageIds,
     isUploading,
     hasError,
+    uploadError,
     addImage,
     removeImage,
     resetImages,
