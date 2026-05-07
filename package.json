@@ -2,6 +2,10 @@
   "name": "3d_print_market",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=24.15.0 <25",
+    "npm": ">=11 <12"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:3001": "cross-env PORT=3001 next dev",
