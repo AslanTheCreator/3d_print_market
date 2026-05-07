@@ -1,7 +1,7 @@
 "use client";
 
 import { FavoriteBorderOutlined, SearchOutlined, StorefrontOutlined } from "@mui/icons-material";
-import { Box, Container, Typography, alpha } from "@mui/material";
+import { Box, CircularProgress, Container, Typography, alpha } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useFavoritesProducts } from "@/entities/favorite";
 import { useAuth } from "@/features/auth";
@@ -9,14 +9,31 @@ import { EmptyPageState, UnauthorizedState } from "@/shared/ui/states";
 import { ProductCatalog } from "@/widgets/product-catalog";
 
 export default function FavoritesPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isInitialized } = useAuth();
   const router = useRouter();
   const {
     data: products = [],
     isLoading,
     isError,
     refetch,
-  } = useFavoritesProducts(isAuthenticated);
+  } = useFavoritesProducts(isInitialized && isAuthenticated);
+
+  if (!isInitialized) {
+    return (
+      <Container sx={{ pt: "20px" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 400,
+          }}
+        >
+          <CircularProgress size={40} />
+        </Box>
+      </Container>
+    );
+  }
 
   if (!isAuthenticated) {
     return <UnauthorizedState type="favorites" />;

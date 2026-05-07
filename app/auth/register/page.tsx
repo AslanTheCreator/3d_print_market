@@ -8,6 +8,29 @@ import { ApiError } from "@/shared/lib/errorHandler";
 import { useAuthStore } from "@/shared/lib/auth";
 import { useNotification } from "@/shared/ui/notification";
 
+const DEFAULT_POST_AUTH_REDIRECT = "/";
+
+const getPostAuthRedirectPath = (): string => {
+  if (typeof window === "undefined") {
+    return DEFAULT_POST_AUTH_REDIRECT;
+  }
+
+  const redirectPath = new URLSearchParams(window.location.search).get(
+    "redirect",
+  );
+
+  if (
+    !redirectPath ||
+    !redirectPath.startsWith("/") ||
+    redirectPath.startsWith("//") ||
+    redirectPath.startsWith("/auth")
+  ) {
+    return DEFAULT_POST_AUTH_REDIRECT;
+  }
+
+  return redirectPath;
+};
+
 export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -96,7 +119,7 @@ export default function RegisterPage() {
       if (isVerificationSuccessful) {
         setAuthenticated();
         setIsVerificationOpen(false);
-        router.push("/");
+        router.replace(getPostAuthRedirectPath());
       }
     } catch (error) {
       console.error("Verification failed:", error);

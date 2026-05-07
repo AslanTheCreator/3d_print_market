@@ -15,6 +15,12 @@ import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 
 type UnauthorizedStateType = "cart" | "favorites" | "checkout";
 
+const fallbackRedirectPaths: Record<UnauthorizedStateType, string> = {
+  cart: "/checkout",
+  favorites: "/favorites",
+  checkout: "/checkout",
+};
+
 const configs: Record<
   UnauthorizedStateType,
   {
@@ -52,6 +58,15 @@ export const UnauthorizedState = ({
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const config = configs[type];
+  const getAuthPath = (authPath: "/auth/login" | "/auth/register") => {
+    const redirectPath =
+      typeof window === "undefined"
+        ? fallbackRedirectPaths[type]
+        : `${window.location.pathname}${window.location.search}`;
+    const params = new URLSearchParams({ redirect: redirectPath });
+
+    return `${authPath}?${params.toString()}`;
+  };
 
   return (
     <Container sx={{ marginTop: "10px" }}>
@@ -98,7 +113,7 @@ export const UnauthorizedState = ({
           <Button
             variant="contained"
             startIcon={<LoginIcon />}
-            onClick={() => router.push("/auth/login")}
+            onClick={() => router.push(getAuthPath("/auth/login"))}
             size={isMobile ? "medium" : "large"}
             sx={{ minWidth: isMobile ? "100%" : 140, textTransform: "none" }}
           >
@@ -108,7 +123,7 @@ export const UnauthorizedState = ({
           <Button
             variant="outlined"
             startIcon={<PersonAddOutlinedIcon />}
-            onClick={() => router.push("/auth/register")}
+            onClick={() => router.push(getAuthPath("/auth/register"))}
             size={isMobile ? "medium" : "large"}
             sx={{ minWidth: isMobile ? "100%" : 140, textTransform: "none" }}
           >

@@ -12,6 +12,29 @@ import {
 import { useAuthStore } from "@/shared/lib/auth";
 import { useNotification } from "@/shared/ui/notification";
 
+const DEFAULT_POST_AUTH_REDIRECT = "/";
+
+const getPostAuthRedirectPath = (): string => {
+  if (typeof window === "undefined") {
+    return DEFAULT_POST_AUTH_REDIRECT;
+  }
+
+  const redirectPath = new URLSearchParams(window.location.search).get(
+    "redirect",
+  );
+
+  if (
+    !redirectPath ||
+    !redirectPath.startsWith("/") ||
+    redirectPath.startsWith("//") ||
+    redirectPath.startsWith("/auth")
+  ) {
+    return DEFAULT_POST_AUTH_REDIRECT;
+  }
+
+  return redirectPath;
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +55,7 @@ export default function LoginPage() {
       const isLoginSuccessful = await login(userLogin, password);
 
       if (isLoginSuccessful) {
-        router.push("/");
+        router.replace(getPostAuthRedirectPath());
       }
     } catch (error) {
       console.error("Login failed:", error);
@@ -95,7 +118,7 @@ export default function LoginPage() {
         setAuthenticated();
         setIsVerificationOpen(false);
         showNotification("Email успешно подтвержден!", "success");
-        router.push("/");
+        router.replace(getPostAuthRedirectPath());
       }
     } catch (error) {
       console.error("Verification failed:", error);
