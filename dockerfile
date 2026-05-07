@@ -19,9 +19,9 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Копируем только необходимое для standalone
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder --chown=node:node /app/public ./public
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 
 EXPOSE 3000
 
@@ -30,6 +30,8 @@ ENV API_BASE_URL=
 ENV NEXT_PUBLIC_API_URL=
 
 # Запускаем напрямую через node
+USER node
+
 CMD ["node", "server.js"]
 
 

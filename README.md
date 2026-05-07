@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 3D Print Market
 
-## Getting Started
+Frontend production marketplace for 3D printing products.
 
-First, run the development server:
+Stack: Next.js 15, React 19, TypeScript, Feature-Sliced Design, MUI, React Query, Zustand.
+
+## Requirements
+
+- Node.js 24.15.0
+- npm 11
+
+Use the project Node version:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+nvm use
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create `.env.local` from `.env.example` and set API URLs:
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```bash
+NEXT_PUBLIC_API_URL=https://api.example.com
+API_BASE_URL=http://backend:8081
+ALLOW_LOCAL_API_URL=false
+```
 
-## Learn More
+`NEXT_PUBLIC_API_URL` is used by the browser. `API_BASE_URL` is optional and is used by the Next.js server when it must call an internal backend address.
 
-To learn more about Next.js, take a look at the following resources:
+## Development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm ci
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+Local app URL: http://localhost:3000
 
-## Deploy on Vercel
+## Checks
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run typecheck
+npm run lint
+npm run architecture:check
+npm run build
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+`architecture:check` runs Steiger against the real project root, including `app` and `src`.
+
+## Architecture
+
+The project follows Feature-Sliced Design:
+
+- `app` - Next.js routes, layouts, metadata and providers
+- `src/widgets` - composed page blocks
+- `src/features` - user scenarios and actions
+- `src/entities` - domain models and API logic
+- `src/shared` - generic UI, hooks, config and utilities
+
+Upper layers depend on lower layers only. Prefer public API imports between slices.
+
+## Docker
+
+Build:
+
+```bash
+docker build -f dockerfile -t 3d-print-market-frontend .
+```
+
+Run:
+
+```bash
+docker run --rm -p 3000:3000 --env-file .env.local 3d-print-market-frontend
+```
+
+The runtime image uses Next.js standalone output and runs as the non-root `node` user.
+
+## CI
+
+GitHub Actions runs:
+
+- dependency install with `npm ci`
+- production dependency audit
+- typecheck
+- ESLint
+- FSD architecture check
+- Next.js build

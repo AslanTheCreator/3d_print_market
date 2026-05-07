@@ -12,6 +12,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint app src --ext .ts,.tsx --max-warnings=0",
+    "architecture:check": "steiger .",
     "typecheck": "next typegen && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -38,7 +39,7 @@
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.23",
-    "@types/node": "^20",
+    "@types/node": "^24.12.2",
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.1",
     "cross-env": "^7.0.3",
