@@ -13,9 +13,14 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useProfileUser } from "@/entities/user";
-import { UserProductsList } from "@/widgets/user-products";
 
-export const DashboardProductsWidget = () => {
+interface DashboardProductsWidgetProps {
+  children?: React.ReactNode;
+}
+
+export const DashboardProductsWidget = ({
+  children,
+}: DashboardProductsWidgetProps) => {
   const theme = useTheme();
   const router = useRouter();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -80,7 +85,7 @@ export const DashboardProductsWidget = () => {
         </Stack>
       </Stack>
 
-      <UserProductsList />
+      {children}
     </Container>
   );
 };

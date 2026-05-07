@@ -14,7 +14,27 @@ export const parseCategoryId = (slug: string): number | null => {
  */
 export const parseCategoryName = (slug: string): string => {
   const parts = slug.split("-");
-  return parts.slice(1).join(" ").replace(/-/g, " ");
+  const categoryName = parts.slice(1).join(" ");
+  return formatCategoryName(categoryName);
+};
+
+const decodeCategoryName = (name: string): string => {
+  try {
+    return decodeURIComponent(name);
+  } catch {
+    return name;
+  }
+};
+
+const formatCategoryName = (name: string): string => {
+  const decodedName = decodeCategoryName(name);
+  const normalizedName = decodedName.toLowerCase().trim();
+
+  if (normalizedName === "nsfw (18+)" || normalizedName === "nsfw(18+)") {
+    return "NSFW (18+)";
+  }
+
+  return decodedName;
 };
 
 /**

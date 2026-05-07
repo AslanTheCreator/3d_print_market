@@ -1,7 +1,7 @@
 import { useMemo, useCallback } from "react";
 import { ProductBasket } from "@/entities/cart";
 import { ShippingMethod, Transfer } from "@/shared/types";
-import { useDictionary } from "@/entities/dictionary";
+import { type DictionaryItem, useDictionary } from "@/entities/dictionary";
 import { DeliveryResolution, SellerDeliveryInfo } from "../model/types";
 
 interface SellerTransfers {
@@ -60,10 +60,10 @@ export const useDeliveryResolver = ({
     });
 
     // Сортируем по приоритету из словаря
-    const methodOrder = shoppingMethods?.map((m) => m.value) || [];
+    const methodOrder = shoppingMethods?.map((m) => m.value) ?? [];
     return [...intersection].sort((a, b) => {
-      const indexA = methodOrder.indexOf(a);
-      const indexB = methodOrder.indexOf(b);
+      const indexA = getMethodSortIndex(a, methodOrder);
+      const indexB = getMethodSortIndex(b, methodOrder);
       return indexA - indexB;
     });
   }, [sellerTransfersData, shoppingMethods, isLoading]);
@@ -171,10 +171,18 @@ export const useDeliveryResolver = ({
 // Вспомогательные функции
 function getMethodDisplayName(
   method: ShippingMethod,
-  shoppingMethods: any[] | undefined,
+  shoppingMethods: DictionaryItem[] | undefined,
 ): string {
   const methodInfo = shoppingMethods?.find((m) => m.value === method);
   return methodInfo?.description || method;
+}
+
+function getMethodSortIndex(
+  method: ShippingMethod,
+  methodOrder: string[],
+): number {
+  const index = methodOrder.indexOf(method);
+  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
 }
 
 function truncate(str: string, maxLength: number): string {

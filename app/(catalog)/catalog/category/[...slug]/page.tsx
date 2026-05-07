@@ -1,9 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Box, Container, Typography } from "@mui/material";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useProductsInfinite } from "@/entities/product";
+import {
+  AgeVerificationGate,
+  isAdultCategoryPath,
+  useAgeVerification,
+} from "@/features/age-verification";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import type { PriceRange, ProductFilter } from "@/shared/types";
 import {
@@ -14,6 +19,7 @@ import {
 
 export default function CategoryPage() {
   const params = useParams();
+  const router = useRouter();
   const slugs = params?.slug as string[] | string;
   const categoryPath = useCategoryFilter(slugs);
   const [priceRange, setPriceRange] = useState<PriceRange | undefined>();
@@ -28,6 +34,17 @@ export default function CategoryPage() {
       ...(priceRange ? { priceRange } : {}),
     };
   }, [categoryPath, priceRange]);
+
+  const isAgeVerificationRequired = useMemo(() => {
+    return categoryPath ? isAdultCategoryPath(categoryPath) : false;
+  }, [categoryPath]);
+  const { isVerified, confirmAge } = useAgeVerification(
+    isAgeVerificationRequired,
+  );
+
+  const handleAgeReject = useCallback(() => {
+    router.replace("/");
+  }, [router]);
 
   const {
     data,
@@ -80,27 +97,35 @@ export default function CategoryPage() {
 
   return (
     <Container sx={{ pt: "20px" }}>
-      <CategoryPageHeader
-        categoryPath={categoryPath}
-        priceRange={priceRange}
-        availablePriceRange={availablePriceRange}
-        onPriceRangeApply={setPriceRange}
-      />
+      <AgeVerificationGate
+        open={isAgeVerificationRequired && !isVerified}
+        onConfirm={confirmAge}
+        onReject={handleAgeReject}
+      >
+        <CategoryPageHeader
+          categoryPath={categoryPath}
+          priceRange={priceRange}
+          availablePriceRange={availablePriceRange}
+          onPriceRangeApply={setPriceRange}
+        />
 
-      <Box sx={{ pt: error || products.length === 0 || !isLoading ? 0 : 2.5 }}>
-        <InfiniteScroll
-          onLoadMore={fetchNextPage}
-          hasNextPage={!!hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
+        <Box
+          sx={{ pt: error || products.length === 0 || !isLoading ? 0 : 2.5 }}
         >
-          <ProductCatalog
-            products={products}
-            isLoading={isLoading}
-            isError={isError}
-            onRetry={refetch}
-          />
-        </InfiniteScroll>
-      </Box>
+          <InfiniteScroll
+            onLoadMore={fetchNextPage}
+            hasNextPage={!!hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+          >
+            <ProductCatalog
+              products={products}
+              isLoading={isLoading}
+              isError={isError}
+              onRetry={refetch}
+            />
+          </InfiniteScroll>
+        </Box>
+      </AgeVerificationGate>
     </Container>
   );
 }
