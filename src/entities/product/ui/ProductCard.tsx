@@ -74,6 +74,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     >
       <Link
         href={`/catalog/${id}/detail`}
+        prefetch={false}
         style={{
           textDecoration: "none",
           color: "inherit",

@@ -2,6 +2,7 @@
 
 import { Box, Typography, Paper, useMediaQuery, useTheme } from "@mui/material";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
+import { useIntersectionObserver } from "usehooks-ts";
 import {
   ProductCard,
   ProductCardSkeleton,
@@ -10,7 +11,7 @@ import {
   useProductsInfinite,
 } from "@/entities/product";
 import { useFavoritesChecks } from "@/entities/favorite";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth";
 import { AddToCartButton } from "@/features/add-to-cart";
@@ -85,8 +86,22 @@ export function RelatedProducts({
   categoryId,
   excludeProductId,
 }: RelatedProductsProps) {
+  const [canLoadProducts, setCanLoadProducts] = useState(false);
+  const { ref, entry } = useIntersectionObserver({
+    threshold: 0,
+    rootMargin: "600px",
+  });
+
+  useEffect(() => {
+    if (entry?.isIntersecting) {
+      setCanLoadProducts(true);
+    }
+  }, [entry?.isIntersecting]);
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useProductsInfinite(10, { categoryId });
+    useProductsInfinite(10, { categoryId }, undefined, {
+      enabled: canLoadProducts,
+    });
 
   const filteredProducts = useMemo(
     () =>
@@ -95,6 +110,10 @@ export function RelatedProducts({
       ),
     [data, excludeProductId],
   );
+
+  if (!canLoadProducts) {
+    return <div ref={ref} />;
+  }
 
   if (!isLoading && filteredProducts.length === 0) {
     return null;
