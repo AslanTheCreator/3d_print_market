@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
-
-const SITE_URL = "https://figurzilla.ru";
+import { SITE_INFO } from "@/shared/config";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -11,13 +10,14 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           "/api/",
           "/auth/",
+          "/catalog/search",
           "/checkout",
           "/dashboard",
           "/favorites",
         ],
       },
     ],
-    sitemap: `${SITE_URL}/sitemap.xml`,
-    host: SITE_URL,
+    sitemap: `${SITE_INFO.url}/sitemap.xml`,
+    host: SITE_INFO.url,
   };
 }

@@ -16,15 +16,41 @@ import {
 const API_URL_PRODUCT = `/product`;
 const API_URL = `/products`;
 
+interface ProductSitemapItem {
+  id: number;
+  createdAt: string;
+  price: number;
+}
+
+const getPublicProductDtos = async (
+  params: FetchProductsParams,
+): Promise<ProductDto[]> => {
+  const requestData = buildProductRequest(params);
+  const { data } = await publicClient.post<ProductDto[]>(
+    `${API_URL}/find`,
+    requestData,
+  );
+
+  return data;
+};
+
 export const productApi = {
   getProducts: async (params: FetchProductsParams): Promise<Product[]> => {
-    const requestData = buildProductRequest(params);
-    const { data } = await publicClient.post<ProductDto[]>(
-      `${API_URL}/find`,
-      requestData,
-    );
+    const data = await getPublicProductDtos(params);
 
     return attachImages<ProductDto, Product>(data, (p) => p.imageId);
+  },
+
+  getProductSitemapItems: async (
+    params: FetchProductsParams,
+  ): Promise<ProductSitemapItem[]> => {
+    const data = await getPublicProductDtos(params);
+
+    return data.map((product) => ({
+      id: product.id,
+      createdAt: product.createdAt,
+      price: product.price,
+    }));
   },
 
   getUserProducts: async (params: FetchProductsParams): Promise<Product[]> => {
