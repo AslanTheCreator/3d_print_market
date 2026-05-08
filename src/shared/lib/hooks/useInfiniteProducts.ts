@@ -21,6 +21,7 @@ export interface UseInfiniteProductsOptions {
   staleTime?: number;
   retry?: number;
   initialData?: InfiniteData<Product[], CursorPageParam | null>;
+  initialDataUpdatedAt?: number;
   enabled?: boolean;
 }
 
@@ -36,6 +37,7 @@ export const useInfiniteProducts = ({
   staleTime = 1000 * 60 * 5,
   retry = 2,
   initialData,
+  initialDataUpdatedAt,
   enabled = true,
 }: UseInfiniteProductsOptions) => {
   return useInfiniteQuery({
@@ -67,6 +69,7 @@ export const useInfiniteProducts = ({
     },
     initialPageParam: null,
     initialData,
+    initialDataUpdatedAt,
     enabled,
     staleTime,
     retry,

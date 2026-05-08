@@ -54,9 +54,10 @@ const getInitialProducts = async (
 ): Promise<{
   products: Product[];
   hasError: boolean;
+  fetchedAt: number;
 }> => {
   if (!categoryPath || isAdultCategoryPath(categoryPath)) {
-    return { products: [], hasError: false };
+    return { products: [], hasError: false, fetchedAt: Date.now() };
   }
 
   try {
@@ -68,9 +69,9 @@ const getInitialProducts = async (
       sortBy: "DATE_DESC",
     });
 
-    return { products, hasError: false };
+    return { products, hasError: false, fetchedAt: Date.now() };
   } catch {
-    return { products: [], hasError: true };
+    return { products: [], hasError: true, fetchedAt: Date.now() };
   }
 };
 
@@ -121,12 +122,14 @@ export const generateMetadata = async ({
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
   const categoryPath = await getCategoryPath(getSlugKey(slug));
-  const { products, hasError } = await getInitialProducts(categoryPath);
+  const { products, hasError, fetchedAt } =
+    await getInitialProducts(categoryPath);
 
   return (
     <CategoryProducts
       categoryPath={categoryPath}
       initialProducts={products}
+      initialDataUpdatedAt={fetchedAt}
       initialError={hasError}
       pageSize={CATEGORY_PRODUCTS_PAGE_SIZE}
     />

@@ -31,6 +31,7 @@ export const metadata: Metadata = {
 const getInitialProducts = async (): Promise<{
   products: Product[];
   hasError: boolean;
+  fetchedAt: number;
 }> => {
   try {
     const products = await productApi.getProducts({
@@ -38,18 +39,19 @@ const getInitialProducts = async (): Promise<{
       sortBy: "DATE_DESC",
     });
 
-    return { products, hasError: false };
+    return { products, hasError: false, fetchedAt: Date.now() };
   } catch {
-    return { products: [], hasError: true };
+    return { products: [], hasError: true, fetchedAt: Date.now() };
   }
 };
 
 export default async function HomePage() {
-  const { products, hasError } = await getInitialProducts();
+  const { products, hasError, fetchedAt } = await getInitialProducts();
 
   return (
     <HomeProducts
       initialProducts={products}
+      initialDataUpdatedAt={fetchedAt}
       initialError={hasError}
       pageSize={HOME_PRODUCTS_PAGE_SIZE}
     />

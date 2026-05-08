@@ -9,12 +9,14 @@ import { ProductCatalog } from "@/widgets/product-catalog";
 
 interface HomeProductsProps {
   initialProducts: Product[];
+  initialDataUpdatedAt: number;
   initialError: boolean;
   pageSize: number;
 }
 
 export const HomeProducts = ({
   initialProducts,
+  initialDataUpdatedAt,
   initialError,
   pageSize,
 }: HomeProductsProps) => {
@@ -30,6 +32,7 @@ export const HomeProducts = ({
     refetch,
   } = useProductsInfinite(pageSize, undefined, "DATE_DESC", {
     initialProducts: initialError ? undefined : initialProducts,
+    initialDataUpdatedAt,
     enabled: !hasInitialError,
   });
 

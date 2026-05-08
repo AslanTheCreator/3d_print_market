@@ -89,13 +89,14 @@ const getInitialProduct = async (
 ): Promise<{
   product: ProductDetail | undefined;
   hasError: boolean;
+  fetchedAt: number;
 }> => {
   try {
     const product = await getProductDetails(id);
 
-    return { product, hasError: false };
+    return { product, hasError: false, fetchedAt: Date.now() };
   } catch {
-    return { product: undefined, hasError: true };
+    return { product: undefined, hasError: true, fetchedAt: Date.now() };
   }
 };
 
@@ -103,12 +104,13 @@ export default async function ProductDetailPage({
   params,
 }: ProductDetailPageProps) {
   const { id } = await params;
-  const { product, hasError } = await getInitialProduct(id);
+  const { product, hasError, fetchedAt } = await getInitialProduct(id);
 
   return (
     <ProductDetailsWidget
       productId={id}
       initialProduct={product}
+      initialDataUpdatedAt={fetchedAt}
       initialError={hasError}
     />
   );

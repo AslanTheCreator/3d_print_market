@@ -1,47 +1,22 @@
-"use client";
-
 import { Suspense } from "react";
-import { Box, Container, Typography } from "@mui/material";
-import { useSearchParams } from "next/navigation";
-import { useProductsInfinite } from "@/entities/product";
-import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
-import { ProductCatalog } from "@/widgets/product-catalog";
+import type { Metadata } from "next";
+import { SearchProducts } from "@/widgets/search-products";
 
-function SearchContent() {
-  const searchParams = useSearchParams();
-  const query = searchParams?.get("query") || "";
-
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useProductsInfinite(10, {
-      name: query,
-    });
-
-  return (
-    <Container sx={{ pt: "20px" }}>
-      <Typography component="h2" variant="h2">
-        {query ? `Результаты поиска: "${query}"` : "Новинки"}
-      </Typography>
-
-      <Box pt="20px">
-        <InfiniteScroll
-          onLoadMore={fetchNextPage}
-          hasNextPage={!!hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
-        >
-          <ProductCatalog
-            products={data?.pages.flat() ?? []}
-            isLoading={isLoading}
-          />
-        </InfiniteScroll>
-      </Box>
-    </Container>
-  );
-}
+export const metadata: Metadata = {
+  title: "Поиск",
+  alternates: {
+    canonical: "/catalog/search",
+  },
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 export default function SearchPage() {
   return (
     <Suspense fallback={<div>Загрузка...</div>}>
-      <SearchContent />
+      <SearchProducts />
     </Suspense>
   );
 }

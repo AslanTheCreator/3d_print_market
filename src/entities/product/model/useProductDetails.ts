@@ -6,6 +6,7 @@ import { ProductDetail } from "@/shared/types";
 interface UseProductDetailsOptions {
   productId?: string;
   initialProduct?: ProductDetail;
+  initialDataUpdatedAt?: number;
   initialError?: boolean;
 }
 
@@ -20,6 +21,7 @@ interface UseProductDetailsReturn {
 export const useProductDetails = ({
   productId,
   initialProduct,
+  initialDataUpdatedAt,
   initialError = false,
 }: UseProductDetailsOptions = {}): UseProductDetailsReturn => {
   const params = useParams();
@@ -32,6 +34,7 @@ export const useProductDetails = ({
     isError,
   } = useProductById(id, {
     initialProduct,
+    initialDataUpdatedAt,
     enabled: !initialError,
   });
 

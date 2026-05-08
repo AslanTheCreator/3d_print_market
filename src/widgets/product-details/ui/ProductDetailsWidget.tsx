@@ -17,12 +17,14 @@ import { DesktopProductDetails } from "./DesktopProductDetails";
 interface ProductDetailsWidgetProps {
   productId?: string;
   initialProduct?: ProductDetail;
+  initialDataUpdatedAt?: number;
   initialError?: boolean;
 }
 
 export function ProductDetailsWidget({
   productId,
   initialProduct,
+  initialDataUpdatedAt,
   initialError,
 }: ProductDetailsWidgetProps) {
   const theme = useTheme();
@@ -32,6 +34,7 @@ export function ProductDetailsWidget({
   const { productCard, allImages, isLoading, isError } = useProductDetails({
     productId,
     initialProduct,
+    initialDataUpdatedAt,
     initialError,
   });
 

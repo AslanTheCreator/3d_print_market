@@ -17,6 +17,7 @@ import { CategoryPageHeader, ProductCatalog } from "@/widgets/product-catalog";
 interface CategoryProductsProps {
   categoryPath: CategoryPath | null;
   initialProducts: Product[];
+  initialDataUpdatedAt: number;
   initialError: boolean;
   pageSize: number;
 }
@@ -24,6 +25,7 @@ interface CategoryProductsProps {
 export const CategoryProducts = ({
   categoryPath,
   initialProducts,
+  initialDataUpdatedAt,
   initialError,
   pageSize,
 }: CategoryProductsProps) => {
@@ -66,6 +68,7 @@ export const CategoryProducts = ({
     refetch,
   } = useProductsInfinite(pageSize, filters, "DATE_DESC", {
     initialProducts: shouldUseInitialProducts ? initialProducts : undefined,
+    initialDataUpdatedAt,
     enabled:
       Boolean(categoryPath) &&
       !shouldBlockQuery &&

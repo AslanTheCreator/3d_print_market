@@ -7,11 +7,15 @@ import { useInfiniteProducts } from "@/shared/hooks";
 
 interface ProductByIdOptions {
   initialProduct?: ProductDetail;
+  initialDataUpdatedAt?: number;
+  staleTime?: number;
   enabled?: boolean;
 }
 
 interface ProductsInfiniteOptions {
   initialProducts?: Product[];
+  initialDataUpdatedAt?: number;
+  staleTime?: number;
   enabled?: boolean;
 }
 
@@ -21,7 +25,8 @@ export const useProductById = (id?: string, options?: ProductByIdOptions) => {
     queryFn: () => productApi.getProductById(Number(id)),
     enabled: (options?.enabled ?? true) && Boolean(id),
     initialData: options?.initialProduct,
-    staleTime: 5 * 60 * 1000,
+    initialDataUpdatedAt: options?.initialDataUpdatedAt,
+    staleTime: options?.staleTime ?? 5 * 60 * 1000,
     retry: 2,
   });
 };
@@ -45,6 +50,8 @@ export const useProductsInfinite = (
             pageParams: [null],
           }
         : undefined,
+    initialDataUpdatedAt: options?.initialDataUpdatedAt,
+    staleTime: options?.staleTime,
     enabled: options?.enabled,
   });
 };
