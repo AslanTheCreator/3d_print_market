@@ -5,16 +5,22 @@ import type { Product, ProductDetail } from "@/shared/types";
 import { ProductFilter, SortBy } from "@/shared/types";
 import { useInfiniteProducts } from "@/shared/hooks";
 
+interface ProductByIdOptions {
+  initialProduct?: ProductDetail;
+  enabled?: boolean;
+}
+
 interface ProductsInfiniteOptions {
   initialProducts?: Product[];
   enabled?: boolean;
 }
 
-export const useProductById = (id?: string) => {
+export const useProductById = (id?: string, options?: ProductByIdOptions) => {
   return useQuery<ProductDetail>({
     queryKey: productKeys.detail(id ?? 0),
     queryFn: () => productApi.getProductById(Number(id)),
-    enabled: Boolean(id),
+    enabled: (options?.enabled ?? true) && Boolean(id),
+    initialData: options?.initialProduct,
     staleTime: 5 * 60 * 1000,
     retry: 2,
   });

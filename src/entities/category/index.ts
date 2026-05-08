@@ -18,5 +18,6 @@ export {
   createBreadcrumbs,
   generateCategoryTitle,
 } from "./lib/createBreadcrumbs";
+export { getCategoryPathFromSlugs } from "./lib/categoryPath";
 export { getCategorySlug, buildCategoryPath } from "./lib/categorySlug";
 export { getCategoryIcon } from "./lib/categoryIcons";

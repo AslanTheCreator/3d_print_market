@@ -9,16 +9,31 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useProductDetails, ProductDetailsSkeleton } from "@/entities/product";
+import type { ProductDetail } from "@/shared/types";
 import { ErrorState } from "@/shared/ui/states";
 import { MobileProductDetails } from "./MobileProductDetails";
 import { DesktopProductDetails } from "./DesktopProductDetails";
 
-export function ProductDetailsWidget() {
+interface ProductDetailsWidgetProps {
+  productId?: string;
+  initialProduct?: ProductDetail;
+  initialError?: boolean;
+}
+
+export function ProductDetailsWidget({
+  productId,
+  initialProduct,
+  initialError,
+}: ProductDetailsWidgetProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const router = useRouter();
 
-  const { productCard, allImages, isLoading, isError } = useProductDetails();
+  const { productCard, allImages, isLoading, isError } = useProductDetails({
+    productId,
+    initialProduct,
+    initialError,
+  });
 
   if (isLoading) {
     return <ProductDetailsSkeleton />;

@@ -3,6 +3,12 @@ import { useParams } from "next/navigation";
 import { useProductById } from "./useProductQueries";
 import { ProductDetail } from "@/shared/types";
 
+interface UseProductDetailsOptions {
+  productId?: string;
+  initialProduct?: ProductDetail;
+  initialError?: boolean;
+}
+
 interface UseProductDetailsReturn {
   productCard: ProductDetail | undefined;
   allImages: string[];
@@ -11,11 +17,23 @@ interface UseProductDetailsReturn {
   error: Error | null;
 }
 
-export const useProductDetails = (): UseProductDetailsReturn => {
+export const useProductDetails = ({
+  productId,
+  initialProduct,
+  initialError = false,
+}: UseProductDetailsOptions = {}): UseProductDetailsReturn => {
   const params = useParams();
-  const id = params.id as string;
+  const id = productId ?? (params.id as string);
 
-  const { data: productCard, isLoading, error, isError } = useProductById(id);
+  const {
+    data: productCard,
+    isLoading,
+    error,
+    isError,
+  } = useProductById(id, {
+    initialProduct,
+    enabled: !initialError,
+  });
 
   const mainImage = useMemo(() => {
     const firstImage = productCard?.image[0];
@@ -41,6 +59,6 @@ export const useProductDetails = (): UseProductDetailsReturn => {
     allImages,
     isLoading,
     error,
-    isError,
+    isError: initialError || isError,
   };
 };
