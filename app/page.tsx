@@ -1,53 +1,35 @@
-"use client";
+import { productApi } from "@/entities/product/api";
+import type { Product } from "@/shared/types";
+import { HomeProducts } from "@/widgets/home-products";
 
-import { Box, Container, Typography } from "@mui/material";
-import { useProductsInfinite } from "@/entities/product";
-import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
-import { ProductCatalog } from "@/widgets/product-catalog";
+export const dynamic = "force-dynamic";
 
-export default function HomePage() {
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error,
-    isError,
-    refetch,
-  } = useProductsInfinite(18);
+const HOME_PRODUCTS_PAGE_SIZE = 18;
 
-  const products = data?.pages.flat() ?? [];
+const getInitialProducts = async (): Promise<{
+  products: Product[];
+  hasError: boolean;
+}> => {
+  try {
+    const products = await productApi.getProducts({
+      size: HOME_PRODUCTS_PAGE_SIZE,
+      sortBy: "DATE_DESC",
+    });
+
+    return { products, hasError: false };
+  } catch {
+    return { products: [], hasError: true };
+  }
+};
+
+export default async function HomePage() {
+  const { products, hasError } = await getInitialProducts();
 
   return (
-    <Container sx={{ pt: "20px" }}>
-      {!error && (products.length > 0 || isLoading) && (
-        <Typography
-          component="h1"
-          variant="h2"
-          sx={{
-            mb: { xs: 2, sm: 3 },
-            fontSize: { xs: "1.75rem", sm: "2rem" },
-          }}
-        >
-          Новинки
-        </Typography>
-      )}
-
-      <Box>
-        <InfiniteScroll
-          onLoadMore={fetchNextPage}
-          hasNextPage={!!hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
-        >
-          <ProductCatalog
-            products={products}
-            isLoading={isLoading}
-            isError={isError}
-            onRetry={() => refetch()}
-          />
-        </InfiniteScroll>
-      </Box>
-    </Container>
+    <HomeProducts
+      initialProducts={products}
+      initialError={hasError}
+      pageSize={HOME_PRODUCTS_PAGE_SIZE}
+    />
   );
 }

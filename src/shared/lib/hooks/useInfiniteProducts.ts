@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { type InfiniteData, useInfiniteQuery } from "@tanstack/react-query";
 import { Product } from "@/shared/types";
 import { FetchProductsParams, ProductFilter, SortBy } from "@/shared/types";
 
@@ -20,6 +20,8 @@ export interface UseInfiniteProductsOptions {
   queryKey: readonly unknown[];
   staleTime?: number;
   retry?: number;
+  initialData?: InfiniteData<Product[], CursorPageParam | null>;
+  enabled?: boolean;
 }
 
 /**
@@ -33,6 +35,8 @@ export const useInfiniteProducts = ({
   queryKey,
   staleTime = 1000 * 60 * 5,
   retry = 2,
+  initialData,
+  enabled = true,
 }: UseInfiniteProductsOptions) => {
   return useInfiniteQuery({
     queryKey: [...queryKey, size, filters, sortBy],
@@ -62,6 +66,8 @@ export const useInfiniteProducts = ({
       };
     },
     initialPageParam: null,
+    initialData,
+    enabled,
     staleTime,
     retry,
   });
