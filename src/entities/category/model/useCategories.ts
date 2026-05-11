@@ -3,12 +3,17 @@ import { categoryApi } from "../api/categoryApi";
 import { categoryKeys } from "./queryKeys";
 import { CategoryModel } from "@/shared/types";
 
-export const useCategories = () => {
+interface UseCategoriesOptions {
+  enabled?: boolean;
+}
+
+export const useCategories = (options?: UseCategoriesOptions) => {
   return useQuery({
     queryKey: categoryKeys.lists(),
     queryFn: categoryApi.getCategories,
     staleTime: 10 * 60 * 1000, // 10 минут — категории редко меняются
     gcTime: 30 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   });
 };
 

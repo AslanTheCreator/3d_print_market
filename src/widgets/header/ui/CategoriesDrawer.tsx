@@ -78,7 +78,7 @@ export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
             </IconButton>
           </Box>
 
-          <CategoriesMenu onClose={onClose} />
+          <CategoriesMenu onClose={onClose} enabled={open} />
         </Box>
       </Drawer>
     );
@@ -113,7 +113,7 @@ export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
           overflowY: "auto",
         }}
       >
-        <CategoriesMenu onClose={onClose} />
+        <CategoriesMenu onClose={onClose} enabled={open} />
       </Box>
     </ClickAwayListener>
   );

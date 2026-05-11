@@ -29,6 +29,7 @@ import { CategoryModel } from "@/shared/types";
 
 interface CategoriesMenuProps {
   onClose: () => void;
+  enabled?: boolean;
 }
 
 interface CategoryItemProps {
@@ -187,8 +188,13 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
   );
 };
 
-export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({ onClose }) => {
-  const { data: categories = [], isLoading, error } = useCategories();
+export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({
+  onClose,
+  enabled = true,
+}) => {
+  const { data: categories = [], isLoading, error } = useCategories({
+    enabled,
+  });
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
 
