@@ -1,5 +1,13 @@
 /** @type {import('next').NextConfig} */
 const isDevelopment = process.env.NODE_ENV === "development";
+const imageSources = [
+  "'self'",
+  "data:",
+  "blob:",
+  "https://mc.yandex.ru",
+  "https://cdn.figurzilla.ru",
+  ...(isDevelopment ? ["http://localhost:9000", "http://127.0.0.1:9000"] : []),
+];
 
 const cspDirectives = [
   "default-src 'self'",
@@ -16,7 +24,7 @@ const cspDirectives = [
     "https://yastatic.net",
   ].join(" "),
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://mc.yandex.ru",
+  `img-src ${imageSources.join(" ")}`,
   "font-src 'self' data:",
   "connect-src 'self' http: https: ws: wss:",
   "frame-src 'self' https://mc.yandex.ru https://yandex.ru https://*.yandex.ru",
@@ -55,6 +63,28 @@ const securityHeaders = [
 const nextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.figurzilla.ru",
+      },
+      ...(isDevelopment
+        ? [
+            {
+              protocol: "http",
+              hostname: "localhost",
+              port: "9000",
+            },
+            {
+              protocol: "http",
+              hostname: "127.0.0.1",
+              port: "9000",
+            },
+          ]
+        : []),
+    ],
+  },
   async headers() {
     return [
       {

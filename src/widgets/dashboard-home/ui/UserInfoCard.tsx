@@ -12,7 +12,7 @@ interface UserInfoCardProps {
 export const UserInfoCard: React.FC<UserInfoCardProps> = ({ user, onEdit }) => {
   const userName = user.login || user.fullName;
   const userImage = user.image?.[0];
-  const hasImage = userImage?.imageData;
+  const hasImage = userImage?.url;
 
   return (
     <Box
@@ -27,11 +27,7 @@ export const UserInfoCard: React.FC<UserInfoCardProps> = ({ user, onEdit }) => {
     >
       {/* Аватар */}
       <Avatar
-        src={
-          hasImage
-            ? `data:${userImage?.contentType};base64,${userImage?.imageData}`
-            : undefined
-        }
+        src={hasImage}
         alt={userName}
         sx={{
           width: 64,

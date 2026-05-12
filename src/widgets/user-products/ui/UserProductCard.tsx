@@ -65,6 +65,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
   const router = useRouter();
 
   const expirationStatus = getExpirationStatus(expirationDate);
+  const productImage = image?.[0] ?? null;
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
@@ -154,7 +155,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
             backgroundColor: alpha(theme.palette.primary.main, 0.05),
           }}
         >
-          {image && image[0]?.imageData ? (
+          {productImage?.url ? (
             <>
               {!isImageLoaded && (
                 <Skeleton
@@ -167,7 +168,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
               )}
               <Image
                 alt={name}
-                src={`data:${image[0].contentType};base64,${image[0].imageData}`}
+                src={productImage.url}
                 fill
                 sizes="(max-width: 600px) 50vw, 33vw"
                 loading="lazy"

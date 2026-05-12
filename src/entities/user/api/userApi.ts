@@ -4,7 +4,6 @@ import {
   UserProfileModel,
   UserUpdateModel,
 } from "../model/types";
-import { ImageResponse } from "@/shared/types";
 import { imageApi } from "@/shared/api";
 import { authClient, publicClient } from "@/shared/api";
 
@@ -15,7 +14,9 @@ const API_URL_PROFILE = `/auth/profile`;
 export const userApi = {
   async getUser(): Promise<UserBaseModel> {
     const { data } = await authClient.get<UserBaseModel>(API_URL);
-    const images = data.imageId ? await imageApi.getImages(data.imageId) : [];
+    const images = data.imageId
+      ? await imageApi.getImageMetadata(data.imageId)
+      : [];
     return { ...data, image: images };
   },
   async getUserByParams(id?: number): Promise<UserFindModel[]> {
@@ -24,11 +25,11 @@ export const userApi = {
     });
     return data ?? [];
   },
-  async getProfileUser(): Promise<
-    UserProfileModel & { image: ImageResponse[] }
-  > {
+  async getProfileUser(): Promise<UserProfileModel> {
     const { data } = await authClient.get<UserProfileModel>(API_URL_PROFILE);
-    const image = data.imageId ? await imageApi.getImages(data.imageId) : [];
+    const image = data.imageId
+      ? await imageApi.getImageMetadata(data.imageId)
+      : [];
     return { ...data, image: image };
   },
   async updateUser(userData: UserUpdateModel): Promise<number> {

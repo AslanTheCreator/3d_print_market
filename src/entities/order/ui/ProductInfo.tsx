@@ -2,19 +2,17 @@
 import React from "react";
 import { Stack, Box, Typography, Skeleton, Chip } from "@mui/material";
 import type { ListOrdersModel } from "../model/types";
-import { useImagesQuery } from "@/shared/api";
+import { useImageMetadataQuery } from "@/shared/api";
 
 interface ProductInfoProps {
   product: ListOrdersModel["product"];
 }
 
 export const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
-  const { data: images, isLoading } = useImagesQuery(product.imageId);
+  const { data: images, isLoading } = useImageMetadataQuery(product.imageId);
   const image = images?.[0] ?? null;
 
-  const imageSrc = image
-    ? `data:${image.contentType};base64,${image.imageData}`
-    : null;
+  const imageSrc = image?.url ?? null;
 
   return (
     <Stack direction="row" spacing={1.5} alignItems="center">

@@ -58,9 +58,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
   } = useImageUpload("PARTICIPANT");
 
   const existingImage = initialData?.image?.[0];
-  const existingImagePreview = existingImage
-    ? `data:${existingImage.contentType};base64,${existingImage.imageData}`
-    : null;
+  const existingImagePreview = existingImage?.url ?? null;
 
   const {
     control,

@@ -72,7 +72,7 @@ export const CurrencyField = ({
               fullWidth
               id="price"
               label="Цена продажи"
-              type="number"
+              type="text"
               placeholder="Например: 1490"
               error={!!priceError}
               helperText={getHelperText(
@@ -91,6 +91,9 @@ export const CurrencyField = ({
                     {currentSymbol}
                   </InputAdornment>
                 ),
+                inputProps: {
+                  inputMode: "decimal",
+                },
               }}
             />
           )}

@@ -41,6 +41,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const isPreorder = availability === "PREORDER";
+  const productImage = image?.[0] ?? null;
 
   return (
     <Card
@@ -93,7 +94,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             backgroundColor: alpha(theme.palette.primary.main, 0.04),
           }}
         >
-          {image && image[0]?.imageData ? (
+          {productImage?.url ? (
             <>
               {!isImageLoaded && (
                 <Skeleton
@@ -106,7 +107,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               )}
               <Image
                 alt={name}
-                src={`data:${image[0].contentType};base64,${image[0].imageData}`}
+                src={productImage.url}
                 fill
                 sizes="(max-width: 600px) 50vw, 33vw"
                 loading="lazy"

@@ -1,7 +1,17 @@
-import type { ImageResponse, ImageTag } from "@/shared/types";
+import type { ImageMetadata, ImageResponse, ImageTag } from "@/shared/types";
 import { publicClient, authClient } from "@/shared/api";
 
 const API_URL = `/images`;
+
+const normalizeImageIds = (imageIds: number | number[] | null) => {
+  if (!imageIds || imageIds === 0) {
+    return [];
+  }
+
+  const ids = Array.isArray(imageIds) ? imageIds : [imageIds];
+
+  return ids.filter((id) => id > 0);
+};
 
 const getImagesBatch = async (imageIds: number[]): Promise<ImageResponse[]> => {
   const queryString = imageIds.map((id) => `ids=${id}`).join("&");
@@ -30,17 +40,24 @@ const getImagesInRequestedOrder = async (
   return images.filter((image): image is ImageResponse => !!image);
 };
 
+const getMetadataBatch = async (
+  imageIds: number[],
+): Promise<ImageMetadata[]> => {
+  const { data } = await publicClient.get<ImageMetadata[]>(
+    `${API_URL}/metadata?ids=${imageIds.join(",")}`,
+  );
+  const imageById = new Map((data ?? []).map((image) => [image.id, image]));
+
+  return imageIds
+    .map((imageId) => imageById.get(imageId))
+    .filter((image): image is ImageMetadata => !!image);
+};
+
 export const imageApi = {
   async getImages(
     imageIds: number | number[] | null,
   ): Promise<ImageResponse[]> {
-    if (!imageIds || imageIds === 0) {
-      return [];
-    }
-
-    const ids = Array.isArray(imageIds) ? imageIds : [imageIds];
-
-    const validIds = ids.filter((id) => id > 0);
+    const validIds = normalizeImageIds(imageIds);
 
     if (validIds.length === 0) {
       return [];
@@ -48,12 +65,28 @@ export const imageApi = {
 
     try {
       if (validIds.length === 1) {
-        return getImagesBatch(validIds);
+        return await getImagesBatch(validIds);
       }
 
-      return getImagesInRequestedOrder(validIds);
+      return await getImagesInRequestedOrder(validIds);
     } catch (error) {
       console.error("Ошибка при получении изображений:", error);
+      return [];
+    }
+  },
+  async getImageMetadata(
+    imageIds: number | number[] | null,
+  ): Promise<ImageMetadata[]> {
+    const validIds = normalizeImageIds(imageIds);
+
+    if (validIds.length === 0) {
+      return [];
+    }
+
+    try {
+      return await getMetadataBatch(validIds);
+    } catch (error) {
+      console.error("Failed to load image metadata:", error);
       return [];
     }
   },

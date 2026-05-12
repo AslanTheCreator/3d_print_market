@@ -2,8 +2,7 @@
 
 import React from "react";
 import { Avatar, Skeleton } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import { imageApi } from "@/shared/api";
+import { useImageMetadataQuery } from "@/shared/api";
 import { useUserById } from "../model/useUserQueries";
 
 interface SellerAvatarProps {
@@ -22,12 +21,8 @@ export const SellerAvatar: React.FC<SellerAvatarProps> = ({
 
   const imageId = seller?.imageId ?? null;
 
-  const { data: images, isLoading: isImageLoading } = useQuery({
-    queryKey: ["seller-avatar", imageId],
-    queryFn: () => imageApi.getImages(imageId!),
-    enabled: !!imageId,
-    staleTime: 1000 * 60 * 10,
-  });
+  const { data: images, isLoading: isImageLoading } =
+    useImageMetadataQuery(imageId);
 
   const isLoading = isSellerLoading || (!!imageId && isImageLoading);
 
@@ -36,9 +31,7 @@ export const SellerAvatar: React.FC<SellerAvatarProps> = ({
   }
 
   const image = images?.[0];
-  const imageSrc = image
-    ? `data:${image.contentType};base64,${image.imageData}`
-    : undefined;
+  const imageSrc = image?.url;
 
   const fallback = sellerLogin?.charAt(0)?.toUpperCase() || "S";
 

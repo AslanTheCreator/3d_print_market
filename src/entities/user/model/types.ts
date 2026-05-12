@@ -2,7 +2,7 @@ import {
   Address,
   SocialNetwork,
   AccountsBaseModel,
-  ImageResponse,
+  ImageMetadata,
   TransferMoney,
   Transfer,
 } from "@/shared/types";
@@ -17,7 +17,7 @@ export interface UserProfileModel extends Pick<
   role: string;
   email: string;
   imageId: number | null;
-  image: ImageResponse[];
+  image: ImageMetadata[];
   exp: number;
   type: string;
 }
@@ -33,7 +33,7 @@ export interface UserBaseModel {
   averageRating: number;
   totalReviews: number;
   imageId: number | null;
-  image: ImageResponse[];
+  image: ImageMetadata[];
   addresses: Address[];
   accounts: AccountsBaseModel[];
   transfers: Transfer[];

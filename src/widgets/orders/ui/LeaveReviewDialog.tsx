@@ -131,9 +131,7 @@ const ProductHeader: React.FC<{ product: Product }> = ({ product }) => {
 
   // Получаем base64 изображение товара
   const productImage = product.image?.[0];
-  const imageSrc = productImage
-    ? `data:${productImage.contentType};base64,${productImage.imageData}`
-    : null;
+  const imageSrc = productImage?.url ?? null;
 
   return (
     <Stack direction="row" spacing={2} alignItems="center">

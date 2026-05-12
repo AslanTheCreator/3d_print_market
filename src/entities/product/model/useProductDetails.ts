@@ -40,17 +40,11 @@ export const useProductDetails = ({
 
   const mainImage = useMemo(() => {
     const firstImage = productCard?.image[0];
-    return firstImage
-      ? `data:${firstImage.contentType};base64,${firstImage.imageData}`
-      : undefined;
+    return firstImage?.url;
   }, [productCard?.image]);
 
   const additionalImages = useMemo(() => {
-    return (
-      productCard?.image
-        ?.slice(1)
-        ?.map((img) => `data:${img.contentType};base64,${img.imageData}`) ?? []
-    );
+    return productCard?.image?.slice(1)?.map((img) => img.url) ?? [];
   }, [productCard?.image]);
 
   const allImages = mainImage

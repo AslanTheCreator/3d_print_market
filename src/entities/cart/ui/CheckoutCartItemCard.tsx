@@ -49,6 +49,7 @@ export const CheckoutCartItemCard = ({
   // Деструктурируем product из ProductBasket
   const { product } = item;
   const { id, name, price, categories, image, currency } = product;
+  const productImage = image?.[0] ?? null;
 
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onSelectChange(id, event.target.checked);
@@ -103,7 +104,7 @@ export const CheckoutCartItemCard = ({
             },
           }}
         >
-          {image?.[0]?.imageData ? (
+          {productImage?.url ? (
             <>
               {!isImageLoaded && (
                 <Skeleton
@@ -115,7 +116,7 @@ export const CheckoutCartItemCard = ({
                 />
               )}
               <Image
-                src={`data:${image[0].contentType};base64,${image[0].imageData}`}
+                src={productImage.url}
                 alt={name}
                 fill
                 style={{

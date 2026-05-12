@@ -1,10 +1,10 @@
 import { imageApi } from "@/shared/api";
-import type { ImageResponse } from "@/shared/types";
+import type { ImageMetadata } from "@/shared/types";
 
 /**
  * Generic-хелпер: для массива элементов подгружает картинки по imageId
  */
-export const attachImages = async <T, R extends T & { image: ImageResponse[] }>(
+export const attachImages = async <T, R extends T & { image: ImageMetadata[] }>(
   items: T[],
   getImageId: (item: T) => number | undefined | null,
 ): Promise<R[]> => {
@@ -13,19 +13,8 @@ export const attachImages = async <T, R extends T & { image: ImageResponse[] }>(
     .filter((imageId): imageId is number => !!imageId && imageId > 0);
 
   const uniqueImageIds = [...new Set(imageIds)];
-  const imageEntries = await Promise.all(
-    uniqueImageIds.map(async (imageId) => {
-      const [image] = await imageApi.getImages(imageId);
-      return [imageId, image] as const;
-    }),
-  );
-  const imageById = new Map<number, ImageResponse>();
-
-  imageEntries.forEach(([imageId, image]) => {
-    if (image) {
-      imageById.set(imageId, image);
-    }
-  });
+  const images = await imageApi.getImageMetadata(uniqueImageIds);
+  const imageById = new Map(images.map((image) => [image.id, image]));
 
   return items.map((item) => {
     const imageId = getImageId(item);

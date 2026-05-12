@@ -1,4 +1,4 @@
-import type { ImageResponse } from "./image";
+import type { ImageMetadata } from "./image";
 import type { CategoryModel } from "./category";
 import type { Review } from "./review";
 import type { Currency } from "./currency";
@@ -25,7 +25,7 @@ export interface ProductDto {
   createdAt: string; // ISO date string
 }
 export interface Product extends ProductDto {
-  image: ImageResponse[];
+  image: ImageMetadata[];
 }
 
 export interface ProductDetailDto {
@@ -50,5 +50,5 @@ export interface ProductDetailDto {
 }
 
 export interface ProductDetail extends ProductDetailDto {
-  image: ImageResponse[];
+  image: ImageMetadata[];
 }

@@ -68,7 +68,7 @@ export const productApi = {
     const { data } = await publicClient.get<ProductDetail>(
       `${API_URL_PRODUCT}/${id}`,
     );
-    const images = await imageApi.getImages(data.imageIds);
+    const images = await imageApi.getImageMetadata(data.imageIds);
 
     return { ...data, image: images };
   },

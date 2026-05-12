@@ -175,7 +175,7 @@ export const ProductFormFields = ({
               fullWidth
               id="count"
               label="Количество в наличии"
-              type="number"
+              type="text"
               placeholder="Например: 5"
               error={!!errors.count}
               helperText={getHelperText(
@@ -195,9 +195,7 @@ export const ProductFormFields = ({
                   </InputAdornment>
                 ),
                 inputProps: {
-                  min: 1,
-                  max: 999999,
-                  step: 1,
+                  inputMode: "numeric",
                 },
               }}
             />
@@ -243,7 +241,7 @@ export const ProductFormFields = ({
                 fullWidth
                 id="prepaymentAmount"
                 label="Сумма предоплаты"
-                type="number"
+                type="text"
                 placeholder="Например: 500"
                 error={!!errors.prepaymentAmount}
                 helperText={getHelperText(
@@ -266,6 +264,9 @@ export const ProductFormFields = ({
                       {currentSymbol}
                     </InputAdornment>
                   ),
+                  inputProps: {
+                    inputMode: "decimal",
+                  },
                 }}
               />
             )}

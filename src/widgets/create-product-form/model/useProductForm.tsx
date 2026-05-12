@@ -18,6 +18,7 @@ import {
   useMultipleImageUpload,
 } from "@/features/image-upload";
 import { useNotification } from "@/shared/ui/notification";
+import type { ImageMetadata } from "@/shared/types";
 import { getCreateProductErrorNotification } from "./getCreateProductErrorNotification";
 
 const PRODUCT_LIST_PATH = "/dashboard/products";
@@ -30,16 +31,11 @@ interface UseProductFormOptions {
 
 const buildInitialImages = (
   imageIds: number[] | undefined,
-  productImages:
-    | {
-        contentType: string;
-        imageData: string;
-      }[]
-    | undefined,
+  productImages: ImageMetadata[] | undefined,
 ): InitialImageUploadState[] =>
   (productImages ?? []).map((image, index) => ({
     id: imageIds?.[index] ?? index,
-    preview: `data:${image.contentType};base64,${image.imageData}`,
+    preview: image.url,
   }));
 
 export const useProductForm = ({
