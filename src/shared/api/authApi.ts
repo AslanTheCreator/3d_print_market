@@ -3,6 +3,7 @@ import { publicClient } from "./axios/instances";
 import { tokenStorage } from "@/shared/lib";
 import {
   AuthFormModel,
+  RegisterFormModel,
   RegisterResponse,
   TokensResponse,
   VerificationCodeResponse,
@@ -26,10 +27,11 @@ export const authApi = {
   async registerUser({
     mail,
     password,
-  }: AuthFormModel): Promise<RegisterResponse> {
+    age,
+  }: RegisterFormModel): Promise<RegisterResponse> {
     const { status, data } = await publicClient.post<number>(
       API_URL_REGISTER,
-      { mail, password },
+      { mail, password, age },
       {
         headers: { "Content-Type": "application/json" },
       },

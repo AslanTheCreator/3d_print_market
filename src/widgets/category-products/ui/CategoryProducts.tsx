@@ -2,15 +2,13 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { Box, Container, Typography } from "@mui/material";
-import { useRouter } from "next/navigation";
 import { useProductsInfinite } from "@/entities/product";
 import type { CategoryPath } from "@/entities/category";
-import {
-  AgeVerificationGate,
-  isAdultCategoryPath,
-  useAgeVerification,
-} from "@/features/age-verification";
+import { useAuth } from "@/features/auth";
+import { isAdultCategoryPath } from "@/features/age-verification";
+import { ApiError } from "@/shared/lib/errorHandler";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
+import { ErrorState, UnauthorizedState } from "@/shared/ui/states";
 import type { PriceRange, Product, ProductFilter } from "@/shared/types";
 import { CategoryPageHeader, ProductCatalog } from "@/widgets/product-catalog";
 
@@ -29,16 +27,13 @@ export const CategoryProducts = ({
   initialError,
   pageSize,
 }: CategoryProductsProps) => {
-  const router = useRouter();
   const [priceRange, setPriceRange] = useState<PriceRange | undefined>();
   const [hasInitialError, setHasInitialError] = useState(initialError);
+  const { isAuthenticated, isInitialized } = useAuth();
 
-  const isAgeVerificationRequired = useMemo(() => {
+  const isAdultCategory = useMemo(() => {
     return categoryPath ? isAdultCategoryPath(categoryPath) : false;
   }, [categoryPath]);
-  const { isVerified, confirmAge } = useAgeVerification(
-    isAgeVerificationRequired,
-  );
 
   const filters = useMemo<ProductFilter | undefined>(() => {
     if (!categoryPath) {
@@ -47,16 +42,19 @@ export const CategoryProducts = ({
 
     return {
       categoryId: categoryPath.categoryId,
+      ...(isAdultCategory ? { includeAdult: true } : {}),
       ...(priceRange ? { priceRange } : {}),
     };
-  }, [categoryPath, priceRange]);
+  }, [categoryPath, isAdultCategory, priceRange]);
 
   const isBaseFilter = priceRange === undefined;
   const shouldUseInitialProducts =
-    isBaseFilter && !initialError && !isAgeVerificationRequired;
+    isBaseFilter && !initialError && !isAdultCategory;
   const shouldBlockQuery = isBaseFilter && hasInitialError;
-  const shouldWaitForAgeConfirmation =
-    isAgeVerificationRequired && !isVerified;
+  const shouldWaitForAuthInitialization =
+    isAdultCategory && !isInitialized;
+  const shouldRequireAuthentication =
+    isAdultCategory && isInitialized && !isAuthenticated;
 
   const {
     data,
@@ -65,6 +63,7 @@ export const CategoryProducts = ({
     isFetchingNextPage,
     isLoading,
     isError,
+    error,
     refetch,
   } = useProductsInfinite(pageSize, filters, "DATE_DESC", {
     initialProducts: shouldUseInitialProducts ? initialProducts : undefined,
@@ -72,13 +71,21 @@ export const CategoryProducts = ({
     enabled:
       Boolean(categoryPath) &&
       !shouldBlockQuery &&
-      !shouldWaitForAgeConfirmation,
+      !shouldWaitForAuthInitialization &&
+      !shouldRequireAuthentication,
   });
 
   const products = useMemo(() => data?.pages.flat() ?? [], [data?.pages]);
   const hasError = shouldBlockQuery || isError;
+  const isAdultAccessForbidden =
+    isAdultCategory && error instanceof ApiError && error.isForbidden();
   const isCatalogLoading =
-    (!hasError && isLoading) || shouldWaitForAgeConfirmation;
+    (!hasError && isLoading) || shouldWaitForAuthInitialization;
+  const shouldShowCategoryHeader =
+    !isAdultCategory ||
+    (!shouldWaitForAuthInitialization &&
+      !shouldRequireAuthentication &&
+      !isAdultAccessForbidden);
 
   const availablePriceRange = useMemo<PriceRange | undefined>(() => {
     if (products.length === 0) {
@@ -104,14 +111,42 @@ export const CategoryProducts = ({
     };
   }, [products]);
 
-  const handleAgeReject = useCallback(() => {
-    router.replace("/");
-  }, [router]);
-
   const handleRetry = useCallback(() => {
     setHasInitialError(false);
     void refetch();
   }, [refetch]);
+
+  const renderCatalogContent = () => {
+    if (shouldRequireAuthentication) {
+      return <UnauthorizedState type="adult" />;
+    }
+
+    if (isAdultAccessForbidden) {
+      return (
+        <ErrorState
+          type="products"
+          title="Раздел недоступен"
+          description="Сервер запретил доступ к этой категории. Вероятнее всего, в профиле указан возраст меньше 18 лет."
+          hideRetry
+        />
+      );
+    }
+
+    return (
+      <InfiniteScroll
+        onLoadMore={fetchNextPage}
+        hasNextPage={!!hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+      >
+        <ProductCatalog
+          products={products}
+          isLoading={isCatalogLoading}
+          isError={hasError}
+          onRetry={handleRetry}
+        />
+      </InfiniteScroll>
+    );
+  };
 
   if (!categoryPath) {
     return (
@@ -128,35 +163,20 @@ export const CategoryProducts = ({
 
   return (
     <Container sx={{ pt: "20px" }}>
-      <AgeVerificationGate
-        open={isAgeVerificationRequired && !isVerified}
-        onConfirm={confirmAge}
-        onReject={handleAgeReject}
-      >
+      {shouldShowCategoryHeader && (
         <CategoryPageHeader
           categoryPath={categoryPath}
           priceRange={priceRange}
           availablePriceRange={availablePriceRange}
           onPriceRangeApply={setPriceRange}
         />
+      )}
 
-        <Box
-          sx={{ pt: hasError || products.length === 0 || !isLoading ? 0 : 2.5 }}
-        >
-          <InfiniteScroll
-            onLoadMore={fetchNextPage}
-            hasNextPage={!!hasNextPage}
-            isFetchingNextPage={isFetchingNextPage}
-          >
-            <ProductCatalog
-              products={products}
-              isLoading={isCatalogLoading}
-              isError={hasError}
-              onRetry={handleRetry}
-            />
-          </InfiniteScroll>
-        </Box>
-      </AgeVerificationGate>
+      <Box
+        sx={{ pt: hasError || products.length === 0 || !isLoading ? 0 : 2.5 }}
+      >
+        {renderCatalogContent()}
+      </Box>
     </Container>
   );
 };

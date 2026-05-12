@@ -18,19 +18,48 @@ import Link from "next/link";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
+interface AuthFormSubmitValues {
+  email: string;
+  password: string;
+  age?: number;
+}
+
 interface IAuthForm {
   title: string;
   subtitle: string;
   url: string;
   linkText: string;
   buttonTitle: string;
-  onSubmit?: (email: string, password: string) => Promise<void>;
+  onSubmit?: (values: AuthFormSubmitValues) => Promise<void>;
   isLoading?: boolean;
   onForgotPassword?: () => void;
   passwordAutoComplete?: "current-password" | "new-password";
+  showAgeField?: boolean;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_AGE = 0;
+const MAX_AGE = 150;
+
+const getAgeError = (ageValue: string): string => {
+  const normalizedAge = ageValue.trim();
+
+  if (!normalizedAge) {
+    return "Введите возраст";
+  }
+
+  if (!/^\d+$/.test(normalizedAge)) {
+    return "Введите целое число";
+  }
+
+  const parsedAge = Number(normalizedAge);
+
+  if (parsedAge < MIN_AGE || parsedAge > MAX_AGE) {
+    return `Возраст должен быть от ${MIN_AGE} до ${MAX_AGE}`;
+  }
+
+  return "";
+};
 
 const AuthForm: React.FC<IAuthForm> = ({
   title,
@@ -42,15 +71,18 @@ const AuthForm: React.FC<IAuthForm> = ({
   isLoading = false,
   onForgotPassword,
   passwordAutoComplete = "current-password",
+  showAgeField = false,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [age, setAge] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [ageError, setAgeError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleTogglePassword = () => {
@@ -66,21 +98,31 @@ const AuthForm: React.FC<IAuthForm> = ({
         ? ""
         : "Введите корректный email";
     const nextPasswordError = password ? "" : "Введите пароль";
+    const nextAgeError = showAgeField ? getAgeError(age) : "";
 
     setEmailError(nextEmailError);
     setPasswordError(nextPasswordError);
+    setAgeError(nextAgeError);
 
-    if (nextEmailError || nextPasswordError) {
+    if (nextEmailError || nextPasswordError || nextAgeError) {
       return;
     }
 
     setEmail(normalizedEmail);
+    const normalizedAge = age.trim();
+    if (showAgeField) {
+      setAge(normalizedAge);
+    }
     setPasswordError("");
 
     if (onSubmit) {
       try {
         setIsSubmitting(true);
-        await onSubmit(normalizedEmail, password);
+        await onSubmit({
+          email: normalizedEmail,
+          password,
+          ...(showAgeField ? { age: Number(normalizedAge) } : {}),
+        });
       } catch (error) {
         console.error("Authentication error:", error);
       } finally {
@@ -235,6 +277,49 @@ const AuthForm: React.FC<IAuthForm> = ({
               </FormHelperText>
             )}
           </Box>
+
+          {showAgeField && (
+            <Box>
+              <TextField
+                fullWidth
+                placeholder="Возраст"
+                type="number"
+                name="age"
+                autoComplete="off"
+                required
+                value={age}
+                onChange={(e) => {
+                  setAge(e.target.value);
+                  setAgeError("");
+                }}
+                error={!!ageError}
+                inputProps={{
+                  min: MIN_AGE,
+                  max: MAX_AGE,
+                  step: 1,
+                  inputMode: "numeric",
+                }}
+                InputProps={{
+                  sx: {
+                    borderRadius: theme.shape.borderRadius,
+                    fontSize: isMobile ? "0.875rem" : "1rem",
+                  },
+                }}
+              />
+              {ageError && (
+                <FormHelperText
+                  error
+                  sx={{
+                    ml: 1.5,
+                    mt: 0.5,
+                    fontSize: "0.75rem",
+                  }}
+                >
+                  {ageError}
+                </FormHelperText>
+              )}
+            </Box>
+          )}
 
           {/* Кнопка "Забыли пароль?" */}
           {onForgotPassword && (

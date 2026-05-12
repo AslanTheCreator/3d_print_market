@@ -3,6 +3,10 @@ export type AuthFormModel = {
   password: string;
 };
 
+export type RegisterFormModel = AuthFormModel & {
+  age: number;
+};
+
 export interface RegisterResponse {
   userId: number;
   isSuccess: boolean;

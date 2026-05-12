@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthForm from "@/widgets/auth-form";
-import { AuthFormModel, VerificationCodeDialog, authApi } from "@/features/auth";
+import { RegisterFormModel, VerificationCodeDialog, authApi } from "@/features/auth";
 import { ApiError } from "@/shared/lib/errorHandler";
 import { useAuthStore } from "@/shared/lib/auth";
 import { useNotification } from "@/shared/ui/notification";
@@ -42,12 +42,26 @@ export default function RegisterPageClient() {
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
   const { showNotification } = useNotification();
 
-  const handleRegister = async (mail: string, password: string) => {
+  const handleRegister = async ({
+    email: mail,
+    password,
+    age,
+  }: {
+    email: string;
+    password: string;
+    age?: number;
+  }) => {
     try {
       setIsLoading(true);
-      const userData: AuthFormModel = {
+      if (age === undefined) {
+        showNotification("Введите возраст", "warning");
+        return;
+      }
+
+      const userData: RegisterFormModel = {
         mail,
         password,
+        age,
       };
 
       const { userId: registeredUserId, isSuccess: isRegistrationSuccessful } =
@@ -146,6 +160,7 @@ export default function RegisterPageClient() {
         onSubmit={handleRegister}
         isLoading={isLoading}
         passwordAutoComplete="new-password"
+        showAgeField
       />
 
       <VerificationCodeDialog

@@ -13,12 +13,13 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import LoginIcon from "@mui/icons-material/Login";
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 
-type UnauthorizedStateType = "cart" | "favorites" | "checkout";
+type UnauthorizedStateType = "cart" | "favorites" | "checkout" | "adult";
 
 const fallbackRedirectPaths: Record<UnauthorizedStateType, string> = {
   cart: "/checkout",
   favorites: "/favorites",
   checkout: "/checkout",
+  adult: "/",
 };
 
 const configs: Record<
@@ -45,6 +46,12 @@ const configs: Record<
       "Чтобы оформить заказ, необходимо войти в свой аккаунт или зарегистрироваться.",
     caption:
       "У вас уже есть товары в корзине? После входа в аккаунт они автоматически восстановятся.",
+  },
+  adult: {
+    description:
+      "Чтобы просматривать разделы 18+, необходимо войти в аккаунт. Возраст проверяется по данным профиля.",
+    caption:
+      "Если вам уже есть 18 лет, войдите или зарегистрируйтесь с корректным возрастом.",
   },
 };
 

@@ -48,7 +48,13 @@ export default function LoginPageClient() {
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
   const { showNotification } = useNotification();
 
-  const handleLogin = async (userLogin: string, password: string) => {
+  const handleLogin = async ({
+    email: userLogin,
+    password,
+  }: {
+    email: string;
+    password: string;
+  }) => {
     try {
       setIsLoading(true);
 

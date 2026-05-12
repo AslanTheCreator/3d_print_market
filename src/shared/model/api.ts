@@ -13,6 +13,7 @@ export interface DateRange {
 export interface ProductFilter {
   name?: string;
   categoryId?: number;
+  includeAdult?: boolean;
   originality?: string;
   participantId?: number;
   priceRange?: PriceRange;
