@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const AGE_VERIFICATION_STORAGE_KEY = "figurzilla:age-verification:18-plus";
+const AGE_VERIFICATION_STORAGE_KEY = "figurzilla:age-verification:18-plus:v2";
 
 const getStoredAgeVerification = (): boolean => {
   try {
-    return window.localStorage.getItem(AGE_VERIFICATION_STORAGE_KEY) === "true";
+    return window.sessionStorage.getItem(AGE_VERIFICATION_STORAGE_KEY) === "true";
   } catch {
     return false;
   }
@@ -14,7 +14,7 @@ const getStoredAgeVerification = (): boolean => {
 
 const storeAgeVerification = () => {
   try {
-    window.localStorage.setItem(AGE_VERIFICATION_STORAGE_KEY, "true");
+    window.sessionStorage.setItem(AGE_VERIFICATION_STORAGE_KEY, "true");
   } catch {
     return;
   }

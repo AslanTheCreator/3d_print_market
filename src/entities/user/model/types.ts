@@ -16,6 +16,7 @@ export interface UserProfileModel extends Pick<
 > {
   role: string;
   email: string;
+  age: number | null;
   imageId: number | null;
   image: ImageMetadata[];
   exp: number;

@@ -12,12 +12,17 @@ export const useCurrentUser = () => {
   });
 };
 
-export const useProfileUser = () => {
+interface UseProfileUserOptions {
+  enabled?: boolean;
+}
+
+export const useProfileUser = (options?: UseProfileUserOptions) => {
   return useQuery({
     queryKey: userKeys.profile(),
     queryFn: () => userApi.getProfileUser(),
     staleTime: 5 * 60 * 1000,
     retry: 1,
+    enabled: options?.enabled ?? true,
   });
 };
 
