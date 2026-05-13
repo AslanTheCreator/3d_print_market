@@ -14,32 +14,50 @@ const request = async (path, init) => {
   }
 };
 
+const assertHtmlResponse = async (path) => {
+  const response = await request(path);
+  const html = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") ?? "", /text\/html/);
+  assert.match(html, /<html/i);
+  assert.ok(html.length > 1000);
+
+  return html;
+};
+
+const publicShellRoutes = ["/", "/checkout", "/favorites"];
+
+const protectedDashboardRoutes = [
+  "/dashboard/products",
+  "/dashboard/products/new",
+  "/dashboard/sales",
+];
+
 describe("frontend smoke", () => {
-  it("returns non-empty HTML for the home page", async () => {
-    const response = await request("/");
-    const html = await response.text();
-
-    assert.equal(response.status, 200);
-    assert.match(response.headers.get("content-type") ?? "", /text\/html/);
-    assert.match(html, /<html/i);
-    assert.ok(html.length > 1000);
-  });
-
-  it("returns public checkout shell for anonymous users", async () => {
-    const response = await request("/checkout");
-    const html = await response.text();
-
-    assert.equal(response.status, 200);
-    assert.match(response.headers.get("content-type") ?? "", /text\/html/);
-    assert.match(html, /<html/i);
-  });
-
-  it("redirects anonymous dashboard requests to login", async () => {
-    const response = await request("/dashboard/products", {
-      redirect: "manual",
+  for (const route of publicShellRoutes) {
+    it(`returns non-empty HTML for ${route}`, async () => {
+      await assertHtmlResponse(route);
     });
+  }
 
-    assert.match(String(response.status), /^30[1278]$/);
-    assert.match(response.headers.get("location") ?? "", /\/auth\/login/);
+  for (const route of protectedDashboardRoutes) {
+    it(`redirects anonymous ${route} requests to login`, async () => {
+      const response = await request(route, {
+        redirect: "manual",
+      });
+
+      assert.match(String(response.status), /^30[1278]$/);
+      assert.match(response.headers.get("location") ?? "", /\/auth\/login/);
+    });
+  }
+
+  it("exposes runtime config for the browser app", async () => {
+    const response = await request("/api/config");
+    const config = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(typeof config.apiUrl, "string");
+    assert.ok(config.apiUrl.length > 0);
   });
 });
