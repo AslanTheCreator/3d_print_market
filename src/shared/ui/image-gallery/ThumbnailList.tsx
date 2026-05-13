@@ -3,9 +3,10 @@
 import { Box, Paper, useTheme, useMediaQuery } from "@mui/material";
 import Image from "next/image";
 import { useCallback } from "react";
+import type { ImageGalleryImage } from "./types";
 
 interface ThumbnailListProps {
-  images: string[];
+  images: ImageGalleryImage[];
   currentIndex: number;
   onImageSelect: (index: number) => void;
   alt: string;
@@ -65,7 +66,7 @@ export function ThumbnailList({
         {images.map((image, index) => (
           <ThumbnailItem
             key={index}
-            src={image}
+            src={image.thumbnailSrc ?? image.previewSrc}
             alt={`${alt} миниатюра ${index + 1}`}
             size={thumbnailSize}
             isActive={currentIndex === index}

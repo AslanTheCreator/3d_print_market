@@ -6,10 +6,13 @@ export interface ImageResponse {
 
 export interface ImageMetadata {
   id: number;
-  url: string;
+  originalUrl: string;
+  mediumUrl: string;
+  thumbnailUrl: string;
   width: number | null;
   height: number | null;
   contentType: string;
+  url?: string;
 }
 
 export type ImageTag = "PARTICIPANT" | "PRODUCT" | "ORDER" | "SYSTEM";

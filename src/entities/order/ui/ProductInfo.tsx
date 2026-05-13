@@ -3,6 +3,7 @@ import React from "react";
 import { Stack, Box, Typography, Skeleton, Chip } from "@mui/material";
 import type { ListOrdersModel } from "../model/types";
 import { useImageMetadataQuery } from "@/shared/api";
+import { getImageUrl } from "@/shared/lib";
 
 interface ProductInfoProps {
   product: ListOrdersModel["product"];
@@ -12,7 +13,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
   const { data: images, isLoading } = useImageMetadataQuery(product.imageId);
   const image = images?.[0] ?? null;
 
-  const imageSrc = image?.url ?? null;
+  const imageSrc = getImageUrl(image, "thumbnail") ?? null;
 
   return (
     <Stack direction="row" spacing={1.5} alignItems="center">

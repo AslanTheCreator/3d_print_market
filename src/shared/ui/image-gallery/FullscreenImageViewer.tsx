@@ -20,9 +20,10 @@ import {
   ZoomOut,
 } from "@mui/icons-material";
 import Image from "next/image";
+import type { ImageGalleryImage } from "./types";
 
 interface FullscreenImageViewerProps {
-  images: string[];
+  images: ImageGalleryImage[];
   initialIndex?: number;
   open: boolean;
   onClose: () => void;
@@ -313,7 +314,10 @@ export function FullscreenImageViewer({
               }}
             >
               <Image
-                src={images[currentIndex]}
+                src={
+                  images[currentIndex].originalSrc ??
+                  images[currentIndex].previewSrc
+                }
                 alt={`${alt} ${currentIndex + 1}`}
                 fill
                 sizes="100vw"

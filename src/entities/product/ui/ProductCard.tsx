@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import { Schedule } from "@mui/icons-material";
 import { Product } from "@/shared/types";
+import { getImageUrl } from "@/shared/lib";
 import { ProductPriceDisplay } from "./ProductPriceDisplay";
 
 interface ProductCardProps extends Product {
@@ -42,6 +43,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const isPreorder = availability === "PREORDER";
   const productImage = image?.[0] ?? null;
+  const productImageSrc = getImageUrl(productImage, "thumbnail");
 
   return (
     <Card
@@ -94,7 +96,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             backgroundColor: alpha(theme.palette.primary.main, 0.04),
           }}
         >
-          {productImage?.url ? (
+          {productImageSrc ? (
             <>
               {!isImageLoaded && (
                 <Skeleton
@@ -107,7 +109,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               )}
               <Image
                 alt={name}
-                src={productImage.url}
+                src={productImageSrc}
                 fill
                 sizes="(max-width: 600px) 50vw, 33vw"
                 loading="lazy"

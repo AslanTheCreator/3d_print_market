@@ -16,7 +16,7 @@ import Link from "next/link";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useState } from "react";
 import { ProductBasket } from "../model/types";
-import { formatPrice } from "@/shared/lib";
+import { formatPrice, getImageUrl } from "@/shared/lib";
 import { QuantityCounter } from "@/shared/ui/quantity-counter";
 
 interface CheckoutCartItemCardProps {
@@ -50,6 +50,7 @@ export const CheckoutCartItemCard = ({
   const { product } = item;
   const { id, name, price, categories, image, currency } = product;
   const productImage = image?.[0] ?? null;
+  const productImageSrc = getImageUrl(productImage, "thumbnail");
 
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onSelectChange(id, event.target.checked);
@@ -104,7 +105,7 @@ export const CheckoutCartItemCard = ({
             },
           }}
         >
-          {productImage?.url ? (
+          {productImageSrc ? (
             <>
               {!isImageLoaded && (
                 <Skeleton
@@ -116,7 +117,7 @@ export const CheckoutCartItemCard = ({
                 />
               )}
               <Image
-                src={productImage.url}
+                src={productImageSrc}
                 alt={name}
                 fill
                 style={{

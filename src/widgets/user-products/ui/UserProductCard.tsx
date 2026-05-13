@@ -35,6 +35,7 @@ import {
   formatExpirationDate,
   ProductPriceDisplay,
 } from "@/entities/product";
+import { getImageUrl } from "@/shared/lib";
 
 interface DeleteProductPayload {
   id: number;
@@ -66,6 +67,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
 
   const expirationStatus = getExpirationStatus(expirationDate);
   const productImage = image?.[0] ?? null;
+  const productImageSrc = getImageUrl(productImage, "thumbnail");
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
@@ -155,7 +157,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
             backgroundColor: alpha(theme.palette.primary.main, 0.05),
           }}
         >
-          {productImage?.url ? (
+          {productImageSrc ? (
             <>
               {!isImageLoaded && (
                 <Skeleton
@@ -168,7 +170,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
               )}
               <Image
                 alt={name}
-                src={productImage.url}
+                src={productImageSrc}
                 fill
                 sizes="(max-width: 600px) 50vw, 33vw"
                 loading="lazy"

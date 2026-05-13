@@ -9,9 +9,10 @@ import type { Swiper as SwiperType } from "swiper";
 import { MainImage } from "./MainImage";
 import { ThumbnailList } from "./ThumbnailList";
 import { FullscreenImageViewer } from "./FullscreenImageViewer";
+import type { ImageGalleryImage } from "./types";
 
 interface ImageGalleryProps {
-  images: string[];
+  images: ImageGalleryImage[];
   alt?: string;
 }
 
@@ -188,10 +189,10 @@ export function ImageGallery({
               marginBottom: "16px",
             }}
           >
-            {images.map((src, index) => (
+            {images.map((image, index) => (
               <SwiperSlide key={index}>
                 <MainImage
-                  src={src}
+                  src={image.previewSrc}
                   alt={`${alt} ${index + 1}`}
                   priority={index === 0}
                 />

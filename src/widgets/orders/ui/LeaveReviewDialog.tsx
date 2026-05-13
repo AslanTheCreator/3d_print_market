@@ -29,6 +29,7 @@ import {
 } from "@mui/icons-material";
 import { Controller } from "react-hook-form";
 import { Product } from "@/shared/types";
+import { getImageUrl } from "@/shared/lib";
 import { useLeaveReview } from "../model/useLeaveReview";
 import { REVIEW_VALIDATION, REVIEW_FORM_RULES } from "../model/types";
 
@@ -131,7 +132,7 @@ const ProductHeader: React.FC<{ product: Product }> = ({ product }) => {
 
   // Получаем base64 изображение товара
   const productImage = product.image?.[0];
-  const imageSrc = productImage?.url ?? null;
+  const imageSrc = getImageUrl(productImage, "thumbnail") ?? null;
 
   return (
     <Stack direction="row" spacing={2} alignItems="center">

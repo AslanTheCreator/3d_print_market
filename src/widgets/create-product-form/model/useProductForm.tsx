@@ -19,6 +19,7 @@ import {
 } from "@/features/image-upload";
 import { useNotification } from "@/shared/ui/notification";
 import type { ImageMetadata } from "@/shared/types";
+import { getImageUrl } from "@/shared/lib";
 import { getCreateProductErrorNotification } from "./getCreateProductErrorNotification";
 
 const PRODUCT_LIST_PATH = "/dashboard/products";
@@ -33,10 +34,20 @@ const buildInitialImages = (
   imageIds: number[] | undefined,
   productImages: ImageMetadata[] | undefined,
 ): InitialImageUploadState[] =>
-  (productImages ?? []).map((image, index) => ({
-    id: imageIds?.[index] ?? index,
-    preview: image.url,
-  }));
+  (productImages ?? [])
+    .map((image, index) => {
+      const preview = getImageUrl(image, "medium");
+
+      if (!preview) {
+        return null;
+      }
+
+      return {
+        id: imageIds?.[index] ?? index,
+        preview,
+      };
+    })
+    .filter((image): image is InitialImageUploadState => image !== null);
 
 export const useProductForm = ({
   mode = "create",

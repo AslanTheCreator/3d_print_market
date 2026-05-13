@@ -3,6 +3,7 @@
 import React from "react";
 import { Avatar, Skeleton } from "@mui/material";
 import { useImageMetadataQuery } from "@/shared/api";
+import { getImageUrl } from "@/shared/lib";
 import { useUserById } from "../model/useUserQueries";
 
 interface SellerAvatarProps {
@@ -31,7 +32,7 @@ export const SellerAvatar: React.FC<SellerAvatarProps> = ({
   }
 
   const image = images?.[0];
-  const imageSrc = image?.url;
+  const imageSrc = getImageUrl(image, "thumbnail");
 
   const fallback = sellerLogin?.charAt(0)?.toUpperCase() || "S";
 

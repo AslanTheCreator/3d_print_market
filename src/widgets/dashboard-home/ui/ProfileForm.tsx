@@ -19,6 +19,7 @@ import { BadgeOutlined, PersonOutline } from "@mui/icons-material";
 import { AvatarUpload } from "@/shared/ui/avatar-upload";
 import { useImageUpload } from "@/features/image-upload";
 import { useUpdateUser, UserBaseModel } from "@/entities/user";
+import { getImageUrl } from "@/shared/lib";
 import { useNotification } from "@/shared/ui/notification";
 import { useState, useEffect } from "react";
 import { ProfileFormHeader } from "./components/ProfileFormHeader";
@@ -58,7 +59,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
   } = useImageUpload("PARTICIPANT");
 
   const existingImage = initialData?.image?.[0];
-  const existingImagePreview = existingImage?.url ?? null;
+  const existingImagePreview = getImageUrl(existingImage, "medium") ?? null;
 
   const {
     control,

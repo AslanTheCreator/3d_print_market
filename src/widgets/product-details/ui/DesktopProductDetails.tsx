@@ -19,6 +19,7 @@ import { FavoriteButton } from "@/features/toggle-favorite";
 import { buildCategoryPath } from "@/entities/category";
 import { useFavoritesChecks } from "@/entities/favorite";
 import { ImageGallery } from "@/shared/ui/image-gallery";
+import type { ImageGalleryImage } from "@/shared/ui/image-gallery";
 import { ProductDetail } from "@/shared/types";
 import { RelatedProducts } from "./RelatedProducts";
 import { ProductDescription } from "./ProductDescription";
@@ -37,7 +38,7 @@ import {
 
 interface DesktopProductDetailsProps {
   productCard: ProductDetail;
-  allImages: string[];
+  allImages: ImageGalleryImage[];
 }
 
 const PriceSection = ({

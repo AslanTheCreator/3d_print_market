@@ -3,6 +3,7 @@ import { Box, Avatar, Typography, Button } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
 import EditIcon from "@mui/icons-material/Edit";
 import { UserBaseModel } from "@/entities/user";
+import { getImageUrl } from "@/shared/lib";
 
 interface UserInfoCardProps {
   user: UserBaseModel;
@@ -12,7 +13,7 @@ interface UserInfoCardProps {
 export const UserInfoCard: React.FC<UserInfoCardProps> = ({ user, onEdit }) => {
   const userName = user.login || user.fullName;
   const userImage = user.image?.[0];
-  const hasImage = userImage?.url;
+  const userImageSrc = getImageUrl(userImage, "thumbnail");
 
   return (
     <Box
@@ -27,7 +28,7 @@ export const UserInfoCard: React.FC<UserInfoCardProps> = ({ user, onEdit }) => {
     >
       {/* Аватар */}
       <Avatar
-        src={hasImage}
+        src={userImageSrc}
         alt={userName}
         sx={{
           width: 64,
@@ -37,7 +38,7 @@ export const UserInfoCard: React.FC<UserInfoCardProps> = ({ user, onEdit }) => {
           bgcolor: "primary.light",
         }}
       >
-        {!hasImage && <PersonIcon sx={{ fontSize: 32 }} />}
+        {!userImageSrc && <PersonIcon sx={{ fontSize: 32 }} />}
       </Avatar>
 
       {/* Информация и кнопка */}

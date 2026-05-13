@@ -9,3 +9,5 @@ export {
   normalizeSlugParam,
 } from "./url/parseCategorySlug";
 export { attachImages } from "./attachImages";
+export { getImageUrl } from "./image/getImageUrl";
+export type { ImageSize } from "./image/getImageUrl";

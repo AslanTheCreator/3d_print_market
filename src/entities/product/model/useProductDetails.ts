@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useProductById } from "./useProductQueries";
+import { getImageUrl } from "@/shared/lib";
 import { ProductDetail } from "@/shared/types";
+import type { ImageGalleryImage } from "@/shared/ui/image-gallery";
 
 interface UseProductDetailsOptions {
   productId?: string;
@@ -12,7 +14,7 @@ interface UseProductDetailsOptions {
 
 interface UseProductDetailsReturn {
   productCard: ProductDetail | undefined;
-  allImages: string[];
+  allImages: ImageGalleryImage[];
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
@@ -38,18 +40,35 @@ export const useProductDetails = ({
     enabled: !initialError,
   });
 
-  const mainImage = useMemo(() => {
-    const firstImage = productCard?.image[0];
-    return firstImage?.url;
-  }, [productCard?.image]);
+  const allImages = useMemo<ImageGalleryImage[]>(() => {
+    return (
+      productCard?.image
+        .flatMap((image) => {
+          const previewSrc = getImageUrl(image, "medium");
 
-  const additionalImages = useMemo(() => {
-    return productCard?.image?.slice(1)?.map((img) => img.url) ?? [];
-  }, [productCard?.image]);
+          if (!previewSrc) {
+            return [];
+          }
 
-  const allImages = mainImage
-    ? [mainImage, ...additionalImages]
-    : additionalImages;
+          const galleryImage: ImageGalleryImage = {
+            previewSrc,
+          };
+          const thumbnailSrc = getImageUrl(image, "thumbnail");
+          const originalSrc = getImageUrl(image, "original");
+
+          if (thumbnailSrc) {
+            galleryImage.thumbnailSrc = thumbnailSrc;
+          }
+
+          if (originalSrc) {
+            galleryImage.originalSrc = originalSrc;
+          }
+
+          return [galleryImage];
+        })
+        ?? []
+    );
+  }, [productCard?.image]);
 
   return {
     productCard,
