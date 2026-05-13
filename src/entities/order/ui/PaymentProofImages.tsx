@@ -136,7 +136,7 @@ export const PaymentProofImages: React.FC<PaymentProofImagesProps> = ({
           >
             {images.map((img, i) => (
               <Thumbnail
-                key={img.filename || i}
+                key={img.fileName || i}
                 image={img}
                 index={i}
                 onZoom={setZoomedSrc}

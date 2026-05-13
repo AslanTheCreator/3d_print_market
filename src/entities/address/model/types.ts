@@ -7,15 +7,6 @@ export interface AddressInput {
   index: number;
 }
 
-export interface AddressInput {
-  country: string;
-  city: string;
-  street: string;
-  houseNumber: string;
-  apartmentNumber: string;
-  index: number;
-}
-
 export const DEFAULT_COUNTRY = "Россия";
 
 export const ADDRESS_VALIDATION = {

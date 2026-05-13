@@ -1,5 +1,5 @@
 export interface ImageResponse {
-  filename: string;
+  fileName: string;
   contentType: string;
   imageData: string;
 }

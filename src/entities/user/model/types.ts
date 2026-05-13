@@ -7,7 +7,7 @@ import {
   Transfer,
 } from "@/shared/types";
 
-type UserStatus = "ACTIVE" | "BLOCKED" | "DELETED";
+type UserStatus = "ACTIVE" | "WAITING_VERIFY" | "BLOCKED" | "DELETED";
 type SellerStatus = "DEFAULT" | "VIP" | "PRO";
 
 export interface UserProfileModel extends Pick<
@@ -16,7 +16,6 @@ export interface UserProfileModel extends Pick<
 > {
   role: string;
   email: string;
-  age: number | null;
   imageId: number | null;
   image: ImageMetadata[];
   exp: number;

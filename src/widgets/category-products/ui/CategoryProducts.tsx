@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Box, Container, Typography } from "@mui/material";
 import { useProductsInfinite } from "@/entities/product";
 import type { CategoryPath } from "@/entities/category";
-import { useProfileUser } from "@/entities/user";
 import { useAuth } from "@/features/auth";
 import {
   AgeVerificationGate,
@@ -42,29 +41,8 @@ export const CategoryProducts = ({
     return categoryPath ? isAdultCategoryPath(categoryPath) : false;
   }, [categoryPath]);
 
-  const {
-    data: profileUser,
-    isLoading: isProfileLoading,
-    isError: isProfileError,
-    error: profileError,
-    refetch: refetchProfile,
-  } = useProfileUser({
-    enabled: isAdultCategory && isInitialized && isAuthenticated,
-  });
-
-  const profileAge = profileUser?.age;
-  const isAdultUser = typeof profileAge === "number" && profileAge >= 18;
-  const isUnderageUser = typeof profileAge === "number" && profileAge < 18;
-  const isAgeUnknown =
-    isAdultCategory &&
-    isInitialized &&
-    isAuthenticated &&
-    !isProfileLoading &&
-    !isProfileError &&
-    typeof profileAge !== "number";
-
   const { isVerified: isAgeVerified, confirmAge } = useAgeVerification(
-    isAdultCategory && isAdultUser,
+    isAdultCategory && isInitialized && isAuthenticated,
   );
 
   const filters = useMemo<ProductFilter | undefined>(() => {
@@ -87,35 +65,15 @@ export const CategoryProducts = ({
     isAdultCategory && !isInitialized;
   const shouldRequireAuthentication =
     isAdultCategory && isInitialized && !isAuthenticated;
-  const shouldWaitForAgeProfile =
-    isAdultCategory && isInitialized && isAuthenticated && isProfileLoading;
-  const shouldShowUnderageForbidden =
-    isAdultCategory &&
-    isInitialized &&
-    isAuthenticated &&
-    !isProfileLoading &&
-    !isProfileError &&
-    isUnderageUser;
   const shouldRequireAgeVerification =
     isAdultCategory &&
     isInitialized &&
     isAuthenticated &&
-    isAdultUser &&
     !isAgeVerified;
-  const isProfileUnauthorized =
-    profileError instanceof ApiError && profileError.isUnauthorized();
-  const isAgeCheckError =
-    isAdultCategory &&
-    isInitialized &&
-    isAuthenticated &&
-    (isAgeUnknown || isProfileError);
   const shouldBlockAdultAccess =
     shouldWaitForAuthInitialization ||
     shouldRequireAuthentication ||
-    shouldWaitForAgeProfile ||
-    shouldShowUnderageForbidden ||
-    shouldRequireAgeVerification ||
-    isAgeCheckError;
+    shouldRequireAgeVerification;
 
   const {
     data,
@@ -141,17 +99,12 @@ export const CategoryProducts = ({
   const isAdultAccessForbidden =
     isAdultCategory && error instanceof ApiError && error.isForbidden();
   const isCatalogLoading =
-    (!hasError && isLoading) ||
-    shouldWaitForAuthInitialization ||
-    shouldWaitForAgeProfile;
+    (!hasError && isLoading) || shouldWaitForAuthInitialization;
   const shouldShowCategoryHeader =
     !isAdultCategory ||
     (!shouldWaitForAuthInitialization &&
       !shouldRequireAuthentication &&
-      !shouldWaitForAgeProfile &&
-      !shouldShowUnderageForbidden &&
       !shouldRequireAgeVerification &&
-      !isAgeCheckError &&
       !isAdultAccessForbidden);
 
   const availablePriceRange = useMemo<PriceRange | undefined>(() => {
@@ -183,16 +136,12 @@ export const CategoryProducts = ({
     void refetch();
   }, [refetch]);
 
-  const handleProfileRetry = useCallback(() => {
-    void refetchProfile();
-  }, [refetchProfile]);
-
   const handleAgeReject = useCallback(() => {
     router.push("/");
   }, [router]);
 
   const renderCatalogContent = () => {
-    if (shouldWaitForAuthInitialization || shouldWaitForAgeProfile) {
+    if (shouldWaitForAuthInitialization) {
       return (
         <ProductCatalog
           products={products}
@@ -205,32 +154,6 @@ export const CategoryProducts = ({
 
     if (shouldRequireAuthentication) {
       return <UnauthorizedState type="adult" />;
-    }
-
-    if (isProfileUnauthorized) {
-      return <UnauthorizedState type="adult" />;
-    }
-
-    if (shouldShowUnderageForbidden) {
-      return (
-        <ErrorState
-          type="products"
-          title="Раздел недоступен"
-          description="В профиле указан возраст меньше 18 лет. Доступ к разделам 18+ закрыт."
-          hideRetry
-        />
-      );
-    }
-
-    if (isAgeCheckError) {
-      return (
-        <ErrorState
-          type="profile"
-          title="Не удалось проверить возраст"
-          description="Для доступа к разделу 18+ необходимо проверить возраст по данным профиля."
-          onRetry={handleProfileRetry}
-        />
-      );
     }
 
     if (isAdultAccessForbidden) {

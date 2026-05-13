@@ -4,7 +4,7 @@ import type { Review } from "./review";
 import type { Currency } from "./currency";
 
 export type Availability = "PURCHASABLE" | "PREORDER" | "EXTERNAL_ONLY";
-type Status = "ACTIVE" | "DELETED";
+type Status = "ACTIVE" | "TIME_EXPIRED" | "BLOCKED" | "DELETED";
 
 export interface ProductDto {
   id: number;
