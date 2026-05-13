@@ -1,5 +1,8 @@
 name: Frontend CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
@@ -15,11 +18,12 @@ jobs:
   checks:
     name: Typecheck, lint, build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       NEXT_PUBLIC_API_URL: https://figurzilla.ru/internal-api/v1
+      CLIENT_API_BASE_URL: https://figurzilla.ru/internal-api/v1
       API_BASE_URL: https://figurzilla.ru/internal-api/v1
 
     steps:
@@ -49,3 +53,14 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
+            --build-arg CLIENT_API_BASE_URL="$CLIENT_API_BASE_URL" \
+            --build-arg API_BASE_URL="$API_BASE_URL" \
+            -t figurzilla-frontend:ci .
+
+      - name: Validate Docker Compose
+        run: docker compose -f docker-compose.yml config

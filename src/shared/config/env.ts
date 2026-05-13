@@ -85,9 +85,11 @@ const getLocalApiUrl = (): string => {
 
 export const getServerApiBaseUrl = (): string =>
   getConfiguredApiUrl(process.env.API_BASE_URL, "API_BASE_URL") ??
+  getConfiguredApiUrl(process.env.CLIENT_API_BASE_URL, "CLIENT_API_BASE_URL") ??
   getConfiguredApiUrl(process.env.NEXT_PUBLIC_API_URL, "NEXT_PUBLIC_API_URL") ??
   getLocalApiUrl();
 
 export const getClientApiBaseUrl = (): string =>
+  getConfiguredApiUrl(process.env.CLIENT_API_BASE_URL, "CLIENT_API_BASE_URL") ??
   getConfiguredApiUrl(process.env.NEXT_PUBLIC_API_URL, "NEXT_PUBLIC_API_URL") ??
   getLocalApiUrl();

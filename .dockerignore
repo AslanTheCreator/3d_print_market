@@ -16,6 +16,8 @@ build
 
 # Тестовые файлы и папки
 src/features/product-creation/test/
+tests
+playwright.config.ts
 coverage
 playwright-report
 test-results
@@ -36,7 +38,9 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Docker файлы
+Dockerfile
 dockerfile
 .dockerignore
+docker-compose*.yml
 
 README.md

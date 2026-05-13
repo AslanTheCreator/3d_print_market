@@ -42,6 +42,9 @@ pnpm-debug.log*
 playwright-report/
 test-results/
 
+# docker
+docker-compose.override.yml
+
 # vercel
 .vercel
 

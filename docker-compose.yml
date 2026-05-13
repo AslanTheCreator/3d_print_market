@@ -1,0 +1,15 @@
+services:
+  frontend:
+    image: ${FRONTEND_IMAGE:-figurzilla-frontend:latest}
+    container_name: ${FRONTEND_CONTAINER_NAME:-figurzilla-frontend}
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      CLIENT_API_BASE_URL: ${CLIENT_API_BASE_URL:?CLIENT_API_BASE_URL is required}
+      API_BASE_URL: ${API_BASE_URL:-}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+      ALLOW_LOCAL_API_URL: ${ALLOW_LOCAL_API_URL:-false}
