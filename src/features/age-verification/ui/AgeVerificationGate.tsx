@@ -66,6 +66,7 @@ export const AgeVerificationGate = ({
           }}
         >
           <Box
+            data-testid="age-verification-gate"
             role="dialog"
             aria-modal="true"
             aria-labelledby="age-verification-title"
@@ -135,6 +136,7 @@ export const AgeVerificationGate = ({
               }}
             >
               <Button
+                data-testid="age-verification-confirm"
                 variant="contained"
                 color="primary"
                 onClick={onConfirm}
@@ -146,6 +148,7 @@ export const AgeVerificationGate = ({
                 Да, мне есть 18 лет
               </Button>
               <Button
+                data-testid="age-verification-reject"
                 variant="text"
                 color="primary"
                 onClick={onReject}

@@ -76,7 +76,10 @@ export const UnauthorizedState = ({
   };
 
   return (
-    <Container sx={{ marginTop: "10px" }}>
+    <Container
+      data-testid={`unauthorized-state-${type}`}
+      sx={{ marginTop: "10px" }}
+    >
       <Box
         display="flex"
         flexDirection="column"

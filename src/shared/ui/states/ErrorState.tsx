@@ -133,6 +133,7 @@ export const ErrorState = ({
 
   const content = (
     <Box
+      data-testid={`error-state-${type}`}
       display="flex"
       flexDirection="column"
       alignItems="center"

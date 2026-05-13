@@ -26,12 +26,23 @@ const assertHtmlResponse = async (path) => {
   return html;
 };
 
-const publicShellRoutes = ["/", "/checkout", "/favorites"];
+const publicShellRoutes = [
+  "/",
+  "/checkout",
+  "/favorites",
+  "/catalog/category/32-test",
+  "/catalog/1/detail",
+];
 
 const protectedDashboardRoutes = [
+  "/dashboard",
   "/dashboard/products",
   "/dashboard/products/new",
+  "/dashboard/products/1/edit",
+  "/dashboard/purchase",
   "/dashboard/sales",
+  "/dashboard/settings",
+  "/dashboard/security",
 ];
 
 describe("frontend smoke", () => {

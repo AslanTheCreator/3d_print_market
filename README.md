@@ -43,10 +43,14 @@ Local app URL: http://localhost:3000
 npm run typecheck
 npm run lint
 npm run architecture:check
+npm run test:smoke
+npm run test:e2e
 npm run build
 ```
 
 `architecture:check` runs Steiger against the real project root, including `app` and `src`.
+`test:smoke` expects a running app and reads `TEST_BASE_URL`, defaulting to `http://localhost:3000`.
+`test:e2e` starts Playwright's local web server automatically unless `TEST_BASE_URL` is set.
 
 ## Architecture
 
@@ -104,3 +108,7 @@ GitHub Actions runs:
 - ESLint
 - FSD architecture check
 - Next.js build
+- production smoke tests
+- Playwright e2e tests
+- Docker image build
+- Docker Compose config validation
