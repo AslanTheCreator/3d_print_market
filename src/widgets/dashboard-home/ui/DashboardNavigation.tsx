@@ -19,6 +19,7 @@ import {
   TrendingUp as TrendingUpIcon,
   Settings as SettingsIcon,
   Shield as ShieldIcon,
+  Dashboard as DashboardIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -30,44 +31,61 @@ interface NavigationItem {
   href: string;
   badge?: number;
   color: string;
+  isActive?: (pathname: string) => boolean;
 }
 
 const navigationItems: NavigationItem[] = [
+  {
+    text: "Обзор",
+    icon: <DashboardIcon />,
+    href: "/dashboard",
+    color: "#ef4284",
+    isActive: (pathname) => pathname === "/dashboard",
+  },
   {
     text: "Мои товары",
     icon: <InventoryIcon />,
     href: "/dashboard/products",
     color: "#f44336",
+    isActive: (pathname) =>
+      pathname === "/dashboard/products" ||
+      (pathname.startsWith("/dashboard/products/") &&
+        !pathname.startsWith("/dashboard/products/new")),
   },
   {
     text: "Покупки",
     icon: <ShoppingBagIcon />,
     href: "/dashboard/purchase",
     color: "#4caf50",
+    isActive: (pathname) => pathname.startsWith("/dashboard/purchase"),
   },
   {
     text: "Продажи",
     icon: <TrendingUpIcon />,
     href: "/dashboard/sales",
     color: "#ff9800",
+    isActive: (pathname) => pathname.startsWith("/dashboard/sales"),
   },
   {
     text: "Создать товар",
     icon: <AccessTimeIcon />,
     href: "/dashboard/products/new",
     color: "#9c27b0",
+    isActive: (pathname) => pathname === "/dashboard/products/new",
   },
   {
     text: "Доставка и оплата",
     icon: <SettingsIcon />,
     href: "/dashboard/settings",
     color: "#607d8b",
+    isActive: (pathname) => pathname.startsWith("/dashboard/settings"),
   },
   {
     text: "Безопасность",
     icon: <ShieldIcon />,
     href: "/dashboard/security",
     color: "#f57c00",
+    isActive: (pathname) => pathname.startsWith("/dashboard/security"),
   },
 ];
 
@@ -86,7 +104,7 @@ export const DashboardNavigation: React.FC = () => {
     >
       <List component="nav" sx={{ px: 1, pb: 1 }}>
         {navigationItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = item.isActive?.(pathname) ?? pathname === item.href;
 
           return (
             <ListItemButton

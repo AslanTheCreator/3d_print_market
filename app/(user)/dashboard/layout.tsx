@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { RequireAuth } from "@/features/auth";
+import { DashboardShell } from "@/widgets/dashboard-home";
 
 const ACCESS_TOKEN_COOKIE = "access_token";
 const REFRESH_TOKEN_COOKIE = "refresh_token";
@@ -25,5 +26,9 @@ export default async function DashboardLayout({
     redirect(`${LOGIN_PATH}?redirect=${encodeURIComponent(DASHBOARD_PATH)}`);
   }
 
-  return <RequireAuth>{children}</RequireAuth>;
+  return (
+    <RequireAuth>
+      <DashboardShell>{children}</DashboardShell>
+    </RequireAuth>
+  );
 }

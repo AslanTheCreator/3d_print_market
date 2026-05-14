@@ -54,9 +54,10 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
     isLoading: isPendingLoading,
   } = useUserPendingActions();
 
-  const canShowProfilePopover = isAuthenticated;
+  const canShowProfilePopover = isAuthenticated && pendingActionsCount > 0;
   const profileUrl = isAuthenticated ? "/dashboard" : "/auth/login";
-  const profileBadge = pendingActionsCount > 0 ? pendingActionsCount : undefined;
+  const profileBadge =
+    pendingActionsCount > 0 ? pendingActionsCount : undefined;
 
   const [isTriggerHovered, setIsTriggerHovered] = useState(false);
   const [isPopoverHovered, setIsPopoverHovered] = useState(false);
@@ -99,7 +100,10 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
 
   const handleProfileFocus = useCallback(
     (event: React.FocusEvent<HTMLElement>) => {
-      if (!canShowProfilePopover || !event.currentTarget.matches(":focus-visible")) {
+      if (
+        !canShowProfilePopover ||
+        !event.currentTarget.matches(":focus-visible")
+      ) {
         return;
       }
 
@@ -341,7 +345,7 @@ const HeaderActionItem = ({
             <Typography
               variant="caption"
               sx={{
-                color: "#0f2f3a",
+                color: "#ffffff",
                 fontWeight: 500,
                 fontSize: "0.78rem",
                 letterSpacing: 0,

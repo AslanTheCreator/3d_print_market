@@ -54,7 +54,7 @@ export const Header = () => {
           pt={1.5}
           direction="row"
           alignItems="center"
-          justifyContent="space-between"
+          justifyContent={isMobile ? "space-between" : "flex-start"}
           sx={{
             minHeight: LAYOUT.HEADER_HEIGHT_PX,
           }}
@@ -62,7 +62,15 @@ export const Header = () => {
           {!isMobile ? (
             <>
               <HeaderLogo isMobile={false} />
-              <Stack direction="row" flex={1} spacing={2.5} mr={2.5} ml={1.5}>
+              <Stack
+                direction="row"
+                flex={1}
+                mr="20px"
+                ml="12px"
+                sx={{
+                  minWidth: 0,
+                }}
+              >
                 <SearchForm />
               </Stack>
               <HeaderActions isMobile={false} />

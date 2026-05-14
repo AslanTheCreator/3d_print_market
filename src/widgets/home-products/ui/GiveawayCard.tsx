@@ -162,7 +162,17 @@ export const GiveawayCard = () => {
           color="primary"
           startIcon={<CardGiftcardOutlined />}
           fullWidth
-          sx={{ minHeight: 44 }}
+          style={{ color: "#fff" }}
+          sx={{
+            minHeight: 44,
+            color: "common.white",
+            "& .MuiButton-startIcon": {
+              color: "inherit",
+            },
+            "& .MuiSvgIcon-root": {
+              color: "inherit",
+            },
+          }}
         >
           Участвовать
         </Button>
