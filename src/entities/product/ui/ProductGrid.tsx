@@ -21,18 +21,26 @@ export const ProductGrid: React.FC<GridProps> = ({ children, isMobile }) => (
 interface GridItemProps {
   children: React.ReactNode;
   isMobile: boolean;
+  xs?: number;
+  sm?: number;
+  md?: number;
+  lg?: number;
 }
 
 export const ProductGridItem: React.FC<GridItemProps> = ({
   children,
   isMobile,
+  xs = 6,
+  sm = 3,
+  md = 3,
+  lg = 2,
 }) => (
   <Grid
     item
-    xs={6}
-    sm={3}
-    md={3}
-    lg={2}
+    xs={xs}
+    sm={sm}
+    md={md}
+    lg={lg}
     sx={{
       padding: isMobile ? "4px" : undefined,
     }}

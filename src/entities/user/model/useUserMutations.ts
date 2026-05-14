@@ -1,7 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { userApi } from "../api/userApi";
 import { userKeys } from "./queryKeys";
-import type { UserBaseModel, UserUpdateModel } from "../model/types";
+import type {
+  UserBaseModel,
+  UserProfileModel,
+  UserUpdateModel,
+} from "../model/types";
 
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
@@ -16,7 +20,9 @@ export const useUpdateUser = () => {
       const previousCurrent = queryClient.getQueryData<UserBaseModel>(
         userKeys.current(),
       );
-      const previousProfile = queryClient.getQueryData<any>(userKeys.profile());
+      const previousProfile = queryClient.getQueryData<UserProfileModel>(
+        userKeys.profile(),
+      );
 
       if (previousCurrent) {
         queryClient.setQueryData<UserBaseModel>(userKeys.current(), {
@@ -27,12 +33,11 @@ export const useUpdateUser = () => {
       }
 
       if (previousProfile) {
-        queryClient.setQueryData(userKeys.profile(), {
+        queryClient.setQueryData<UserProfileModel>(userKeys.profile(), {
           ...previousProfile,
-          user: {
-            ...previousProfile.user,
-            ...newData,
-          },
+          login: newData.login,
+          fullName: newData.fullName,
+          imageId: newData.imageId ?? previousProfile.imageId,
         });
       }
 

@@ -6,6 +6,8 @@ import { useProductsInfinite } from "@/entities/product";
 import type { Product } from "@/shared/types";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { ProductCatalog } from "@/widgets/product-catalog";
+import { ProductGridItem } from "@/entities/product";
+import { GiveawayCard } from "./GiveawayCard";
 
 interface HomeProductsProps {
   initialProducts: Product[];
@@ -68,6 +70,17 @@ export const HomeProducts = ({
         >
           <ProductCatalog
             products={products}
+            leadingContent={(isMobile) => (
+              <ProductGridItem
+                isMobile={isMobile}
+                xs={12}
+                sm={6}
+                md={6}
+                lg={4}
+              >
+                <GiveawayCard />
+              </ProductGridItem>
+            )}
             isLoading={isCatalogLoading}
             isError={hasError}
             onRetry={handleRetry}

@@ -78,25 +78,27 @@ Run image directly:
 docker run --rm -p 3000:3000 --env-file .env.local figurzilla-frontend:latest
 ```
 
-Run with Docker Compose:
+Run the full local stack with Docker Compose:
 
 ```bash
 docker compose up -d
 ```
 
-The runtime image uses Next.js standalone output and runs as the non-root `node` user.
+The compose file starts PostgreSQL, MinIO, backend and frontend together. The frontend runtime image uses Next.js standalone output and runs as the non-root `node` user.
 
-Docker Compose reads runtime variables from the shell or `.env` file. For local backend usage:
+Default local values:
 
 ```bash
-FRONTEND_IMAGE=figurzilla-frontend:latest
+FRONTEND_IMAGE=atupenov/frontend_app:v1.22
 FRONTEND_PORT=3000
 CLIENT_API_BASE_URL=http://localhost:8081
-API_BASE_URL=http://host.docker.internal:8081
+API_BASE_URL=http://backend:8081
 ALLOW_LOCAL_API_URL=true
 ```
 
-For a shared Docker network with backend service named `backend`, keep `CLIENT_API_BASE_URL` accessible from the browser and set `API_BASE_URL=http://backend:8081`.
+The local compose file expects backend init scripts and MinIO data one level above the frontend repository: `../init-scripts` and `../data`.
+
+Use a `.env` file or shell variables only when the image tag, port or API URLs differ.
 
 ## CI
 

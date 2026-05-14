@@ -16,6 +16,7 @@ import { useAuth } from "@/features/auth";
 
 interface ProductCatalogProps {
   products: Product[];
+  leadingContent?: React.ReactNode | ((isMobile: boolean) => React.ReactNode);
   isLoading?: boolean;
   isError?: boolean;
   onRetry?: () => void;
@@ -23,6 +24,7 @@ interface ProductCatalogProps {
 
 export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   products,
+  leadingContent,
   isLoading,
   isError,
   onRetry,
@@ -33,6 +35,10 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
+  const renderedLeadingContent =
+    typeof leadingContent === "function"
+      ? leadingContent(isMobile)
+      : leadingContent;
 
   const getSkeletonCount = () => {
     if (isMobile) return 6;
@@ -48,6 +54,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
     return (
       <Box>
         <ProductGrid isMobile={isMobile}>
+          {renderedLeadingContent}
           {Array.from({ length: getSkeletonCount() }).map((_, index) => (
             <ProductGridItem key={index} isMobile={isMobile}>
               <ProductCardSkeleton />
@@ -63,6 +70,14 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   }
 
   if (!products || products.length === 0) {
+    if (renderedLeadingContent) {
+      return (
+        <Box>
+          <ProductGrid isMobile={isMobile}>{renderedLeadingContent}</ProductGrid>
+        </Box>
+      );
+    }
+
     return (
       <EmptyCatalogState
         type="empty"
@@ -77,6 +92,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   return (
     <Box>
       <ProductGrid isMobile={isMobile}>
+        {renderedLeadingContent}
         {products.map((product) => (
           <ProductGridItem key={product.id} isMobile={isMobile}>
             <Box sx={{ position: "relative" }}>

@@ -1,7 +1,114 @@
 services:
+  db:
+    image: postgres:15.3
+    container_name: postgres-with-cron
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: model_store
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ../init-scripts:/docker-entrypoint-initdb.d
+    command: >
+      bash -c "
+      apt-get update && apt-get install -y postgresql-15-cron && \
+      echo \"shared_preload_libraries = 'pg_cron'\" >> /usr/share/postgresql/postgresql.conf.sample && \
+      echo \"cron.database_name = 'model_store'\" >> /usr/share/postgresql/postgresql.conf.sample && \
+      docker-entrypoint.sh postgres
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d model_store"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - app-network
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2022-02-18T01-50-10Z
+    container_name: minio_storage
+    volumes:
+      - ../data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: "minio_user"
+      MINIO_ROOT_PASSWORD: "minio_password"
+      MINIO_ADDRESS: ":9000"
+      MINIO_CONSOLE_ADDRESS: ":9001"
+    command: minio server /data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - app-network
+
+  backend:
+    image: ready555/model_store:v1.24
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://db:5432/model_store?tcpKeepAlive=true
+      SPRING_R2DBC_USERNAME: root
+      SPRING_R2DBC_PASSWORD: root
+      SPRING_R2DBC_POOL_ENABLED: "true"
+      SPRING_R2DBC_POOL_INITIAL_SIZE: "5"
+      SPRING_R2DBC_POOL_MAX_SIZE: "20"
+      SPRING_R2DBC_POOL_MAX_IDLE_TIME: "20m"
+      SPRING_R2DBC_POOL_MAX_LIFE_TIME: "30m"
+      SPRING_R2DBC_POOL_VALIDATION_QUERY: "SELECT 1"
+      SPRING_R2DBC_POOL_VALIDATION_DEPTH: "remote"
+
+      SPRING_FLYWAY_URL: jdbc:postgresql://db:5432/model_store
+      SPRING_FLYWAY_USER: root
+      SPRING_FLYWAY_PASSWORD: root
+
+      SPRING_MAIL_HOST: smtp.mail.ru
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_USERNAME: figurzilla@mail.ru
+      SPRING_MAIL_PASSWORD: gTBGUZNISOsZCG4i4ri6
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_TRUST: "smtp.mail.ru"
+
+      S3_ACCESS-KEY: minio_user
+      S3_SECRET-KEY: minio_password
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_PARTICIPANT_BUCKET_NAME: participant-bucket
+      S3_PRODUCT_BUCKET_NAME: product-bucket
+      S3_SYSTEM_BUCKET_NAME: system-bucket
+      S3_ORDER_BUCKET_NAME: order-bucket
+
+      APP_MAX_PARTICIPANT_IMAGES: 1
+      APP_MAX_PRODUCT_IMAGES: 4
+      APP_PRODUCT-EXPIRATION-DAYS: 30
+      APP_PRIVATE_KEY_PATH: /backend/keys/private_key.pem
+      APP_PUBLIC_KEY_PATH: /backend/keys/public_key.pem
+      APP_EMAIL_FROM: figurzilla@mail.ru
+      APP_CORS-ALLOW-ALL: "false"
+      APP_ALLOWED-ORIGINS: "http://localhost:3000"
+      APP_CDN-BASE-URL: http://localhost:9000
+    networks:
+      - app-network
+
   frontend:
-    image: ${FRONTEND_IMAGE:-figurzilla-frontend:latest}
+    image: ${FRONTEND_IMAGE:-atupenov/frontend_app:v1.22}
     container_name: ${FRONTEND_CONTAINER_NAME:-figurzilla-frontend}
+    depends_on:
+      - backend
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
@@ -9,7 +116,16 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: 0.0.0.0
-      CLIENT_API_BASE_URL: ${CLIENT_API_BASE_URL:?CLIENT_API_BASE_URL is required}
-      API_BASE_URL: ${API_BASE_URL:-}
+      CLIENT_API_BASE_URL: ${CLIENT_API_BASE_URL:-http://localhost:8081}
+      API_BASE_URL: ${API_BASE_URL:-http://backend:8081}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
-      ALLOW_LOCAL_API_URL: ${ALLOW_LOCAL_API_URL:-false}
+      ALLOW_LOCAL_API_URL: ${ALLOW_LOCAL_API_URL:-true}
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db_data:
