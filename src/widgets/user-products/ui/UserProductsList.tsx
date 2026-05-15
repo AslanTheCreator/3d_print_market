@@ -2,7 +2,6 @@
 
 import React, { useCallback, useState } from "react";
 import {
-  Grid,
   Box,
   Button,
   CircularProgress,
@@ -29,6 +28,16 @@ interface ProductToDelete {
   id: number;
   name: string;
 }
+
+const productsGridSx = {
+  display: "grid",
+  gridTemplateColumns: {
+    xs: "repeat(2, minmax(0, 1fr))",
+    sm: "repeat(auto-fill, minmax(190px, 1fr))",
+  },
+  gap: { xs: 1, sm: 2, md: 2.5 },
+  alignItems: "stretch",
+} as const;
 
 export const UserProductsList: React.FC = () => {
   const router = useRouter();
@@ -86,14 +95,10 @@ export const UserProductsList: React.FC = () => {
   // Loading state
   if (isLoading) {
     return (
-      <Box>
-        <Grid container spacing={{ xs: 1, sm: 2, md: 2.5 }}>
-          {Array.from({ length: 12 }).map((_, index) => (
-            <Grid item xs={6} sm={4} md={3} lg={2} key={index}>
-              <ProductCardSkeleton />
-            </Grid>
-          ))}
-        </Grid>
+      <Box sx={productsGridSx}>
+        {Array.from({ length: 12 }).map((_, index) => (
+          <ProductCardSkeleton key={index} />
+        ))}
       </Box>
     );
   }
@@ -131,16 +136,15 @@ export const UserProductsList: React.FC = () => {
   return (
     <Box>
       {/* Products Grid */}
-      <Grid container spacing={{ xs: 1, sm: 2, md: 2.5 }}>
+      <Box sx={productsGridSx}>
         {products.map((product) => (
-          <Grid item xs={6} sm={4} md={3} lg={2} key={product.id}>
-            <UserProductCard
-              {...product}
-              onDeleteClick={handleOpenDeleteDialog}
-            />
-          </Grid>
+          <UserProductCard
+            key={product.id}
+            {...product}
+            onDeleteClick={handleOpenDeleteDialog}
+          />
         ))}
-      </Grid>
+      </Box>
 
       {/* List Actions */}
       <Box sx={{ display: "flex", justifyContent: "center", mt: 4, gap: 2 }}>

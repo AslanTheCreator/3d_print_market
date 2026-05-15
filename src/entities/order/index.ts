@@ -19,15 +19,8 @@ export {
   useCancelOrder,
 } from "./model/useOrderMutations";
 
-// UI Components
-export { OrderHistory } from "./ui/OrderHistory";
-export { OrderProgress } from "./ui/OrderProgress";
 export { OrderStatusChip } from "./ui/OrderStatusChip";
-export { UserInfo } from "./ui/UserInfo";
-export { ProductInfo } from "./ui/ProductInfo";
-export { DeliveryInfo } from "./ui/DeliveryInfo";
 export { OrdersEmptyState } from "./ui/OrdersEmptyState";
-export { PaymentProofImages } from "./ui/PaymentProofImages";
 export {
   getOrderStatusMeta,
   orderNeedsAttention,

@@ -1,24 +1,39 @@
 import React from "react";
 import Link from "next/link";
 import {
+  Avatar,
   Box,
+  Button,
   Card,
   CardContent,
+  Divider,
   Grid,
+  IconButton,
+  LinearProgress,
+  Stack,
   Typography,
   alpha,
   useTheme,
 } from "@mui/material";
 import {
+  CameraAltRounded,
+  CheckCircleRounded,
+  DashboardRounded,
   FavoriteRounded,
+  PersonRounded,
   ShoppingBagRounded,
+  StarRounded,
   TrendingUpRounded,
+  WarningAmberRounded,
 } from "@mui/icons-material";
 import { useFavoritesProducts } from "@/entities/favorite";
 import { UserBaseModel } from "@/entities/user";
+import { getImageUrl } from "@/shared/lib";
+import { PageHeader } from "@/shared/ui/page-header";
 
 interface DashboardContentProps {
   user: UserBaseModel;
+  onEditProfile: () => void;
 }
 
 interface DashboardShortcutCardProps {
@@ -26,6 +41,11 @@ interface DashboardShortcutCardProps {
   subtitle: string;
   href: string;
   icon: React.ReactNode;
+}
+
+interface ProfileTask {
+  label: string;
+  completed: boolean;
 }
 
 const getProductWord = (count: number) => {
@@ -46,6 +66,31 @@ const getProductWord = (count: number) => {
   }
 
   return "товаров";
+};
+
+const getProfileTasks = (user: UserBaseModel): ProfileTask[] => [
+  {
+    label: "Добавьте фото профиля",
+    completed: Boolean(user.imageId || user.image?.length),
+  },
+  {
+    label: "Заполните имя профиля",
+    completed: Boolean(user.fullName?.trim() || user.login?.trim()),
+  },
+  {
+    label: "Укажите контактный телефон",
+    completed: Boolean(user.phoneNumber?.trim()),
+  },
+  {
+    label: "Добавьте способ оплаты",
+    completed: user.accounts.length > 0,
+  },
+];
+
+const getProfileCompletion = (tasks: readonly ProfileTask[]) => {
+  const completedTasks = tasks.filter((task) => task.completed).length;
+
+  return Math.round((completedTasks / tasks.length) * 100);
 };
 
 const DashboardShortcutCard = ({
@@ -133,9 +178,229 @@ const DashboardShortcutCard = ({
   );
 };
 
-export const DashboardContent: React.FC<DashboardContentProps> = ({ user }) => {
+interface ProfileOverviewProps {
+  user: UserBaseModel;
+  onEditProfile: () => void;
+}
+
+const ProfileOverview = ({ user, onEditProfile }: ProfileOverviewProps) => {
   const theme = useTheme();
-  const displayName = user.fullName?.trim() ? user.fullName : user.login;
+  const userName = user.login || user.fullName;
+  const userImage = user.image?.[0];
+  const userImageSrc = getImageUrl(userImage, "medium");
+  const tasks = getProfileTasks(user);
+  const completion = getProfileCompletion(tasks);
+  const rating = Number.isFinite(user.averageRating)
+    ? user.averageRating.toFixed(1)
+    : "0.0";
+
+  return (
+    <Card
+      sx={{
+        mb: 2,
+        borderRadius: 2,
+        backgroundColor: theme.palette.common.white,
+        border: `1px solid ${alpha(theme.palette.common.black, 0.08)}`,
+        boxShadow: "0 6px 18px rgba(15, 23, 42, 0.04)",
+      }}
+    >
+      <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+        <Stack
+          direction={{ xs: "column", lg: "row" }}
+          spacing={{ xs: 3, lg: 4 }}
+          divider={
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ display: { xs: "none", lg: "block" } }}
+            />
+          }
+        >
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2.5}
+            alignItems={{ xs: "flex-start", sm: "center" }}
+            sx={{ flex: "1 1 42%", minWidth: 0 }}
+          >
+            <Box sx={{ position: "relative", flexShrink: 0 }}>
+              <Avatar
+                src={userImageSrc}
+                alt={userName}
+                sx={{
+                  width: { xs: 96, sm: 118 },
+                  height: { xs: 96, sm: 118 },
+                  border: "3px solid",
+                  borderColor: "background.paper",
+                  boxShadow: "0 0 0 1px rgba(15, 23, 42, 0.12)",
+                  bgcolor: "primary.light",
+                }}
+              >
+                {!userImageSrc && <PersonRounded sx={{ fontSize: 48 }} />}
+              </Avatar>
+
+              <IconButton
+                aria-label="Редактировать профиль"
+                onClick={onEditProfile}
+                sx={{
+                  position: "absolute",
+                  right: -6,
+                  bottom: -6,
+                  width: 42,
+                  height: 42,
+                  bgcolor: "background.paper",
+                  boxShadow: "0 6px 18px rgba(15, 23, 42, 0.18)",
+                  "&:hover": {
+                    bgcolor: "background.paper",
+                  },
+                }}
+              >
+                <CameraAltRounded fontSize="small" />
+              </IconButton>
+            </Box>
+
+            <Box minWidth={0}>
+              <Typography
+                variant="h4"
+                component="h2"
+                sx={{
+                  fontWeight: 800,
+                  lineHeight: 1.15,
+                  mb: 1,
+                  fontSize: { xs: "1.6rem", sm: "2rem" },
+                }}
+              >
+                {userName}
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 1.5 }}
+              >
+                Профиль Figurzilla
+              </Typography>
+
+              <Stack direction="row" spacing={1.25} alignItems="center">
+                <StarRounded sx={{ color: "#FFB300", fontSize: 22 }} />
+                <Typography variant="subtitle1" fontWeight={800}>
+                  {rating}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {user.totalReviews} отзывов
+                </Typography>
+              </Stack>
+            </Box>
+          </Stack>
+
+          <Box sx={{ flex: "1 1 32%", minWidth: 0 }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{ mb: 1 }}
+            >
+              <Typography variant="body2" color="text.secondary">
+                Заполненность профиля
+              </Typography>
+              <Typography variant="body2" fontWeight={800} color="primary.main">
+                {completion}%
+              </Typography>
+            </Stack>
+
+            <LinearProgress
+              variant="determinate"
+              value={completion}
+              sx={{
+                height: 7,
+                borderRadius: 999,
+                mb: 2,
+                bgcolor: alpha(theme.palette.primary.main, 0.12),
+              }}
+            />
+
+            <Stack spacing={1}>
+              {tasks.map((task) => (
+                <Stack
+                  key={task.label}
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                >
+                  {task.completed ? (
+                    <CheckCircleRounded
+                      sx={{ color: "success.main", fontSize: 20 }}
+                    />
+                  ) : (
+                    <WarningAmberRounded
+                      sx={{ color: "warning.main", fontSize: 20 }}
+                    />
+                  )}
+                  <Typography variant="body2" color="text.secondary">
+                    {task.label}
+                  </Typography>
+                </Stack>
+              ))}
+            </Stack>
+          </Box>
+
+          <Stack
+            spacing={2.5}
+            sx={{
+              flex: "0 0 260px",
+              minWidth: 0,
+              justifyContent: "space-between",
+            }}
+          >
+            <Button
+              variant="contained"
+              onClick={onEditProfile}
+              sx={{
+                minHeight: 46,
+                borderRadius: 1.5,
+                textTransform: "none",
+                fontWeight: 800,
+              }}
+            >
+              Редактировать профиль
+            </Button>
+
+            <Divider />
+
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Отзывов
+                </Typography>
+                <Typography variant="h5" fontWeight={800}>
+                  {user.totalReviews}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Рейтинг
+                </Typography>
+                <Typography variant="h5" fontWeight={800}>
+                  {rating}
+                </Typography>
+              </Box>
+            </Box>
+          </Stack>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+};
+
+export const DashboardContent: React.FC<DashboardContentProps> = ({
+  user,
+  onEditProfile,
+}) => {
   const { data: favorites = [], isLoading: isFavoritesLoading } =
     useFavoritesProducts();
 
@@ -166,40 +431,13 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ user }) => {
 
   return (
     <Box>
-      <Card
-        sx={{
-          mb: 2,
-          borderRadius: 3,
-          backgroundColor: theme.palette.common.white,
-          border: `1px solid ${alpha(theme.palette.common.black, 0.08)}`,
-          boxShadow: "0 6px 18px rgba(15, 23, 42, 0.04)",
-        }}
-      >
-        <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
-          <Typography
-            variant="h4"
-            component="h1"
-            sx={{
-              fontWeight: 700,
-              lineHeight: 1.2,
-              fontSize: { xs: "1.25rem", sm: "1.5rem" },
-            }}
-          >
-            Добро пожаловать, {displayName}!
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              mt: 0.75,
-              color: "text.secondary",
-              fontSize: { xs: "0.95rem", sm: "1rem" },
-              lineHeight: 1.4,
-            }}
-          >
-            Управляйте избранным, покупками и продажами в одном месте.
-          </Typography>
-        </CardContent>
-      </Card>
+      <PageHeader
+        title="Обзор"
+        subtitle="Профиль, быстрые разделы и готовность аккаунта."
+        icon={<DashboardRounded />}
+      />
+
+      <ProfileOverview user={user} onEditProfile={onEditProfile} />
 
       <Grid container spacing={2}>
         {cards.map((card) => (

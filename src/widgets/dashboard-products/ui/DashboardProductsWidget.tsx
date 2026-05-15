@@ -1,18 +1,16 @@
 ﻿"use client";
 
 import React from "react";
-import { Add } from "@mui/icons-material";
+import { Add, Inventory2Outlined } from "@mui/icons-material";
 import {
   Box,
   Button,
-  Container,
-  Stack,
-  Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useProfileUser } from "@/entities/user";
+import { PageHeader } from "@/shared/ui/page-header";
 
 interface DashboardProductsWidgetProps {
   children?: React.ReactNode;
@@ -31,41 +29,16 @@ export const DashboardProductsWidget = ({
   };
 
   return (
-    <Container
-      maxWidth="lg"
-      sx={{ py: { xs: 2, sm: 4 }, pb: { xs: 12, sm: 4 } }}
-    >
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", sm: "center" }}
-        spacing={2}
-        sx={{ mb: 3 }}
-      >
-        <Box>
-          <Typography
-            variant={isMobile ? "h5" : "h4"}
-            fontWeight={700}
-            sx={{ mb: 0.5 }}
-          >
-            Мои товары
-          </Typography>
-          {user && (
-            <Typography variant="body2" color="text.secondary">
-              {
-                `Продавец: ${user.login}`
-              }
-            </Typography>
-          )}
-        </Box>
-
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1.5}
-          sx={{
-            width: { xs: "100%", sm: "auto" },
-          }}
-        >
+    <Box sx={{ width: "100%", py: { xs: 2, sm: 3 }, pb: { xs: 12, sm: 3 } }}>
+      <PageHeader
+        title="Мои товары"
+        subtitle={
+          user
+            ? `Продавец: ${user.login}`
+            : "Управляйте товарами и создавайте новые позиции."
+        }
+        icon={<Inventory2Outlined />}
+        actions={
           <Button
             variant="contained"
             startIcon={<Add />}
@@ -82,10 +55,10 @@ export const DashboardProductsWidget = ({
           >
             Создать товар
           </Button>
-        </Stack>
-      </Stack>
+        }
+      />
 
       {children}
-    </Container>
+    </Box>
   );
 };

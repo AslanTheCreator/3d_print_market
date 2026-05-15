@@ -12,8 +12,15 @@ import {
   Skeleton,
   Stack,
 } from "@mui/material";
-import { LocationOn, LocalShipping, Payment, Share } from "@mui/icons-material";
+import {
+  LocationOn,
+  LocalShipping,
+  Payment,
+  SettingsRounded,
+  Share,
+} from "@mui/icons-material";
 import { useRouter, useSearchParams } from "next/navigation";
+import { PageHeader } from "@/shared/ui/page-header";
 import { AddressManagerWidget } from "./AddressManagerWidget";
 import { ShippingMethodsWidget } from "./ShippingMethodsWidget";
 import { PaymentAccountsWidget } from "./PaymentAccountsWidget";
@@ -226,6 +233,12 @@ export const DashboardSettingsWidget = () => {
         px: { xs: 2, sm: 3 },
       }}
     >
+      <PageHeader
+        title="Доставка и оплата"
+        subtitle="Адреса, способы отправки, платежные реквизиты и контакты."
+        icon={<SettingsRounded />}
+      />
+
       <Suspense fallback={<SettingsLoadingSkeleton />}>
         <SettingsContent />
       </Suspense>
