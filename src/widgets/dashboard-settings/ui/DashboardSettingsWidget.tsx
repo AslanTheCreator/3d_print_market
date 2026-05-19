@@ -2,7 +2,6 @@
 
 import React, { Suspense } from "react";
 import {
-  Container,
   Paper,
   Tabs,
   Tab,
@@ -226,22 +225,20 @@ function SettingsLoadingSkeleton() {
 
 export const DashboardSettingsWidget = () => {
   return (
-    <Container
-      maxWidth="md"
+    <Box
       sx={{
-        py: { xs: 2, sm: 4 },
-        px: { xs: 2, sm: 3 },
+        width: "100%",
+        py: { xs: 2, sm: 3 },
       }}
     >
       <PageHeader
         title="Доставка и оплата"
-        subtitle="Адреса, способы отправки, платежные реквизиты и контакты."
         icon={<SettingsRounded />}
       />
 
       <Suspense fallback={<SettingsLoadingSkeleton />}>
         <SettingsContent />
       </Suspense>
-    </Container>
+    </Box>
   );
 };

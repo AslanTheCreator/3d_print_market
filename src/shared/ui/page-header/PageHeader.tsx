@@ -19,7 +19,6 @@ interface PageHeaderProps {
   icon?: ReactNode;
   meta?: ReactNode;
   onBack?: () => void;
-  subtitle?: string;
   title: string;
 }
 
@@ -30,7 +29,6 @@ export const PageHeader = ({
   icon,
   meta,
   onBack,
-  subtitle,
   title,
 }: PageHeaderProps) => {
   const theme = useTheme();
@@ -103,15 +101,6 @@ export const PageHeader = ({
             >
               {title}
             </Typography>
-            {subtitle && (
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mt: 0.5 }}
-              >
-                {subtitle}
-              </Typography>
-            )}
           </Box>
         </Stack>
 

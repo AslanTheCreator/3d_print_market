@@ -433,7 +433,6 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
     <Box>
       <PageHeader
         title="Обзор"
-        subtitle="Профиль, быстрые разделы и готовность аккаунта."
         icon={<DashboardRounded />}
       />
 

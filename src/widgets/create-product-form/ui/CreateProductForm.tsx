@@ -710,7 +710,6 @@ export const CreateProductForm = ({
     <Box sx={{ width: "100%", py: { xs: 2, sm: 3 } }}>
       <PageHeader
         title={isEditMode ? "Редактировать товар" : "Создать товар"}
-        subtitle="Добавьте фото, описание, категорию, цену и количество."
         icon={<SellOutlined />}
         backLabel="К товарам"
         onBack={isEditMode ? handleBack : undefined}
