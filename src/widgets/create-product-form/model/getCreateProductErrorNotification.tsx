@@ -8,6 +8,7 @@ interface CreateProductErrorNotification {
 }
 
 const SHIPPING_SETTINGS_PATH = "/dashboard/settings?tab=shipping";
+const PAYMENT_SETTINGS_PATH = "/dashboard/settings?tab=payment";
 const CONTACTS_SETTINGS_PATH = "/dashboard/settings?tab=contacts";
 
 export const getCreateProductErrorNotification = (
@@ -27,6 +28,25 @@ export const getCreateProductErrorNotification = (
               sx={{ fontWeight: 600 }}
             >
               Настроить доставку →
+            </AppLink>
+          </>
+        ),
+      };
+    }
+
+    if (error.isCode(ErrorCodes.ACCOUNT_NOT_FOUND)) {
+      return {
+        severity: "info",
+        message: (
+          <>
+            {error.message}.{" "}
+            <AppLink
+              href={PAYMENT_SETTINGS_PATH}
+              color="primary"
+              underline="hover"
+              sx={{ fontWeight: 600 }}
+            >
+              Настроить способ оплаты →
             </AppLink>
           </>
         ),

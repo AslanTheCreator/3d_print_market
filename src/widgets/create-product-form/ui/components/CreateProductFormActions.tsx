@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Box,
   Button,
@@ -13,6 +14,18 @@ import {
 } from "@mui/material";
 import { CheckCircle, CheckCircleOutline, RestartAlt } from "@mui/icons-material";
 
+const SHIPPING_SETTINGS_PATH = "/dashboard/settings?tab=shipping";
+const PAYMENT_SETTINGS_PATH = "/dashboard/settings?tab=payment";
+const CONTACTS_SETTINGS_PATH = "/dashboard/settings?tab=contacts";
+
+interface RequirementItem {
+  actionHref?: string;
+  actionLabel?: string;
+  done: boolean;
+  isLoading?: boolean;
+  label: string;
+}
+
 interface CreateProductFormActionsProps {
   isFormValid: boolean;
   isPending: boolean;
@@ -25,6 +38,11 @@ interface CreateProductFormActionsProps {
     hasCategories: boolean;
     hasName: boolean;
     hasPrice: boolean;
+    hasSellerAccount: boolean;
+    hasSellerSocialNetwork: boolean;
+    hasSellerTransfer: boolean;
+    isSellerSettingsError: boolean;
+    isSellerSettingsLoading: boolean;
   };
 }
 
@@ -40,7 +58,7 @@ export const CreateProductFormActions = ({
   const theme = useTheme();
   const isEditMode = mode === "edit";
 
-  const requirementItems = [
+  const productRequirementItems: RequirementItem[] = [
     {
       label: "Добавлено фото",
       done: publishRequirements.hasImages,
@@ -59,15 +77,54 @@ export const CreateProductFormActions = ({
     },
   ];
 
+  const sellerRequirementItems: RequirementItem[] = isEditMode
+    ? []
+    : [
+        {
+          label: "Настроена доставка",
+          done: publishRequirements.hasSellerTransfer,
+          isLoading: publishRequirements.isSellerSettingsLoading,
+          actionHref: SHIPPING_SETTINGS_PATH,
+          actionLabel: "Заполнить",
+        },
+        {
+          label: "Добавлен способ оплаты",
+          done: publishRequirements.hasSellerAccount,
+          isLoading: publishRequirements.isSellerSettingsLoading,
+          actionHref: PAYMENT_SETTINGS_PATH,
+          actionLabel: "Заполнить",
+        },
+        {
+          label: "Добавлен контакт для связи",
+          done: publishRequirements.hasSellerSocialNetwork,
+          isLoading: publishRequirements.isSellerSettingsLoading,
+          actionHref: CONTACTS_SETTINGS_PATH,
+          actionLabel: "Заполнить",
+        },
+      ];
+  const requirementItems = [
+    ...productRequirementItems,
+    ...sellerRequirementItems,
+  ];
+
   const allRequirementsDone = requirementItems.every((item) => item.done);
+  const hasMissingSellerSettings = sellerRequirementItems.some(
+    (item) => !item.done,
+  );
 
   const statusText = isUploadingImages
     ? "Дождитесь завершения загрузки фото."
-    : allRequirementsDone
-      ? isEditMode
-        ? "Можно сохранить изменения."
-        : "Можно опубликовать товар."
-      : "Заполните обязательные пункты.";
+    : publishRequirements.isSellerSettingsLoading
+      ? "Проверяем настройки продавца."
+      : publishRequirements.isSellerSettingsError
+        ? "Не удалось проверить настройки продавца."
+        : hasMissingSellerSettings
+          ? "Заполните настройки продавца. Данные товара сохранятся."
+          : allRequirementsDone
+            ? isEditMode
+              ? "Можно сохранить изменения."
+              : "Можно опубликовать товар."
+            : "Заполните обязательные пункты.";
 
   return (
     <Paper
@@ -136,6 +193,16 @@ export const CreateProductFormActions = ({
               >
                 {item.label}
               </Typography>
+              {!item.done && item.actionHref && !item.isLoading && (
+                <Button
+                  component={Link}
+                  href={item.actionHref}
+                  size="small"
+                  sx={{ ml: "auto", fontWeight: 700, minWidth: 0 }}
+                >
+                  {item.actionLabel}
+                </Button>
+              )}
             </Stack>
           ))}
         </Stack>

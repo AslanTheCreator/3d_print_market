@@ -93,6 +93,7 @@ export const ErrorCodes = {
 
   // Product creation
   TRANSFER_NOT_FOUND: "TRANSFER_NOT_FOUND",
+  ACCOUNT_NOT_FOUND: "ACCOUNT_NOT_FOUND",
   SOCIAL_NETWORK_NOT_FOUND: "SOCIAL_NETWORK_NOT_FOUND",
 } as const;
 
