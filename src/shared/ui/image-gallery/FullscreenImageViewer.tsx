@@ -20,6 +20,7 @@ import {
   ZoomOut,
 } from "@mui/icons-material";
 import Image from "next/image";
+import { ImageFallback } from "@/shared/ui/image-fallback";
 import type { ImageGalleryImage } from "./types";
 
 interface FullscreenImageViewerProps {
@@ -45,6 +46,15 @@ export function FullscreenImageViewer({
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [failedImageSources, setFailedImageSources] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  const currentImage = images[currentIndex];
+  const currentImageSrc =
+    currentImage?.originalSrc ?? currentImage?.previewSrc ?? null;
+  const shouldShowCurrentImage =
+    currentImageSrc !== null && !failedImageSources.has(currentImageSrc);
 
   // Сброс зума при смене изображения
   useEffect(() => {
@@ -58,6 +68,10 @@ export function FullscreenImageViewer({
       setCurrentIndex(initialIndex);
     }
   }, [open, initialIndex]);
+
+  useEffect(() => {
+    setFailedImageSources(new Set());
+  }, [images]);
 
   // Навигация клавиатурой
   const handlePrevious = useCallback(() => {
@@ -139,6 +153,18 @@ export function FullscreenImageViewer({
   const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
   }, []);
+
+  const handleCurrentImageError = useCallback(() => {
+    if (!currentImageSrc) {
+      return;
+    }
+
+    setFailedImageSources((prev) => {
+      const next = new Set(prev);
+      next.add(currentImageSrc);
+      return next;
+    });
+  }, [currentImageSrc]);
 
   useEffect(() => {
     if (!open) return;
@@ -313,22 +339,30 @@ export function FullscreenImageViewer({
                 transition: isDragging ? "none" : "transform 0.3s ease-out",
               }}
             >
-              <Image
-                src={
-                  images[currentIndex].originalSrc ??
-                  images[currentIndex].previewSrc
-                }
-                alt={`${alt} ${currentIndex + 1}`}
-                fill
-                sizes="100vw"
-                style={{
-                  objectFit: "contain",
-                  userSelect: "none",
-                  pointerEvents: "none",
-                }}
-                priority
-                quality={100}
-              />
+              {shouldShowCurrentImage ? (
+                <Image
+                  src={currentImageSrc}
+                  alt={`${alt} ${currentIndex + 1}`}
+                  fill
+                  sizes="100vw"
+                  style={{
+                    objectFit: "contain",
+                    userSelect: "none",
+                    pointerEvents: "none",
+                  }}
+                  priority
+                  quality={100}
+                  onError={handleCurrentImageError}
+                />
+              ) : (
+                <ImageFallback
+                  label="Изображение недоступно"
+                  sx={{
+                    bgcolor: "rgba(255,255,255,0.08)",
+                    color: "rgba(255,255,255,0.72)",
+                  }}
+                />
+              )}
             </Box>
           </Box>
         </Zoom>

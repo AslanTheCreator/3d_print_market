@@ -2,7 +2,8 @@
 
 import { Box, Paper, useTheme, useMediaQuery } from "@mui/material";
 import Image from "next/image";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { ImageFallback } from "@/shared/ui/image-fallback";
 import type { ImageGalleryImage } from "./types";
 
 interface ThumbnailListProps {
@@ -95,6 +96,13 @@ function ThumbnailItem({
 }: ThumbnailItemProps) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+  const [hasImageError, setHasImageError] = useState(false);
+
+  useEffect(() => {
+    setHasImageError(false);
+  }, [src]);
+
+  const imageSrc = hasImageError ? null : src;
 
   return (
     <Box
@@ -128,15 +136,20 @@ function ThumbnailItem({
       }}
       aria-label={`Выбрать ${alt}`}
     >
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes={`${size}px`}
-        style={{
-          objectFit: "cover",
-        }}
-      />
+      {imageSrc ? (
+        <Image
+          src={imageSrc}
+          alt={alt}
+          fill
+          sizes={`${size}px`}
+          style={{
+            objectFit: "cover",
+          }}
+          onError={() => setHasImageError(true)}
+        />
+      ) : (
+        <ImageFallback compact label={alt} />
+      )}
     </Box>
   );
 }

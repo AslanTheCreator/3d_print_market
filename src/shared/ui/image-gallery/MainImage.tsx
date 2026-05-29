@@ -1,7 +1,9 @@
 "use client";
 
-import { Box, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Box } from "@mui/material";
 import Image from "next/image";
+import { ImageFallback } from "@/shared/ui/image-fallback";
 
 interface MainImageProps {
   src?: string;
@@ -10,6 +12,14 @@ interface MainImageProps {
 }
 
 export function MainImage({ src, alt, priority = false }: MainImageProps) {
+  const [hasImageError, setHasImageError] = useState(false);
+
+  useEffect(() => {
+    setHasImageError(false);
+  }, [src]);
+
+  const imageSrc = src && !hasImageError ? src : null;
+
   return (
     <Box
       sx={{
@@ -21,9 +31,9 @@ export function MainImage({ src, alt, priority = false }: MainImageProps) {
         bgcolor: "grey.100",
       }}
     >
-      {src ? (
+      {imageSrc ? (
         <Image
-          src={src}
+          src={imageSrc}
           alt={alt}
           fill
           priority={priority}
@@ -32,22 +42,10 @@ export function MainImage({ src, alt, priority = false }: MainImageProps) {
             objectFit: "contain",
             transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           }}
+          onError={() => setHasImageError(true)}
         />
       ) : (
-        <Box
-          sx={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            bgcolor: "grey.200",
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            Изображение отсутствует
-          </Typography>
-        </Box>
+        <ImageFallback />
       )}
     </Box>
   );

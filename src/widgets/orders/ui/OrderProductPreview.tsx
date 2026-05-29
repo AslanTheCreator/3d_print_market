@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Chip, Stack, Typography } from "@mui/material";
-import { ImageNotSupported } from "@mui/icons-material";
 import type { ListOrdersModel } from "@/entities/order";
 import { getImageUrl } from "@/shared/lib";
+import { ImageFallback } from "@/shared/ui/image-fallback";
 import {
   getOrderPeerLabel,
   type OrdersUserRole,
@@ -23,9 +23,16 @@ export const OrderProductPreview = ({
   imageSize = 64,
   showCategory = true,
 }: OrderProductPreviewProps) => {
+  const [hasImageError, setHasImageError] = useState(false);
   const image = order.product.image?.[0] ?? null;
-  const imageSrc = getImageUrl(image, "thumbnail") ?? null;
+  const productImageSrc = getImageUrl(image, "thumbnail") ?? null;
+  const imageSrc =
+    productImageSrc && !hasImageError ? productImageSrc : null;
   const categoryName = order.product.categories[0]?.name ?? "Без категории";
+
+  useEffect(() => {
+    setHasImageError(false);
+  }, [productImageSrc]);
 
   return (
     <Stack direction="row" spacing={1.5} alignItems="center" minWidth={0}>
@@ -52,9 +59,10 @@ export const OrderProductPreview = ({
               height: "100%",
               objectFit: "cover",
             }}
+            onError={() => setHasImageError(true)}
           />
         ) : (
-          <ImageNotSupported sx={{ color: "text.disabled" }} />
+          <ImageFallback compact label="Нет фото" />
         )}
       </Box>
 

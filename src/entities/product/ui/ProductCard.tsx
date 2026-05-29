@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -18,6 +18,7 @@ import {
 import { Schedule } from "@mui/icons-material";
 import { Product } from "@/shared/types";
 import { getImageUrl } from "@/shared/lib";
+import { ImageFallback } from "@/shared/ui/image-fallback";
 import { ProductPriceDisplay } from "./ProductPriceDisplay";
 
 interface ProductCardProps extends Product {
@@ -38,12 +39,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   totalReviews,
 }) => {
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
+  const [hasImageError, setHasImageError] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const isPreorder = availability === "PREORDER";
   const productImage = image?.[0] ?? null;
-  const productImageSrc = getImageUrl(productImage, "thumbnail");
+  const productImageSrc = getImageUrl(productImage, "medium");
+  const imageSrc = productImageSrc && !hasImageError ? productImageSrc : null;
+
+  useEffect(() => {
+    setIsImageLoaded(false);
+    setHasImageError(false);
+  }, [productImageSrc]);
 
   return (
     <Card
@@ -96,7 +104,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             backgroundColor: alpha(theme.palette.primary.main, 0.04),
           }}
         >
-          {productImageSrc ? (
+          {imageSrc ? (
             <>
               {!isImageLoaded && (
                 <Skeleton
@@ -109,7 +117,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               )}
               <Image
                 alt={name}
-                src={productImageSrc}
+                src={imageSrc}
                 fill
                 sizes="(max-width: 600px) 50vw, 33vw"
                 loading="lazy"
@@ -120,22 +128,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   transition: "opacity 0.3s ease, transform 0.25s ease",
                 }}
                 onLoad={() => setIsImageLoaded(true)}
+                onError={() => setHasImageError(true)}
               />
             </>
           ) : (
-            <Box
-              sx={{
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "text.secondary",
-                fontSize: "0.75rem",
-              }}
-            >
-              Изображение недоступно
-            </Box>
+            <ImageFallback />
           )}
 
           {/* Бейдж предзаказа */}

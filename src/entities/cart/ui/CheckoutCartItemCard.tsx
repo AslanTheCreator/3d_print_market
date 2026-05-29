@@ -14,10 +14,11 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductBasket } from "../model/types";
 import { formatPrice, getImageUrl } from "@/shared/lib";
 import { QuantityCounter } from "@/shared/ui/quantity-counter";
+import { ImageFallback } from "@/shared/ui/image-fallback";
 
 interface CheckoutCartItemCardProps {
   item: ProductBasket;
@@ -43,6 +44,7 @@ export const CheckoutCartItemCard = ({
   maxQuantity,
 }: CheckoutCartItemCardProps) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [hasImageError, setHasImageError] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -51,6 +53,12 @@ export const CheckoutCartItemCard = ({
   const { id, name, price, categories, image, currency } = product;
   const productImage = image?.[0] ?? null;
   const productImageSrc = getImageUrl(productImage, "thumbnail");
+  const imageSrc = productImageSrc && !hasImageError ? productImageSrc : null;
+
+  useEffect(() => {
+    setIsImageLoaded(false);
+    setHasImageError(false);
+  }, [productImageSrc]);
 
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onSelectChange(id, event.target.checked);
@@ -105,7 +113,7 @@ export const CheckoutCartItemCard = ({
             },
           }}
         >
-          {productImageSrc ? (
+          {imageSrc ? (
             <>
               {!isImageLoaded && (
                 <Skeleton
@@ -117,7 +125,7 @@ export const CheckoutCartItemCard = ({
                 />
               )}
               <Image
-                src={productImageSrc}
+                src={imageSrc}
                 alt={name}
                 fill
                 style={{
@@ -126,21 +134,11 @@ export const CheckoutCartItemCard = ({
                   transition: "opacity 0.3s ease",
                 }}
                 onLoad={() => setIsImageLoaded(true)}
+                onError={() => setHasImageError(true)}
               />
             </>
           ) : (
-            <Box
-              sx={{
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: theme.palette.grey[400],
-              }}
-            >
-              Нет фото
-            </Box>
+            <ImageFallback compact label="Нет фото" />
           )}
         </Box>
       </Link>

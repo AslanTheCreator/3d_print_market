@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,6 +36,7 @@ import {
   ProductPriceDisplay,
 } from "@/entities/product";
 import { getImageUrl } from "@/shared/lib";
+import { ImageFallback } from "@/shared/ui/image-fallback";
 
 interface DeleteProductPayload {
   id: number;
@@ -61,13 +62,20 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
   onDeleteClick,
 }) => {
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
+  const [hasImageError, setHasImageError] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const theme = useTheme();
   const router = useRouter();
 
   const expirationStatus = getExpirationStatus(expirationDate);
   const productImage = image?.[0] ?? null;
-  const productImageSrc = getImageUrl(productImage, "thumbnail");
+  const productImageSrc = getImageUrl(productImage, "medium");
+  const imageSrc = productImageSrc && !hasImageError ? productImageSrc : null;
+
+  useEffect(() => {
+    setIsImageLoaded(false);
+    setHasImageError(false);
+  }, [productImageSrc]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
@@ -157,7 +165,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
             backgroundColor: alpha(theme.palette.primary.main, 0.05),
           }}
         >
-          {productImageSrc ? (
+          {imageSrc ? (
             <>
               {!isImageLoaded && (
                 <Skeleton
@@ -170,7 +178,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
               )}
               <Image
                 alt={name}
-                src={productImageSrc}
+                src={imageSrc}
                 fill
                 sizes="(max-width: 600px) 50vw, 33vw"
                 loading="lazy"
@@ -180,22 +188,11 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
                   transition: "opacity 0.3s",
                 }}
                 onLoad={() => setIsImageLoaded(true)}
+                onError={() => setHasImageError(true)}
               />
             </>
           ) : (
-            <Box
-              sx={{
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "text.secondary",
-                fontSize: "0.75rem",
-              }}
-            >
-              Изображение недоступно
-            </Box>
+            <ImageFallback />
           )}
 
           <Stack
