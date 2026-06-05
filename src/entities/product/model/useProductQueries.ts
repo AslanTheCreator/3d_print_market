@@ -19,6 +19,11 @@ interface ProductsInfiniteOptions {
   enabled?: boolean;
 }
 
+interface ProductNameSuggestionsOptions {
+  enabled?: boolean;
+  staleTime?: number;
+}
+
 export const useProductById = (id?: string, options?: ProductByIdOptions) => {
   return useQuery<ProductDetail>({
     queryKey: productKeys.detail(id ?? 0),
@@ -28,6 +33,21 @@ export const useProductById = (id?: string, options?: ProductByIdOptions) => {
     initialDataUpdatedAt: options?.initialDataUpdatedAt,
     staleTime: options?.staleTime ?? 5 * 60 * 1000,
     retry: 2,
+  });
+};
+
+export const useProductNameSuggestions = (
+  name: string,
+  options?: ProductNameSuggestionsOptions,
+) => {
+  const normalizedName = name.trim();
+
+  return useQuery<string[]>({
+    queryKey: productKeys.nameSuggestions(normalizedName),
+    queryFn: () => productApi.findProductNames(normalizedName),
+    enabled: (options?.enabled ?? true) && normalizedName.length >= 2,
+    staleTime: options?.staleTime ?? 5 * 60 * 1000,
+    retry: 1,
   });
 };
 

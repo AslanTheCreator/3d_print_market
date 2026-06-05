@@ -64,6 +64,18 @@ export const productApi = {
     return attachImages<ProductDto, Product>(data, (p) => p.imageId);
   },
 
+  findProductNames: async (name: string): Promise<string[]> => {
+    const { data } = await publicClient.post<string[]>(
+      `${API_URL}/names/find`,
+      undefined,
+      {
+        params: { name },
+      },
+    );
+
+    return data;
+  },
+
   getProductById: async (id: number): Promise<ProductDetail> => {
     const { data } = await publicClient.get<ProductDetail>(
       `${API_URL_PRODUCT}/${id}`,
