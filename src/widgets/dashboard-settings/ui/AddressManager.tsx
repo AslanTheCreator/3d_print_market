@@ -79,11 +79,18 @@ export const AddressManager: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+      <Typography
+        variant="h6"
+        sx={{
+          fontWeight: 700,
+          mb: { xs: 1.5, sm: 2 },
+          fontSize: { xs: "1rem", sm: "1.25rem" },
+        }}
+      >
         {viewMode === "add" ? "Добавить новый адрес" : "Мои адреса"}
       </Typography>
 
-      <Divider sx={{ mb: 3 }} />
+      <Divider sx={{ mb: { xs: 2, sm: 3 } }} />
 
       {/* Режим списка */}
       <Collapse in={viewMode === "list"}>
@@ -127,11 +134,23 @@ export const AddressManager: React.FC = () => {
             Это действие нельзя отменить.
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
+        <DialogActions
+          sx={{
+            px: { xs: 2, sm: 3 },
+            pb: { xs: 2, sm: 2 },
+            flexDirection: { xs: "column-reverse", sm: "row" },
+            alignItems: { xs: "stretch", sm: "center" },
+            gap: { xs: 1, sm: 0 },
+            "& > :not(:first-of-type)": {
+              ml: { xs: 0, sm: 1 },
+            },
+          }}
+        >
           <Button
             onClick={closeDeleteDialog}
             variant="outlined"
             disabled={isDeleting}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             Отмена
           </Button>
@@ -140,6 +159,7 @@ export const AddressManager: React.FC = () => {
             color="error"
             variant="contained"
             disabled={isDeleting}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             {isDeleting ? "Удаление..." : "Удалить"}
           </Button>

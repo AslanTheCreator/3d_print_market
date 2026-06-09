@@ -2,14 +2,12 @@
 
 import {
   Box,
-  Button,
   Checkbox,
   Chip,
   CircularProgress,
   FormControl,
   FormHelperText,
   Grid,
-  IconButton,
   InputAdornment,
   InputLabel,
   MenuItem,
@@ -21,23 +19,14 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
-  alpha,
   useTheme,
 } from "@mui/material";
 import {
-  AddShoppingCart,
   CategoryOutlined,
-  FavoriteBorder,
-  ImageNotSupportedOutlined,
   ImageOutlined,
   SellOutlined,
 } from "@mui/icons-material";
-import {
-  Controller,
-  Control,
-  FieldErrors,
-  useWatch,
-} from "react-hook-form";
+import { Controller, Control, FieldErrors } from "react-hook-form";
 
 import {
   getCurrencySymbol,
@@ -57,7 +46,7 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { MultiImageUpload } from "./components/MultiImageUpload";
 import { CreateProductFormActions } from "./components/CreateProductFormActions";
 import { CreateProductFormSection } from "./components/CreateProductFormSection";
-import { useProductForm } from "../model";
+import { PRODUCT_IMAGE_LIMIT, useProductForm } from "../model";
 
 interface CreateProductFormProps {
   mode?: "create" | "edit";
@@ -76,14 +65,6 @@ interface ProductMainInfoFieldsProps extends ProductFieldsProps {
 interface ProductSaleFieldsProps extends ProductFieldsProps {
   currentCurrency: Currency;
   isPreorder: boolean;
-}
-
-interface ProductPreviewPanelProps {
-  categoryName: string;
-  currency: Currency;
-  imageSrc?: string;
-  name: string;
-  price: string;
 }
 
 const currencySymbols: Record<Currency, string> = {
@@ -106,16 +87,6 @@ const flattenCategories = (
     { ...category, depth },
     ...flattenCategories(category.childs, depth + 1),
   ]);
-
-const getCategoryLabel = (
-  categories: CategoryModel[],
-  categoryIds: number[],
-) => {
-  const flatCategories = flattenCategories(categories);
-  const category = flatCategories.find((item) => item.id === categoryIds[0]);
-
-  return category?.name ?? "Категория не выбрана";
-};
 
 const ProductMainInfoFields = ({
   categories,
@@ -401,128 +372,6 @@ const ProductSaleFields = ({
   );
 };
 
-const ProductPreviewPanel = ({
-  categoryName,
-  currency,
-  imageSrc,
-  name,
-  price,
-}: ProductPreviewPanelProps) => {
-  const theme = useTheme();
-  const priceNumber = Number.parseFloat(price);
-  const priceLabel = Number.isFinite(priceNumber) && priceNumber > 0
-    ? `${priceNumber.toLocaleString("ru-RU")} ${getReadableCurrencySymbol(
-        currency,
-      )}`
-    : `0 ${getReadableCurrencySymbol(currency)}`;
-
-  return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 2,
-        borderRadius: 2,
-        border: `1px solid ${theme.palette.divider}`,
-        bgcolor: "background.paper",
-      }}
-    >
-      <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 1.5 }}>
-        Предпросмотр товара
-      </Typography>
-
-      <Paper
-        elevation={0}
-        sx={{
-          overflow: "hidden",
-          borderRadius: 2,
-          border: `1px solid ${theme.palette.divider}`,
-          bgcolor: "background.paper",
-        }}
-      >
-        <Box
-          sx={{
-            position: "relative",
-            height: 238,
-            bgcolor: alpha(theme.palette.primary.main, 0.04),
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {imageSrc ? (
-            <Box
-              component="img"
-              src={imageSrc}
-              alt={name}
-              sx={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
-            />
-          ) : (
-            <Stack alignItems="center" spacing={1} color="text.disabled">
-              <ImageNotSupportedOutlined sx={{ fontSize: 62 }} />
-              <Typography variant="body2">Фото появится здесь</Typography>
-            </Stack>
-          )}
-
-          <IconButton
-            size="small"
-            sx={{
-              position: "absolute",
-              top: 10,
-              right: 10,
-              bgcolor: "background.paper",
-              "&:hover": { bgcolor: "background.paper" },
-            }}
-          >
-            <FavoriteBorder />
-          </IconButton>
-        </Box>
-
-        <Stack spacing={1} sx={{ p: 1.5 }}>
-          <Typography variant="caption" color="text.secondary">
-            {categoryName}
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            fontWeight={800}
-            sx={{
-              minHeight: 48,
-              display: "-webkit-box",
-              overflow: "hidden",
-              WebkitBoxOrient: "vertical",
-              WebkitLineClamp: 2,
-            }}
-          >
-            {name || "Название товара"}
-          </Typography>
-
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            spacing={1}
-          >
-            <Typography variant="h6" color="primary.main" fontWeight={900}>
-              {priceLabel}
-            </Typography>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<AddShoppingCart />}
-              sx={{ borderRadius: 1.5, fontWeight: 800 }}
-            >
-              Купить
-            </Button>
-          </Stack>
-        </Stack>
-      </Paper>
-    </Paper>
-  );
-};
-
 export const CreateProductForm = ({
   mode = "create",
   productId,
@@ -550,10 +399,7 @@ export const CreateProductForm = ({
     retryLoadCategories,
     retryLoadProduct,
   } = useProductForm({ mode, productId });
-  const watchedName = useWatch({ control, name: "name" });
-  const watchedPrice = useWatch({ control, name: "price" });
-  const watchedCategoryIds = useWatch({ control, name: "categoryIds" });
-  const imagePreview = imageUploadState.images[0]?.preview;
+  const imageCountLabel = `${imageUploadState.images.length}/${PRODUCT_IMAGE_LIMIT} фото`;
 
   const renderContent = () => {
     if (isProductLoading || isCategoriesLoading) {
@@ -629,7 +475,10 @@ export const CreateProductForm = ({
                 border: `1px solid ${theme.palette.divider}`,
               }}
             >
-              <MultiImageUpload uploadState={imageUploadState} maxImages={3} />
+              <MultiImageUpload
+                uploadState={imageUploadState}
+                maxImages={PRODUCT_IMAGE_LIMIT}
+              />
             </Paper>
 
             <Paper
@@ -683,14 +532,6 @@ export const CreateProductForm = ({
               top: { lg: 96 },
             }}
           >
-            <ProductPreviewPanel
-              imageSrc={imagePreview}
-              name={watchedName}
-              price={watchedPrice}
-              currency={currentCurrency}
-              categoryName={getCategoryLabel(categories, watchedCategoryIds)}
-            />
-
             <CreateProductFormActions
               mode={mode}
               isFormValid={isFormValid}
@@ -717,7 +558,7 @@ export const CreateProductForm = ({
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Chip
               icon={<ImageOutlined />}
-              label={`${imageUploadState.images.length}/3 фото`}
+              label={imageCountLabel}
               variant="outlined"
               size="small"
             />

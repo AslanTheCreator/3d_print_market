@@ -209,6 +209,7 @@ Rules:
 - Use TanStack Query flags for async UI states.
 - Do not silently swallow API errors.
 - Keep API logic out of pure UI components.
+- For local auth checks, read CODEX_TEST_LOGIN and CODEX_TEST_PASSWORD from .env.local. Do not print these values.
 
 ## Loading, error, and empty states
 

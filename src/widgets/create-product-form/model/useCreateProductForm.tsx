@@ -12,6 +12,7 @@ import { useCategories } from "@/entities/category";
 import { useMultipleImageUpload } from "@/features/image-upload";
 import { useNotification } from "@/shared/ui/notification";
 import { getCreateProductErrorNotification } from "./getCreateProductErrorNotification";
+import { PRODUCT_IMAGE_LIMIT } from "./constants";
 
 const PRODUCT_LIST_PATH = "/dashboard/products";
 const SUCCESS_REDIRECT_DELAY_MS = 1500;
@@ -26,7 +27,10 @@ export const useCreateProductForm = () => {
   } = useCategories();
   const { showNotification } = useNotification();
   const { mutate: createProduct, isPending } = useCreateProduct();
-  const imageUploadState = useMultipleImageUpload("PRODUCT", 3);
+  const imageUploadState = useMultipleImageUpload(
+    "PRODUCT",
+    PRODUCT_IMAGE_LIMIT,
+  );
 
   const {
     control,

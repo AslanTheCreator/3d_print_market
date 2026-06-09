@@ -28,6 +28,7 @@ import {
   readProductFormDraft,
   writeProductFormDraft,
 } from "./productFormDraft";
+import { PRODUCT_IMAGE_LIMIT } from "./constants";
 
 const PRODUCT_LIST_PATH = "/dashboard/products";
 const SUCCESS_REDIRECT_DELAY_MS = 1500;
@@ -102,7 +103,10 @@ export const useProductForm = ({
   const { showNotification } = useNotification();
   const { mutate: createProduct, isPending: isCreating } = useCreateProduct();
   const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct();
-  const imageUploadState = useMultipleImageUpload("PRODUCT", 3);
+  const imageUploadState = useMultipleImageUpload(
+    "PRODUCT",
+    PRODUCT_IMAGE_LIMIT,
+  );
   const setUploadInitialImages = imageUploadState.setInitialImages;
 
   const {

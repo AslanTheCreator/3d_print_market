@@ -44,6 +44,38 @@ const INDEX_TO_TAB: Record<number, TabKey> = {
 
 const DEFAULT_TAB: TabKey = "address";
 
+const SETTINGS_TABS: Array<{
+  icon: React.ReactElement;
+  key: TabKey;
+  label: string;
+  mobileLabel: string;
+}> = [
+  {
+    key: "address",
+    label: "Адрес доставки",
+    mobileLabel: "Адрес",
+    icon: <LocationOn />,
+  },
+  {
+    key: "shipping",
+    label: "Способ отправки",
+    mobileLabel: "Доставка",
+    icon: <LocalShipping />,
+  },
+  {
+    key: "payment",
+    label: "Способ оплаты",
+    mobileLabel: "Оплата",
+    icon: <Payment />,
+  },
+  {
+    key: "contacts",
+    label: "Способы связи",
+    mobileLabel: "Связь",
+    icon: <Share />,
+  },
+];
+
 interface TabPanelProps {
   children: React.ReactNode;
   index: number;
@@ -72,7 +104,7 @@ const TabPanel = ({ children, value, index }: TabPanelProps) => {
       aria-labelledby={`settings-tab-${index}`}
       style={{ display: isActive ? "block" : "none" }}
     >
-      <Box sx={{ pt: 3 }}>{children}</Box>
+      <Box sx={{ pt: { xs: 2, sm: 3 } }}>{children}</Box>
     </div>
   );
 };
@@ -119,61 +151,69 @@ function SettingsContent() {
       <Tabs
         value={activeTab}
         onChange={handleTabChange}
-        variant={isMobile ? "fullWidth" : "standard"}
+        variant={isMobile ? "scrollable" : "standard"}
+        scrollButtons={isMobile ? "auto" : false}
+        allowScrollButtonsMobile
         sx={{
           borderBottom: 1,
           borderColor: "divider",
           bgcolor: "background.paper",
-          px: { xs: 0, sm: 2 },
+          minHeight: { xs: 60, sm: 64 },
+          px: { xs: 1, sm: 2 },
+          py: { xs: 1, sm: 0 },
+          "& .MuiTabs-flexContainer": {
+            gap: { xs: 1, sm: 0 },
+          },
+          "& .MuiTabs-indicator": {
+            display: { xs: "none", sm: "block" },
+            height: 3,
+            borderRadius: "3px 3px 0 0",
+          },
+          "& .MuiTabs-scrollButtons": {
+            width: 28,
+            "&.Mui-disabled": {
+              opacity: 0.2,
+            },
+          },
         }}
       >
-        <Tab
-          icon={<LocationOn />}
-          iconPosition="start"
-          label="Адрес доставки"
-          id="settings-tab-0"
-          aria-controls="settings-tabpanel-0"
-          sx={{
-            minHeight: { xs: 56, sm: 64 },
-            fontSize: { xs: "0.75rem", sm: "0.875rem" },
-          }}
-        />
-        <Tab
-          icon={<LocalShipping />}
-          iconPosition="start"
-          label="Способ отправки"
-          id="settings-tab-1"
-          aria-controls="settings-tabpanel-1"
-          sx={{
-            minHeight: { xs: 56, sm: 64 },
-            fontSize: { xs: "0.75rem", sm: "0.875rem" },
-          }}
-        />
-        <Tab
-          icon={<Payment />}
-          iconPosition="start"
-          label="Способ оплаты"
-          id="settings-tab-2"
-          aria-controls="settings-tabpanel-2"
-          sx={{
-            minHeight: { xs: 56, sm: 64 },
-            fontSize: { xs: "0.75rem", sm: "0.875rem" },
-          }}
-        />
-        <Tab
-          icon={<Share />}
-          iconPosition="start"
-          label="Способы связи"
-          id="settings-tab-3"
-          aria-controls="settings-tabpanel-3"
-          sx={{
-            minHeight: { xs: 56, sm: 64 },
-            fontSize: { xs: "0.75rem", sm: "0.875rem" },
-          }}
-        />
+        {SETTINGS_TABS.map((tab, index) => (
+          <Tab
+            key={tab.key}
+            icon={tab.icon}
+            iconPosition="start"
+            label={isMobile ? tab.mobileLabel : tab.label}
+            id={`settings-tab-${index}`}
+            aria-controls={`settings-tabpanel-${index}`}
+            sx={{
+              minHeight: { xs: 42, sm: 64 },
+              minWidth: { xs: "auto", sm: 160 },
+              flexShrink: 0,
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.75, sm: 1.5 },
+              borderRadius: { xs: 1.5, sm: 0 },
+              fontSize: { xs: "0.813rem", sm: "0.875rem" },
+              fontWeight: 800,
+              textTransform: "none",
+              color: "text.secondary",
+              "& .MuiTab-iconWrapper": {
+                mr: 0.75,
+                fontSize: { xs: 19, sm: 22 },
+              },
+              "&.Mui-selected": {
+                color: { xs: "primary.contrastText", sm: "primary.main" },
+                bgcolor: { xs: "primary.main", sm: "transparent" },
+                boxShadow: {
+                  xs: "0 6px 14px rgba(239, 66, 132, 0.22)",
+                  sm: "none",
+                },
+              },
+            }}
+          />
+        ))}
       </Tabs>
 
-      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Box sx={{ p: { xs: 1.5, sm: 3 } }}>
         <TabPanel value={activeTab} index={0}>
           <AddressManagerWidget />
         </TabPanel>

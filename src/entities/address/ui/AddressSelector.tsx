@@ -88,7 +88,10 @@ export const AddressSelector = ({
           variant="contained"
           startIcon={<Add />}
           onClick={onAddNewAddress}
-          sx={{ mt: 2 }}
+          sx={{
+            mt: 2,
+            width: { xs: "100%", sm: "auto" },
+          }}
         >
           Добавить адрес
         </Button>

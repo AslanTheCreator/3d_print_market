@@ -17,7 +17,7 @@ export const AddressManagerWidget: React.FC = () => {
         severity="info"
         icon={<InfoOutlined />}
         sx={{
-          mb: 3,
+          mb: { xs: 2, sm: 3 },
           borderRadius: 2,
           "& .MuiAlert-message": {
             fontSize: { xs: "0.813rem", sm: "0.875rem" },
@@ -40,7 +40,7 @@ export const AddressManagerWidget: React.FC = () => {
           borderRadius: 2,
         }}
       >
-        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+        <CardContent sx={{ p: { xs: 1.5, sm: 3 } }}>
           <AddressManager />
         </CardContent>
       </Card>
