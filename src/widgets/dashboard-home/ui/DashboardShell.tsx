@@ -14,8 +14,9 @@ export const DashboardShell = ({ children }: DashboardShellProps) => {
     <Container
       maxWidth="lg"
       sx={{
-        pt: "20px",
-        pb: 4,
+        pt: { xs: 1.5, md: "20px" },
+        pb: { xs: 3, md: 4 },
+        px: { xs: 1.5, sm: 2, md: 3 },
       }}
     >
       <Box
@@ -26,7 +27,7 @@ export const DashboardShell = ({ children }: DashboardShellProps) => {
             md: "260px minmax(0, 1fr)",
             lg: "280px minmax(0, 1fr)",
           },
-          gap: { md: 3, lg: 4 },
+          gap: { xs: 1.5, md: 3, lg: 4 },
           alignItems: "start",
         }}
       >

@@ -98,6 +98,8 @@ export const CategoryProducts = ({
   const hasError = shouldBlockQuery || isError;
   const isAdultAccessForbidden =
     isAdultCategory && error instanceof ApiError && error.isForbidden();
+  const adultAccessForbiddenMessage =
+    error instanceof ApiError ? error.message : undefined;
   const isCatalogLoading =
     (!hasError && isLoading) || shouldWaitForAuthInitialization;
   const shouldShowCategoryHeader =
@@ -161,7 +163,7 @@ export const CategoryProducts = ({
         <ErrorState
           type="products"
           title="Раздел недоступен"
-          description="Сервер запретил доступ к этой категории. Вероятнее всего, в профиле указан возраст меньше 18 лет."
+          description={adultAccessForbiddenMessage}
           hideRetry
         />
       );

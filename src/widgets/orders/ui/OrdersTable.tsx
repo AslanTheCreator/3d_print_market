@@ -138,6 +138,168 @@ const OrderMiniProgress = ({ order }: { order: ListOrdersModel }) => {
   );
 };
 
+const OrderInfoItem = ({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) => (
+  <Box
+    sx={{
+      minWidth: 0,
+      p: 1,
+      borderRadius: 1.5,
+      bgcolor: "grey.50",
+    }}
+  >
+    <Typography
+      variant="caption"
+      color="text.secondary"
+      sx={{
+        display: "block",
+        mb: 0.25,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label}
+    </Typography>
+    <Typography
+      variant="body2"
+      fontWeight={highlight ? 800 : 700}
+      color={highlight ? "primary.main" : "text.primary"}
+      sx={{
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}
+      title={value}
+    >
+      {value}
+    </Typography>
+  </Box>
+);
+
+const OrderMobileCard = ({
+  order,
+  userRole,
+}: {
+  order: ListOrdersModel;
+  userRole: OrdersUserRole;
+}) => {
+  const theme = useTheme();
+
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 1.5,
+        borderRadius: 2,
+        bgcolor: "background.paper",
+        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
+      }}
+    >
+      <Stack spacing={1.25}>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          justifyContent="space-between"
+        >
+          <Box
+            sx={{
+              minWidth: 0,
+              "& .MuiChip-root": {
+                maxWidth: "100%",
+                minWidth: 0,
+              },
+              "& .MuiChip-label": {
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              },
+            }}
+          >
+            <OrderStatusChip status={order.actualStatus} />
+          </Box>
+
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            textAlign="right"
+            sx={{ flexShrink: 0 }}
+          >
+            {formatOrderDate(order.createdAt)}
+          </Typography>
+        </Stack>
+
+        <OrderProductPreview
+          order={order}
+          userRole={userRole}
+          imageSize={78}
+          showCategory={false}
+        />
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: 1,
+          }}
+        >
+          <OrderInfoItem
+            label={getOrderPeerLabel(userRole)}
+            value={order.userInfo.login}
+          />
+          <OrderInfoItem
+            label="Сумма"
+            value={formatOrderPrice(order)}
+            highlight
+          />
+        </Box>
+
+        <Box
+          sx={{
+            p: 1.25,
+            borderRadius: 1.5,
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+            bgcolor: alpha(theme.palette.primary.main, 0.035),
+          }}
+        >
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: "block", mb: 0.75 }}
+          >
+            Статус заказа
+          </Typography>
+          <OrderMiniProgress order={order} />
+        </Box>
+
+        <Box
+          sx={{
+            "& .MuiButton-root": {
+              minHeight: 38,
+              borderRadius: 1.5,
+              textTransform: "none",
+              fontWeight: 800,
+            },
+          }}
+        >
+          {userRole === "seller" ? (
+            <SellerActions order={order} />
+          ) : (
+            <CustomerActions order={order} />
+          )}
+        </Box>
+      </Stack>
+    </Paper>
+  );
+};
+
 export const OrdersTable = ({
   orders,
   totalCount,
@@ -160,9 +322,26 @@ export const OrdersTable = ({
         {title}
       </Typography>
 
+      {orders.length > 0 && (
+        <Stack spacing={1.25} sx={{ display: { xs: "flex", md: "none" } }}>
+          {orders.map((order) => (
+            <OrderMobileCard
+              key={order.orderId}
+              order={order}
+              userRole={userRole}
+            />
+          ))}
+
+          <Typography variant="caption" color="text.secondary" sx={{ px: 0.5 }}>
+            Показано {orders.length} из {totalCount} заказов
+          </Typography>
+        </Stack>
+      )}
+
       <Paper
         variant="outlined"
         sx={{
+          display: { xs: orders.length === 0 ? "block" : "none", md: "block" },
           borderRadius: 2,
           overflow: "hidden",
           bgcolor: "background.paper",

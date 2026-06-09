@@ -87,11 +87,11 @@ export const OrdersSummaryCards = ({
       sx={{
         display: "grid",
         gridTemplateColumns: {
-          xs: "1fr",
+          xs: "repeat(2, minmax(0, 1fr))",
           sm: "repeat(2, minmax(0, 1fr))",
           lg: "repeat(4, minmax(0, 1fr))",
         },
-        gap: 2,
+        gap: { xs: 1, sm: 2 },
       }}
     >
       {cards.map(({ label, value, color, Icon }) => {
@@ -102,23 +102,30 @@ export const OrdersSummaryCards = ({
             key={label}
             variant="outlined"
             sx={{
-              p: 2,
+              p: { xs: 1.25, sm: 2 },
               borderRadius: 2,
               bgcolor: "background.paper",
             }}
           >
-            <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={{ xs: 0.75, sm: 1.5 }}
+              alignItems={{ xs: "flex-start", sm: "center" }}
+            >
               <Box
                 sx={{
-                  width: 46,
-                  height: 46,
-                  borderRadius: "50%",
+                  width: { xs: 36, sm: 46 },
+                  height: { xs: 36, sm: 46 },
+                  borderRadius: { xs: 1.5, sm: "50%" },
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: mainColor,
                   bgcolor: alpha(mainColor, 0.12),
                   flexShrink: 0,
+                  "& .MuiSvgIcon-root": {
+                    fontSize: { xs: 21, sm: 24 },
+                  },
                 }}
               >
                 <Icon />
@@ -130,10 +137,16 @@ export const OrdersSummaryCards = ({
                   color="text.secondary"
                   noWrap
                   title={label}
+                  sx={{ fontSize: { xs: "0.72rem", sm: "0.875rem" } }}
                 >
                   {label}
                 </Typography>
-                <Typography variant="h5" fontWeight={800} color={mainColor}>
+                <Typography
+                  variant="h5"
+                  fontWeight={800}
+                  color={mainColor}
+                  sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}
+                >
                   {value}
                 </Typography>
               </Box>

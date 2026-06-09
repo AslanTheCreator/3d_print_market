@@ -18,6 +18,7 @@ import {
 import {
   CameraAltRounded,
   CheckCircleRounded,
+  ChevronRightRounded,
   DashboardRounded,
   FavoriteRounded,
   PersonRounded,
@@ -41,6 +42,7 @@ interface DashboardShortcutCardProps {
   subtitle: string;
   href: string;
   icon: React.ReactNode;
+  color: string;
 }
 
 interface ProfileTask {
@@ -98,6 +100,7 @@ const DashboardShortcutCard = ({
   subtitle,
   href,
   icon,
+  color,
 }: DashboardShortcutCardProps) => {
   const theme = useTheme();
 
@@ -109,69 +112,97 @@ const DashboardShortcutCard = ({
         display: "block",
         width: "100%",
         height: "100%",
-        borderRadius: 3,
+        borderRadius: 2,
         backgroundColor: theme.palette.common.white,
         border: `1px solid ${alpha(theme.palette.common.black, 0.08)}`,
-        boxShadow: "0 6px 18px rgba(15, 23, 42, 0.04)",
+        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
         textDecoration: "none",
         transition:
           "transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease",
         "&:hover": {
           transform: "translateY(-2px)",
-          borderColor: alpha(theme.palette.primary.main, 0.18),
+          borderColor: alpha(color, 0.28),
           boxShadow: "0 10px 22px rgba(15, 23, 42, 0.08)",
         },
       }}
     >
       <CardContent
         sx={{
-          p: { xs: 2.5, sm: 3 },
-          minHeight: 112,
+          p: { xs: 1.5, sm: 2, md: 2.5 },
+          minHeight: { xs: 136, sm: 148, md: 132 },
           display: "flex",
-          alignItems: "center",
+          flexDirection: "column",
+          alignItems: "stretch",
           justifyContent: "space-between",
           gap: 2,
         }}
       >
-        <Box>
-          <Typography
-            variant="h5"
-            component="h2"
-            sx={{
-              mb: 0.5,
-              fontWeight: 700,
-              color: "text.primary",
-              fontSize: { xs: "1rem", sm: "1.125rem" },
-              lineHeight: 1.2,
-            }}
-          >
-            {title}
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              color: "text.secondary",
-              fontSize: { xs: "0.95rem", sm: "1rem" },
-              lineHeight: 1.2,
-            }}
-          >
-            {subtitle}
-          </Typography>
-        </Box>
-
         <Box
           sx={{
-            color: "primary.main",
+            width: { xs: 44, sm: 48 },
+            height: { xs: 44, sm: 48 },
+            borderRadius: 2,
+            bgcolor: alpha(color, 0.12),
+            color,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
             "& .MuiSvgIcon-root": {
-              fontSize: 34,
+              fontSize: { xs: 26, sm: 28 },
             },
           }}
         >
           {icon}
+        </Box>
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) auto",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          <Box minWidth={0}>
+            <Typography
+              variant="h5"
+              component="h2"
+              sx={{
+                mb: 0.25,
+                fontWeight: 800,
+                color: "text.primary",
+                fontSize: { xs: "0.98rem", sm: "1.05rem", md: "1.25rem" },
+                lineHeight: 1.15,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {title}
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "text.secondary",
+                fontSize: { xs: "0.76rem", sm: "0.85rem", md: "0.95rem" },
+                lineHeight: 1.2,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {subtitle}
+            </Typography>
+          </Box>
+
+          <ChevronRightRounded
+            sx={{
+              color: "text.secondary",
+              fontSize: 24,
+              flexShrink: 0,
+            }}
+          />
         </Box>
       </CardContent>
     </Card>
@@ -197,7 +228,7 @@ const ProfileOverview = ({ user, onEditProfile }: ProfileOverviewProps) => {
   return (
     <Card
       sx={{
-        mb: 2,
+        mb: { xs: 1.25, sm: 2 },
         borderRadius: 2,
         backgroundColor: theme.palette.common.white,
         border: `1px solid ${alpha(theme.palette.common.black, 0.08)}`,
@@ -207,7 +238,7 @@ const ProfileOverview = ({ user, onEditProfile }: ProfileOverviewProps) => {
       <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
         <Stack
           direction={{ xs: "column", lg: "row" }}
-          spacing={{ xs: 3, lg: 4 }}
+          spacing={{ xs: 1.5, sm: 3, lg: 4 }}
           divider={
             <Divider
               orientation="vertical"
@@ -217,9 +248,9 @@ const ProfileOverview = ({ user, onEditProfile }: ProfileOverviewProps) => {
           }
         >
           <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2.5}
-            alignItems={{ xs: "flex-start", sm: "center" }}
+            direction="row"
+            spacing={{ xs: 1.25, sm: 2.5 }}
+            alignItems="center"
             sx={{ flex: "1 1 42%", minWidth: 0 }}
           >
             <Box sx={{ position: "relative", flexShrink: 0 }}>
@@ -227,15 +258,17 @@ const ProfileOverview = ({ user, onEditProfile }: ProfileOverviewProps) => {
                 src={userImageSrc}
                 alt={userName}
                 sx={{
-                  width: { xs: 96, sm: 118 },
-                  height: { xs: 96, sm: 118 },
-                  border: "3px solid",
+                  width: { xs: 60, sm: 118 },
+                  height: { xs: 60, sm: 118 },
+                  border: { xs: "2px solid", sm: "3px solid" },
                   borderColor: "background.paper",
                   boxShadow: "0 0 0 1px rgba(15, 23, 42, 0.12)",
                   bgcolor: "primary.light",
                 }}
               >
-                {!userImageSrc && <PersonRounded sx={{ fontSize: 48 }} />}
+                {!userImageSrc && (
+                  <PersonRounded sx={{ fontSize: { xs: 30, sm: 48 } }} />
+                )}
               </Avatar>
 
               <IconButton
@@ -243,10 +276,10 @@ const ProfileOverview = ({ user, onEditProfile }: ProfileOverviewProps) => {
                 onClick={onEditProfile}
                 sx={{
                   position: "absolute",
-                  right: -6,
-                  bottom: -6,
-                  width: 42,
-                  height: 42,
+                  right: { xs: -4, sm: -6 },
+                  bottom: { xs: -4, sm: -6 },
+                  width: { xs: 32, sm: 42 },
+                  height: { xs: 32, sm: 42 },
                   bgcolor: "background.paper",
                   boxShadow: "0 6px 18px rgba(15, 23, 42, 0.18)",
                   "&:hover": {
@@ -254,7 +287,7 @@ const ProfileOverview = ({ user, onEditProfile }: ProfileOverviewProps) => {
                   },
                 }}
               >
-                <CameraAltRounded fontSize="small" />
+                <CameraAltRounded sx={{ fontSize: { xs: 18, sm: 20 } }} />
               </IconButton>
             </Box>
 
@@ -265,8 +298,11 @@ const ProfileOverview = ({ user, onEditProfile }: ProfileOverviewProps) => {
                 sx={{
                   fontWeight: 800,
                   lineHeight: 1.15,
-                  mb: 1,
-                  fontSize: { xs: "1.6rem", sm: "2rem" },
+                  mb: { xs: 0.5, sm: 1 },
+                  fontSize: { xs: "1.15rem", sm: "2rem" },
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  wordBreak: "break-word",
                 }}
               >
                 {userName}
@@ -275,24 +311,62 @@ const ProfileOverview = ({ user, onEditProfile }: ProfileOverviewProps) => {
               <Typography
                 variant="body2"
                 color="text.secondary"
-                sx={{ mb: 1.5 }}
+                sx={{
+                  mb: 1.5,
+                  display: { xs: "none", sm: "block" },
+                }}
               >
                 Профиль Figurzilla
               </Typography>
 
-              <Stack direction="row" spacing={1.25} alignItems="center">
-                <StarRounded sx={{ color: "#FFB300", fontSize: 22 }} />
-                <Typography variant="subtitle1" fontWeight={800}>
+              <Stack
+                direction="row"
+                spacing={{ xs: 0.75, sm: 1.25 }}
+                alignItems="center"
+                sx={{ minWidth: 0 }}
+              >
+                <StarRounded
+                  sx={{ color: "#FFB300", fontSize: { xs: 18, sm: 22 } }}
+                />
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={800}
+                  sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                >
                   {rating}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {user.totalReviews} отзывов
                 </Typography>
               </Stack>
             </Box>
           </Stack>
 
-          <Box sx={{ flex: "1 1 32%", minWidth: 0 }}>
+          <Box
+            sx={{
+              flex: "1 1 32%",
+              minWidth: 0,
+              p: { xs: 1.25, sm: 0 },
+              borderRadius: { xs: 1.5, sm: 0 },
+              bgcolor: {
+                xs: alpha(theme.palette.primary.main, 0.05),
+                sm: "transparent",
+              },
+              border: {
+                xs: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
+                sm: "none",
+              },
+            }}
+          >
             <Stack
               direction="row"
               alignItems="center"
@@ -311,14 +385,14 @@ const ProfileOverview = ({ user, onEditProfile }: ProfileOverviewProps) => {
               variant="determinate"
               value={completion}
               sx={{
-                height: 7,
+                height: { xs: 6, sm: 7 },
                 borderRadius: 999,
-                mb: 2,
+                mb: { xs: 1.25, sm: 2 },
                 bgcolor: alpha(theme.palette.primary.main, 0.12),
               }}
             />
 
-            <Stack spacing={1}>
+            <Stack spacing={{ xs: 0.75, sm: 1 }}>
               {tasks.map((task) => (
                 <Stack
                   key={task.label}
@@ -328,14 +402,18 @@ const ProfileOverview = ({ user, onEditProfile }: ProfileOverviewProps) => {
                 >
                   {task.completed ? (
                     <CheckCircleRounded
-                      sx={{ color: "success.main", fontSize: 20 }}
+                      sx={{ color: "success.main", fontSize: { xs: 18, sm: 20 } }}
                     />
                   ) : (
                     <WarningAmberRounded
-                      sx={{ color: "warning.main", fontSize: 20 }}
+                      sx={{ color: "warning.main", fontSize: { xs: 18, sm: 20 } }}
                     />
                   )}
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: "0.76rem", sm: "0.875rem" } }}
+                  >
                     {task.label}
                   </Typography>
                 </Stack>
@@ -344,52 +422,26 @@ const ProfileOverview = ({ user, onEditProfile }: ProfileOverviewProps) => {
           </Box>
 
           <Stack
-            spacing={2.5}
+            spacing={{ xs: 1.25, sm: 2.5 }}
             sx={{
-              flex: "0 0 260px",
+              flex: { xs: "0 1 auto", lg: "0 0 260px" },
               minWidth: 0,
-              justifyContent: "space-between",
+              justifyContent: { xs: "flex-start", lg: "center" },
             }}
           >
             <Button
               variant="contained"
               onClick={onEditProfile}
               sx={{
-                minHeight: 46,
+                minHeight: { xs: 40, sm: 46 },
                 borderRadius: 1.5,
                 textTransform: "none",
                 fontWeight: 800,
+                width: "100%",
               }}
             >
               Редактировать профиль
             </Button>
-
-            <Divider />
-
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                gap: 2,
-              }}
-            >
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Отзывов
-                </Typography>
-                <Typography variant="h5" fontWeight={800}>
-                  {user.totalReviews}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Рейтинг
-                </Typography>
-                <Typography variant="h5" fontWeight={800}>
-                  {rating}
-                </Typography>
-              </Box>
-            </Box>
           </Stack>
         </Stack>
       </CardContent>
@@ -401,6 +453,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
   user,
   onEditProfile,
 }) => {
+  const theme = useTheme();
   const { data: favorites = [], isLoading: isFavoritesLoading } =
     useFavoritesProducts();
 
@@ -414,33 +467,38 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
       subtitle: favoriteSubtitle,
       href: "/favorites",
       icon: <FavoriteRounded />,
+      color: theme.palette.primary.main,
     },
     {
       title: "Покупки",
       subtitle: "Смотреть",
       href: "/dashboard/purchase",
       icon: <ShoppingBagRounded />,
+      color: theme.palette.info.main,
     },
     {
       title: "Продажи",
       subtitle: "Смотреть",
       href: "/dashboard/sales",
       icon: <TrendingUpRounded />,
+      color: theme.palette.success.main,
     },
   ];
 
   return (
     <Box>
-      <PageHeader
-        title="Обзор"
-        icon={<DashboardRounded />}
-      />
+      <Box sx={{ display: { xs: "none", md: "block" } }}>
+        <PageHeader
+          title="Обзор"
+          icon={<DashboardRounded />}
+        />
+      </Box>
 
       <ProfileOverview user={user} onEditProfile={onEditProfile} />
 
-      <Grid container spacing={2}>
+      <Grid container spacing={{ xs: 1, sm: 2 }}>
         {cards.map((card) => (
-          <Grid item key={card.title} xs={12} md={4}>
+          <Grid item key={card.title} xs={6} sm={4} md={4}>
             <DashboardShortcutCard {...card} />
           </Grid>
         ))}
