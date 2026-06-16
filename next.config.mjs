@@ -6,6 +6,7 @@ const imageSources = [
   "blob:",
   "https://mc.yandex.ru",
   "https://cdn.figurzilla.ru",
+  "http://77.37.166.117:9000",
   ...(isDevelopment ? ["http://localhost:9000", "http://127.0.0.1:9000"] : []),
 ];
 
@@ -68,6 +69,11 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "cdn.figurzilla.ru",
+      },
+      {
+        protocol: "http",
+        hostname: "77.37.166.117",
+        port: "9000",
       },
       ...(isDevelopment
         ? [
