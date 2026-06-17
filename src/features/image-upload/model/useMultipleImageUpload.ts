@@ -66,7 +66,8 @@ export const useMultipleImageUpload = (
   useEffect(() => {
     return () => {
       imagesRef.current.forEach((img) => {
-        if (img.preview) {
+        // Загруженные фото могут быть восстановлены из черновика при переходе между страницами.
+        if (img.preview && img.id === null) {
           revokePreviewIfNeeded(img.preview);
         }
       });

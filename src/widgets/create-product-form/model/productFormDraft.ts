@@ -1,6 +1,7 @@
 import type { InitialImageUploadState } from "@/features/image-upload";
 import { imageApi } from "@/shared/api";
 import { getImageUrl } from "@/shared/lib";
+import type { ImageResponse } from "@/shared/types";
 import {
   defaultProductFormValues,
   type ProductFormData,
@@ -12,6 +13,7 @@ let memoryProductFormDraft: ProductFormDraft | null = null;
 
 interface ProductFormDraft {
   imageIds: number[];
+  images: InitialImageUploadState[];
   values: ProductFormData;
 }
 
@@ -69,6 +71,7 @@ const parseProductFormDraft = (value: unknown): ProductFormDraft | null => {
 
   return {
     imageIds: readImageIds(value.imageIds),
+    images: [],
     values: {
       categoryIds: readCategoryIds(values.categoryIds),
       name: readString(values, "name"),
@@ -86,6 +89,25 @@ const parseProductFormDraft = (value: unknown): ProductFormDraft | null => {
     },
   };
 };
+
+const mergeMemoryImages = (draft: ProductFormDraft): ProductFormDraft => {
+  const imageIds = new Set(draft.imageIds);
+  const images =
+    memoryProductFormDraft?.images.filter((image) => imageIds.has(image.id)) ??
+    [];
+
+  return {
+    ...draft,
+    images,
+  };
+};
+
+const serializeProductFormDraft = (
+  draft: ProductFormDraft,
+): Omit<ProductFormDraft, "images"> => ({
+  imageIds: draft.imageIds,
+  values: draft.values,
+});
 
 const getDraftStorage = (): Storage | null => {
   if (typeof window === "undefined") {
@@ -109,8 +131,9 @@ export const readProductFormDraft = (): ProductFormDraft | null => {
   try {
     const rawDraft = storage.getItem(PRODUCT_FORM_DRAFT_KEY);
     const draft = rawDraft ? parseProductFormDraft(JSON.parse(rawDraft)) : null;
-    memoryProductFormDraft = draft;
-    return draft;
+    const draftWithMemoryImages = draft ? mergeMemoryImages(draft) : null;
+    memoryProductFormDraft = draftWithMemoryImages;
+    return draftWithMemoryImages;
   } catch {
     return memoryProductFormDraft;
   }
@@ -132,10 +155,45 @@ export const writeProductFormDraft = (draft: ProductFormDraft): void => {
 
   try {
     memoryProductFormDraft = draft;
-    storage?.setItem(PRODUCT_FORM_DRAFT_KEY, JSON.stringify(draft));
+    storage?.setItem(
+      PRODUCT_FORM_DRAFT_KEY,
+      JSON.stringify(serializeProductFormDraft(draft)),
+    );
   } catch {
     memoryProductFormDraft = draft;
   }
+};
+
+const getImageResponsePreview = (
+  image: ImageResponse | undefined,
+): string | null => {
+  if (!image?.contentType || !image.imageData) {
+    return null;
+  }
+
+  return `data:${image.contentType};base64,${image.imageData}`;
+};
+
+const loadProductFormDraftImagesFromContent = async (
+  imageIds: number[],
+): Promise<InitialImageUploadState[]> => {
+  const images = await Promise.all(
+    imageIds.map(async (imageId) => {
+      const [image] = await imageApi.getImages(imageId);
+      const preview = getImageResponsePreview(image);
+
+      if (!preview) {
+        return null;
+      }
+
+      return {
+        id: imageId,
+        preview,
+      };
+    }),
+  );
+
+  return images.filter((image): image is InitialImageUploadState => !!image);
 };
 
 export const clearProductFormDraft = (): void => {
@@ -153,8 +211,7 @@ export const loadProductFormDraftImages = async (
   imageIds: number[],
 ): Promise<InitialImageUploadState[]> => {
   const images = await imageApi.getImageMetadata(imageIds);
-
-  return images
+  const metadataImages = images
     .map((image) => {
       const preview = getImageUrl(image, "medium");
 
@@ -168,4 +225,10 @@ export const loadProductFormDraftImages = async (
       };
     })
     .filter((image): image is InitialImageUploadState => image !== null);
+
+  if (metadataImages.length === imageIds.length) {
+    return metadataImages;
+  }
+
+  return loadProductFormDraftImagesFromContent(imageIds);
 };

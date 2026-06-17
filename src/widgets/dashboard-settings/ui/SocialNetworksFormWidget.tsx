@@ -32,6 +32,7 @@ import {
 } from "../model/useSocialNetworkMutations";
 import type { SocialNetworkInput } from "../model/types";
 import { useSocialNetworks } from "../model/useSocialNetworks";
+import { useInvalidateSellerSettings } from "../model/useInvalidateSellerSettings";
 
 interface SocialFormItem {
   enabled: boolean;
@@ -151,6 +152,7 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
   const createMutation = useCreateSocial();
   const updateMutation = useUpdateSocial();
   const deleteMutation = useDeleteSocial();
+  const invalidateSellerSettings = useInvalidateSellerSettings();
 
   const isPending =
     createMutation.isPending ||
@@ -287,6 +289,7 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
 
       try {
         await Promise.all(operations);
+        await invalidateSellerSettings();
         setExpandedItems(new Set());
         setWasSaved(true);
         showNotification("Социальные сети сохранены", "success");
@@ -302,6 +305,7 @@ const SocialNetworksForm: React.FC<SocialNetworksFormProps> = ({
       createMutation,
       deleteMutation,
       existingByType,
+      invalidateSellerSettings,
       showNotification,
       updateMutation,
     ],

@@ -29,6 +29,7 @@ import { useNotification } from "@/shared/ui/notification";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
 import type { DictionaryItem } from "@/entities/dictionary";
 import type { Currency, ShippingMethod, Transfer } from "@/shared/types";
+import { useInvalidateSellerSettings } from "../model/useInvalidateSellerSettings";
 
 interface TransferFormItem {
   enabled: boolean;
@@ -100,6 +101,7 @@ const TransferForm: React.FC<TransferFormProps> = ({
   const createMutation = useCreateTransfer();
   const updateMutation = useUpdateTransfer();
   const deleteMutation = useDeleteTransfer();
+  const invalidateSellerSettings = useInvalidateSellerSettings();
 
   const isPending =
     createMutation.isPending ||
@@ -365,6 +367,7 @@ const TransferForm: React.FC<TransferFormProps> = ({
 
       try {
         await Promise.all(operations);
+        await invalidateSellerSettings();
         setExpandedItems(new Set());
         setWasSaved(true);
         showNotification("Способы доставки сохранены", "success");
@@ -380,6 +383,7 @@ const TransferForm: React.FC<TransferFormProps> = ({
       createMutation,
       deleteMutation,
       existingByMethod,
+      invalidateSellerSettings,
       showNotification,
       updateMutation,
     ],

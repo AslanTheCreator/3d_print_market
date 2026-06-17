@@ -36,6 +36,7 @@ interface CreateProductFormActionsProps {
   publishRequirements: {
     hasImages: boolean;
     hasCategories: boolean;
+    hasCount: boolean;
     hasName: boolean;
     hasPrice: boolean;
     hasSellerAccount: boolean;
@@ -74,6 +75,10 @@ export const CreateProductFormActions = ({
     {
       label: "Указана цена",
       done: publishRequirements.hasPrice,
+    },
+    {
+      label: "Указано количество",
+      done: publishRequirements.hasCount,
     },
   ];
 
@@ -194,14 +199,24 @@ export const CreateProductFormActions = ({
                 {item.label}
               </Typography>
               {!item.done && item.actionHref && !item.isLoading && (
-                <Button
-                  component={Link}
-                  href={item.actionHref}
-                  size="small"
-                  sx={{ ml: "auto", fontWeight: 700, minWidth: 0 }}
-                >
-                  {item.actionLabel}
-                </Button>
+                isUploadingImages ? (
+                  <Button
+                    disabled
+                    size="small"
+                    sx={{ ml: "auto", fontWeight: 700, minWidth: 0 }}
+                  >
+                    {item.actionLabel}
+                  </Button>
+                ) : (
+                  <Button
+                    component={Link}
+                    href={item.actionHref}
+                    size="small"
+                    sx={{ ml: "auto", fontWeight: 700, minWidth: 0 }}
+                  >
+                    {item.actionLabel}
+                  </Button>
+                )
               )}
             </Stack>
           ))}

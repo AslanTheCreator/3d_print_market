@@ -31,6 +31,7 @@ import { useNotification } from "@/shared/ui/notification";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
 import type { DictionaryItem } from "@/entities/dictionary";
 import type { AccountsBaseModel, TransferMoney } from "@/shared/types";
+import { useInvalidateSellerSettings } from "../model/useInvalidateSellerSettings";
 
 interface AccountFormItem {
   enabled: boolean;
@@ -161,6 +162,7 @@ const AccountsForm: React.FC<AccountsFormProps> = ({ methods, existing }) => {
   const createMutation = useCreateAccount();
   const updateMutation = useUpdateAccount();
   const deleteMutation = useDeleteAccount();
+  const invalidateSellerSettings = useInvalidateSellerSettings();
 
   const isPending =
     createMutation.isPending ||
@@ -307,6 +309,7 @@ const AccountsForm: React.FC<AccountsFormProps> = ({ methods, existing }) => {
 
       try {
         await Promise.all(operations);
+        await invalidateSellerSettings();
         setExpandedItems(new Set());
         setWasSaved(true);
         showNotification("Способы оплаты сохранены", "success");
@@ -322,6 +325,7 @@ const AccountsForm: React.FC<AccountsFormProps> = ({ methods, existing }) => {
       createMutation,
       deleteMutation,
       existingByMethod,
+      invalidateSellerSettings,
       showNotification,
       updateMutation,
     ],

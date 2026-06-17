@@ -75,6 +75,9 @@ export const useProductForm = ({
   const isEditMode = mode === "edit";
   const initializedProductIdRef = useRef<string | null>(null);
   const draftRestoreStartedRef = useRef(false);
+  const [preservedDraftImageIds, setPreservedDraftImageIds] = useState<
+    number[]
+  >([]);
   const [isDraftReady, setIsDraftReady] = useState(isEditMode);
   const [initialFormValues, setInitialFormValues] =
     useState<ProductFormData>(defaultProductFormValues);
@@ -91,6 +94,7 @@ export const useProductForm = ({
   const {
     data: currentUser,
     isLoading: isCurrentUserLoading,
+    isFetching: isCurrentUserFetching,
     error: currentUserError,
     refetch: refetchCurrentUser,
   } = useCurrentUser();
@@ -127,6 +131,26 @@ export const useProductForm = ({
     () => normalizeProductFormValues(watchedFormValues),
     [watchedFormValues],
   );
+  const effectiveImageIds = useMemo(
+    () =>
+      imageUploadState.imageIds.length > 0
+        ? imageUploadState.imageIds
+        : preservedDraftImageIds,
+    [imageUploadState.imageIds, preservedDraftImageIds],
+  );
+  const currentDraftImages = useMemo<InitialImageUploadState[]>(
+    () =>
+      imageUploadState.images
+        .map((image) => ({
+          id: image.id ?? 0,
+          preview: image.preview,
+        }))
+        .filter(
+          (image): image is InitialImageUploadState =>
+            image.id > 0 && Boolean(image.preview),
+        ),
+    [imageUploadState.images],
+  );
 
   useEffect(() => {
     if (isEditMode) {
@@ -155,9 +179,13 @@ export const useProductForm = ({
       reset(draft.values);
 
       if (draft.imageIds.length > 0) {
-        const draftImages = await loadProductFormDraftImages(draft.imageIds);
+        const draftImages =
+          draft.images.length > 0
+            ? draft.images
+            : await loadProductFormDraftImages(draft.imageIds);
 
         if (isActive) {
+          setPreservedDraftImageIds(draftImages.map((image) => image.id));
           setUploadInitialImages(draftImages);
         }
       }
@@ -187,11 +215,57 @@ export const useProductForm = ({
       return;
     }
 
+    if (imageUploadState.imageIds.length > 0 && preservedDraftImageIds.length > 0) {
+      setPreservedDraftImageIds([]);
+    }
+
     writeProductFormDraft({
       values: formValues,
-      imageIds: imageUploadState.imageIds,
+      imageIds: effectiveImageIds,
+      images: currentDraftImages,
     });
-  }, [formValues, imageUploadState.imageIds, isDraftReady, isEditMode]);
+  }, [
+    currentDraftImages,
+    effectiveImageIds,
+    formValues,
+    imageUploadState.imageIds,
+    isDraftReady,
+    isEditMode,
+    preservedDraftImageIds.length,
+  ]);
+
+  useEffect(() => {
+    if (!imageUploadState.isUploading) {
+      return;
+    }
+
+    const preventNavigationWhileUploading = (event: MouseEvent) => {
+      const target = event.target;
+
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const link = target.closest("a[href]");
+
+      if (!link) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
+    document.addEventListener("click", preventNavigationWhileUploading, true);
+
+    return () => {
+      document.removeEventListener(
+        "click",
+        preventNavigationWhileUploading,
+        true,
+      );
+    };
+  }, [imageUploadState.isUploading]);
 
   useEffect(() => {
     if (!isEditMode || !productId || !product) {
@@ -217,21 +291,27 @@ export const useProductForm = ({
   const categoryIds = watch("categoryIds");
   const name = watch("name");
   const price = watch("price");
-  const hasSellerTransfer = isEditMode || (currentUser?.transfers.length ?? 0) > 0;
+  const count = watch("count");
+  const hasSellerTransfer =
+    isEditMode ||
+    currentUser?.transfers.some((transfer) => transfer.status === "ACTIVE") ||
+    false;
   const hasSellerAccount = isEditMode || (currentUser?.accounts.length ?? 0) > 0;
   const hasSellerSocialNetwork =
     isEditMode || (currentUser?.socialNetworks.length ?? 0) > 0;
 
   const publishRequirements = {
-    hasImages: imageUploadState.imageIds.length > 0,
+    hasImages: effectiveImageIds.length > 0,
     hasCategories: categoryIds.length > 0,
     hasName: name.trim().length > 0,
     hasPrice: price.trim().length > 0,
+    hasCount: count.trim().length > 0,
     hasSellerTransfer,
     hasSellerAccount,
     hasSellerSocialNetwork,
     isSellerSettingsError: !isEditMode && Boolean(currentUserError),
-    isSellerSettingsLoading: !isEditMode && isCurrentUserLoading,
+    isSellerSettingsLoading:
+      !isEditMode && (isCurrentUserLoading || isCurrentUserFetching),
   };
 
   const hasImageChanges = useMemo(() => {
@@ -254,6 +334,7 @@ export const useProductForm = ({
     }
 
     clearProductFormDraft();
+    setPreservedDraftImageIds([]);
     reset(defaultProductFormValues);
     imageUploadState.resetImages();
   };
@@ -263,7 +344,7 @@ export const useProductForm = ({
   };
 
   const onSubmit = (data: ProductFormData) => {
-    if (!imageUploadState.imageIds.length) {
+    if (!effectiveImageIds.length) {
       showNotification(
         "Пожалуйста, загрузите хотя бы одно изображение товара",
         "error",
@@ -287,7 +368,7 @@ export const useProductForm = ({
       return;
     }
 
-    const productData = mapFormDataToCreateModel(data, imageUploadState.imageIds);
+    const productData = mapFormDataToCreateModel(data, effectiveImageIds);
 
     if (isEditMode && productId) {
       updateProduct(
@@ -335,6 +416,7 @@ export const useProductForm = ({
     publishRequirements.hasCategories &&
     publishRequirements.hasName &&
     publishRequirements.hasPrice &&
+    publishRequirements.hasCount &&
     publishRequirements.hasSellerTransfer &&
     publishRequirements.hasSellerAccount &&
     publishRequirements.hasSellerSocialNetwork &&
