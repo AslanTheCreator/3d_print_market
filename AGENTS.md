@@ -322,6 +322,7 @@ A task is complete only when:
 - changed files are explained;
 - the solution follows existing project architecture;
 - no backend fields or contracts are invented.
+- visual verification via Browser is not necessary
 
 ## Codex workflow
 

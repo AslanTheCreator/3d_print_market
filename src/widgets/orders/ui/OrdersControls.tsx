@@ -5,12 +5,10 @@ import {
   Box,
   Button,
   Chip,
-  InputAdornment,
   MenuItem,
   Stack,
   TextField,
 } from "@mui/material";
-import { Search } from "@mui/icons-material";
 import type {
   OrdersFilterId,
   OrdersFilterOption,
@@ -22,8 +20,6 @@ interface OrdersControlsProps {
   filterCounts: Record<OrdersFilterId, number>;
   activeFilter: OrdersFilterId;
   onFilterChange: (filterId: OrdersFilterId) => void;
-  search: string;
-  onSearchChange: (search: string) => void;
   sort: OrdersSortId;
   onSortChange: (sortId: OrdersSortId) => void;
 }
@@ -33,8 +29,6 @@ export const OrdersControls = ({
   filterCounts,
   activeFilter,
   onFilterChange,
-  search,
-  onSearchChange,
   sort,
   onSortChange,
 }: OrdersControlsProps) => {
@@ -51,6 +45,8 @@ export const OrdersControls = ({
           gap: 1,
           overflowX: "auto",
           pb: 0.5,
+          minWidth: 0,
+          flexGrow: 1,
         }}
       >
         {filters.map((filter) => {
@@ -92,38 +88,23 @@ export const OrdersControls = ({
         })}
       </Box>
 
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={1.25}
-        sx={{ minWidth: { md: 360 } }}
+      <TextField
+        select
+        value={sort}
+        onChange={(event) => onSortChange(event.target.value as OrdersSortId)}
+        size="small"
+        sx={{
+          width: { xs: "100%", sm: 220 },
+          flexShrink: 0,
+          "& .MuiSelect-select": {
+            pr: 4,
+          },
+        }}
       >
-        <TextField
-          value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Найти заказ"
-          size="small"
-          fullWidth
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search fontSize="small" />
-              </InputAdornment>
-            ),
-          }}
-        />
-
-        <TextField
-          select
-          value={sort}
-          onChange={(event) => onSortChange(event.target.value as OrdersSortId)}
-          size="small"
-          sx={{ minWidth: { sm: 170 } }}
-        >
-          <MenuItem value="attention">Сначала важные</MenuItem>
-          <MenuItem value="newest">Сначала новые</MenuItem>
-          <MenuItem value="oldest">Сначала старые</MenuItem>
-        </TextField>
-      </Stack>
+        <MenuItem value="attention">Сначала важные</MenuItem>
+        <MenuItem value="newest">Сначала новые</MenuItem>
+        <MenuItem value="oldest">Сначала старые</MenuItem>
+      </TextField>
     </Stack>
   );
 };

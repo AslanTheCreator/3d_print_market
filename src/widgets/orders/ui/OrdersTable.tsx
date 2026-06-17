@@ -25,11 +25,6 @@ interface OrdersTableProps {
   userRole: OrdersUserRole;
 }
 
-const tableColumns = {
-  gridTemplateColumns:
-    "minmax(280px, 2fr) minmax(120px, 0.8fr) minmax(150px, 0.9fr) minmax(240px, 1.4fr) minmax(110px, 0.7fr) minmax(130px, 0.8fr) minmax(170px, 1fr)",
-};
-
 const getStepIndex = (
   steps: readonly OrderProgressStep[],
   order: ListOrdersModel,
@@ -184,7 +179,7 @@ const OrderInfoItem = ({
   </Box>
 );
 
-const OrderMobileCard = ({
+const OrderCard = ({
   order,
   userRole,
 }: {
@@ -197,7 +192,7 @@ const OrderMobileCard = ({
     <Paper
       variant="outlined"
       sx={{
-        p: 1.5,
+        p: { xs: 1.5, sm: 2 },
         borderRadius: 2,
         bgcolor: "background.paper",
         boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
@@ -322,157 +317,47 @@ export const OrdersTable = ({
         {title}
       </Typography>
 
-      {orders.length > 0 && (
-        <Stack spacing={1.25} sx={{ display: { xs: "flex", md: "none" } }}>
-          {orders.map((order) => (
-            <OrderMobileCard
-              key={order.orderId}
-              order={order}
-              userRole={userRole}
-            />
-          ))}
+      {orders.length === 0 ? (
+        <Paper
+          variant="outlined"
+          sx={{
+            borderRadius: 2,
+            bgcolor: "background.paper",
+          }}
+        >
+          <Box sx={{ p: 4, textAlign: "center" }}>
+            <Typography variant="subtitle1" fontWeight={700}>
+              Заказы не найдены
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Попробуйте изменить фильтр или сортировку.
+            </Typography>
+          </Box>
+        </Paper>
+      ) : (
+        <Stack spacing={1.25}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(min(100%, 360px), 1fr))",
+              gap: 1.5,
+            }}
+          >
+            {orders.map((order) => (
+              <OrderCard
+                key={order.orderId}
+                order={order}
+                userRole={userRole}
+              />
+            ))}
+          </Box>
 
           <Typography variant="caption" color="text.secondary" sx={{ px: 0.5 }}>
             Показано {orders.length} из {totalCount} заказов
           </Typography>
         </Stack>
       )}
-
-      <Paper
-        variant="outlined"
-        sx={{
-          display: { xs: orders.length === 0 ? "block" : "none", md: "block" },
-          borderRadius: 2,
-          overflow: "hidden",
-          bgcolor: "background.paper",
-        }}
-      >
-        {orders.length === 0 ? (
-          <Box sx={{ p: 4, textAlign: "center" }}>
-            <Typography variant="subtitle1" fontWeight={700}>
-              Заказы не найдены
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Попробуйте изменить фильтр, сортировку или поисковый запрос.
-            </Typography>
-          </Box>
-        ) : (
-          <Box sx={{ overflowX: "auto" }}>
-            <Box sx={{ minWidth: 1200 }}>
-              <Box
-                sx={{
-                  display: "grid",
-                  ...tableColumns,
-                  gap: 2,
-                  px: 2,
-                  py: 1.25,
-                  bgcolor: alpha(theme.palette.grey[500], 0.06),
-                }}
-              >
-                {[
-                  "Заказ / товар",
-                  getOrderPeerLabel(userRole),
-                  "Статус",
-                  "Оплата и доставка",
-                  "Сумма",
-                  "Дата",
-                  "Действия",
-                ].map((label) => (
-                  <Typography
-                    key={label}
-                    variant="caption"
-                    color="text.secondary"
-                    fontWeight={700}
-                  >
-                    {label}
-                  </Typography>
-                ))}
-              </Box>
-
-              {orders.map((order) => (
-                <Box
-                  key={order.orderId}
-                  sx={{
-                    display: "grid",
-                    ...tableColumns,
-                    gap: 2,
-                    alignItems: "center",
-                    px: 2,
-                    py: 1.5,
-                    borderTop: `1px solid ${theme.palette.divider}`,
-                  }}
-                >
-                  <OrderProductPreview
-                    order={order}
-                    userRole={userRole}
-                    imageSize={56}
-                  />
-
-                  <Stack spacing={0.25} minWidth={0}>
-                    <Typography
-                      variant="body2"
-                      fontWeight={700}
-                      noWrap
-                      title={order.userInfo.login}
-                    >
-                      {order.userInfo.login}
-                    </Typography>
-                    {order.userInfo.mail && (
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        noWrap
-                        title={order.userInfo.mail}
-                      >
-                        {order.userInfo.mail}
-                      </Typography>
-                    )}
-                  </Stack>
-
-                  <Box
-                    sx={{
-                      minWidth: 0,
-                      "& .MuiChip-root": { maxWidth: "100%" },
-                      "& .MuiChip-label": {
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      },
-                    }}
-                  >
-                    <OrderStatusChip status={order.actualStatus} />
-                  </Box>
-
-                  <OrderMiniProgress order={order} />
-
-                  <Typography
-                    variant="subtitle2"
-                    fontWeight={800}
-                    color="primary.main"
-                  >
-                    {formatOrderPrice(order)}
-                  </Typography>
-
-                  <Typography variant="body2" color="text.secondary">
-                    {formatOrderDate(order.createdAt)}
-                  </Typography>
-
-                  {userRole === "seller" ? (
-                    <SellerActions order={order} />
-                  ) : (
-                    <CustomerActions order={order} />
-                  )}
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        )}
-
-        <Box sx={{ px: 2, py: 1.5, borderTop: `1px solid ${theme.palette.divider}` }}>
-          <Typography variant="caption" color="text.secondary">
-            Показано {orders.length} из {totalCount} заказов
-          </Typography>
-        </Box>
-      </Paper>
     </Box>
   );
 };

@@ -1,5 +1,4 @@
 import {
-  getOrderStatusMeta,
   isActiveOrderStatus,
   orderNeedsAttention,
   type ListOrdersModel,
@@ -148,34 +147,6 @@ export const filterOrdersByStatus = (
   }
 
   return orders.filter((order) => statuses.includes(order.actualStatus));
-};
-
-export const searchOrders = (
-  orders: readonly ListOrdersModel[],
-  search: string,
-) => {
-  const normalizedSearch = search.trim().toLowerCase();
-
-  if (!normalizedSearch) {
-    return [...orders];
-  }
-
-  return orders.filter((order) => {
-    const statusLabel = getOrderStatusMeta(order.actualStatus).label;
-    const searchableText = [
-      order.orderId,
-      order.product.name,
-      order.userInfo.login,
-      order.transfer.address,
-      order.deliveryUrl,
-      statusLabel,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-
-    return searchableText.includes(normalizedSearch);
-  });
 };
 
 export const sortOrders = (

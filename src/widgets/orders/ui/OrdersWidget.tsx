@@ -14,7 +14,6 @@ import {
   getOrdersFilters,
   getOrdersStatCounts,
   getOrdersTitle,
-  searchOrders,
   sortOrders,
   type OrdersFilterId,
   type OrdersSortId,
@@ -32,7 +31,6 @@ interface OrdersWidgetProps {
 
 export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
   const [activeFilter, setActiveFilter] = useState<OrdersFilterId>("all");
-  const [search, setSearch] = useState("");
   const [sort, setSort] = useState<OrdersSortId>("attention");
   const { data: orders, isLoading, error } = query;
 
@@ -76,10 +74,9 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
       activeFilter,
       userRole,
     );
-    const searchedOrders = searchOrders(filteredOrders, search);
 
-    return sortOrders(searchedOrders, sort, userRole);
-  }, [activeFilter, ordersList, search, sort, userRole]);
+    return sortOrders(filteredOrders, sort, userRole);
+  }, [activeFilter, ordersList, sort, userRole]);
 
   if (isLoading) {
     return <LoadingOrderState title={title} itemsCount={3} />;
@@ -116,8 +113,6 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
           filterCounts={filterCounts}
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
-          search={search}
-          onSearchChange={setSearch}
           sort={sort}
           onSortChange={setSort}
         />
