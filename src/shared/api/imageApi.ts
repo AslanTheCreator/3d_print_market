@@ -27,13 +27,8 @@ const getImagesInRequestedOrder = async (
 ): Promise<ImageResponse[]> => {
   const images = await Promise.all(
     imageIds.map(async (imageId) => {
-      try {
-        const [image] = await getImagesBatch([imageId]);
-        return image ?? null;
-      } catch (error) {
-        console.error(`Failed to load image ${imageId}:`, error);
-        return null;
-      }
+      const [image] = await getImagesBatch([imageId]);
+      return image ?? null;
     }),
   );
 
@@ -63,16 +58,11 @@ export const imageApi = {
       return [];
     }
 
-    try {
-      if (validIds.length === 1) {
-        return await getImagesBatch(validIds);
-      }
-
-      return await getImagesInRequestedOrder(validIds);
-    } catch (error) {
-      console.error("Ошибка при получении изображений:", error);
-      return [];
+    if (validIds.length === 1) {
+      return getImagesBatch(validIds);
     }
+
+    return getImagesInRequestedOrder(validIds);
   },
   async getImageMetadata(
     imageIds: number | number[] | null,
@@ -83,12 +73,7 @@ export const imageApi = {
       return [];
     }
 
-    try {
-      return await getMetadataBatch(validIds);
-    } catch (error) {
-      console.error("Failed to load image metadata:", error);
-      return [];
-    }
+    return getMetadataBatch(validIds);
   },
   async saveImage(file: File, tag: ImageTag): Promise<number[]> {
     const formData = new FormData();

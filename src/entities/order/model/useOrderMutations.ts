@@ -46,13 +46,11 @@ export const useConfirmOrderBySeller = () => {
   return useMutation({
     mutationFn: ({
       orderId,
-      accountId,
       comment = "",
     }: {
       orderId: number;
-      accountId: number;
       comment?: string;
-    }) => orderApi.confirmOrderBySeller(orderId, accountId, comment),
+    }) => orderApi.confirmOrderBySeller(orderId, comment),
     onSuccess: () => invalidateOrdersLists(queryClient),
     onError: logMutationError("Ошибка подтверждения заказа продавцом:"),
   });

@@ -21,7 +21,6 @@ export type ConfirmationType = "order" | "preorder";
 // Интерфейс для параметров мутации заказа
 interface OrderConfirmationParams {
   orderId: number;
-  accountId: number;
   comment?: string;
 }
 
@@ -104,11 +103,9 @@ export const ConfirmationDialog = ({
 
   const handleConfirm = () => {
     if (confirmationType === "order") {
-      // Для обычного заказа нужен accountId
       confirmationMutation.mutate(
         {
           orderId: order.orderId,
-          accountId: order.userInfo.id,
         },
         {
           onSuccess: () => {
@@ -117,7 +114,6 @@ export const ConfirmationDialog = ({
         },
       );
     } else {
-      // Для предзаказа accountId не нужен
       confirmationMutation.mutate(
         {
           orderId: order.orderId,

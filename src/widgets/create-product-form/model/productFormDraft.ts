@@ -1,7 +1,7 @@
 import type { InitialImageUploadState } from "@/features/image-upload";
 import { imageApi } from "@/shared/api";
 import { getImageUrl } from "@/shared/lib";
-import type { ImageResponse } from "@/shared/types";
+import type { ImageMetadata, ImageResponse } from "@/shared/types";
 import {
   defaultProductFormValues,
   type ProductFormData,
@@ -210,7 +210,14 @@ export const clearProductFormDraft = (): void => {
 export const loadProductFormDraftImages = async (
   imageIds: number[],
 ): Promise<InitialImageUploadState[]> => {
-  const images = await imageApi.getImageMetadata(imageIds);
+  let images: ImageMetadata[];
+
+  try {
+    images = await imageApi.getImageMetadata(imageIds);
+  } catch {
+    return loadProductFormDraftImagesFromContent(imageIds);
+  }
+
   const metadataImages = images
     .map((image) => {
       const preview = getImageUrl(image, "medium");

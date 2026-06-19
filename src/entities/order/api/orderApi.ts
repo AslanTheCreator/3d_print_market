@@ -21,11 +21,10 @@ export const orderApi = {
   // Подтверждение заказа продавцом
   confirmOrderBySeller: async (
     orderId: number,
-    accountId: number,
     comment: string = "",
   ) => {
     const { data } = await authClient.post<number>(
-      `${API_URL}/${orderId}/AWAITING_PREPAYMENT?accountId=${accountId}&comment=${encodeURIComponent(comment)}`,
+      `${API_URL}/${orderId}/AWAITING_PREPAYMENT?comment=${encodeURIComponent(comment)}`,
     );
     return data;
   },

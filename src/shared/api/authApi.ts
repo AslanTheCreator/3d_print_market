@@ -84,7 +84,7 @@ export const authApi = {
     try {
       const { data: userId } = await publicClient.post(
         `${API_URL_AUTH}/verification/resend`,
-        {},
+        undefined,
         {
           ...skipErrorTransformConfig,
           params: { email },
@@ -138,7 +138,7 @@ export const authApi = {
 
     const { data: accessToken } = await publicClient.post<string>(
       `${API_URL_AUTH}/refresh`,
-      {},
+      undefined,
       {
         headers: {
           "X-Refresh-Token": refreshToken,
@@ -152,7 +152,7 @@ export const authApi = {
   async passwordReset(email: string): Promise<boolean> {
     await publicClient.post(
       `${API_URL_AUTH}/password/reset`,
-      {},
+      undefined,
       {
         params: { email },
       },
