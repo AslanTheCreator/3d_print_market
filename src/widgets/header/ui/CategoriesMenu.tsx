@@ -12,12 +12,14 @@ import {
   Collapse,
   CircularProgress,
   Alert,
+  IconButton,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CategoryIcon from "@mui/icons-material/Category";
+import CloseIcon from "@mui/icons-material/Close";
 import { alpha } from "@mui/material/styles";
 import {
   useCategories,
@@ -30,6 +32,7 @@ import { CategoryModel } from "@/shared/types";
 interface CategoriesMenuProps {
   onClose: () => void;
   enabled?: boolean;
+  showCloseButton?: boolean;
 }
 
 interface CategoryItemProps {
@@ -191,6 +194,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
 export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({
   onClose,
   enabled = true,
+  showCloseButton = false,
 }) => {
   const { data: categories = [], isLoading, error } = useCategories({
     enabled,
@@ -289,6 +293,23 @@ export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({
         >
           Figurzilla
         </Typography>
+        {showCloseButton && (
+          <IconButton
+            onClick={onClose}
+            aria-label="Закрыть меню категорий"
+            sx={{
+              width: 44,
+              height: 44,
+              flexShrink: 0,
+              backgroundColor: "background.default",
+              "&:hover": {
+                backgroundColor: "action.hover",
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        )}
       </Box>
 
       {/* Loading state */}

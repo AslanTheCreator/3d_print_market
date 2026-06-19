@@ -4,11 +4,9 @@ import React from "react";
 import {
   Drawer,
   Box,
-  IconButton,
   useTheme,
   ClickAwayListener,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 import { CategoriesMenu } from "./CategoriesMenu";
 import { LAYOUT } from "@/shared/config";
 
@@ -52,33 +50,13 @@ export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
             display: "flex",
             flexDirection: "column",
             height: "100%",
-            position: "relative",
           }}
         >
-          <Box
-            sx={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              zIndex: 1,
-            }}
-          >
-            <IconButton
-              onClick={onClose}
-              size="small"
-              aria-label="Закрыть меню категорий"
-              sx={{
-                backgroundColor: theme.palette.background.default,
-                "&:hover": {
-                  backgroundColor: theme.palette.action.hover,
-                },
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
-
-          <CategoriesMenu onClose={onClose} enabled={open} />
+          <CategoriesMenu
+            onClose={onClose}
+            enabled={open}
+            showCloseButton
+          />
         </Box>
       </Drawer>
     );
