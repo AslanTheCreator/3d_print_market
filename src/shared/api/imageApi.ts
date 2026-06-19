@@ -100,4 +100,15 @@ export const imageApi = {
     );
     return data;
   },
+  async deleteImages(imageIds: number[], tag: ImageTag): Promise<void> {
+    if (imageIds.length === 0) {
+      return;
+    }
+
+    const params = new URLSearchParams();
+    imageIds.forEach((imageId) => params.append("ids", String(imageId)));
+    params.set("tag", tag);
+
+    await authClient.delete(`${API_URL}?${params.toString()}`);
+  },
 };

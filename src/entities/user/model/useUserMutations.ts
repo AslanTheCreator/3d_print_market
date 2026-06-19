@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { imageApi } from "@/shared/api";
 import { userApi } from "../api/userApi";
 import { userKeys } from "./queryKeys";
 import type {
@@ -7,13 +8,29 @@ import type {
   UserUpdateModel,
 } from "../model/types";
 
+interface UpdateUserMutationVariables {
+  userData: UserUpdateModel;
+  imageIdToDelete?: number;
+}
+
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: UserUpdateModel) => userApi.updateUser(data),
+    mutationFn: async ({
+      userData,
+      imageIdToDelete,
+    }: UpdateUserMutationVariables): Promise<number> => {
+      const userId = await userApi.updateUser(userData);
 
-    onMutate: async (newData) => {
+      if (imageIdToDelete !== undefined) {
+        await imageApi.deleteImages([imageIdToDelete], "PARTICIPANT");
+      }
+
+      return userId;
+    },
+
+    onMutate: async ({ userData, imageIdToDelete }) => {
       await queryClient.cancelQueries({ queryKey: userKeys.current() });
       await queryClient.cancelQueries({ queryKey: userKeys.profile() });
 
@@ -27,17 +44,25 @@ export const useUpdateUser = () => {
       if (previousCurrent) {
         queryClient.setQueryData<UserBaseModel>(userKeys.current(), {
           ...previousCurrent,
-          ...newData,
-          imageId: newData.imageId ?? previousCurrent.imageId,
+          ...userData,
+          imageId:
+            imageIdToDelete !== undefined
+              ? null
+              : (userData.imageId ?? previousCurrent.imageId),
+          image: imageIdToDelete !== undefined ? [] : previousCurrent.image,
         });
       }
 
       if (previousProfile) {
         queryClient.setQueryData<UserProfileModel>(userKeys.profile(), {
           ...previousProfile,
-          login: newData.login,
-          fullName: newData.fullName,
-          imageId: newData.imageId ?? previousProfile.imageId,
+          login: userData.login,
+          fullName: userData.fullName,
+          imageId:
+            imageIdToDelete !== undefined
+              ? null
+              : (userData.imageId ?? previousProfile.imageId),
+          image: imageIdToDelete !== undefined ? [] : previousProfile.image,
         });
       }
 
@@ -53,9 +78,11 @@ export const useUpdateUser = () => {
       }
     },
 
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: userKeys.current() });
-      queryClient.invalidateQueries({ queryKey: userKeys.profile() });
+    onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: userKeys.current() }),
+        queryClient.invalidateQueries({ queryKey: userKeys.profile() }),
+      ]);
     },
   });
 };
