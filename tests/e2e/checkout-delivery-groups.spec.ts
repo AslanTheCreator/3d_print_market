@@ -194,6 +194,7 @@ test("selects delivery independently for each seller", async ({
   const sellerTwo = page.getByTestId("checkout-seller-20");
   const sellerWithoutDelivery = page.getByTestId("checkout-seller-30");
   const submitButton = page.getByRole("button", { name: "Оформить заказ" });
+  const submitBlocker = page.getByTestId("checkout-submit-blocker");
 
   await expect(sellerOne).toBeVisible();
   await expect(sellerTwo).toBeVisible();
@@ -204,15 +205,20 @@ test("selects delivery independently for each seller", async ({
   await expect(sellerOne.locator('input[type="radio"]:checked')).toHaveCount(0);
   await expect(sellerTwo.getByRole("radio")).toBeChecked();
   await expect(submitButton).toBeDisabled();
+  await expect(submitBlocker).toHaveText("Выберите адрес доставки");
 
   await page.getByText("Тестовая 1", { exact: true }).click();
   await sellerOne.getByTestId("checkout-delivery-10-101").click();
 
   await expect(submitButton).toBeDisabled();
+  await expect(submitBlocker).toHaveText(
+    "У продавца «seller-without-delivery» нет доступных способов доставки",
+  );
   await page
     .getByRole("checkbox", { name: "Выбрать товар Товар 4" })
     .uncheck();
   await expect(submitButton).toBeEnabled();
+  await expect(submitBlocker).toHaveCount(0);
   await expect(page.getByTestId("checkout-summary-delivery-10")).toContainText(
     "300 ₽",
   );

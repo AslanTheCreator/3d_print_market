@@ -143,16 +143,6 @@ export const useCheckoutDelivery = ({
     [activeSellerGroups],
   );
 
-  const isDeliveryReady =
-    activeSellerGroups.length > 0 &&
-    activeSellerGroups.every(
-      (group) =>
-        !group.isLoading &&
-        !group.isError &&
-        group.transfers.length > 0 &&
-        group.selectedTransfer !== null,
-    );
-
   return {
     sellerGroups,
     activeSellerGroups,
@@ -163,7 +153,6 @@ export const useCheckoutDelivery = ({
     selectTransfer,
     retrySellerDelivery,
     getTransferIdForSeller,
-    isDeliveryReady,
   };
 };
 

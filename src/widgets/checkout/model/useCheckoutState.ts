@@ -37,11 +37,15 @@ export const useCheckoutState = ({ cartItems }: UseCheckoutStateProps) => {
     selectedProductIds,
   });
 
-  const isReadyToSubmit = useCheckoutSubmitReadiness({
-    selectedAddress,
-    selectedItemsCount: selectedItems.length,
-    isDeliveryReady: checkoutDelivery.isDeliveryReady,
-  });
+  const { isReadyToSubmit, submitBlockerMessage } =
+    useCheckoutSubmitReadiness({
+      selectedAddress,
+      addressesCount: addresses.length,
+      isLoadingAddresses,
+      isAddressesError,
+      selectedItemsCount: selectedItems.length,
+      activeSellerGroups: checkoutDelivery.activeSellerGroups,
+    });
 
   return {
     selectedAddress,
@@ -60,6 +64,7 @@ export const useCheckoutState = ({ cartItems }: UseCheckoutStateProps) => {
     toggleSelectAll,
     ...checkoutDelivery,
     isReadyToSubmit,
+    submitBlockerMessage,
   };
 };
 

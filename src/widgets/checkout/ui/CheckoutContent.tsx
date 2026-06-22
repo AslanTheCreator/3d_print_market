@@ -91,6 +91,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
           cartItems={checkoutState.selectedItems}
           sellerDeliveries={checkoutState.selectedSellerDeliveries}
           isReadyToSubmit={checkoutState.isReadyToSubmit}
+          submitBlockerMessage={checkoutState.submitBlockerMessage}
           isSubmitting={isSubmitting}
           onSubmit={onSubmit}
         />

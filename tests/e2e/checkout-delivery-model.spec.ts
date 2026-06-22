@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 import type { ProductBasket } from "@/entities/cart";
-import type { Transfer } from "@/shared/types";
+import type { Address, Transfer } from "@/shared/types";
 import {
   getActiveTransfers,
   groupCartItemsBySeller,
   reconcileSelectedTransfers,
 } from "@/widgets/checkout/model/checkoutDeliveryGroups";
+import { getCheckoutSubmitReadiness } from "@/widgets/checkout/model/checkoutSubmitReadiness";
+import type { SellerCheckoutGroup } from "@/widgets/checkout/model/types";
 
 const productItem = (
   id: number,
@@ -30,6 +32,27 @@ const transfer = (
   price: 500,
   currency: "RUB",
 });
+
+const selectedAddress = { id: 50 } as Address;
+
+const sellerGroup = (
+  overrides: Partial<SellerCheckoutGroup> = {},
+): SellerCheckoutGroup => {
+  const selectedTransfer = transfer(1, 10);
+
+  return {
+    sellerId: 10,
+    sellerLogin: "seller-a",
+    items: [productItem(1, 10, "seller-a")],
+    transfers: [selectedTransfer],
+    selectedTransfer,
+    isActive: true,
+    isLoading: false,
+    isError: false,
+    errorMessage: null,
+    ...overrides,
+  };
+};
 
 test.describe("checkout delivery model", () => {
   test("groups cart items by seller and preserves their order", () => {
@@ -120,5 +143,103 @@ test.describe("checkout delivery model", () => {
       },
     ]);
     expect(resolvedSelections.has(10)).toBe(false);
+  });
+
+  test("explains why address selection blocks checkout", () => {
+    const commonParams = {
+      selectedAddress: null,
+      addressesCount: 1,
+      isLoadingAddresses: false,
+      isAddressesError: false,
+      selectedItemsCount: 1,
+      activeSellerGroups: [sellerGroup()],
+    };
+
+    expect(getCheckoutSubmitReadiness(commonParams)).toEqual({
+      isReadyToSubmit: false,
+      submitBlockerMessage: "Выберите адрес доставки",
+    });
+    expect(
+      getCheckoutSubmitReadiness({
+        ...commonParams,
+        addressesCount: 0,
+      }).submitBlockerMessage,
+    ).toBe("Добавьте адрес доставки в настройках профиля");
+    expect(
+      getCheckoutSubmitReadiness({
+        ...commonParams,
+        isLoadingAddresses: true,
+      }).submitBlockerMessage,
+    ).toBe("Загружаем адреса доставки");
+    expect(
+      getCheckoutSubmitReadiness({
+        ...commonParams,
+        isAddressesError: true,
+      }).submitBlockerMessage,
+    ).toBe("Не удалось загрузить адреса доставки");
+  });
+
+  test("points to the seller whose delivery is incomplete", () => {
+    const commonParams = {
+      selectedAddress,
+      addressesCount: 1,
+      isLoadingAddresses: false,
+      isAddressesError: false,
+      selectedItemsCount: 1,
+    };
+
+    expect(
+      getCheckoutSubmitReadiness({
+        ...commonParams,
+        activeSellerGroups: [
+          sellerGroup({ selectedTransfer: null, transfers: [] }),
+        ],
+      }).submitBlockerMessage,
+    ).toBe("У продавца «seller-a» нет доступных способов доставки");
+    expect(
+      getCheckoutSubmitReadiness({
+        ...commonParams,
+        activeSellerGroups: [sellerGroup({ selectedTransfer: null })],
+      }).submitBlockerMessage,
+    ).toBe("Выберите доставку продавца «seller-a»");
+    expect(
+      getCheckoutSubmitReadiness({
+        ...commonParams,
+        activeSellerGroups: [sellerGroup({ isLoading: true })],
+      }).submitBlockerMessage,
+    ).toBe("Загружаем доставку продавца «seller-a»");
+    expect(
+      getCheckoutSubmitReadiness({
+        ...commonParams,
+        activeSellerGroups: [sellerGroup({ isError: true })],
+      }).submitBlockerMessage,
+    ).toBe("Не удалось загрузить доставку продавца «seller-a»");
+  });
+
+  test("allows checkout only when address, items and delivery are ready", () => {
+    expect(
+      getCheckoutSubmitReadiness({
+        selectedAddress,
+        addressesCount: 1,
+        isLoadingAddresses: false,
+        isAddressesError: false,
+        selectedItemsCount: 1,
+        activeSellerGroups: [sellerGroup()],
+      }),
+    ).toEqual({
+      isReadyToSubmit: true,
+      submitBlockerMessage: null,
+    });
+
+    expect(
+      getCheckoutSubmitReadiness({
+        selectedAddress,
+        addressesCount: 1,
+        isLoadingAddresses: false,
+        isAddressesError: false,
+        selectedItemsCount: 0,
+        activeSellerGroups: [],
+      }).submitBlockerMessage,
+    ).toBe("Выберите хотя бы один товар");
   });
 });

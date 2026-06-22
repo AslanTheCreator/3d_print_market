@@ -23,6 +23,7 @@ interface CheckoutSummaryProps {
   cartItems: ProductBasket[];
   sellerDeliveries: SelectedSellerDelivery[];
   isReadyToSubmit: boolean;
+  submitBlockerMessage: string | null;
   isSubmitting: boolean;
   onSubmit: () => void;
   isLoading?: boolean;
@@ -32,6 +33,7 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
   cartItems,
   sellerDeliveries,
   isReadyToSubmit,
+  submitBlockerMessage,
   isSubmitting,
   onSubmit,
   isLoading = false,
@@ -230,13 +232,14 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
       </Button>
 
       {/* Подсказка если не готово */}
-      {!isReadyToSubmit && !isSubmitting && (
+      {submitBlockerMessage && !isSubmitting && (
         <Typography
+          data-testid="checkout-submit-blocker"
           variant="caption"
           color="text.secondary"
           sx={{ display: "block", textAlign: "center", mt: 1 }}
         >
-          Выберите адрес и доставку для каждого продавца
+          {submitBlockerMessage}
         </Typography>
       )}
     </Paper>
