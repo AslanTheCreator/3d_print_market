@@ -28,6 +28,7 @@ import {
   Refresh,
   Home,
   Receipt,
+  ArrowBack,
 } from "@mui/icons-material";
 import { CheckoutResult } from "../model/types";
 
@@ -58,8 +59,6 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
   const isFullSuccess = result.successCount === result.totalCount;
   const isPartialSuccess =
     result.successCount > 0 && result.successCount < result.totalCount;
-  const isFullFailure = result.successCount === 0;
-
   const getDialogIcon = () => {
     if (isFullSuccess) {
       return (
@@ -85,15 +84,16 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
       return `Все ${result.totalCount} ${getItemWord(result.totalCount)} успешно оформлены. Вы можете отслеживать их статус в разделе "Мои покупки".`;
     }
     if (isPartialSuccess) {
-      return `Оформлено ${result.successCount} из ${result.totalCount} ${getItemWord(result.totalCount)}. Вы можете попробовать оформить оставшиеся товары повторно.`;
+      return `Оформлено ${result.successCount} из ${result.totalCount} ${getItemWord(result.totalCount)}. Повторите неудачные заказы или вернитесь к оформлению.`;
     }
-    return "Произошла ошибка при оформлении заказов. Пожалуйста, попробуйте позже или свяжитесь с поддержкой.";
+    return "Заказы не были оформлены. Повторите попытку или вернитесь к оформлению, чтобы проверить товары и доставку.";
   };
 
   return (
     <Dialog
+      data-testid="checkout-result-dialog"
       open={open}
-      onClose={isFullSuccess ? onClose : undefined}
+      onClose={isRetrying ? undefined : onClose}
       maxWidth="sm"
       fullWidth
       fullScreen={isMobile}
@@ -114,6 +114,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
         >
           {getDialogIcon()}
           <Typography
+            data-testid="checkout-result-title"
             variant="h5"
             fontWeight={700}
             sx={{ mt: 2, textAlign: "center" }}
@@ -264,9 +265,22 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
           </Button>
         )}
 
-        {result.success.length > 0 && (
+        {result.failed.length > 0 && (
           <Button
             variant="contained"
+            color="primary"
+            startIcon={<ArrowBack />}
+            onClick={onClose}
+            disabled={isRetrying}
+            fullWidth={isMobile}
+          >
+            Вернуться к оформлению
+          </Button>
+        )}
+
+        {result.success.length > 0 && (
+          <Button
+            variant={result.failed.length > 0 ? "outlined" : "contained"}
             color="primary"
             startIcon={<Receipt />}
             onClick={onGoToOrders}
@@ -277,7 +291,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
         )}
 
         <Button
-          variant={result.success.length > 0 ? "outlined" : "contained"}
+          variant={result.failed.length > 0 ? "text" : "outlined"}
           startIcon={<Home />}
           onClick={onGoHome}
           fullWidth={isMobile}

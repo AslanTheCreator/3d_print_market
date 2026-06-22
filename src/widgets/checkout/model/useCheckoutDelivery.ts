@@ -1,114 +1,180 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { ShippingMethod } from "@/shared/types";
-import { ProductBasket } from "@/entities/cart";
+import type { ProductBasket } from "@/entities/cart";
 import { orderApi, orderQueryKeys } from "@/entities/order";
-import { useDeliveryResolver } from "./useDeliveryResolver";
+import type { Transfer } from "@/shared/types";
+import { ApiError } from "@/shared/lib/errorHandler";
+import {
+  areTransferSelectionsEqual,
+  getActiveTransfers,
+  groupCartItemsBySeller,
+  reconcileSelectedTransfers,
+} from "./checkoutDeliveryGroups";
+import type {
+  SelectedSellerDelivery,
+  SellerCheckoutGroup,
+} from "./types";
 
 interface UseCheckoutDeliveryProps {
-  selectedItems: ProductBasket[];
+  cartItems: ProductBasket[];
+  selectedProductIds: Set<number>;
 }
 
+const DELIVERY_ERROR_FALLBACK = "Не удалось загрузить способы доставки";
+
 export const useCheckoutDelivery = ({
-  selectedItems,
+  cartItems,
+  selectedProductIds,
 }: UseCheckoutDeliveryProps) => {
-  const [selectedDeliveryMethod, setSelectedDeliveryMethod] =
-    useState<ShippingMethod | null>(null);
+  const [selectedTransfersBySeller, setSelectedTransfersBySeller] = useState<
+    Map<number, Transfer>
+  >(() => new Map());
 
-  const sellerProductMap = useMemo(() => {
-    const map = new Map<number, number>();
-
-    for (const item of selectedItems) {
-      if (!map.has(item.product.sellerId)) {
-        map.set(item.product.sellerId, item.product.id);
-      }
-    }
-
-    return map;
-  }, [selectedItems]);
-
-  const sellerProductEntries = useMemo(() => {
-    return Array.from(sellerProductMap.entries());
-  }, [sellerProductMap]);
+  const sellerCartGroups = useMemo(
+    () => groupCartItemsBySeller(cartItems),
+    [cartItems],
+  );
 
   const sellerQueries = useQueries({
-    queries: sellerProductEntries.map(([, productId]) => ({
-      queryKey: orderQueryKeys.orderData(productId),
-      queryFn: () => orderApi.getOrderData(productId),
-      enabled: !!productId,
+    queries: sellerCartGroups.map((group) => ({
+      queryKey: orderQueryKeys.orderData(group.items[0].product.id),
+      queryFn: () => orderApi.getOrderData(group.items[0].product.id),
       staleTime: 5 * 60 * 1000,
       gcTime: 10 * 60 * 1000,
       refetchOnWindowFocus: false,
     })),
   });
 
-  const sellerTransfersData = useMemo(() => {
-    return sellerProductEntries.map(([sellerId], index) => {
+  const sellerGroups = useMemo<SellerCheckoutGroup[]>(() => {
+    return sellerCartGroups.map((group, index) => {
       const query = sellerQueries[index];
+      const transfers = getActiveTransfers(query?.data?.sellerTransfers ?? []);
+      const storedSelection = selectedTransfersBySeller.get(group.sellerId);
+      const selectedTransfer = storedSelection
+        ? transfers.find((transfer) => transfer.id === storedSelection.id) ??
+          (query?.isLoading || query?.isError ? storedSelection : null)
+        : null;
 
       return {
-        sellerId,
-        transfers: query?.data?.sellerTransfers || [],
+        ...group,
+        transfers,
+        selectedTransfer,
+        isActive: group.items.some((item) =>
+          selectedProductIds.has(item.product.id),
+        ),
         isLoading: query?.isLoading ?? true,
         isError: query?.isError ?? false,
+        errorMessage: getDeliveryErrorMessage(query?.error),
       };
     });
-  }, [sellerProductEntries, sellerQueries]);
-
-  const deliveryResolution = useDeliveryResolver({
-    cartItems: selectedItems,
-    sellerTransfersData,
-    selectedMethod: selectedDeliveryMethod,
-  });
-
-  const handleAutoSelectMethod = useCallback(() => {
-    if (deliveryResolution.isLoading) {
-      return;
-    }
-
-    const firstAvailableMethod = deliveryResolution.availableMethods[0] ?? null;
-
-    if (!firstAvailableMethod) {
-      if (selectedDeliveryMethod !== null) {
-        setSelectedDeliveryMethod(null);
-      }
-      return;
-    }
-
-    if (
-      selectedDeliveryMethod === null ||
-      !deliveryResolution.availableMethods.includes(selectedDeliveryMethod)
-    ) {
-      setSelectedDeliveryMethod(firstAvailableMethod);
-    }
-  }, [
-    selectedDeliveryMethod,
-    deliveryResolution.availableMethods,
-    deliveryResolution.isLoading,
-  ]);
+  }, [selectedProductIds, selectedTransfersBySeller, sellerCartGroups, sellerQueries]);
 
   useEffect(() => {
-    handleAutoSelectMethod();
-  }, [handleAutoSelectMethod]);
+    setSelectedTransfersBySeller((currentSelections) => {
+      const nextSelections = reconcileSelectedTransfers(
+        currentSelections,
+        sellerGroups.map((group) => ({
+          sellerId: group.sellerId,
+          transfers: group.transfers,
+          isLoading: group.isLoading,
+          isError: group.isError,
+        })),
+      );
+
+      return areTransferSelectionsEqual(currentSelections, nextSelections)
+        ? currentSelections
+        : nextSelections;
+    });
+  }, [sellerGroups]);
+
+  const activeSellerGroups = useMemo(
+    () => sellerGroups.filter((group) => group.isActive),
+    [sellerGroups],
+  );
+
+  const selectedSellerDeliveries = useMemo<SelectedSellerDelivery[]>(() => {
+    return activeSellerGroups.flatMap((group) =>
+      !group.isLoading && !group.isError && group.selectedTransfer
+        ? [
+            {
+              sellerId: group.sellerId,
+              sellerLogin: group.sellerLogin,
+              transfer: group.selectedTransfer,
+            },
+          ]
+        : [],
+    );
+  }, [activeSellerGroups]);
+
+  const selectTransfer = useCallback((sellerId: number, transfer: Transfer) => {
+    if (transfer.status !== "ACTIVE") {
+      return;
+    }
+
+    setSelectedTransfersBySeller((currentSelections) => {
+      const nextSelections = new Map(currentSelections);
+      nextSelections.set(sellerId, transfer);
+      return nextSelections;
+    });
+  }, []);
+
+  const retrySellerDelivery = useCallback(
+    (sellerId: number) => {
+      const sellerIndex = sellerCartGroups.findIndex(
+        (group) => group.sellerId === sellerId,
+      );
+
+      if (sellerIndex >= 0) {
+        void sellerQueries[sellerIndex]?.refetch();
+      }
+    },
+    [sellerCartGroups, sellerQueries],
+  );
 
   const getTransferIdForSeller = useCallback(
     (sellerId: number): number | null => {
-      const info = deliveryResolution.sellerDeliveryInfo.get(sellerId);
-      return info?.selectedTransfer?.id || null;
+      return (
+        activeSellerGroups.find((group) => group.sellerId === sellerId)
+          ?.selectedTransfer?.id ?? null
+      );
     },
-    [deliveryResolution.sellerDeliveryInfo],
+    [activeSellerGroups],
   );
 
+  const isDeliveryReady =
+    activeSellerGroups.length > 0 &&
+    activeSellerGroups.every(
+      (group) =>
+        !group.isLoading &&
+        !group.isError &&
+        group.transfers.length > 0 &&
+        group.selectedTransfer !== null,
+    );
+
   return {
-    sellerQueries,
-    selectedDeliveryMethod,
-    setSelectedDeliveryMethod,
-    availableDeliveryMethods: deliveryResolution.availableMethods,
-    deliveryResolution,
+    sellerGroups,
+    activeSellerGroups,
+    selectedSellerDeliveries,
+    selectedTransfers: selectedSellerDeliveries.map(
+      (delivery) => delivery.transfer,
+    ),
+    selectTransfer,
+    retrySellerDelivery,
     getTransferIdForSeller,
-    isLoadingDelivery: deliveryResolution.isLoading,
-    isDeliveryError: deliveryResolution.isError,
+    isDeliveryReady,
   };
 };
+
+function getDeliveryErrorMessage(error: unknown): string | null {
+  if (!error) {
+    return null;
+  }
+
+  if (error instanceof ApiError || error instanceof Error) {
+    return error.message;
+  }
+
+  return DELIVERY_ERROR_FALLBACK;
+}

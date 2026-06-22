@@ -85,6 +85,7 @@ export const CheckoutCartItemCard = ({
       <Checkbox
         checked={isSelected}
         onChange={handleCheckboxChange}
+        inputProps={{ "aria-label": `Выбрать товар ${name}` }}
         sx={{
           p: 0,
           mt: 0.5,

@@ -10,22 +10,18 @@ import {
   alpha,
   useTheme,
 } from "@mui/material";
-import { ProductBasket } from "@/entities/cart";
 import { CheckoutState } from "../model/useCheckoutState";
 import { CheckoutCartSection } from "./CheckoutCartSection";
-import { DeliveryMethodSelector } from "./DeliveryMethodSelector";
 import { CheckoutSummary } from "./CheckoutSummary";
 import { AddressCheckoutSelector } from "./AddressCheckoutSelector";
 
 interface CheckoutContentProps {
-  cartItems: ProductBasket[];
   checkoutState: CheckoutState;
   isSubmitting: boolean;
   onSubmit: () => void;
 }
 
 export const CheckoutContent: React.FC<CheckoutContentProps> = ({
-  cartItems,
   checkoutState,
   isSubmitting,
   onSubmit,
@@ -47,26 +43,16 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
             onRetry={() => void checkoutState.refetchAddresses()}
           />
 
-          {/* Способ доставки */}
-          <DeliveryMethodSelector
-            availableMethods={checkoutState.availableDeliveryMethods}
-            selectedMethod={checkoutState.selectedDeliveryMethod}
-            onMethodSelect={checkoutState.setSelectedDeliveryMethod}
-            isLoading={checkoutState.isLoadingDelivery}
-            isError={checkoutState.isDeliveryError}
-            errorMessage={checkoutState.deliveryErrorMessage}
-            fallbackMessages={checkoutState.deliveryResolution.fallbackMessages}
-            hasFallbacks={checkoutState.deliveryResolution.hasFallbacks}
-          />
-
-          {/* Корзина с товарами */}
+          {/* Товары сгруппированы по продавцам вместе с их доставкой */}
           <CheckoutCartSection
-            items={cartItems}
+            sellerGroups={checkoutState.sellerGroups}
             selectedProductIds={checkoutState.selectedProductIds}
             isAllSelected={checkoutState.isAllSelected}
             selectedCount={checkoutState.selectedCount}
             onToggleProductSelection={checkoutState.toggleProductSelection}
             onToggleSelectAll={checkoutState.toggleSelectAll}
+            onTransferSelect={checkoutState.selectTransfer}
+            onRetryDelivery={checkoutState.retrySellerDelivery}
           />
 
           {/* Комментарий к заказу */}
@@ -103,10 +89,10 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
       <Grid item xs={12} lg={4}>
         <CheckoutSummary
           cartItems={checkoutState.selectedItems}
+          sellerDeliveries={checkoutState.selectedSellerDeliveries}
           isReadyToSubmit={checkoutState.isReadyToSubmit}
           isSubmitting={isSubmitting}
           onSubmit={onSubmit}
-          hasFallbacks={checkoutState.deliveryResolution.hasFallbacks}
         />
       </Grid>
     </Grid>

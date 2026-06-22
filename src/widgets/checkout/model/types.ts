@@ -1,4 +1,5 @@
-import { ShippingMethod, Transfer } from "@/shared/types";
+import type { ProductBasket } from "@/entities/cart";
+import type { Transfer } from "@/shared/types";
 
 // Результат создания одного заказа
 export interface OrderResult {
@@ -8,25 +9,22 @@ export interface OrderResult {
   errorMessage?: string;
 }
 
-// Информация о способе доставки для продавца
-export interface SellerDeliveryInfo {
+export interface SellerCheckoutGroup {
   sellerId: number;
+  sellerLogin: string;
+  items: ProductBasket[];
+  transfers: Transfer[];
   selectedTransfer: Transfer | null;
-  isFallback: boolean;
-  fallbackReason?: string;
-  originalMethod?: ShippingMethod;
+  isActive: boolean;
+  isLoading: boolean;
+  isError: boolean;
+  errorMessage: string | null;
 }
 
-// Агрегированная информация о доставке
-export interface DeliveryResolution {
-  // Доступные способы доставки (пересечение всех продавцов)
-  availableMethods: ShippingMethod[];
-  // Информация по каждому продавцу
-  sellerDeliveryInfo: Map<number, SellerDeliveryInfo>;
-  // Есть ли fallback'и
-  hasFallbacks: boolean;
-  // Сообщения о fallback'ах для UI
-  fallbackMessages: string[];
+export interface SelectedSellerDelivery {
+  sellerId: number;
+  sellerLogin: string;
+  transfer: Transfer;
 }
 
 // Данные для создания заказа (расширенные)

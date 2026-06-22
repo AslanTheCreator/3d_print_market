@@ -1,79 +1,39 @@
 "use client";
 
 import { useCallback } from "react";
-import {
-  useCartItemRemoval,
-  useCartQuantity,
-  ProductBasket,
-  CheckoutCartItemCard,
-} from "@/entities/cart";
-import {
-  Box,
-  Checkbox,
-  Typography,
-  useTheme,
-  alpha,
-  Paper,
-} from "@mui/material";
-import { useAuth } from "@/features/auth";
+import { Box, Checkbox, Paper, Stack, Typography, alpha, useTheme } from "@mui/material";
+import { useCartItemRemoval } from "@/entities/cart";
+import type { Transfer } from "@/shared/types";
+import type { SellerCheckoutGroup } from "../model/types";
+import { CheckoutSellerGroupCard } from "./CheckoutSellerGroupCard";
 
 interface CheckoutCartSectionProps {
-  items: ProductBasket[];
-  // Состояние выбора из useCheckoutState
+  sellerGroups: SellerCheckoutGroup[];
   selectedProductIds: Set<number>;
   isAllSelected: boolean;
   selectedCount: number;
   onToggleProductSelection: (productId: number, selected: boolean) => void;
   onToggleSelectAll: (selected: boolean) => void;
+  onTransferSelect: (sellerId: number, transfer: Transfer) => void;
+  onRetryDelivery: (sellerId: number) => void;
 }
 
-// Компонент-обёртка для отдельного товара с хуком useCartQuantity
-const CheckoutCartItemWrapper = ({
-  item,
-  isSelected,
-  onSelectChange,
-  onRemove,
-  isRemoving,
-}: {
-  item: ProductBasket;
-  isSelected: boolean;
-  onSelectChange: (id: number, selected: boolean) => void;
-  onRemove: (id: number) => void;
-  isRemoving: boolean;
-}) => {
-  const { isAuthenticated } = useAuth();
-  // item.product.count — количество в наличии (максимум)
-  // item.count — количество в корзине (серверное)
-  const { quantity, handleIncrement, handleDecrement, maxQuantity } =
-    useCartQuantity(item.product.id, isAuthenticated, {
-      maxQuantity: item.product.count,
-    });
-
-  return (
-    <CheckoutCartItemCard
-      item={item}
-      isSelected={isSelected}
-      onSelectChange={onSelectChange}
-      quantity={quantity}
-      onQuantityIncrement={handleIncrement}
-      onQuantityDecrement={handleDecrement}
-      onRemove={onRemove}
-      isRemoving={isRemoving}
-      maxQuantity={maxQuantity ?? undefined}
-    />
-  );
-};
-
 export const CheckoutCartSection = ({
-  items,
+  sellerGroups,
   selectedProductIds,
   isAllSelected,
   selectedCount,
   onToggleProductSelection,
   onToggleSelectAll,
+  onTransferSelect,
+  onRetryDelivery,
 }: CheckoutCartSectionProps) => {
   const theme = useTheme();
   const { handleRemoveItem, removingItemIds } = useCartItemRemoval();
+  const totalItemsCount = sellerGroups.reduce(
+    (total, group) => total + group.items.length,
+    0,
+  );
 
   const handleSelectAll = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,33 +41,6 @@ export const CheckoutCartSection = ({
     },
     [onToggleSelectAll],
   );
-
-  const handleSelectItem = useCallback(
-    (id: number, selected: boolean) => {
-      onToggleProductSelection(id, selected);
-    },
-    [onToggleProductSelection],
-  );
-
-  // Плюрализация слова "товар"
-  const getItemsWord = (count: number): string => {
-    const lastDigit = count % 10;
-    const lastTwoDigits = count % 100;
-
-    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
-      return "товаров";
-    }
-
-    if (lastDigit === 1) {
-      return "товар";
-    }
-
-    if (lastDigit >= 2 && lastDigit <= 4) {
-      return "товара";
-    }
-
-    return "товаров";
-  };
 
   return (
     <Paper
@@ -119,13 +52,13 @@ export const CheckoutCartSection = ({
         backgroundColor: theme.palette.background.paper,
       }}
     >
-      {/* Заголовок с чекбоксом "Выбрать все" */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           gap: 1.5,
           pb: 2,
+          mb: 2,
           borderBottom: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
         }}
       >
@@ -133,6 +66,7 @@ export const CheckoutCartSection = ({
           checked={isAllSelected}
           indeterminate={selectedCount > 0 && !isAllSelected}
           onChange={handleSelectAll}
+          inputProps={{ "aria-label": "Выбрать все товары" }}
           sx={{
             p: 0,
             color: theme.palette.grey[400],
@@ -141,30 +75,30 @@ export const CheckoutCartSection = ({
             },
           }}
         />
-        <Typography variant="h6" fontWeight={600}>
-          Корзина
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{ color: theme.palette.text.secondary }}
-        >
-          {selectedCount} {getItemsWord(selectedCount)} выбрано
-        </Typography>
+        <Box>
+          <Typography variant="h6" fontWeight={600}>
+            Товары и доставка
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Выбрано {selectedCount} из {totalItemsCount}
+          </Typography>
+        </Box>
       </Box>
 
-      {/* Список товаров */}
-      <Box>
-        {items.map((item) => (
-          <CheckoutCartItemWrapper
-            key={item.product.id}
-            item={item}
-            isSelected={selectedProductIds.has(item.product.id)}
-            onSelectChange={handleSelectItem}
+      <Stack spacing={2}>
+        {sellerGroups.map((group) => (
+          <CheckoutSellerGroupCard
+            key={group.sellerId}
+            group={group}
+            selectedProductIds={selectedProductIds}
+            onToggleProductSelection={onToggleProductSelection}
             onRemove={handleRemoveItem}
-            isRemoving={removingItemIds.includes(item.product.id)}
+            removingItemIds={removingItemIds}
+            onTransferSelect={onTransferSelect}
+            onRetryDelivery={onRetryDelivery}
           />
         ))}
-      </Box>
+      </Stack>
     </Paper>
   );
 };

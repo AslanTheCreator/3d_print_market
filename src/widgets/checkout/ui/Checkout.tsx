@@ -158,7 +158,6 @@ const Checkout = () => {
       </Typography>
 
       <CheckoutContent
-        cartItems={cartItems}
         checkoutState={checkoutState}
         isSubmitting={isSubmitting}
         onSubmit={handleSubmit}

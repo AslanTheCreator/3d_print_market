@@ -1,39 +1,22 @@
 "use client";
 
 import { useMemo } from "react";
-import { Address, ShippingMethod } from "@/shared/types";
+import type { Address } from "@/shared/types";
 
 interface UseCheckoutSubmitReadinessProps {
   selectedAddress: Address | null;
-  selectedDeliveryMethod: ShippingMethod | null;
   selectedItemsCount: number;
-  isLoadingDelivery: boolean;
-  selectedTransfersCount: number;
-  sellersCount: number;
+  isDeliveryReady: boolean;
 }
 
 export const useCheckoutSubmitReadiness = ({
   selectedAddress,
-  selectedDeliveryMethod,
   selectedItemsCount,
-  isLoadingDelivery,
-  selectedTransfersCount,
-  sellersCount,
+  isDeliveryReady,
 }: UseCheckoutSubmitReadinessProps) => {
   return useMemo(() => {
     return (
-      selectedAddress !== null &&
-      selectedDeliveryMethod !== null &&
-      selectedItemsCount > 0 &&
-      !isLoadingDelivery &&
-      selectedTransfersCount === sellersCount
+      selectedAddress !== null && selectedItemsCount > 0 && isDeliveryReady
     );
-  }, [
-    selectedAddress,
-    selectedDeliveryMethod,
-    selectedItemsCount,
-    isLoadingDelivery,
-    selectedTransfersCount,
-    sellersCount,
-  ]);
+  }, [isDeliveryReady, selectedAddress, selectedItemsCount]);
 };

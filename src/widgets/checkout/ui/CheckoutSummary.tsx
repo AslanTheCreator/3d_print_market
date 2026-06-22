@@ -11,51 +11,59 @@ import {
   alpha,
   useTheme,
   CircularProgress,
-  Collapse,
-  Alert,
 } from "@mui/material";
-import { ShoppingCart, Warning } from "@mui/icons-material";
+import { ShoppingCart } from "@mui/icons-material";
 import { formatPrice } from "@/shared/lib";
+import type { Currency } from "@/shared/types";
 import { ProductBasket, useCartQuantityStore } from "@/entities/cart";
+import { calculateCheckoutTotals } from "../model/checkoutTotals";
+import type { SelectedSellerDelivery } from "../model/types";
 
 interface CheckoutSummaryProps {
   cartItems: ProductBasket[];
+  sellerDeliveries: SelectedSellerDelivery[];
   isReadyToSubmit: boolean;
   isSubmitting: boolean;
   onSubmit: () => void;
-  hasFallbacks?: boolean;
   isLoading?: boolean;
 }
 
 export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
   cartItems,
+  sellerDeliveries,
   isReadyToSubmit,
   isSubmitting,
   onSubmit,
-  hasFallbacks = false,
   isLoading = false,
 }) => {
   const theme = useTheme();
+  const deliveryTransfers = React.useMemo(
+    () => sellerDeliveries.map((delivery) => delivery.transfer),
+    [sellerDeliveries],
+  );
 
   // Подписываемся на items для реактивного обновления при изменении количества
   const items = useCartQuantityStore((state) => state.items);
 
   // Вычисляем итоги
-  const { itemsCount, subtotal } = React.useMemo(() => {
-    const quantitiesByProductId = new Map(
-      items.map((item) => [item.productId, item.quantity]),
+  const { itemsCount, productTotals, deliveryTotals, orderTotals } =
+    React.useMemo(
+      () =>
+        calculateCheckoutTotals({
+          cartItems,
+          quantityItems: items,
+          deliveryTransfers,
+        }),
+      [cartItems, deliveryTransfers, items],
     );
-    let total = 0;
-    let totalItemsCount = 0;
 
-    for (const item of cartItems) {
-      const quantity = quantitiesByProductId.get(item.product.id) ?? 1;
-      total += item.product.price * quantity;
-      totalItemsCount += quantity;
-    }
-
-    return { itemsCount: totalItemsCount, subtotal: total };
-  }, [cartItems, items]);
+  const formattedProductTotal = formatCurrencyTotals(productTotals, "0 ₽");
+  const formattedDeliveryTotal =
+    deliveryTransfers.length > 0 &&
+    [...deliveryTotals.values()].every((total) => total === 0)
+      ? "Бесплатно"
+      : formatCurrencyTotals(deliveryTotals, "—");
+  const formattedOrderTotal = formatCurrencyTotals(orderTotals, "0 ₽");
 
   // Плюрализация
   const getItemsWord = (count: number): string => {
@@ -129,9 +137,51 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
             {itemsCount} {getItemsWord(itemsCount)}
           </Typography>
           <Typography variant="body1" fontWeight={500}>
-            {formatPrice(subtotal)} ₽
+            {formattedProductTotal}
           </Typography>
         </Box>
+
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography variant="body1" color="text.secondary">
+            Доставка
+          </Typography>
+          <Typography variant="body1" fontWeight={500}>
+            {formattedDeliveryTotal}
+          </Typography>
+        </Box>
+
+        {sellerDeliveries.map((delivery) => (
+          <Box
+            key={delivery.sellerId}
+            data-testid={`checkout-summary-delivery-${delivery.sellerId}`}
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 2,
+              mt: 0.5,
+              pl: 1.5,
+            }}
+          >
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {delivery.sellerLogin}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {delivery.transfer.price === 0
+                ? "Бесплатно"
+                : formatPrice(
+                    delivery.transfer.price,
+                    delivery.transfer.currency,
+                  )}
+            </Typography>
+          </Box>
+        ))}
       </Box>
 
       <Divider sx={{ my: 2 }} />
@@ -149,22 +199,9 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
           Итого
         </Typography>
         <Typography variant="h5" fontWeight={700} color="primary.main">
-          {formatPrice(subtotal)} ₽
+          {formattedOrderTotal}
         </Typography>
       </Box>
-
-      {/* Предупреждение о fallback */}
-      <Collapse in={hasFallbacks}>
-        <Alert
-          severity="info"
-          icon={<Warning sx={{ fontSize: 20 }} />}
-          sx={{ mb: 2 }}
-        >
-          <Typography variant="body2">
-            Для некоторых товаров способ доставки был изменён автоматически.
-          </Typography>
-        </Alert>
-      </Collapse>
 
       {/* Кнопка оформления */}
       <Button
@@ -199,9 +236,22 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
           color="text.secondary"
           sx={{ display: "block", textAlign: "center", mt: 1 }}
         >
-          Выберите адрес и способ доставки
+          Выберите адрес и доставку для каждого продавца
         </Typography>
       )}
     </Paper>
   );
 };
+
+function formatCurrencyTotals(
+  totals: ReadonlyMap<Currency, number>,
+  emptyValue: string,
+): string {
+  if (totals.size === 0) {
+    return emptyValue;
+  }
+
+  return [...totals.entries()]
+    .map(([currency, total]) => formatPrice(total, currency))
+    .join(" + ");
+}
