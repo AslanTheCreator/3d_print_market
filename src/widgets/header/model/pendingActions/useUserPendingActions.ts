@@ -2,12 +2,14 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/shared/lib/auth";
 import { useSellerOrders, useCustomerOrders } from "@/entities/order";
-import { productApi, productKeys } from "@/entities/product";
-import { getExpirationStatus } from "@/entities/product";
+import {
+  getExpirationStatus,
+  productApi,
+  productKeys,
+} from "@/entities/product";
 import {
   SELLER_ACTION_STATUSES,
   CUSTOMER_ACTION_STATUSES,
-  PRODUCT_RENEWAL_THRESHOLD_DAYS,
   SELLER_STATUS_ACTION_MAP,
   CUSTOMER_STATUS_ACTION_MAP,
   PRODUCT_RENEWAL_ACTION,
@@ -89,24 +91,13 @@ export const useUserPendingActions = () => {
     return groups;
   }, [customerOrders]);
 
-  // Товары, требующие продления (≤7 дней)
+  // Считаем только товары, для которых в карточке доступно продление.
   const renewalGroup = useMemo((): PendingActionGroup | null => {
     if (!userProducts || !Array.isArray(userProducts)) return null;
 
-    const expiringProducts = userProducts.filter((product) => {
-      const status = getExpirationStatus(product.expirationDate);
-      return (
-        status.daysRemaining <= PRODUCT_RENEWAL_THRESHOLD_DAYS &&
-        !status.isExpired
-      );
-    });
-
-    const expiredProducts = userProducts.filter((product) => {
-      const status = getExpirationStatus(product.expirationDate);
-      return status.isExpired;
-    });
-
-    const totalCount = expiringProducts.length + expiredProducts.length;
+    const totalCount = userProducts.filter((product) =>
+      getExpirationStatus(product.expirationDate).shouldShowExtendButton,
+    ).length;
 
     if (totalCount === 0) return null;
 

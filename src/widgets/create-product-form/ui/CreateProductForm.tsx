@@ -7,7 +7,6 @@ import {
   CircularProgress,
   FormControl,
   FormHelperText,
-  Grid,
   InputAdornment,
   InputLabel,
   MenuItem,
@@ -96,8 +95,17 @@ const ProductMainInfoFields = ({
   const flatCategories = flattenCategories(categories);
 
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12} md={6}>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "minmax(0, 1fr)",
+          md: "repeat(2, minmax(0, 1fr))",
+        },
+        gap: 2,
+      }}
+    >
+      <Box sx={{ minWidth: 0 }}>
         <Controller
           name="name"
           control={control}
@@ -115,9 +123,9 @@ const ProductMainInfoFields = ({
             />
           )}
         />
-      </Grid>
+      </Box>
 
-      <Grid item xs={12} md={6}>
+      <Box sx={{ minWidth: 0 }}>
         <Controller
           name="categoryIds"
           control={control}
@@ -170,9 +178,9 @@ const ProductMainInfoFields = ({
             </FormControl>
           )}
         />
-      </Grid>
+      </Box>
 
-      <Grid item xs={12}>
+      <Box sx={{ minWidth: 0, gridColumn: { md: "1 / -1" } }}>
         <Controller
           name="description"
           control={control}
@@ -194,8 +202,8 @@ const ProductMainInfoFields = ({
             />
           )}
         />
-      </Grid>
-    </Grid>
+      </Box>
+    </Box>
   );
 };
 
@@ -208,8 +216,17 @@ const ProductSaleFields = ({
   const currentSymbol = getReadableCurrencySymbol(currentCurrency);
 
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12}>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "minmax(0, 1fr)",
+          md: "repeat(3, minmax(0, 1fr))",
+        },
+        gap: 2,
+      }}
+    >
+      <Box sx={{ minWidth: 0, gridColumn: "1 / -1" }}>
         <Controller
           name="isPreorder"
           control={control}
@@ -253,9 +270,9 @@ const ProductSaleFields = ({
             </FormControl>
           )}
         />
-      </Grid>
+      </Box>
 
-      <Grid item xs={12} md={4}>
+      <Box sx={{ minWidth: 0 }}>
         <Controller
           name="price"
           control={control}
@@ -283,9 +300,9 @@ const ProductSaleFields = ({
             />
           )}
         />
-      </Grid>
+      </Box>
 
-      <Grid item xs={12} md={4}>
+      <Box sx={{ minWidth: 0 }}>
         <Controller
           name="currency"
           control={control}
@@ -311,9 +328,9 @@ const ProductSaleFields = ({
             </FormControl>
           )}
         />
-      </Grid>
+      </Box>
 
-      <Grid item xs={12} md={4}>
+      <Box sx={{ minWidth: 0 }}>
         <Controller
           name="count"
           control={control}
@@ -332,10 +349,10 @@ const ProductSaleFields = ({
             />
           )}
         />
-      </Grid>
+      </Box>
 
       {isPreorder && (
-        <Grid item xs={12} md={4}>
+        <Box sx={{ minWidth: 0 }}>
           <Controller
             name="prepaymentAmount"
             control={control}
@@ -366,9 +383,9 @@ const ProductSaleFields = ({
               />
             )}
           />
-        </Grid>
+        </Box>
       )}
-    </Grid>
+    </Box>
   );
 };
 

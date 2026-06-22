@@ -21,9 +21,6 @@ export const CUSTOMER_ACTION_STATUSES = [
   "ON_THE_WAY",
 ] as const;
 
-// Порог дней для продления товара (≤7 дней)
-export const PRODUCT_RENEWAL_THRESHOLD_DAYS = 7;
-
 export type PendingActionType =
   | "seller_confirm"
   | "seller_confirm_prepayment"

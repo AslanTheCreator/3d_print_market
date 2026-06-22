@@ -1,11 +1,14 @@
 export interface ExpirationStatus {
   isExpired: boolean;
   daysRemaining: number;
-  shouldShowWarning: boolean; // За 7 дней
-  shouldShowExtendButton: boolean; // За 3 дня
+  shouldShowWarning: boolean; // За 4-7 дней
+  shouldShowExtendButton: boolean; // За 7 дней и после истечения
   statusColor: "success" | "warning" | "error" | "default";
   statusText: string;
 }
+
+const PRODUCT_RENEWAL_THRESHOLD_DAYS = 7;
+const PRODUCT_EXPIRATION_URGENT_THRESHOLD_DAYS = 3;
 
 export const getExpirationStatus = (
   expirationDate: string
@@ -16,8 +19,11 @@ export const getExpirationStatus = (
   const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
   const isExpired = daysRemaining <= 0;
-  const shouldShowWarning = daysRemaining <= 7 && daysRemaining > 3;
-  const shouldShowExtendButton = daysRemaining <= 3;
+  const shouldShowWarning =
+    daysRemaining <= PRODUCT_RENEWAL_THRESHOLD_DAYS &&
+    daysRemaining > PRODUCT_EXPIRATION_URGENT_THRESHOLD_DAYS;
+  const shouldShowExtendButton =
+    daysRemaining <= PRODUCT_RENEWAL_THRESHOLD_DAYS;
 
   let statusColor: ExpirationStatus["statusColor"] = "success";
   let statusText = `Активен (${daysRemaining} дн.)`;
@@ -25,10 +31,10 @@ export const getExpirationStatus = (
   if (isExpired) {
     statusColor = "error";
     statusText = "Истёк срок";
-  } else if (daysRemaining <= 3) {
+  } else if (daysRemaining <= PRODUCT_EXPIRATION_URGENT_THRESHOLD_DAYS) {
     statusColor = "error";
     statusText = `Осталось ${daysRemaining} дн.`;
-  } else if (daysRemaining <= 7) {
+  } else if (daysRemaining <= PRODUCT_RENEWAL_THRESHOLD_DAYS) {
     statusColor = "warning";
     statusText = `Осталось ${daysRemaining} дн.`;
   } else if (daysRemaining <= 14) {

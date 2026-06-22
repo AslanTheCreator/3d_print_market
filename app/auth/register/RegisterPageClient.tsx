@@ -161,6 +161,7 @@ export default function RegisterPageClient() {
         isLoading={isLoading}
         passwordAutoComplete="new-password"
         showAgeField
+        requirePersonalDataConsent
       />
 
       <VerificationCodeDialog

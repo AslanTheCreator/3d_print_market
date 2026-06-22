@@ -26,9 +26,13 @@ export const Header = () => {
     scrollThreshold: SCROLL_THRESHOLD,
     throttleDelay: THROTTLE_DELAY,
   });
-  const headerTop = isMobile ? (isVisible ? 0 : `-${LAYOUT.HEADER_HEIGHT_PX}`) : 0;
+  const headerTransform = isMobile
+    ? isVisible
+      ? "translateY(0)"
+      : "translateY(-100%)"
+    : "none";
   const headerTransition = isMobile
-    ? theme.transitions.create(["top"], {
+    ? theme.transitions.create(["transform"], {
         duration: theme.transitions.duration.standard,
         easing: theme.transitions.easing.easeInOut,
       })
@@ -40,12 +44,12 @@ export const Header = () => {
       sx={{
         position: "fixed",
         width: "100%",
-        top: headerTop,
+        top: 0,
+        transform: headerTransform,
         transition: headerTransition,
         backgroundColor: theme.palette.secondary.main,
         zIndex: theme.zIndex.appBar,
-        border: `2px solid ${theme.palette.secondary.main}`,
-        boxShadow: theme.shadows[4],
+        boxShadow: isMobile && !isVisible ? "none" : theme.shadows[4],
       }}
     >
       <Container>
