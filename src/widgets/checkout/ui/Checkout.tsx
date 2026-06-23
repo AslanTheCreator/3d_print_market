@@ -5,6 +5,7 @@ import { Typography, Box, CircularProgress } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useRouter } from "next/navigation";
 import { useCartProducts } from "@/entities/cart";
+import { useProfileUser } from "@/entities/user";
 import { useCheckoutState } from "../model/useCheckoutState";
 import { useCheckoutSubmit } from "../model/useCheckoutSubmit";
 import { CheckoutResultDialog } from "./CheckoutResultDialog";
@@ -27,8 +28,18 @@ const Checkout = () => {
     isError: isCartError,
     refetch: refetchCart,
   } = useCartProducts();
+  const {
+    data: currentUser,
+    isPending: isLoadingCurrentUser,
+    isError: isCurrentUserError,
+  } = useProfileUser();
 
-  const checkoutState = useCheckoutState({ cartItems });
+  const checkoutState = useCheckoutState({
+    cartItems,
+    currentUserId: currentUser?.id,
+    isLoadingCurrentUser,
+    isCurrentUserError,
+  });
 
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);

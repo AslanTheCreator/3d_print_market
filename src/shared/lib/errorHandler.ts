@@ -7,9 +7,9 @@ import axios, { AxiosError } from "axios";
 export interface BackendErrorResponse {
   code: string;
   message: string;
-  status: number;
-  timestamp: string;
-  details: unknown | null;
+  status?: number;
+  timestamp?: string;
+  details?: unknown | null;
 }
 
 /**
@@ -90,6 +90,7 @@ export const ErrorCodes = {
 
   // Validation
   COUNT_INVALID: "COUNT_INVALID",
+  OWN_PRODUCT_PURCHASE_FORBIDDEN: "OWN_PRODUCT_PURCHASE_FORBIDDEN",
 
   // Product creation
   TRANSFER_NOT_FOUND: "TRANSFER_NOT_FOUND",
@@ -124,8 +125,9 @@ function isBackendError(data: unknown): data is BackendErrorResponse {
     typeof data === "object" &&
     data !== null &&
     "code" in data &&
+    typeof data.code === "string" &&
     "message" in data &&
-    "status" in data
+    typeof data.message === "string"
   );
 }
 
@@ -179,7 +181,7 @@ function transformAxiosError(error: AxiosError<unknown>): ApiError {
     return new ApiError(
       data.message,
       data.code,
-      data.status,
+      data.status ?? status,
       data.details,
       data.timestamp,
       error,

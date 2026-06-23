@@ -7,6 +7,9 @@ interface GetCheckoutSubmitReadinessParams {
   isLoadingAddresses: boolean;
   isAddressesError: boolean;
   selectedItemsCount: number;
+  isLoadingCurrentUser: boolean;
+  isCurrentUserError: boolean;
+  hasOwnSelectedItems: boolean;
   activeSellerGroups: SellerCheckoutGroup[];
 }
 
@@ -21,6 +24,9 @@ export function getCheckoutSubmitReadiness({
   isLoadingAddresses,
   isAddressesError,
   selectedItemsCount,
+  isLoadingCurrentUser,
+  isCurrentUserError,
+  hasOwnSelectedItems,
   activeSellerGroups,
 }: GetCheckoutSubmitReadinessParams): CheckoutSubmitReadiness {
   const submitBlockerMessage = getSubmitBlockerMessage({
@@ -29,6 +35,9 @@ export function getCheckoutSubmitReadiness({
     isLoadingAddresses,
     isAddressesError,
     selectedItemsCount,
+    isLoadingCurrentUser,
+    isCurrentUserError,
+    hasOwnSelectedItems,
     activeSellerGroups,
   });
 
@@ -44,6 +53,9 @@ function getSubmitBlockerMessage({
   isLoadingAddresses,
   isAddressesError,
   selectedItemsCount,
+  isLoadingCurrentUser,
+  isCurrentUserError,
+  hasOwnSelectedItems,
   activeSellerGroups,
 }: GetCheckoutSubmitReadinessParams): string | null {
   if (selectedItemsCount === 0) {
@@ -64,6 +76,18 @@ function getSubmitBlockerMessage({
     }
 
     return "Выберите адрес доставки";
+  }
+
+  if (isLoadingCurrentUser) {
+    return "Проверяем владельцев выбранных товаров";
+  }
+
+  if (isCurrentUserError) {
+    return "Не удалось проверить владельцев выбранных товаров";
+  }
+
+  if (hasOwnSelectedItems) {
+    return "Нельзя оформить заказ на собственный товар. Снимите его выбор или удалите из корзины";
   }
 
   if (activeSellerGroups.length === 0) {

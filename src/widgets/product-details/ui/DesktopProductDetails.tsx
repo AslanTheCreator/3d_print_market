@@ -227,6 +227,7 @@ export function DesktopProductDetails({
             <Stack spacing={1.5}>
               <AddToCartButton
                 productId={productCard.id}
+                sellerId={productCard.participantId}
                 availability={productCard.availability}
                 variant="detailed"
                 productName={productCard.name}

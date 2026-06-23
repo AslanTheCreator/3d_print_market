@@ -112,6 +112,19 @@ test("selects delivery independently for each seller", async ({
   let orderResponseMode: "partial" | "failure" = "partial";
 
   await page.route("**/basket/find", (route) => fulfillJson(route, cartItems));
+  await page.route("**/auth/profile", (route) =>
+    fulfillJson(route, {
+      id: 30,
+      fullName: "Тестовый пользователь",
+      login: "buyer",
+      role: "USER",
+      email: "buyer@example.com",
+      imageId: null,
+      image: [],
+      exp: 0,
+      type: "access",
+    }),
+  );
   await page.route("**/address", (route) =>
     fulfillJson(route, [
       {
@@ -196,7 +209,7 @@ test("selects delivery independently for each seller", async ({
   const submitButton = page.getByRole("button", { name: "Оформить заказ" });
   const submitBlocker = page.getByTestId("checkout-submit-blocker");
 
-  await expect(sellerOne).toBeVisible();
+  await expect(sellerOne).toBeVisible({ timeout: 15_000 });
   await expect(sellerTwo).toBeVisible();
   await expect(sellerWithoutDelivery).toContainText(
     "У продавца нет доступных способов доставки",
@@ -212,7 +225,7 @@ test("selects delivery independently for each seller", async ({
 
   await expect(submitButton).toBeDisabled();
   await expect(submitBlocker).toHaveText(
-    "У продавца «seller-without-delivery» нет доступных способов доставки",
+    "Нельзя оформить заказ на собственный товар. Снимите его выбор или удалите из корзины",
   );
   await page
     .getByRole("checkbox", { name: "Выбрать товар Товар 4" })

@@ -21,6 +21,7 @@ import { useAddToCartFeature } from "../model/useAddToCartFeature";
 
 interface AddToCartButtonProps {
   productId: number;
+  sellerId: number;
   availability: Availability;
   variant?: "default" | "detailed";
   size?: "small" | "medium" | "large";
@@ -31,6 +32,7 @@ interface AddToCartButtonProps {
 
 export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   productId,
+  sellerId,
   variant = "default",
   size = "medium",
   fullWidth = true,
@@ -50,9 +52,16 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   const { isAuthenticated } = useAuth();
   const { showNotification } = useNotification();
 
-  const { handleAddToCart, isPending } = useAddToCartFeature(isAuthenticated, {
+  const {
+    handleAddToCart,
+    isPending,
+    isOwnProduct,
+    isOwnerCheckPending,
+    isOwnerCheckError,
+  } = useAddToCartFeature(isAuthenticated, sellerId, {
     onAuthRequired: (name) => showDialog(name),
-    onNotification: (message, severity) => showNotification(message, severity),
+    onNotification: (message, severity) =>
+      showNotification(message, severity),
     onSuccess: () => {
       handleSetQuantity(1);
     },
@@ -136,7 +145,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   };
 
   const getColorStyles = () => {
-    if (isOutOfStock) {
+    if (isOwnProduct || isOutOfStock || isOwnerCheckError) {
       return {
         bgcolor: theme.palette.grey[400],
         color: theme.palette.grey[600],
@@ -164,6 +173,12 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   };
 
   const getButtonText = () => {
+    if (isOwnProduct) {
+      return "Ваш товар";
+    }
+    if (isOwnerCheckError) {
+      return "Недоступно";
+    }
     if (isOutOfStock) {
       return "Нет в наличии";
     }
@@ -173,7 +188,13 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     return variant === "detailed" ? "Добавить в корзину" : "Купить";
   };
 
-  if (inCart && !isOutOfStock) {
+  if (
+    inCart &&
+    !isOutOfStock &&
+    !isOwnProduct &&
+    !isOwnerCheckPending &&
+    !isOwnerCheckError
+  ) {
     if (variant === "detailed") {
       const detailedContent = (
         <Stack
@@ -274,10 +295,19 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
         onClick={handleClick}
         variant="contained"
         fullWidth={fullWidth}
-        disabled={isPending || isOutOfStock}
+        disabled={
+          isPending ||
+          isOutOfStock ||
+          isOwnProduct ||
+          isOwnerCheckPending ||
+          isOwnerCheckError
+        }
         size={size}
         startIcon={
-          variant === "default" && !isOutOfStock ? (
+          variant === "default" &&
+          !isOutOfStock &&
+          !isOwnProduct &&
+          !isOwnerCheckError ? (
             <ShoppingCartOutlinedIcon
               sx={{ fontSize: isMobile ? "0.875rem" : "1rem" }}
             />

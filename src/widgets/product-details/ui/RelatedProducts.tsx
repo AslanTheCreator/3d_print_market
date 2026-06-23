@@ -64,6 +64,7 @@ const RelatedProductsGrid = ({
               actions={
                 <AddToCartButton
                   productId={product.id}
+                  sellerId={product.sellerId}
                   availability={product.availability}
                   productName={product.name}
                   stockCount={product.count}

@@ -41,6 +41,7 @@ interface MobileProductDetailsProps {
 
 const MobileBottomBar = ({
   productId,
+  sellerId,
   availability,
   productName,
   stockCount,
@@ -49,6 +50,7 @@ const MobileBottomBar = ({
   currency,
 }: {
   productId: number;
+  sellerId: number;
   availability: ProductDetail["availability"];
   productName: string;
   stockCount: number | null;
@@ -113,6 +115,7 @@ const MobileBottomBar = ({
 
         <AddToCartButton
           productId={productId}
+          sellerId={sellerId}
           availability={availability}
           variant="detailed"
           productName={productName}
@@ -365,6 +368,7 @@ export function MobileProductDetails({
 
       <MobileBottomBar
         productId={productCard.id}
+        sellerId={productCard.participantId}
         availability={productCard.availability}
         productName={productCard.name}
         stockCount={productCard.count}

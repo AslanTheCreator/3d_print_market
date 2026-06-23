@@ -14,6 +14,9 @@ interface UseCheckoutSubmitReadinessProps {
   isLoadingAddresses: boolean;
   isAddressesError: boolean;
   selectedItemsCount: number;
+  isLoadingCurrentUser: boolean;
+  isCurrentUserError: boolean;
+  hasOwnSelectedItems: boolean;
   activeSellerGroups: SellerCheckoutGroup[];
 }
 
@@ -23,6 +26,9 @@ export const useCheckoutSubmitReadiness = ({
   isLoadingAddresses,
   isAddressesError,
   selectedItemsCount,
+  isLoadingCurrentUser,
+  isCurrentUserError,
+  hasOwnSelectedItems,
   activeSellerGroups,
 }: UseCheckoutSubmitReadinessProps): CheckoutSubmitReadiness => {
   return useMemo(
@@ -33,6 +39,9 @@ export const useCheckoutSubmitReadiness = ({
         isLoadingAddresses,
         isAddressesError,
         selectedItemsCount,
+        isLoadingCurrentUser,
+        isCurrentUserError,
+        hasOwnSelectedItems,
         activeSellerGroups,
       }),
     [
@@ -40,6 +49,9 @@ export const useCheckoutSubmitReadiness = ({
       addressesCount,
       isAddressesError,
       isLoadingAddresses,
+      isLoadingCurrentUser,
+      isCurrentUserError,
+      hasOwnSelectedItems,
       selectedAddress,
       selectedItemsCount,
     ],

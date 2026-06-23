@@ -34,6 +34,11 @@ const transfer = (
 });
 
 const selectedAddress = { id: 50 } as Address;
+const verifiedUserState = {
+  isLoadingCurrentUser: false,
+  isCurrentUserError: false,
+  hasOwnSelectedItems: false,
+};
 
 const sellerGroup = (
   overrides: Partial<SellerCheckoutGroup> = {},
@@ -147,6 +152,7 @@ test.describe("checkout delivery model", () => {
 
   test("explains why address selection blocks checkout", () => {
     const commonParams = {
+      ...verifiedUserState,
       selectedAddress: null,
       addressesCount: 1,
       isLoadingAddresses: false,
@@ -181,6 +187,7 @@ test.describe("checkout delivery model", () => {
 
   test("points to the seller whose delivery is incomplete", () => {
     const commonParams = {
+      ...verifiedUserState,
       selectedAddress,
       addressesCount: 1,
       isLoadingAddresses: false,
@@ -219,6 +226,7 @@ test.describe("checkout delivery model", () => {
   test("allows checkout only when address, items and delivery are ready", () => {
     expect(
       getCheckoutSubmitReadiness({
+        ...verifiedUserState,
         selectedAddress,
         addressesCount: 1,
         isLoadingAddresses: false,
@@ -233,6 +241,7 @@ test.describe("checkout delivery model", () => {
 
     expect(
       getCheckoutSubmitReadiness({
+        ...verifiedUserState,
         selectedAddress,
         addressesCount: 1,
         isLoadingAddresses: false,
@@ -241,5 +250,24 @@ test.describe("checkout delivery model", () => {
         activeSellerGroups: [],
       }).submitBlockerMessage,
     ).toBe("Выберите хотя бы один товар");
+  });
+
+  test("blocks checkout when an own product is selected", () => {
+    expect(
+      getCheckoutSubmitReadiness({
+        ...verifiedUserState,
+        selectedAddress,
+        addressesCount: 1,
+        isLoadingAddresses: false,
+        isAddressesError: false,
+        selectedItemsCount: 1,
+        hasOwnSelectedItems: true,
+        activeSellerGroups: [sellerGroup()],
+      }),
+    ).toEqual({
+      isReadyToSubmit: false,
+      submitBlockerMessage:
+        "Нельзя оформить заказ на собственный товар. Снимите его выбор или удалите из корзины",
+    });
   });
 });
