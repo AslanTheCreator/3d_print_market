@@ -1,5 +1,5 @@
-import { ProductBasket } from "@/entities/cart";
-import { OrderResult, OrderToCreate } from "./types";
+import type { ProductBasket } from "@/entities/cart";
+import type { OrderResult, OrderToCreate } from "./types";
 
 interface BuildOrderToCreateProps {
   item: ProductBasket;

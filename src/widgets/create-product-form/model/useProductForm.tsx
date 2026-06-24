@@ -4,9 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import {
-  ProductFormData,
+  type ProductFormData,
   defaultProductFormValues,
-  mapFormDataToCreateModel,
   mapProductDetailToFormData,
   useCreateProduct,
   useProductById,
@@ -21,32 +20,24 @@ import {
 import { useNotification } from "@/shared/ui/notification";
 import type { ImageMetadata } from "@/shared/types";
 import { getImageUrl } from "@/shared/lib";
-import { getCreateProductErrorNotification } from "./getCreateProductErrorNotification";
-import {
-  clearProductFormDraft,
-  loadProductFormDraftImages,
-  readProductFormDraft,
-  writeProductFormDraft,
-} from "./productFormDraft";
+import { clearProductFormDraft } from "./productFormDraft";
 import { PRODUCT_IMAGE_LIMIT } from "./constants";
+import {
+  buildProductPublishRequirements,
+  isReadyForProductPrimaryAction,
+} from "./productPublishRequirements";
+import { createProductFormSubmitHandler } from "./productFormSubmit";
+import {
+  normalizeProductFormValues,
+  useProductFormDraftState,
+} from "./useProductFormDraftState";
 
 const PRODUCT_LIST_PATH = "/dashboard/products";
-const SUCCESS_REDIRECT_DELAY_MS = 1500;
 
 interface UseProductFormOptions {
   mode?: "create" | "edit";
   productId?: string;
 }
-
-const normalizeProductFormValues = (
-  values: Partial<ProductFormData>,
-): ProductFormData => ({
-  ...defaultProductFormValues,
-  ...values,
-  categoryIds: values.categoryIds ?? defaultProductFormValues.categoryIds,
-  currency: values.currency ?? defaultProductFormValues.currency,
-  isPreorder: values.isPreorder ?? defaultProductFormValues.isPreorder,
-});
 
 const buildInitialImages = (
   imageIds: number[] | undefined,
@@ -74,11 +65,6 @@ export const useProductForm = ({
   const router = useRouter();
   const isEditMode = mode === "edit";
   const initializedProductIdRef = useRef<string | null>(null);
-  const draftRestoreStartedRef = useRef(false);
-  const [preservedDraftImageIds, setPreservedDraftImageIds] = useState<
-    number[]
-  >([]);
-  const [isDraftReady, setIsDraftReady] = useState(isEditMode);
   const [initialFormValues, setInitialFormValues] =
     useState<ProductFormData>(defaultProductFormValues);
   const [initialImages, setInitialImages] = useState<InitialImageUploadState[]>(
@@ -131,76 +117,13 @@ export const useProductForm = ({
     () => normalizeProductFormValues(watchedFormValues),
     [watchedFormValues],
   );
-  const effectiveImageIds = useMemo(
-    () =>
-      imageUploadState.imageIds.length > 0
-        ? imageUploadState.imageIds
-        : preservedDraftImageIds,
-    [imageUploadState.imageIds, preservedDraftImageIds],
-  );
-  const currentDraftImages = useMemo<InitialImageUploadState[]>(
-    () =>
-      imageUploadState.images
-        .map((image) => ({
-          id: image.id ?? 0,
-          preview: image.preview,
-        }))
-        .filter(
-          (image): image is InitialImageUploadState =>
-            image.id > 0 && Boolean(image.preview),
-        ),
-    [imageUploadState.images],
-  );
-
-  useEffect(() => {
-    if (isEditMode) {
-      setIsDraftReady(true);
-      return;
-    }
-
-    if (draftRestoreStartedRef.current) {
-      return;
-    }
-
-    draftRestoreStartedRef.current = true;
-
-    let isActive = true;
-
-    const restoreDraft = async () => {
-      const draft = readProductFormDraft();
-
-      if (!draft) {
-        if (isActive) {
-          setIsDraftReady(true);
-        }
-        return;
-      }
-
-      reset(draft.values);
-
-      if (draft.imageIds.length > 0) {
-        const draftImages =
-          draft.images.length > 0
-            ? draft.images
-            : await loadProductFormDraftImages(draft.imageIds);
-
-        if (isActive) {
-          setPreservedDraftImageIds(draftImages.map((image) => image.id));
-          setUploadInitialImages(draftImages);
-        }
-      }
-
-      if (isActive) {
-        setIsDraftReady(true);
-      }
-    };
-
-    void restoreDraft();
-
-    return () => {
-      isActive = false;
-    };
-  }, [isEditMode, reset, setUploadInitialImages]);
+  const { effectiveImageIds, isDraftReady, resetDraftImageIds } =
+    useProductFormDraftState({
+      isEditMode,
+      formValues,
+      imageUploadState,
+      reset,
+    });
 
   useEffect(() => {
     if (isEditMode) {
@@ -209,30 +132,6 @@ export const useProductForm = ({
 
     void refetchCurrentUser();
   }, [isEditMode, refetchCurrentUser]);
-
-  useEffect(() => {
-    if (isEditMode || !isDraftReady) {
-      return;
-    }
-
-    if (imageUploadState.imageIds.length > 0 && preservedDraftImageIds.length > 0) {
-      setPreservedDraftImageIds([]);
-    }
-
-    writeProductFormDraft({
-      values: formValues,
-      imageIds: effectiveImageIds,
-      images: currentDraftImages,
-    });
-  }, [
-    currentDraftImages,
-    effectiveImageIds,
-    formValues,
-    imageUploadState.imageIds,
-    isDraftReady,
-    isEditMode,
-    preservedDraftImageIds.length,
-  ]);
 
   useEffect(() => {
     if (!imageUploadState.isUploading) {
@@ -300,19 +199,19 @@ export const useProductForm = ({
   const hasSellerSocialNetwork =
     isEditMode || (currentUser?.socialNetworks.length ?? 0) > 0;
 
-  const publishRequirements = {
-    hasImages: effectiveImageIds.length > 0,
-    hasCategories: categoryIds.length > 0,
-    hasName: name.trim().length > 0,
-    hasPrice: price.trim().length > 0,
-    hasCount: count.trim().length > 0,
+  const publishRequirements = buildProductPublishRequirements({
+    effectiveImageIds,
+    categoryIds,
+    name,
+    price,
+    count,
     hasSellerTransfer,
     hasSellerAccount,
     hasSellerSocialNetwork,
     isSellerSettingsError: !isEditMode && Boolean(currentUserError),
     isSellerSettingsLoading:
       !isEditMode && (isCurrentUserLoading || isCurrentUserFetching),
-  };
+  });
 
   const hasImageChanges = useMemo(() => {
     const initialImageIds = initialImages.map((image) => image.id);
@@ -334,7 +233,7 @@ export const useProductForm = ({
     }
 
     clearProductFormDraft();
-    setPreservedDraftImageIds([]);
+    resetDraftImageIds();
     reset(defaultProductFormValues);
     imageUploadState.resetImages();
   };
@@ -343,85 +242,19 @@ export const useProductForm = ({
     router.back();
   };
 
-  const onSubmit = (data: ProductFormData) => {
-    if (!effectiveImageIds.length) {
-      showNotification(
-        "Пожалуйста, загрузите хотя бы одно изображение товара",
-        "error",
-      );
-      return;
-    }
-
-    if (!data.categoryIds.length) {
-      showNotification("Пожалуйста, выберите хотя бы одну категорию", "error");
-      return;
-    }
-
-    if (
-      !isEditMode &&
-      (!hasSellerTransfer || !hasSellerAccount || !hasSellerSocialNetwork)
-    ) {
-      showNotification(
-        "Заполните недостающие настройки продавца перед публикацией товара",
-        "info",
-      );
-      return;
-    }
-
-    const productData = mapFormDataToCreateModel(data, effectiveImageIds);
-
-    if (isEditMode && productId) {
-      updateProduct(
-        {
-          productId: Number(productId),
-          data: productData,
-        },
-        {
-          onSuccess: () => {
-            showNotification("Товар успешно обновлён", "success");
-            setTimeout(
-              () => router.push(PRODUCT_LIST_PATH),
-              SUCCESS_REDIRECT_DELAY_MS,
-            );
-          },
-          onError: (error) => {
-            const notification = getCreateProductErrorNotification(error);
-            showNotification(notification.message, notification.severity);
-          },
-        },
-      );
-
-      return;
-    }
-
-    createProduct(productData, {
-      onSuccess: () => {
-        showNotification("Товар успешно создан!", "success");
-        clearProductFormDraft();
-        resetForm();
-        setTimeout(
-          () => router.push(PRODUCT_LIST_PATH),
-          SUCCESS_REDIRECT_DELAY_MS,
-        );
-      },
-      onError: (error) => {
-        const notification = getCreateProductErrorNotification(error);
-        showNotification(notification.message, notification.severity);
-      },
-    });
-  };
-
-  const isReadyForPrimaryAction =
-    publishRequirements.hasImages &&
-    publishRequirements.hasCategories &&
-    publishRequirements.hasName &&
-    publishRequirements.hasPrice &&
-    publishRequirements.hasCount &&
-    publishRequirements.hasSellerTransfer &&
-    publishRequirements.hasSellerAccount &&
-    publishRequirements.hasSellerSocialNetwork &&
-    !publishRequirements.isSellerSettingsLoading &&
-    !publishRequirements.isSellerSettingsError;
+  const onSubmit = createProductFormSubmitHandler({
+    createProduct,
+    effectiveImageIds,
+    hasSellerAccount,
+    hasSellerSocialNetwork,
+    hasSellerTransfer,
+    isEditMode,
+    productId,
+    resetForm,
+    showNotification,
+    updateProduct,
+    navigateToProductList: () => router.push(PRODUCT_LIST_PATH),
+  });
 
   const hasChanges = isEditMode ? isDirty || hasImageChanges : true;
   const isPending = isCreating || isUpdating;
@@ -429,7 +262,7 @@ export const useProductForm = ({
     isDraftReady &&
     !imageUploadState.isUploading &&
     hasChanges &&
-    isReadyForPrimaryAction;
+    isReadyForProductPrimaryAction(publishRequirements);
   const isSubmitting = isPending || imageUploadState.isUploading;
 
   return {

@@ -72,16 +72,40 @@ const ORDER_STATUS_META: Record<OrderStatus, OrderStatusMeta> = {
   },
 };
 
-const SELLER_ATTENTION_STATUSES: readonly OrderStatus[] = [
+export const SELLER_ORDER_ACTION_STATUSES: readonly OrderStatus[] = [
   "BOOKED",
   "AWAITING_PREPAYMENT_APPROVAL",
   "ASSEMBLING",
 ];
 
-const CUSTOMER_ATTENTION_STATUSES: readonly OrderStatus[] = [
+export const CUSTOMER_ORDER_ACTION_STATUSES: readonly OrderStatus[] = [
   "AWAITING_PREPAYMENT",
   "AWAITING_PAYMENT",
   "ON_THE_WAY",
+];
+
+export const ORDER_NEW_STATUSES: readonly OrderStatus[] = ["BOOKED"];
+export const ORDER_PAYMENT_STATUSES: readonly OrderStatus[] = [
+  "AWAITING_PREPAYMENT",
+  "AWAITING_PAYMENT",
+];
+export const ORDER_PROCESSING_STATUSES: readonly OrderStatus[] = [
+  "BOOKED",
+  "AWAITING_PREPAYMENT_APPROVAL",
+  "ASSEMBLING",
+];
+export const ORDER_ASSEMBLING_STATUSES: readonly OrderStatus[] = [
+  "ASSEMBLING",
+];
+export const ORDER_SHIPPING_STATUSES: readonly OrderStatus[] = [
+  "ON_THE_WAY",
+];
+export const ORDER_COMPLETED_STATUSES: readonly OrderStatus[] = [
+  "COMPLETED",
+];
+export const ORDER_DISPUTED_STATUSES: readonly OrderStatus[] = [
+  "DISPUTED",
+  "FAILED",
 ];
 
 const CUSTOMER_STATUSES_WITH_TRACKING: readonly OrderStatus[] = [
@@ -129,8 +153,8 @@ export const orderNeedsAttention = (
   userRole: OrderUserRole,
 ) => {
   return userRole === "seller"
-    ? SELLER_ATTENTION_STATUSES.includes(status)
-    : CUSTOMER_ATTENTION_STATUSES.includes(status);
+    ? SELLER_ORDER_ACTION_STATUSES.includes(status)
+    : CUSTOMER_ORDER_ACTION_STATUSES.includes(status);
 };
 
 export const isActiveOrderStatus = (status: OrderStatus) => {

@@ -3,14 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { DictionaryItem } from "@/entities/dictionary";
-import { useNotification } from "@/shared/ui/notification";
-import type { SocialNetwork, SocialNetworkType } from "@/shared/types";
 import {
   useCreateSocial,
   useDeleteSocial,
   useUpdateSocial,
-} from "../../model/useSocialNetworkMutations";
-import type { SocialNetworkInput } from "../../model/types";
+  type SocialNetworkInput,
+} from "@/entities/social-network";
+import { useNotification } from "@/shared/ui/notification";
+import type { SocialNetwork, SocialNetworkType } from "@/shared/types";
 import { useInvalidateSellerSettings } from "../../model/useInvalidateSellerSettings";
 import {
   buildDefaultValues,

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { productApi } from "@/entities/product/api";
+import { productApi } from "@/entities/product/server";
 import { SITE_INFO } from "@/shared/config";
 import type { Product } from "@/shared/types";
 import { HomeProducts } from "@/widgets/home-products";

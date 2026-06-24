@@ -2,9 +2,9 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { productKeys } from "@/entities/product";
+import { useCreateReview } from "@/entities/review";
 import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { useCreateReview } from "./useCreateReview";
 import { LeaveReviewFormData } from "./types";
 import { orderQueryKeys } from "@/entities/order";
 

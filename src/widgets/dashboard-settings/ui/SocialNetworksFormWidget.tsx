@@ -3,7 +3,7 @@
 import React from "react";
 import { Alert, Box, CircularProgress } from "@mui/material";
 import { useDictionary } from "@/entities/dictionary";
-import { useSocialNetworks } from "../model/useSocialNetworks";
+import { useSocialNetworks } from "@/entities/social-network";
 import { SocialNetworksForm } from "./social-networks/SocialNetworksForm";
 
 export const SocialNetworksFormWidget: React.FC = () => {

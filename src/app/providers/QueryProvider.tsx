@@ -3,7 +3,7 @@
 import { ReactNode, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApiError } from "@/shared/lib/errorHandler";
-// import { ReactQueryDevtools } from "@tanstack/react-query-devtools"; // Р Р°СЃРєРѕРјРјРµРЅС‚РёСЂСѓР№С‚Рµ, РµСЃР»Рё РёСЃРїРѕР»СЊР·СѓРµС‚Рµ
+// import { ReactQueryDevtools } from "@tanstack/react-query-devtools"; // Раскомментируйте, если используете
 
 const DEFAULT_STALE_TIME = 30_000;
 const DEFAULT_GC_TIME = 5 * 60_000;

@@ -1,6 +1,6 @@
 import { cache } from "react";
 import type { Metadata } from "next";
-import { productApi } from "@/entities/product/api";
+import { productApi } from "@/entities/product/server";
 import { SITE_INFO } from "@/shared/config";
 import type { ProductDetail } from "@/shared/types";
 import { ProductDetailsWidget } from "@/widgets/product-details";

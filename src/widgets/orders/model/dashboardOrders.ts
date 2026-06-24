@@ -1,4 +1,11 @@
 import {
+  ORDER_ASSEMBLING_STATUSES,
+  ORDER_COMPLETED_STATUSES,
+  ORDER_DISPUTED_STATUSES,
+  ORDER_NEW_STATUSES,
+  ORDER_PAYMENT_STATUSES,
+  ORDER_PROCESSING_STATUSES,
+  ORDER_SHIPPING_STATUSES,
   isActiveOrderStatus,
   orderNeedsAttention,
   type ListOrdersModel,
@@ -57,13 +64,13 @@ const SELLER_FILTER_STATUSES: Record<
   readonly OrderStatus[] | undefined
 > = {
   all: undefined,
-  new: ["BOOKED"],
-  payment: ["AWAITING_PREPAYMENT", "AWAITING_PAYMENT"],
-  processing: ["BOOKED", "AWAITING_PREPAYMENT_APPROVAL", "ASSEMBLING"],
-  assembling: ["ASSEMBLING"],
-  shipping: ["ON_THE_WAY"],
-  completed: ["COMPLETED"],
-  disputed: ["DISPUTED", "FAILED"],
+  new: ORDER_NEW_STATUSES,
+  payment: ORDER_PAYMENT_STATUSES,
+  processing: ORDER_PROCESSING_STATUSES,
+  assembling: ORDER_ASSEMBLING_STATUSES,
+  shipping: ORDER_SHIPPING_STATUSES,
+  completed: ORDER_COMPLETED_STATUSES,
+  disputed: ORDER_DISPUTED_STATUSES,
 };
 
 const CUSTOMER_FILTER_STATUSES: Record<
@@ -71,13 +78,13 @@ const CUSTOMER_FILTER_STATUSES: Record<
   readonly OrderStatus[] | undefined
 > = {
   all: undefined,
-  new: ["BOOKED"],
-  payment: ["AWAITING_PREPAYMENT", "AWAITING_PAYMENT"],
-  processing: ["BOOKED", "AWAITING_PREPAYMENT_APPROVAL", "ASSEMBLING"],
-  assembling: ["ASSEMBLING"],
-  shipping: ["ON_THE_WAY"],
-  completed: ["COMPLETED"],
-  disputed: ["DISPUTED", "FAILED"],
+  new: ORDER_NEW_STATUSES,
+  payment: ORDER_PAYMENT_STATUSES,
+  processing: ORDER_PROCESSING_STATUSES,
+  assembling: ORDER_ASSEMBLING_STATUSES,
+  shipping: ORDER_SHIPPING_STATUSES,
+  completed: ORDER_COMPLETED_STATUSES,
+  disputed: ORDER_DISPUTED_STATUSES,
 };
 
 export const getOrdersTitle = (userRole: OrdersUserRole) =>
@@ -121,15 +128,19 @@ export const getOrdersStatCounts = (
   ).length,
   active: orders.filter((order) => isActiveOrderStatus(order.actualStatus))
     .length,
-  completed: orders.filter((order) => order.actualStatus === "COMPLETED")
-    .length,
-  sellerConfirm: orders.filter((order) =>
-    ["BOOKED", "AWAITING_PREPAYMENT_APPROVAL"].includes(order.actualStatus),
+  completed: orders.filter((order) =>
+    ORDER_COMPLETED_STATUSES.includes(order.actualStatus),
   ).length,
-  sellerShipping: orders.filter((order) => order.actualStatus === "ASSEMBLING")
-    .length,
-  customerShipping: orders.filter((order) => order.actualStatus === "ON_THE_WAY")
-    .length,
+  sellerConfirm: orders.filter((order) =>
+    ORDER_NEW_STATUSES.includes(order.actualStatus) ||
+    order.actualStatus === "AWAITING_PREPAYMENT_APPROVAL",
+  ).length,
+  sellerShipping: orders.filter((order) =>
+    ORDER_ASSEMBLING_STATUSES.includes(order.actualStatus),
+  ).length,
+  customerShipping: orders.filter((order) =>
+    ORDER_SHIPPING_STATUSES.includes(order.actualStatus),
+  ).length,
 });
 
 export const filterOrdersByStatus = (

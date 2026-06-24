@@ -4,14 +4,16 @@ import React, { useState } from "react";
 import { Typography, Box, CircularProgress } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useRouter } from "next/navigation";
+import {
+  useOrderCreateSubmit,
+  type CheckoutResult,
+} from "@/features/order-create";
 import { useCartProducts } from "@/entities/cart";
 import { useProfileUser } from "@/entities/user";
 import { useCheckoutState } from "../model/useCheckoutState";
-import { useCheckoutSubmit } from "../model/useCheckoutSubmit";
 import { CheckoutResultDialog } from "./CheckoutResultDialog";
 import { CheckoutContent } from "./CheckoutContent";
 import { OrderSuccessState } from "@/shared/ui/states";
-import { CheckoutResult } from "../model/types";
 import { EmptyPageState } from "@/shared/ui/states";
 import { ErrorState } from "@/shared/ui/states";
 import {
@@ -46,7 +48,7 @@ const Checkout = () => {
   const [lastResult, setLastResult] = useState<CheckoutResult | null>(null);
 
   const { handleSubmit, retryFailed, isSubmitting, submitResult, clearResult } =
-    useCheckoutSubmit({
+    useOrderCreateSubmit({
       cartItems: checkoutState.selectedItems,
       checkoutState,
       onSuccess: (result: CheckoutResult) => {

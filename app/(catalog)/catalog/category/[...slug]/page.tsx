@@ -1,10 +1,12 @@
 import { cache } from "react";
 import type { Metadata } from "next";
-import type { CategoryPath } from "@/entities/category";
-import { categoryApi } from "@/entities/category/api";
-import { getCategoryPathFromSlugs } from "@/entities/category/lib";
-import { productApi } from "@/entities/product/api";
-import { isAdultCategoryPath } from "@/features/age-verification/model";
+import {
+  categoryApi,
+  getCategoryPathFromSlugs,
+  type CategoryPath,
+} from "@/entities/category/server";
+import { productApi } from "@/entities/product/server";
+import { isAdultCategoryPath } from "@/features/age-verification/server";
 import { SITE_INFO } from "@/shared/config";
 import type { Product } from "@/shared/types";
 import { CategoryProducts } from "@/widgets/category-products";

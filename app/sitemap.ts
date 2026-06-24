@@ -1,8 +1,7 @@
 import type { MetadataRoute } from "next";
-import { categoryApi } from "@/entities/category/api";
-import { getCategorySlug } from "@/entities/category/lib";
-import { productApi } from "@/entities/product/api";
-import { isAdultCategoryName } from "@/features/age-verification/model";
+import { categoryApi, getCategorySlug } from "@/entities/category/server";
+import { productApi } from "@/entities/product/server";
+import { isAdultCategoryName } from "@/features/age-verification/server";
 import { SITE_INFO } from "@/shared/config";
 import type { CategoryModel } from "@/shared/types";
 

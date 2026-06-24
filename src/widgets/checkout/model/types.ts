@@ -1,13 +1,12 @@
 import type { ProductBasket } from "@/entities/cart";
+import type {
+  CheckoutResult,
+  OrderResult,
+  OrderToCreate,
+} from "@/features/order-create";
 import type { Transfer } from "@/shared/types";
 
-// Результат создания одного заказа
-export interface OrderResult {
-  productId: number;
-  productName: string;
-  status: "success" | "error";
-  errorMessage?: string;
-}
+export type { CheckoutResult, OrderResult, OrderToCreate };
 
 export interface SellerCheckoutGroup {
   sellerId: number;
@@ -25,22 +24,4 @@ export interface SelectedSellerDelivery {
   sellerId: number;
   sellerLogin: string;
   transfer: Transfer;
-}
-
-// Данные для создания заказа (расширенные)
-export interface OrderToCreate {
-  productId: number;
-  productName: string;
-  count: number;
-  addressId: number;
-  transferId: number;
-  comment: string;
-}
-
-// Итоговый результат оформления
-export interface CheckoutResult {
-  success: OrderResult[];
-  failed: OrderResult[];
-  totalCount: number;
-  successCount: number;
 }

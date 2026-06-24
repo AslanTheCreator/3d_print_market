@@ -6,20 +6,16 @@ import {
   Update,
 } from "@mui/icons-material";
 import { SvgIconProps } from "@mui/material";
+import {
+  CUSTOMER_ORDER_ACTION_STATUSES,
+  SELLER_ORDER_ACTION_STATUSES,
+} from "@/entities/order";
 
 // Статусы заказов, требующие действий от продавца
-export const SELLER_ACTION_STATUSES = [
-  "BOOKED",
-  "AWAITING_PREPAYMENT_APPROVAL",
-  "ASSEMBLING",
-] as const;
+export const SELLER_ACTION_STATUSES = SELLER_ORDER_ACTION_STATUSES;
 
 // Статусы заказов, требующие действий от покупателя
-export const CUSTOMER_ACTION_STATUSES = [
-  "AWAITING_PREPAYMENT",
-  "AWAITING_PAYMENT",
-  "ON_THE_WAY",
-] as const;
+export const CUSTOMER_ACTION_STATUSES = CUSTOMER_ORDER_ACTION_STATUSES;
 
 export type PendingActionType =
   | "seller_confirm"

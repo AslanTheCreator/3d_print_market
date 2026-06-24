@@ -1,10 +1,5 @@
 import { authClient } from "@/shared/api";
-
-export interface CreateReviewInput {
-  orderId: number;
-  rating: number;
-  comment: string;
-}
+import type { CreateReviewInput } from "../model/types";
 
 const API_URL = "/reviews";
 
