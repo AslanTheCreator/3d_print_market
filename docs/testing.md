@@ -1,113 +1,137 @@
 # Testing
 
-## Что уже есть
+Документ описывает только реальные проверки и команды из `package.json`.
 
-В проект добавлены два первых слоя тестов:
+## Инструменты
 
-```bash
-npm run test:smoke
-npm run test:e2e
-```
+В проекте используются:
 
-Smoke-тесты - это быстрые проверки, что приложение в целом живо после запуска или деплоя. Они не проверяют все детали UI, но ловят грубые поломки: страница не открылась, сервер не отдал HTML, защищенный route перестал редиректить.
+- ESLint для статической проверки `app` и `src`;
+- TypeScript и `next typegen` для typecheck;
+- Steiger для проверки FSD-архитектуры;
+- Next production build;
+- `node:test` для HTTP smoke-тестов;
+- Playwright для e2e и browser-level проверок.
 
-E2E-тесты на Playwright открывают сайт в настоящем браузере. Это следующий слой после HTTP smoke: он проверяет не только ответ сервера, но и то, что страница реально рендерится в браузере.
-
-## Как запускать локально
-
-Сначала нужно запустить приложение:
+## Команды
 
 ```bash
 npm run dev
+npm run build
+npm run start
+npm run lint
+npm run typecheck
+npm run architecture:check
+npm run test:smoke
+npm run test:e2e
+npm run test:e2e:ui
 ```
 
-Во втором терминале запустить smoke-тесты:
+Ключевые проверки: `lint`, `typecheck`, `architecture:check`, `build`, `test:smoke`, `test:e2e`.
+
+## Минимум для code changes
+
+Для большинства code changes запускать:
 
 ```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+```
+
+## User-facing изменения
+
+Если изменение влияет на UI, routes, forms, auth, checkout, каталог, личный кабинет или production behavior, дополнительно рассмотреть:
+
+```bash
+npm run build
 npm run test:smoke
 ```
 
-Для браузерных e2e-тестов:
+`build` нужен, когда изменение может затронуть:
+
+- Next.js route compilation;
+- server/client component boundaries;
+- metadata или route handlers;
+- production bundle;
+- env/runtime config.
+
+## Smoke-тесты
+
+Smoke-тесты находятся в `tests/smoke`.
+
+`npm run test:smoke` не запускает dev server сам. Перед ним нужно поднять приложение:
 
 ```bash
-npm run test:e2e
+npm run dev
+npm run test:smoke
 ```
 
-Если Playwright попросит установить браузер:
+По умолчанию smoke использует:
 
-```bash
-npx playwright install chromium
-```
-
-По умолчанию тесты идут на:
-
-```text
+```txt
 http://localhost:3000
 ```
 
-Если приложение запущено на другом адресе:
+Для другого адреса задать `TEST_BASE_URL`:
 
 ```powershell
 $env:TEST_BASE_URL="http://localhost:3001"
 npm run test:smoke
-npm run test:e2e
 ```
 
-## Что проверяет текущий smoke-набор
+Smoke быстро проверяет HTML-ответы, публичные страницы, dashboard redirect для анонима и `/api/config`.
 
-- `/` возвращает непустой HTML.
-- `/checkout` возвращает публичную оболочку страницы.
-- `/favorites` возвращает публичную оболочку страницы.
-- `/dashboard/products` редиректит анонимного пользователя на login.
-- `/dashboard/products/new` редиректит анонимного пользователя на login.
-- `/dashboard/sales` редиректит анонимного пользователя на login.
-- `/api/config` возвращает runtime API config для браузерного приложения.
+## E2E
 
-## Что проверяет текущий e2e-набор
+Playwright-конфиг находится в `playwright.config.ts`. Тесты находятся в `tests/e2e`.
 
-- `/` открывается в браузере.
-- `/checkout` открывается в браузере.
-- `/favorites` открывается в браузере.
-- `/dashboard/products` редиректит анонима на login.
-- `/dashboard/products/new` редиректит анонима на login.
-- `/dashboard/sales` редиректит анонима на login.
-- `/api/config` доступен через браузерный request context.
+Если `TEST_BASE_URL` не задан, Playwright сам запускает web server:
 
-## Зачем нужен `tests/smoke/http-smoke.test.mjs`
+- по умолчанию `npx next dev --turbopack -p 3000`;
+- при `PLAYWRIGHT_USE_PRODUCTION_SERVER=true` — `npx next start -p 3000`;
+- команду можно переопределить через `PLAYWRIGHT_WEB_SERVER_COMMAND`.
 
-Этот файл нужен как самый простой автоматический тест после запуска frontend. Он делает обычные HTTP-запросы к приложению и проверяет базовые production-важные вещи:
-
-- frontend вообще отвечает;
-- публичные страницы отдают HTML;
-- dashboard не доступен анониму;
-- runtime config доступен клиентскому приложению.
-
-Это не замена Playwright. Это первый дешевый уровень защиты, который можно запускать локально, в CI или после деплоя на test-стенд.
-
-## Зачем нужен `tests/e2e/anonymous-access.spec.ts`
-
-Этот файл проверяет первые пользовательские сценарии в настоящем браузере без тестовых аккаунтов:
-
-- публичные страницы открываются;
-- страница содержит видимый контент;
-- защищенные dashboard-роуты не доступны анониму;
-- runtime config доступен frontend-приложению.
-
-Это пока не полный e2e-набор. Это стартовая защита от грубых регрессий в роутинге, SSR, middleware и клиентском рендеринге.
-
-## Как запускать e2e на test-стенде
-
-Если сайт уже развернут на test-стенде, передайте адрес через `TEST_BASE_URL`:
+Если `TEST_BASE_URL` задан, Playwright проверяет уже запущенный стенд.
 
 ```powershell
-$env:TEST_BASE_URL="https://test.figurzilla.ru"
+$env:TEST_BASE_URL="https://test.example.com"
 npm run test:e2e
 ```
 
-В этом режиме Playwright не будет сам запускать `npm run dev`, а проверит указанный стенд.
+E2E нужен для изменений в auth, protected routes, checkout, формах, browser-only поведении, redirects и runtime config.
 
-## Ограничения
+## Backend и env
 
-HTTP smoke-тест не кликает по интерфейсу и не проверяет поведение React после hydration.
+Некоторые тесты зависят от API URL или моков.
 
-Текущий Playwright-набор пока не проверяет login, создание товара, корзину и checkout. Для этих сценариев нужны стабильные тестовые аккаунты, тестовые товары и договоренность, как очищать или пересоздавать test data.
+В Playwright web server env используются fallback значения `CLIENT_API_BASE_URL`, `API_BASE_URL`, `ALLOW_LOCAL_API_URL`.
+
+Если тест требует реальный backend или test-стенд:
+
+- указать `TEST_BASE_URL`;
+- задать нужные env variables;
+- не печатать секреты из `.env.local`;
+- явно написать в итоговом ответе, что проверка зависит от внешнего backend/env.
+
+## Документационные изменения
+
+Documentation-only изменения обычно не требуют:
+
+- `npm run lint`;
+- `npm run typecheck`;
+- `npm run architecture:check`;
+- `npm run build`;
+- smoke/e2e.
+
+Достаточно проверить diff, Markdown-содержание и соответствие фактам из кода. Если проверки не запускались, нужно прямо указать причину.
+
+## Как сообщать результат
+
+В финальном ответе указывать:
+
+- какие команды запускались;
+- статус каждой команды;
+- если команда не запускалась — почему;
+- если тест зависит от backend/env — что именно помешало;
+- если остался риск — какой сценарий стоит проверить отдельно.
