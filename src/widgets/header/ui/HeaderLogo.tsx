@@ -42,7 +42,7 @@ export const HeaderLogo: React.FC<HeaderLogoProps> = ({ isMobile }) => {
               component="span"
               sx={{
                 fontSize: { md: "1.45rem", lg: "1.75rem" },
-                fontWeight: 900,
+                fontWeight: 800,
                 letterSpacing: 0,
                 lineHeight: 1,
                 textTransform: "uppercase",

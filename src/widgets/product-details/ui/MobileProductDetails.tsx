@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import dynamic from "next/dynamic";
 import {
   alpha,
   Box,
@@ -20,11 +21,10 @@ import { FavoriteButton } from "@/features/toggle-favorite";
 import { ImageGallery } from "@/shared/ui/image-gallery";
 import type { ImageGalleryImage } from "@/shared/ui/image-gallery";
 import { ProductDetail } from "@/shared/types";
-import { RelatedProducts } from "./RelatedProducts";
+import { DeferredProductSection } from "./DeferredProductSection";
 import { ProductDescription } from "./ProductDescription";
 import { ProductCategoryChips } from "./ProductCategoryChips";
 import { ProductPriceCardContainer } from "./ProductPriceCardContainer";
-import { MobileProductReviewsSection } from "./MobileProductReviewsSection";
 import { ProductSellerCard } from "./ProductSellerCard";
 import { ProductStockIndicator } from "./ProductStockIndicator";
 import { ProductTitle } from "./ProductTitle";
@@ -33,6 +33,25 @@ import {
   formatStockCount,
   getSellerCardMeta,
 } from "./productDetailsFormatters";
+
+const LazyMobileProductReviewsSection = dynamic(
+  () =>
+    import("./MobileProductReviewsSection").then(
+      (module) => module.MobileProductReviewsSection,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
+const LazyRelatedProducts = dynamic(
+  () => import("./RelatedProducts").then((module) => module.RelatedProducts),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 
 interface MobileProductDetailsProps {
   productCard: ProductDetail;
@@ -353,15 +372,19 @@ export function MobileProductDetails({
         </Paper>
 
         {productCard.reviews.length > 0 ? (
-          <MobileProductReviewsSection reviews={productCard.reviews} />
+          <DeferredProductSection rootMargin="800px">
+            <LazyMobileProductReviewsSection reviews={productCard.reviews} />
+          </DeferredProductSection>
         ) : null}
 
         {primaryCategoryId ? (
           <Box sx={{ mt: 2.5 }}>
-            <RelatedProducts
-              categoryId={primaryCategoryId}
-              excludeProductId={productCard.id}
-            />
+            <DeferredProductSection rootMargin="800px">
+              <LazyRelatedProducts
+                categoryId={primaryCategoryId}
+                excludeProductId={productCard.id}
+              />
+            </DeferredProductSection>
           </Box>
         ) : null}
       </Box>

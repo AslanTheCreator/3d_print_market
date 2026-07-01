@@ -1,20 +1,90 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Box, Paper, IconButton, alpha, useTheme } from "@mui/material";
+import dynamic from "next/dynamic";
+import {
+  Box,
+  GlobalStyles,
+  Paper,
+  IconButton,
+  alpha,
+  useTheme,
+} from "@mui/material";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
+import type { Theme } from "@mui/material/styles";
 import { MainImage } from "./MainImage";
 import { ThumbnailList } from "./ThumbnailList";
-import { FullscreenImageViewer } from "./FullscreenImageViewer";
 import type { ImageGalleryImage } from "./types";
 
 interface ImageGalleryProps {
   images: ImageGalleryImage[];
   alt?: string;
 }
+
+const LazyFullscreenImageViewer = dynamic(
+  () =>
+    import("./FullscreenImageViewer").then(
+      (module) => module.FullscreenImageViewer,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
+const imageGallerySwiperStyles = (theme: Theme) => ({
+  ".product-image-swiper.swiper": {
+    width: "100%",
+    height: "100%",
+    position: "relative",
+    overflow: "hidden",
+  },
+  ".product-image-swiper .swiper-wrapper": {
+    position: "relative",
+    zIndex: 1,
+    display: "flex",
+    width: "100%",
+    height: "100%",
+    boxSizing: "content-box",
+    transitionProperty: "transform",
+  },
+  ".product-image-swiper .swiper-slide": {
+    position: "relative",
+    display: "block",
+    flexShrink: 0,
+    width: "100%",
+    height: "100%",
+    transitionProperty: "transform",
+  },
+  ".product-image-swiper .swiper-pagination": {
+    position: "absolute",
+    zIndex: 10,
+    left: 0,
+    bottom: 8,
+    width: "100%",
+    textAlign: "center",
+    transition: "opacity 0.3s",
+    transform: "translate3d(0, 0, 0)",
+  },
+  ".product-image-swiper .swiper-pagination-bullet": {
+    display: "inline-block",
+    width: 8,
+    height: 8,
+    marginLeft: 4,
+    marginRight: 4,
+    borderRadius: "50%",
+    backgroundColor: "rgba(255, 255, 255, 0.6)",
+    opacity: 1,
+    cursor: "pointer",
+    boxShadow: "0 1px 3px rgba(15, 23, 42, 0.2)",
+  },
+  ".product-image-swiper .swiper-pagination-bullet-active": {
+    backgroundColor: theme.palette.primary.main,
+  },
+});
 
 export function ImageGallery({
   images,
@@ -78,6 +148,8 @@ export function ImageGallery({
 
   return (
     <>
+      <GlobalStyles styles={imageGallerySwiperStyles} />
+
       <Box
         component="section"
         role="button"
@@ -177,6 +249,7 @@ export function ImageGallery({
           ) : null}
 
           <Swiper
+            className="product-image-swiper"
             modules={[Pagination]}
             onSlideChange={(swiper) => setCurrentIndex(swiper.activeIndex)}
             onSwiper={setSwiperInstance}
@@ -211,13 +284,15 @@ export function ImageGallery({
         ) : null}
       </Box>
 
-      <FullscreenImageViewer
-        images={images}
-        initialIndex={currentIndex}
-        open={isFullscreenOpen}
-        onClose={handleCloseFullscreen}
-        alt={alt}
-      />
+      {isFullscreenOpen ? (
+        <LazyFullscreenImageViewer
+          images={images}
+          initialIndex={currentIndex}
+          open={isFullscreenOpen}
+          onClose={handleCloseFullscreen}
+          alt={alt}
+        />
+      ) : null}
     </>
   );
 }

@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import {
-  alpha,
   Box,
+  GlobalStyles,
   IconButton,
   Paper,
   Rating,
@@ -27,6 +27,30 @@ interface ProductReviewsSectionProps {
 interface ReviewCardProps {
   review: Review;
 }
+
+const productReviewsSwiperStyles = {
+  ".product-reviews-swiper.swiper": {
+    width: "100%",
+    position: "relative",
+    overflow: "hidden",
+  },
+  ".product-reviews-swiper .swiper-wrapper": {
+    position: "relative",
+    zIndex: 1,
+    display: "flex",
+    width: "100%",
+    height: "100%",
+    boxSizing: "content-box",
+    transitionProperty: "transform",
+  },
+  ".product-reviews-swiper .swiper-slide": {
+    position: "relative",
+    display: "block",
+    flexShrink: 0,
+    height: "auto",
+    transitionProperty: "transform",
+  },
+};
 
 function ReviewCard({ review }: ReviewCardProps) {
   return (
@@ -113,6 +137,8 @@ export function ProductReviewsSection({ reviews }: ProductReviewsSectionProps) {
 
   return (
     <Box>
+      <GlobalStyles styles={productReviewsSwiperStyles} />
+
       <Stack
         direction="row"
         alignItems="flex-start"
@@ -200,6 +226,7 @@ export function ProductReviewsSection({ reviews }: ProductReviewsSectionProps) {
         }}
       >
         <Swiper
+          className="product-reviews-swiper"
           slidesPerView="auto"
           slidesPerGroup={1}
           spaceBetween={16}

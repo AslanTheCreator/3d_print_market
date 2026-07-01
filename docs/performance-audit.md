@@ -6,10 +6,10 @@
 
 ## Executive summary
 
-- Production build проходит, но First Load JS на ключевых страницах высокий: `/catalog/[id]/detail` - 337 kB, `/` и `/catalog/category/[...slug]` - 301 kB, `/catalog/search` - 297 kB, `/favorites` - 296 kB, `/checkout` - 286 kB.
-- Runtime desktop-замер на production server с fallback API показал холодную загрузку публичных страниц около 1.0-1.1 MB transfer, из них примерно 500-550 kB JS и 484 kB fonts.
-- Основные причины: глобальный client shell, тяжелый header/providers слой, 127 файлов с `use client`, 88 файлов с MUI icons, 5 загружаемых Montserrat woff2 на route, Swiper на product detail.
-- На публичных страницах наблюдаются лишние failed prefetch/redirect requests к protected dashboard routes для анонимного пользователя.
+- Production build проходит, но First Load JS на ключевых страницах все еще высокий: `/catalog/[id]/detail` - 328 kB после I3, `/` - 301 kB, `/catalog/category/[...slug]` - 300 kB, `/catalog/search` и `/favorites` - 296 kB, `/checkout` - 287 kB.
+- Исходный runtime desktop-замер на production server с fallback API показал холодную загрузку публичных страниц около 1.0-1.1 MB transfer, из них примерно 500-550 kB JS и 484 kB fonts до исправления I2.
+- Основные оставшиеся причины: глобальный client shell, тяжелый providers слой, 127 файлов с `use client`, 88 файлов с MUI icons, Swiper в основной галерее product detail.
+- В исходном замере на публичных страницах наблюдались лишние failed prefetch/redirect requests к protected dashboard routes; footer prefetch исправлен в I1, I4 оставлен до повторной runtime-проверки.
 - Проверки `lint`, `typecheck`, `architecture:check`, `build`, `test:smoke` прошли. `test:e2e` требует отдельного исправления test-server запуска: тесты фактически доходят до `ok`, но команда зависает/таймаутится из-за несовместимости `next start` с `output: "standalone"` в текущем CI/Playwright сценарии.
 
 ## Окружение и команды
@@ -53,35 +53,38 @@
 
 ## Build metrics
 
-Route-size данные из `npm.cmd run build`:
+Route-size данные из текущего `npm.cmd run build` после I1-I3:
+
+> `Size` в выводе Next.js - это размер route-specific client chunks после текущего chunk splitting, а не полный cold-load transfer и не per-task delta. Значения для routes, не затронутых I3, могут меняться из-за перераскладки chunk graph после lazy-splitting; для cold-load сравнения важнее `First Load JS`, а для I3-сравнения - строка `/catalog/[id]/detail`.
 
 | Route | Type | Size | First Load JS |
 | --- | --- | ---: | ---: |
-| `/` | dynamic | 6.7 kB | 301 kB |
-| `/catalog/category/[...slug]` | dynamic | 6.59 kB | 301 kB |
-| `/catalog/search` | static | 4.62 kB | 297 kB |
-| `/catalog/[id]/detail` | dynamic | 43.3 kB | 337 kB |
-| `/checkout` | static | 18 kB | 286 kB |
-| `/favorites` | static | 10.9 kB | 296 kB |
+| `/` | dynamic | 10.2 kB | 301 kB |
+| `/catalog/category/[...slug]` | dynamic | 9.9 kB | 300 kB |
+| `/catalog/search` | static | 8.15 kB | 296 kB |
+| `/catalog/[id]/detail` | dynamic | 40 kB | 328 kB |
+| `/checkout` | static | 21.1 kB | 287 kB |
+| `/favorites` | static | 5.88 kB | 296 kB |
 | `/auth/login` | static | 1.58 kB | 233 kB |
-| `/auth/register` | static | 1.3 kB | 233 kB |
-| `/dashboard` | dynamic | 232 B | 307 kB |
-| `/dashboard/products` | dynamic | 8.4 kB | 255 kB |
-| `/dashboard/products/new` | dynamic | 185 B | 282 kB |
-| `/dashboard/products/[id]/edit` | dynamic | 182 B | 282 kB |
-| `/dashboard/purchase` | dynamic | 192 B | 300 kB |
-| `/dashboard/sales` | dynamic | 191 B | 300 kB |
-| `/dashboard/settings` | dynamic | 20.6 kB | 265 kB |
+| `/auth/register` | static | 1.3 kB | 232 kB |
+| `/dashboard` | dynamic | 231 B | 308 kB |
+| `/dashboard/products` | dynamic | 8.4 kB | 254 kB |
+| `/dashboard/products/new` | dynamic | 180 B | 281 kB |
+| `/dashboard/products/[id]/edit` | dynamic | 180 B | 281 kB |
+| `/dashboard/purchase` | dynamic | 192 B | 299 kB |
+| `/dashboard/sales` | dynamic | 191 B | 299 kB |
+| `/dashboard/settings` | dynamic | 20.7 kB | 266 kB |
 | `/dashboard/security` | dynamic | 7.01 kB | 232 kB |
 | `/about` | static | 1.35 kB | 140 kB |
-| `/contacts`, `/privacy`, `/user-agreement` | static | 1.3 kB | 129 kB |
+| `/contacts`, `/privacy`, `/user-agreement` | static | 1.3 kB | 130 kB |
 
 Общие build-факты:
 
 - Shared First Load JS: 102 kB.
 - Middleware: 34 kB.
-- Самый тяжелый route chunk: `app/(catalog)/catalog/[id]/detail/page` около 50 kB raw file size.
-- `.next/app-build-manifest.json`: `/layout` подключает 30 JS-файлов; catalog/search/category/detail - 31-33 JS-файла.
+- Самый тяжелый route chunk: `app/(catalog)/catalog/[id]/detail/page` около 40 kB после I3.
+- `.next/app-build-manifest.json`: `/layout` подключает 29 JS-файлов; `/catalog/[id]/detail` - 31 JS-файл.
+- После I3 lazy chunks для fullscreen gallery, reviews и related products не входят в cold route/layout manifest: `2142` около 9.7 kB, `2637` около 3.9 kB, `1933` около 3.2 kB, `5395` около 5.2 kB.
 
 ## Runtime metrics
 
@@ -118,17 +121,17 @@ Production server, desktop Chromium, холодный context на route, fallba
   - 88 файлов содержат `@mui/icons-material`.
   - 127 import lines с `@mui/icons-material`.
 - Heavy/runtime libraries:
-  - `swiper`: `src/shared/ui/image-gallery/ImageGallery.tsx`, `src/widgets/product-details/ui/ProductReviewsSection.tsx`
+  - `swiper`: `src/shared/ui/image-gallery/ImageGallery.tsx`; reviews carousel вынесен в lazy `src/widgets/product-details/ui/ProductReviewsSection.tsx`
   - `framer-motion`: `src/widgets/dashboard-home/ui/DashboardHomeWidget.tsx`
-  - `lodash`: `useCartQuantity.ts`, `useHideOnScroll.ts`
+  - `lodash`: `src/entities/cart/model/useCartQuantity.ts`
   - `lucide-react`: `EmptyCatalogState.tsx`
   - `next/image`: 10 файлов
 - Assets:
   - `src/shared/assets/logo/logo-desktop.png`: 924.4 kB, PNG signature valid.
   - `src/shared/assets/logo/logo.svg`: 148.4 kB.
-  - Montserrat woff2 files: 6 files, about 94-100 kB each; runtime loaded 5 fonts, about 484 kB.
+  - Montserrat source asset после I2: `public/fonts/montserrat/Montserrat-Variable.woff2`, 41.6 kB; старые отдельные weight-файлы удалены.
   - `src/shared/assets/icons/favorites.png`: 41.7 kB, PNG signature valid.
-- `prefetch={false}` найден только в `src/entities/product/ui/ProductCard.tsx`.
+- `prefetch={false}` используется в `src/entities/product/ui/ProductCard.tsx`; footer dashboard links отключают prefetch условно через `prefetch={shouldDisablePrefetch ? false : undefined}`.
 
 ## Findings
 
@@ -165,91 +168,6 @@ Expected effect:
 
 ### Important
 
-#### I1. Глобальный client shell делает даже статичные страницы тяжелыми
-
-Evidence:
-
-- `app/layout.tsx` оборачивает весь сайт в `AppProviders` и `AppLayout`.
-- `src/app/providers/AppProviders.tsx` - client component; внутри `ThemeProvider`, `AuthProvider`, `QueryProvider`, `NotificationProvider`.
-- `src/app/layouts/AppLayout.tsx` всегда рендерит `Header` и `Footer`; `Header` - client component.
-- `.next/app-build-manifest.json`: `/layout` подключает 30 JS-файлов.
-- Runtime: `/privacy` без observed failed requests все равно загрузил 60 resources, 483 kB JS и 484 kB fonts.
-
-Impact:
-
-- Статичные/legal страницы получают стоимость интерактивного marketplace shell.
-- Public catalog/auth/checkout маршруты стартуют с 500+ kB JS transfer в холодном desktop context.
-
-Recommendation:
-
-- Разделить shell на server/static части и client islands.
-- Проверить, можно ли вынести `AuthProvider`, `QueryProvider`, `NotificationProvider` ниже, только туда, где они нужны.
-- Разделить `Header` на статичную server-разметку и отдельные client-компоненты для search/actions/mobile scroll.
-- Не ломать MUI theme setup: сначала сделать spike на одной статичной группе страниц.
-
-Expected effect:
-
-- Снижение First Load JS для info/auth/public pages.
-- Меньше hydration work и script requests.
-
-Status 2026-06-30, I1 v2:
-
-- Принято продуктовое ограничение: единые `Header` и `Footer`, глобальные `AppProviders` и все бизнес-возможности header остаются на всех страницах.
-- Реализована оптимизация внутри единого shell: `CategoriesDrawer`/`CategoriesMenu` и `PendingActionsPopover` вынесены в lazy client chunks, pending action model больше не импортирует MUI icon components, `useHideOnScroll` больше не тянет `lodash/throttle`.
-- Для footer-ссылок на `/dashboard/*` отключен Next prefetch, чтобы анонимный пользователь не получал лишние protected prefetch/redirect requests.
-- Build после изменения: `/layout` подключает 29 файлов вместо 30; `HeaderActions -> PendingActionsPopover` вынесен в `static/chunks/2600...js` около 9.6 kB; `HeaderCategoryButton -> CategoriesDrawer` вынесен в отдельные lazy chunks `6718`, `6574`, `3820`, `2740`.
-- First Load JS после `npm.cmd run build`: `/about` - 140 kB, `/privacy` - 130 kB, `/` - 301 kB, `/catalog/search` - 296 kB, `/favorites` - 296 kB. Из-за сохранения полного глобального shell снижение First Load JS ограничено; основной эффект I1 v2 - меньше cold-load кода закрытых header-сценариев и меньше лишних protected prefetch-запросов.
-- Проверки: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd run architecture:check`, `npm.cmd run build` прошли.
-
-#### I2. Шрифты Montserrat дают около 484 kB transfer на route
-
-Evidence:
-
-- `src/app/config/fonts.ts` подключает 6 локальных woff2: weights 400, 500, 600, 700, 800, 900.
-- Runtime resource timing показывает 5 font requests и около 484 kB font transfer на route.
-- Source assets суммарно около 582 kB.
-
-Impact:
-
-- Шрифты сравнимы по весу с JS на каждой cold-load странице.
-- На мобильной сети это будет заметно по FCP/LCP, даже при `display: "swap"`.
-
-Recommendation:
-
-- Проверить реальные используемые `fontWeight` и оставить минимальный набор.
-- Рассмотреть variable font Montserrat вместо нескольких отдельных woff2.
-- Если нужен полный Cyrillic coverage, отдельно проверить subset strategy и визуальные требования.
-
-Expected effect:
-
-- Существенное снижение transfer на всех страницах.
-
-#### I3. Product detail - самый тяжелый маршрут по JS
-
-Evidence:
-
-- Build: `/catalog/[id]/detail` - 43.3 kB route size, 337 kB First Load JS.
-- Runtime: 78 requests, 56 JS requests, 552 kB JS transfer, 1090 kB total transfer.
-- `ProductDetailsWidget` является client component и выбирает mobile/desktop через `useMediaQuery`.
-- `ImageGallery` и `ProductReviewsSection` используют Swiper.
-
-Impact:
-
-- Карточка товара - ключевой коммерческий route; лишний JS напрямую влияет на perceived performance и INP.
-- Swiper/reviews/related sections могут попадать в начальную стоимость даже когда часть UI ниже первого экрана.
-
-Recommendation:
-
-- Отложить тяжелые секции: reviews carousel, fullscreen gallery, related products.
-- Проверить dynamic import для Swiper-зависимых частей.
-- Сохранить SSR initial product data, но сократить client boundary вокруг чистого контента.
-- Mobile/desktop ветки грузить осторожно: не допускать загрузки обеих тяжелых реализаций без необходимости.
-
-Expected effect:
-
-- Снижение route JS для product detail.
-- Меньше hydration и long tasks на карточке товара.
-
 #### I4. Public pages инициируют лишние prefetch/redirect requests к protected dashboard routes
 
 Evidence:
@@ -258,7 +176,7 @@ Evidence:
   - `/auth/login?redirect=%2Fdashboard%2Fproducts%2Fnew`
   - `/auth/login?redirect=%2Fdashboard%2Fproducts`
   - `/auth/login?redirect=%2Fdashboard%2Fsales`
-- `prefetch={false}` найден только в `ProductCard`.
+- В `Footer` prefetch для `/dashboard/*` уже отключен после I1; нужна повторная runtime-проверка, чтобы подтвердить отсутствие других initiators.
 - Protected dashboard links существуют в dashboard navigation и pending-actions surface.
 - Middleware редиректит `/dashboard` и `/dashboard/:path*` на `/auth/login`.
 
@@ -394,7 +312,7 @@ Recommendation:
 
 Evidence:
 
-- `swiper` только в gallery/reviews.
+- `swiper` используется в основной gallery и lazy reviews.
 - `framer-motion` только в dashboard home.
 
 Impact:
@@ -403,7 +321,7 @@ Impact:
 
 Recommendation:
 
-- При оптимизации product detail/dashboard проверять, остались ли эти зависимости только в route chunks, а не в shared shell.
+- При оптимизации dashboard проверить, остается ли `framer-motion` только в route chunks, а не в shared shell.
 
 #### M3. Middleware сам по себе не является performance-проблемой
 
@@ -422,8 +340,7 @@ Recommendation:
 
 ## Quick wins
 
-- Отключить prefetch для protected dashboard/pending action links.
-- Уменьшить набор Montserrat weights или перейти на variable font после визуальной проверки.
+- Повторно снять runtime waterfall для protected dashboard prefetch после I1; при остаточных initiators точечно поставить `prefetch={false}`.
 - Оптимизировать `logo-desktop.png`.
 - Передавать `isError/onRetry` в `SearchProducts` и убрать безусловный `retry=2` для product infinite queries.
 - Исправить CI/Playwright production server command под standalone output.
@@ -432,7 +349,6 @@ Recommendation:
 
 - Кеширование `/` и `/catalog/category/[...slug]`: нужно согласовать допустимую свежесть каталога с backend/product owner.
 - Отложенная Метрика: нужно согласовать с аналитикой, можно ли менять момент загрузки `webvisor/clickmap`.
-- Product detail code-splitting: нужно проверить UX на mobile/desktop, чтобы lazy loading галереи/reviews не ухудшил first interaction.
 
 ## Что не проверялось
 
@@ -440,6 +356,7 @@ Recommendation:
 - Mobile throttling Lighthouse.
 - Реальные backend latency и реальные изображения товаров/CDN.
 - Authenticated dashboard с настоящими пользовательскими данными.
+- Визуальный product detail UX на реальных backend данных после I3; локальный smoke с fallback API прошел, но не покрывает реальную галерею/reviews/related.
 - Bundle analyzer с module attribution: новая dependency не добавлялась, отдельный analyzer не подключался.
 
 ## Приоритизация
@@ -464,5 +381,5 @@ Minor:
 
 1. Исправить production-like test server path для standalone и повторить `npm run test:e2e` без таймаутов.
 2. Добавить lightweight performance smoke на 5 routes: `/`, `/catalog/search`, `/catalog/[id]/detail`, `/checkout`, `/privacy`, с budgets по JS/font/failed requests.
-3. Сделать отдельный optimization PR для шрифтов и protected-link prefetch.
-4. После этого переснять build/runtime metrics и сравнить с таблицами из этого отчета.
+3. Повторить runtime waterfall для I4 и подтвердить, остались ли protected prefetch initiators после footer-fix.
+4. После следующих исправлений переснимать build/runtime metrics и сравнивать с таблицами из этого отчета.
