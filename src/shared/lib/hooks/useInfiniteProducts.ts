@@ -1,4 +1,7 @@
-import { type InfiniteData, useInfiniteQuery } from "@tanstack/react-query";
+import {
+  type InfiniteData,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import { Product } from "@/shared/types";
 import { FetchProductsParams, ProductFilter, SortBy } from "@/shared/types";
 
@@ -12,6 +15,11 @@ export interface ProductFetchFunction {
   (params: FetchProductsParams): Promise<Product[]>;
 }
 
+type QueryRetryValue =
+  | boolean
+  | number
+  | ((failureCount: number, error: Error) => boolean);
+
 export interface UseInfiniteProductsOptions {
   size: number;
   filters?: ProductFilter;
@@ -19,7 +27,7 @@ export interface UseInfiniteProductsOptions {
   fetchFunction: ProductFetchFunction;
   queryKey: readonly unknown[];
   staleTime?: number;
-  retry?: number;
+  retry?: QueryRetryValue;
   initialData?: InfiniteData<Product[], CursorPageParam | null>;
   initialDataUpdatedAt?: number;
   enabled?: boolean;
@@ -35,7 +43,7 @@ export const useInfiniteProducts = ({
   fetchFunction,
   queryKey,
   staleTime = 1000 * 60 * 5,
-  retry = 2,
+  retry,
   initialData,
   initialDataUpdatedAt,
   enabled = true,
@@ -72,6 +80,6 @@ export const useInfiniteProducts = ({
     initialDataUpdatedAt,
     enabled,
     staleTime,
-    retry,
+    ...(retry !== undefined ? { retry } : {}),
   });
 };

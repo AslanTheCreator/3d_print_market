@@ -221,31 +221,6 @@ Expected effect:
 
 - Ниже TTFB и backend pressure на public catalog traffic.
 
-#### I6. Product infinite queries переопределяют retry и могут дублировать failed requests
-
-Evidence:
-
-- `src/shared/lib/hooks/useInfiniteProducts.ts` задает `retry = 2`.
-- Это обходит более аккуратную default retry policy из `QueryProvider`.
-- Runtime `/catalog/search?query=test` при fallback API показал два failed `/products/find` requests.
-- `SearchProducts` не передает `isError` в `ProductCatalog`, поэтому API-failure может выглядеть как пустое/зависшее состояние.
-
-Impact:
-
-- Ошибки API могут множить сетевую нагрузку.
-- Пользователь поиска может не получить явный error state.
-
-Recommendation:
-
-- Использовать общий `shouldRetryQuery` policy или передавать retry function в infinite product queries.
-- Для search page передавать `isError` и `onRetry` в `ProductCatalog`.
-- Для 4xx/backend validation ошибок не ретраить.
-
-Expected effect:
-
-- Меньше лишних API calls при ошибках.
-- Лучше perceived performance и error UX поиска.
-
 #### I7. Крупные локальные logo assets попадают в критичный shell
 
 Evidence:
@@ -342,7 +317,6 @@ Recommendation:
 
 - Повторно снять runtime waterfall для protected dashboard prefetch после I1; при остаточных initiators точечно поставить `prefetch={false}`.
 - Оптимизировать `logo-desktop.png`.
-- Передавать `isError/onRetry` в `SearchProducts` и убрать безусловный `retry=2` для product infinite queries.
 - Исправить CI/Playwright production server command под standalone output.
 
 ## Рекомендации, требующие согласования

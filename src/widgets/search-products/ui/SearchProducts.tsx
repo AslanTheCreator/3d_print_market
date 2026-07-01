@@ -10,10 +10,17 @@ export const SearchProducts = () => {
   const searchParams = useSearchParams();
   const query = searchParams?.get("query") || "";
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useProductsInfinite(10, {
-      name: query,
-    });
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+  } = useProductsInfinite(10, {
+    name: query,
+  });
 
   return (
     <Container sx={{ pt: "20px" }}>
@@ -29,7 +36,11 @@ export const SearchProducts = () => {
         >
           <ProductCatalog
             products={data?.pages.flat() ?? []}
+            isError={isError}
             isLoading={isLoading}
+            onRetry={() => {
+              void refetch();
+            }}
           />
         </InfiniteScroll>
       </Box>
