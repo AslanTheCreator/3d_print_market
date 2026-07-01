@@ -1,10 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import { IconButton, useTheme } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
-import { CategoriesDrawer } from "./CategoriesDrawer";
+
+const LazyCategoriesDrawer = dynamic(
+  () =>
+    import("./CategoriesDrawer").then((module) => module.CategoriesDrawer),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 
 interface HeaderCategoryButtonProps {
   isMobile: boolean;
@@ -15,15 +24,21 @@ export const HeaderCategoryButton = ({
 }: HeaderCategoryButtonProps) => {
   const theme = useTheme();
   const [isOpen, setIsOpen] = useState(false);
+  const [shouldMountDrawer, setShouldMountDrawer] = useState(false);
 
-  const toggleDrawer = () => {
-    setIsOpen((prev) => !prev);
+  const handleOpen = () => {
+    setShouldMountDrawer(true);
+    setIsOpen(true);
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
   };
 
   return (
     <>
       <IconButton
-        onClick={toggleDrawer}
+        onClick={isOpen ? handleClose : handleOpen}
         aria-label="Открыть категории"
         sx={{
           backgroundColor: theme.palette.primary.main,
@@ -48,11 +63,13 @@ export const HeaderCategoryButton = ({
       >
         {isOpen ? <CloseIcon /> : <MenuIcon />}
       </IconButton>
-      <CategoriesDrawer
-        open={isOpen}
-        onClose={toggleDrawer}
-        isMobile={isMobile}
-      />
+      {shouldMountDrawer && (
+        <LazyCategoriesDrawer
+          open={isOpen}
+          onClose={handleClose}
+          isMobile={isMobile}
+        />
+      )}
     </>
   );
 };

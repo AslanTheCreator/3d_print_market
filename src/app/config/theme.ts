@@ -1,6 +1,11 @@
 "use client";
-import { createTheme, responsiveFontSizes, Theme } from "@mui/material/styles";
-import { alpha } from "@mui/material/styles";
+import {
+  alpha,
+  createTheme,
+  responsiveFontSizes,
+  Theme,
+} from "@mui/material/styles";
+import { LAYOUT } from "@/shared/config";
 
 const appFontFamily =
   'var(--font-montserrat), "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif';
@@ -17,14 +22,14 @@ const secondaryColor = {
   light: "#7ad4ee",
   main: "#54C5E5",
   dark: "#3ca8c6",
-  contrastText: "#ffffff",
+  contrastText: "#fff",
 };
 
 const preorderColor = {
   light: "#81c784", // Светло-зеленый
   main: "#4caf50", // Основной зеленый (Material Design Green 500)
   dark: "#388e3c", // Темно-зеленый
-  contrastText: "#ffffff",
+  contrastText: "#fff",
 };
 
 // Создаем базовую тему без компонентов
@@ -36,7 +41,7 @@ let theme = createTheme({
   typography: {
     fontFamily: appFontFamily,
     fontWeightLight: 400,
-    fontWeightRegular: 500,
+    fontWeightRegular: 400,
     fontWeightMedium: 600,
     fontWeightBold: 700,
     h1: {
@@ -183,7 +188,7 @@ theme = createTheme(theme, {
           color: theme.palette.text.primary,
         },
         main: {
-          paddingTop: "119px", // Равняется высоте хедера
+          paddingTop: LAYOUT.HEADER_HEIGHT_PX, // Равняется высоте хедера
         },
         // Глобальные стили для скроллбара
         "*::-webkit-scrollbar": {
@@ -217,10 +222,16 @@ theme = createTheme(theme, {
           padding: "8px 16px",
           fontWeight: 600,
           boxShadow: "none",
+          "&.Mui-focusVisible": {
+            outline: `3px solid ${alpha(theme.palette.primary.main, 0.45)}`,
+            outlineOffset: 2,
+          },
+        }),
+        contained: {
           "&:hover": {
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
           },
-        }),
+        },
         containedPrimary: ({ theme }: { theme: Theme }) => ({
           "&:hover": {
             backgroundColor: theme.palette.primary.dark,
@@ -291,6 +302,10 @@ theme = createTheme(theme, {
           "&:hover": {
             backgroundColor: alpha(theme.palette.primary.main, 0.04),
           },
+          "&.Mui-focusVisible": {
+            outline: `3px solid ${alpha(theme.palette.primary.main, 0.45)}`,
+            outlineOffset: 2,
+          },
         }),
       },
     },
@@ -347,11 +362,15 @@ theme = createTheme(theme, {
     },
     MuiTab: {
       styleOverrides: {
-        root: {
+        root: ({ theme }: { theme: Theme }) => ({
           textTransform: "none",
           fontWeight: 600,
           fontSize: "0.875rem",
-        },
+          "&.Mui-focusVisible": {
+            outline: `3px solid ${alpha(theme.palette.primary.main, 0.45)}`,
+            outlineOffset: -3,
+          },
+        }),
       },
     },
     // Оптимизация для мобильного меню
@@ -377,21 +396,6 @@ theme = createTheme(theme, {
           [theme.breakpoints.down("sm")]: {
             margin: "16px",
             maxWidth: "calc(100% - 32px)",
-          },
-        }),
-      },
-    },
-    // Адаптивный Grid для мобильных устройств
-    MuiGrid: {
-      styleOverrides: {
-        container: ({ theme }: { theme: Theme }) => ({
-          [theme.breakpoints.down("sm")]: {
-            padding: "0 4px", // Уменьшенный отступ на мобильных
-          },
-        }),
-        item: ({ theme }: { theme: Theme }) => ({
-          [theme.breakpoints.down("sm")]: {
-            padding: "4px", // Уменьшенный отступ между элементами на мобильных
           },
         }),
       },

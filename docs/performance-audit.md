@@ -192,6 +192,15 @@ Expected effect:
 - Снижение First Load JS для info/auth/public pages.
 - Меньше hydration work и script requests.
 
+Status 2026-06-30, I1 v2:
+
+- Принято продуктовое ограничение: единые `Header` и `Footer`, глобальные `AppProviders` и все бизнес-возможности header остаются на всех страницах.
+- Реализована оптимизация внутри единого shell: `CategoriesDrawer`/`CategoriesMenu` и `PendingActionsPopover` вынесены в lazy client chunks, pending action model больше не импортирует MUI icon components, `useHideOnScroll` больше не тянет `lodash/throttle`.
+- Для footer-ссылок на `/dashboard/*` отключен Next prefetch, чтобы анонимный пользователь не получал лишние protected prefetch/redirect requests.
+- Build после изменения: `/layout` подключает 29 файлов вместо 30; `HeaderActions -> PendingActionsPopover` вынесен в `static/chunks/2600...js` около 9.6 kB; `HeaderCategoryButton -> CategoriesDrawer` вынесен в отдельные lazy chunks `6718`, `6574`, `3820`, `2740`.
+- First Load JS после `npm.cmd run build`: `/about` - 140 kB, `/privacy` - 130 kB, `/` - 301 kB, `/catalog/search` - 296 kB, `/favorites` - 296 kB. Из-за сохранения полного глобального shell снижение First Load JS ограничено; основной эффект I1 v2 - меньше cold-load кода закрытых header-сценариев и меньше лишних protected prefetch-запросов.
+- Проверки: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd run architecture:check`, `npm.cmd run build` прошли.
+
 #### I2. Шрифты Montserrat дают около 484 kB transfer на route
 
 Evidence:

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useCartChecks } from "@/entities/cart";
 import { useFavoritesChecks } from "@/entities/favorite";
 import { useAuth } from "@/features/auth";
@@ -20,7 +21,17 @@ import PersonCustomIcon from "@/shared/assets/icons/userAccount.svg";
 import ShoppingCartCustomIcon from "@/shared/assets/icons/backet.svg";
 import { ICON_SIZES } from "../model/constants";
 import { useUserPendingActions } from "../model/pendingActions";
-import { PendingActionsPopover } from "./PendingActionsPopover";
+
+const LazyPendingActionsPopover = dynamic(
+  () =>
+    import("./PendingActionsPopover").then(
+      (module) => module.PendingActionsPopover,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 
 interface HeaderActionsProps {
   isMobile: boolean;
@@ -41,7 +52,6 @@ interface HeaderIconConfig {
 }
 
 export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
-  const theme = useTheme();
   const { isAuthenticated } = useAuth();
 
   const { getCartItemsCount } = useCartChecks(isAuthenticated);
@@ -236,21 +246,23 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
         ))}
       </Stack>
 
-      <PendingActionsPopover
-        anchorEl={profileTriggerWrapperRef.current}
-        open={isPopoverOpen}
-        onClose={handlePopoverClose}
-        onMouseEnter={handlePopoverMouseEnter}
-        onMouseLeave={handlePopoverMouseLeave}
-        onFocus={handlePopoverFocus}
-        onBlur={handlePopoverBlur}
-        paperRef={popoverPaperRef}
-        sellerActionGroups={sellerActionGroups}
-        customerActionGroups={customerActionGroups}
-        renewalGroup={renewalGroup}
-        totalCount={pendingActionsCount}
-        isLoading={isPendingLoading}
-      />
+      {isPopoverOpen && (
+        <LazyPendingActionsPopover
+          anchorEl={profileTriggerWrapperRef.current}
+          open={isPopoverOpen}
+          onClose={handlePopoverClose}
+          onMouseEnter={handlePopoverMouseEnter}
+          onMouseLeave={handlePopoverMouseLeave}
+          onFocus={handlePopoverFocus}
+          onBlur={handlePopoverBlur}
+          paperRef={popoverPaperRef}
+          sellerActionGroups={sellerActionGroups}
+          customerActionGroups={customerActionGroups}
+          renewalGroup={renewalGroup}
+          totalCount={pendingActionsCount}
+          isLoading={isPendingLoading}
+        />
+      )}
     </>
   );
 };

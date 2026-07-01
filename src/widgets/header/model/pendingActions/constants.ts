@@ -1,12 +1,4 @@
 import {
-  CheckCircle,
-  Payment,
-  LocalShipping,
-  Inventory,
-  Update,
-} from "@mui/icons-material";
-import { SvgIconProps } from "@mui/material";
-import {
   CUSTOMER_ORDER_ACTION_STATUSES,
   SELLER_ORDER_ACTION_STATUSES,
 } from "@/entities/order";
@@ -26,11 +18,18 @@ export type PendingActionType =
   | "customer_confirm_receipt"
   | "product_renewal";
 
+export type PendingActionIconKey =
+  | "check-circle"
+  | "payment"
+  | "local-shipping"
+  | "inventory"
+  | "update";
+
 export interface PendingActionGroup {
   type: PendingActionType;
   label: string;
   count: number;
-  icon: React.ComponentType<SvgIconProps>;
+  iconKey: PendingActionIconKey;
   color: string;
   href: string;
 }
@@ -41,26 +40,26 @@ export const SELLER_STATUS_ACTION_MAP: Record<
   {
     type: PendingActionType;
     label: string;
-    icon: React.ComponentType<SvgIconProps>;
+    iconKey: PendingActionIconKey;
     color: string;
   }
 > = {
   BOOKED: {
     type: "seller_confirm",
     label: "Подтвердить заказ",
-    icon: CheckCircle,
+    iconKey: "check-circle",
     color: "#ff9800",
   },
   AWAITING_PREPAYMENT_APPROVAL: {
     type: "seller_confirm_prepayment",
     label: "Подтвердить предоплату",
-    icon: Payment,
+    iconKey: "payment",
     color: "#2196f3",
   },
   ASSEMBLING: {
     type: "seller_ship",
     label: "Отправить товар",
-    icon: LocalShipping,
+    iconKey: "local-shipping",
     color: "#9c27b0",
   },
 };
@@ -70,26 +69,26 @@ export const CUSTOMER_STATUS_ACTION_MAP: Record<
   {
     type: PendingActionType;
     label: string;
-    icon: React.ComponentType<SvgIconProps>;
+    iconKey: PendingActionIconKey;
     color: string;
   }
 > = {
   AWAITING_PREPAYMENT: {
     type: "customer_prepay",
     label: "Оплатить предоплату",
-    icon: Payment,
+    iconKey: "payment",
     color: "#2196f3",
   },
   AWAITING_PAYMENT: {
     type: "customer_pay",
     label: "Оплатить заказ",
-    icon: Payment,
+    iconKey: "payment",
     color: "#f44336",
   },
   ON_THE_WAY: {
     type: "customer_confirm_receipt",
     label: "Подтвердить получение",
-    icon: Inventory,
+    iconKey: "inventory",
     color: "#4caf50",
   },
 };
@@ -97,7 +96,7 @@ export const CUSTOMER_STATUS_ACTION_MAP: Record<
 export const PRODUCT_RENEWAL_ACTION = {
   type: "product_renewal" as PendingActionType,
   label: "Продлить товар",
-  icon: Update,
+  iconKey: "update" as PendingActionIconKey,
   color: "#ff5722",
   href: "/dashboard/products",
 };

@@ -128,6 +128,8 @@ app -> widgets -> features -> entities -> shared
 
 `widgets` могут импортировать `features`, `entities` и `shared`.
 
+Глобальный shell (`Header`, `Footer`, app layout) должен оставаться визуально и функционально единым для всех страниц. Тяжелые скрытые части shell, например drawer-меню, popover-ы и большие icon maps, нужно загружать как lazy client chunks, если они не нужны до пользовательского взаимодействия. Модельные файлы shell не должны импортировать UI icon components, когда достаточно легкого идентификатора для последующего маппинга внутри UI.
+
 ### `app`
 
 App layer собирает приложение.

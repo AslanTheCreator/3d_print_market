@@ -18,9 +18,28 @@ import {
   Receipt,
   Update,
   CheckCircleOutline,
+  CheckCircle,
+  Payment,
+  LocalShipping,
+  Inventory,
 } from "@mui/icons-material";
+import type { SvgIconProps } from "@mui/material/SvgIcon";
 import Link from "next/link";
-import { PendingActionGroup } from "../model/pendingActions";
+import type {
+  PendingActionGroup,
+  PendingActionIconKey,
+} from "../model/pendingActions";
+
+const pendingActionIcons: Record<
+  PendingActionIconKey,
+  React.ComponentType<SvgIconProps>
+> = {
+  "check-circle": CheckCircle,
+  payment: Payment,
+  "local-shipping": LocalShipping,
+  inventory: Inventory,
+  update: Update,
+};
 
 interface PendingActionsPopoverProps {
   anchorEl: HTMLElement | null;
@@ -209,7 +228,7 @@ const ActionSection: React.FC<ActionSectionProps> = ({
       </Stack>
 
       {groups.map((group) => {
-        const IconComponent = group.icon;
+        const IconComponent = pendingActionIcons[group.iconKey];
 
         return (
           <Box

@@ -64,24 +64,30 @@ export const Footer = () => {
                 {column.title}
               </Typography>
               <Stack spacing={1}>
-                {column.links.map((link) => (
-                  <Typography
-                    key={link.href}
-                    component={Link}
-                    href={link.href}
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{
-                      width: "fit-content",
-                      transition: "color 0.2s ease",
-                      "&:hover": {
-                        color: "primary.main",
-                      },
-                    }}
-                  >
-                    {link.label}
-                  </Typography>
-                ))}
+                {column.links.map((link) => {
+                  const shouldDisablePrefetch =
+                    link.href.startsWith("/dashboard");
+
+                  return (
+                    <Typography
+                      key={link.href}
+                      component={Link}
+                      href={link.href}
+                      prefetch={shouldDisablePrefetch ? false : undefined}
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{
+                        width: "fit-content",
+                        transition: "color 0.2s ease",
+                        "&:hover": {
+                          color: "primary.main",
+                        },
+                      }}
+                    >
+                      {link.label}
+                    </Typography>
+                  );
+                })}
               </Stack>
             </Stack>
           ))}
