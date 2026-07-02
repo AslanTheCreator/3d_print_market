@@ -25,10 +25,13 @@ interface ProductNameSuggestionsOptions {
 }
 
 export const useProductById = (id?: string, options?: ProductByIdOptions) => {
+  const productId = id ? Number(id) : 0;
+  const isProductIdValid = Number.isFinite(productId) && productId > 0;
+
   return useQuery<ProductDetail>({
-    queryKey: productKeys.detail(id ?? 0),
-    queryFn: () => productApi.getProductById(Number(id)),
-    enabled: (options?.enabled ?? true) && Boolean(id),
+    queryKey: productKeys.detail(productId),
+    queryFn: () => productApi.getProductById(productId),
+    enabled: (options?.enabled ?? true) && isProductIdValid,
     initialData: options?.initialProduct,
     initialDataUpdatedAt: options?.initialDataUpdatedAt,
     staleTime: options?.staleTime ?? 5 * 60 * 1000,

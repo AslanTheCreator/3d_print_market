@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { imageApi } from "@/shared/api";
 import { productApi } from "../api/productApi";
 import { productKeys } from "./queryKeys";
 
@@ -18,14 +19,20 @@ export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       productId,
       data,
+      imageIdsToDelete = [],
     }: {
       productId: number;
       data: Parameters<typeof productApi.updateProduct>[1];
-    }) => productApi.updateProduct(productId, data),
+      imageIdsToDelete?: number[];
+    }) => {
+      await productApi.updateProduct(productId, data);
+      await imageApi.deleteImages(imageIdsToDelete, "PRODUCT");
+    },
     onSuccess: async (_, { productId }) => {
+      await queryClient.invalidateQueries({ queryKey: productKeys.lists() });
       await queryClient.invalidateQueries({ queryKey: productKeys.userAll() });
       await queryClient.invalidateQueries({
         queryKey: productKeys.detail(productId),

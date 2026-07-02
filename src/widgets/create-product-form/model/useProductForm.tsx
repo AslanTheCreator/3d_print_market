@@ -225,6 +225,18 @@ export const useProductForm = ({
     );
   }, [imageUploadState.imageIds, initialImages]);
 
+  const imageIdsToDelete = useMemo(() => {
+    if (!isEditMode) {
+      return [];
+    }
+
+    const currentImageIds = new Set(imageUploadState.imageIds);
+
+    return initialImages
+      .map((image) => image.id)
+      .filter((imageId) => !currentImageIds.has(imageId));
+  }, [imageUploadState.imageIds, initialImages, isEditMode]);
+
   const resetForm = () => {
     if (isEditMode) {
       reset(initialFormValues);
@@ -248,6 +260,7 @@ export const useProductForm = ({
     hasSellerAccount,
     hasSellerSocialNetwork,
     hasSellerTransfer,
+    imageIdsToDelete,
     isEditMode,
     productId,
     resetForm,

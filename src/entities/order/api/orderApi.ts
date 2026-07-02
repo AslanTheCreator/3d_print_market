@@ -2,11 +2,33 @@ import {
   OrderCreateModel,
   OrderGetDataModel,
   ListOrdersModel,
+  ListOrdersDto,
   OrderCancel,
 } from "../model/types";
 import { authClient } from "@/shared/api";
+import { attachImages } from "@/shared/lib";
+import type { ImageMetadata } from "@/shared/types";
 
 const API_URL = `/order`;
+
+type OrderDtoWithImage = ListOrdersDto & { image: ImageMetadata[] };
+
+const attachOrderProductImages = async (
+  orders: ListOrdersDto[],
+): Promise<ListOrdersModel[]> => {
+  const ordersWithImages = await attachImages<ListOrdersDto, OrderDtoWithImage>(
+    orders,
+    (order) => order.product.imageId,
+  );
+
+  return ordersWithImages.map(({ image, ...order }) => ({
+    ...order,
+    product: {
+      ...order.product,
+      image,
+    },
+  }));
+};
 
 export const orderApi = {
   // Создание заказа
@@ -19,10 +41,7 @@ export const orderApi = {
   },
 
   // Подтверждение заказа продавцом
-  confirmOrderBySeller: async (
-    orderId: number,
-    comment: string = "",
-  ) => {
+  confirmOrderBySeller: async (orderId: number, comment: string = "") => {
     const { data } = await authClient.post<number>(
       `${API_URL}/${orderId}/AWAITING_PREPAYMENT?comment=${encodeURIComponent(comment)}`,
     );
@@ -104,17 +123,33 @@ export const orderApi = {
 
   // Получение заказов продавца
   getSellerOrders: async () => {
-    const { data } = await authClient.get<ListOrdersModel[]>(
+    const { data } = await authClient.get<ListOrdersDto[]>(
       `${API_URL}/seller`,
     );
-    return data;
+    return attachOrderProductImages(data);
   },
 
   // Получение заказов покупателя
   getCustomerOrders: async () => {
-    const { data } = await authClient.get<ListOrdersModel[]>(
+    const { data } = await authClient.get<ListOrdersDto[]>(
       `${API_URL}/customer`,
     );
-    return data;
+    return attachOrderProductImages(data);
   },
+  // createDispute: async (
+  //   orderId: number,
+  //   comment: string,
+  //   imageIds: number[],
+  // ) => {
+  //   const { data } = await authClient.post<number>(
+  //     `${API_URL}/orders/${orderId}/DISPUTED?imageIds=${encodeURIComponent(imageIds.join(","))}&comment=${encodeURIComponent(comment)}`,
+  //   );
+  //   return data;
+  // },
+  // closeDispute: async (orderId: number, comment: string) => {
+  //   const { data } = await authClient.post<number>(
+  //     `${API_URL}/orders/${orderId}/DISPUTE_CLOSED?comment=${encodeURIComponent(comment)}`,
+  //   );
+  //   return data;
+  // },
 };

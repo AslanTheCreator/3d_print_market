@@ -1,4 +1,10 @@
-import { Currency, Address, Product, Transfer } from "@/shared/types";
+import type {
+  Currency,
+  Address,
+  Product,
+  ProductDto,
+  Transfer,
+} from "@/shared/types";
 
 export type OrderStatus =
   | "BOOKED"
@@ -58,6 +64,10 @@ export interface ListOrdersModel {
   images: number[];
   deliveryUrl: string;
   histories: OrderHistory[];
+}
+
+export interface ListOrdersDto extends Omit<ListOrdersModel, "product"> {
+  product: ProductDto;
 }
 
 export interface OrderCancel {

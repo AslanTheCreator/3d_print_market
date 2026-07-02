@@ -1,14 +1,25 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Box, Container, Typography } from "@mui/material";
 import { useSearchParams } from "next/navigation";
 import { useProductsInfinite } from "@/entities/product";
+import type { PriceRange, ProductFilter } from "@/shared/types";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
-import { ProductCatalog } from "@/widgets/product-catalog";
+import { PriceRangeFilter, ProductCatalog } from "@/widgets/product-catalog";
 
 export const SearchProducts = () => {
   const searchParams = useSearchParams();
   const query = searchParams?.get("query") || "";
+  const [priceRange, setPriceRange] = useState<PriceRange | undefined>();
+
+  const filters = useMemo<ProductFilter>(
+    () => ({
+      name: query,
+      ...(priceRange ? { priceRange } : {}),
+    }),
+    [priceRange, query],
+  );
 
   const {
     data,
@@ -18,15 +29,54 @@ export const SearchProducts = () => {
     isFetchingNextPage,
     isLoading,
     refetch,
-  } = useProductsInfinite(10, {
-    name: query,
-  });
+  } = useProductsInfinite(10, filters);
+
+  const products = useMemo(() => data?.pages.flat() ?? [], [data?.pages]);
+
+  const availablePriceRange = useMemo<PriceRange | undefined>(() => {
+    if (products.length === 0) {
+      return undefined;
+    }
+
+    let minPrice = products[0].price;
+    let maxPrice = products[0].price;
+
+    for (const product of products) {
+      if (product.price < minPrice) {
+        minPrice = product.price;
+      }
+
+      if (product.price > maxPrice) {
+        maxPrice = product.price;
+      }
+    }
+
+    return {
+      minPrice,
+      maxPrice,
+    };
+  }, [products]);
 
   return (
     <Container sx={{ pt: "20px" }}>
       <Typography component="h2" variant="h2">
         {query ? `Результаты поиска: "${query}"` : "Новинки"}
       </Typography>
+
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 1.5,
+          mt: 2,
+        }}
+      >
+        <PriceRangeFilter
+          value={priceRange}
+          availableRange={availablePriceRange}
+          onApply={setPriceRange}
+        />
+      </Box>
 
       <Box pt="20px">
         <InfiniteScroll
@@ -35,7 +85,7 @@ export const SearchProducts = () => {
           isFetchingNextPage={isFetchingNextPage}
         >
           <ProductCatalog
-            products={data?.pages.flat() ?? []}
+            products={products}
             isError={isError}
             isLoading={isLoading}
             onRetry={() => {

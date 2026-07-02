@@ -112,6 +112,7 @@ Interceptor преобразует Axios errors в `ApiError`, кроме зап
 - DTO и domain types держать в существующих `model/types.ts` или `shared/model`, если тип уже общий.
 - Mapping держать рядом с доменом или API-модулем.
 - Использовать существующие helpers вроде `attachImages`, `buildProductRequest` и product form mappers.
+- Списки заказов нормализуют товар из DTO в domain model в `entities/order/api`: `product.image` подгружается по `product.imageId`.
 - Не менять frontend type под предположение о backend.
 
 Если backend shape неясен, сначала найти существующий API usage или подтвержденный документ. Если подтверждения нет, запросить уточнение.

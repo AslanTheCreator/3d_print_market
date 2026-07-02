@@ -22,6 +22,7 @@ interface CreateProductFormSubmitHandlerParams {
   hasSellerAccount: boolean;
   hasSellerSocialNetwork: boolean;
   hasSellerTransfer: boolean;
+  imageIdsToDelete: number[];
   isEditMode: boolean;
   productId: string | undefined;
   resetForm: () => void;
@@ -36,6 +37,7 @@ export const createProductFormSubmitHandler = ({
   hasSellerAccount,
   hasSellerSocialNetwork,
   hasSellerTransfer,
+  imageIdsToDelete,
   isEditMode,
   productId,
   resetForm,
@@ -75,6 +77,7 @@ export const createProductFormSubmitHandler = ({
         {
           productId: Number(productId),
           data: productData,
+          imageIdsToDelete,
         },
         {
           onSuccess: () => {
