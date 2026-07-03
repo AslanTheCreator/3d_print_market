@@ -217,7 +217,7 @@ export const CheckoutCartItemCard = ({
           <Typography
             variant={isMobile ? "body1" : "h6"}
             fontWeight={700}
-            color="primary"
+            color="text.primary"
           >
             {formatPrice(price * quantity, currency)}
           </Typography>

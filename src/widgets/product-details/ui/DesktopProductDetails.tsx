@@ -114,7 +114,7 @@ const PriceSection = ({
               </Typography>
               <Typography
                 variant="h3"
-                color="preorder.main"
+                color="text.primary"
                 sx={{ fontWeight: 800, lineHeight: 1.05, mt: 0.5 }}
               >
                 {formatMoney(prepaymentAmount, currency)}
@@ -155,7 +155,7 @@ const PriceSection = ({
             </Typography>
             <Typography
               variant="h3"
-              color="primary.main"
+              color="text.primary"
               sx={{ fontWeight: 800, lineHeight: 1.05, mt: 0.5 }}
             >
               {formatMoney(price, currency)}

@@ -116,7 +116,7 @@ const MobileBottomBar = ({
               mt: isPreorder ? 0.25 : 0,
               fontWeight: 800,
               lineHeight: 1.1,
-              color: isPreorder ? "preorder.main" : "primary.main",
+              color: "text.primary",
             }}
           >
             {formatMoney(priceValue, currency)}
@@ -194,7 +194,7 @@ const MobilePriceCard = ({
 
           <Typography
             variant="h4"
-            color="preorder.main"
+            color="text.primary"
             sx={{ fontWeight: 800, lineHeight: 1.05 }}
           >
             {formatMoney(prepaymentAmount, currency)}
@@ -224,7 +224,7 @@ const MobilePriceCard = ({
           </Typography>
           <Typography
             variant="h4"
-            color="primary.main"
+            color="text.primary"
             sx={{ fontWeight: 800, lineHeight: 1.05 }}
           >
             {formatMoney(price, currency)}

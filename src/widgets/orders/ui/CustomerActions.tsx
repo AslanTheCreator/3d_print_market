@@ -187,7 +187,7 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {order.product.name}
             </Typography>
-            <Typography variant="h6" color="primary.main" fontWeight={600}>
+            <Typography variant="h6" color="text.primary" fontWeight={600}>
               {order.totalPrice} {order.product.currency}
             </Typography>
           </Paper>

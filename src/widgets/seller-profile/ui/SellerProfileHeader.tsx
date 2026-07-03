@@ -200,11 +200,11 @@ export const SellerProfileHeader = ({ seller }: SellerProfileHeaderProps) => {
           {isImageLoading ? (
             <Skeleton
               variant="circular"
-              width={112}
-              height={112}
+              width={136}
+              height={136}
               sx={{
-                width: { xs: 88, sm: 112 },
-                height: { xs: 88, sm: 112 },
+                width: { xs: 104, sm: 136 },
+                height: { xs: 104, sm: 136 },
                 flexShrink: 0,
               }}
             />
@@ -213,11 +213,11 @@ export const SellerProfileHeader = ({ seller }: SellerProfileHeaderProps) => {
               src={imageSrc}
               alt={displayName}
               sx={{
-                width: { xs: 88, sm: 112 },
-                height: { xs: 88, sm: 112 },
+                width: { xs: 104, sm: 136 },
+                height: { xs: 104, sm: 136 },
                 bgcolor: imageSrc ? "transparent" : "primary.main",
                 color: "primary.contrastText",
-                fontSize: { xs: 34, sm: 42 },
+                fontSize: { xs: 40, sm: 52 },
                 fontWeight: 800,
                 flexShrink: 0,
               }}
@@ -382,11 +382,11 @@ export const SellerProfileHeaderSkeleton = () => (
       <Stack direction="row" spacing={2.5} alignItems="center" flex={1}>
         <Skeleton
           variant="circular"
-          width={112}
-          height={112}
+          width={136}
+          height={136}
           sx={{
-            width: { xs: 88, sm: 112 },
-            height: { xs: 88, sm: 112 },
+            width: { xs: 104, sm: 136 },
+            height: { xs: 104, sm: 136 },
             flexShrink: 0,
           }}
         />

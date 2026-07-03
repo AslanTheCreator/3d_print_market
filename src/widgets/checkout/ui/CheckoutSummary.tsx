@@ -200,7 +200,7 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
         <Typography variant="h6" fontWeight={600}>
           Итого
         </Typography>
-        <Typography variant="h5" fontWeight={700} color="primary.main">
+        <Typography variant="h5" fontWeight={700} color="text.primary">
           {formattedOrderTotal}
         </Typography>
       </Box>

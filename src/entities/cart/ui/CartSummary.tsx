@@ -58,7 +58,7 @@ export const CartSummary = ({
             К оплате:
           </Typography>
 
-          <Typography variant="h5" fontWeight={700} color="primary.main">
+          <Typography variant="h5" fontWeight={700} color="text.primary">
             {formatPrice(total)} ₽
           </Typography>
         </Stack>

@@ -166,7 +166,7 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
               </Typography>
               <Chip label="Оплачено" color="success" size="small" />
             </Box>
-            <Typography variant="h6" color="primary.main" fontWeight={600}>
+            <Typography variant="h6" color="text.primary" fontWeight={600}>
               {order.totalPrice} {order.product.currency}
             </Typography>
           </Stack>

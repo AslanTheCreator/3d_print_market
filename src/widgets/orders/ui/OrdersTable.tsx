@@ -166,7 +166,7 @@ const OrderInfoItem = ({
     <Typography
       variant="body2"
       fontWeight={highlight ? 800 : 700}
-      color={highlight ? "primary.main" : "text.primary"}
+      color="text.primary"
       sx={{
         overflow: "hidden",
         textOverflow: "ellipsis",

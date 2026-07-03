@@ -49,7 +49,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
           <Typography
             fontWeight={800}
             fontSize={isMobile ? "1.125rem" : "1.25rem"}
-            color="primary.main"
+            color="text.primary"
             sx={{ lineHeight: 1.2 }}
           >
             {formatPrice(price)} ₽
@@ -57,7 +57,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
           {/* Цена предзаказа */}
           <Typography
             variant="caption"
-            color="preorder.main"
+            color="text.primary"
             sx={{
               fontSize: isMobile ? "0.75rem" : "0.8rem",
               fontWeight: 600,
@@ -71,7 +71,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
           <Typography
             fontWeight={800}
             fontSize={isMobile ? "1rem" : "1.125rem"}
-            color="primary.main"
+            color="text.primary"
             sx={{ lineHeight: 1.2 }}
           >
             {formatPrice(price)} ₽

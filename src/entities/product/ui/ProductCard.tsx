@@ -190,7 +190,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
             <Typography
               fontSize={isMobile ? "0.82rem" : "0.92rem"}
-              fontWeight={600}
+              fontWeight={500}
               color="text.primary"
               noWrap
               sx={{ lineHeight: 1.3 }}
