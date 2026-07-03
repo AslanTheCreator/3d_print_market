@@ -55,10 +55,12 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: isMobile
-                    ? "repeat(2, minmax(0, 1fr))"
-                    : "repeat(3, minmax(0, 1fr))",
-                  gap: { xs: 1, sm: 2 },
+                  gridTemplateColumns: {
+                    xs: "repeat(2, minmax(0, 1fr))",
+                    sm: "repeat(auto-fill, minmax(156px, 1fr))",
+                    md: "repeat(auto-fill, minmax(190px, 1fr))",
+                  },
+                  gap: { xs: 1, sm: 1.5, md: 2.5 },
                 }}
               >
                 {Array.from({ length: getSkeletonCount() }).map((_, index) => (

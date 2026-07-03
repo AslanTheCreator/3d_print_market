@@ -55,6 +55,28 @@
 - при ошибке товар считается не найденным для metadata;
 - UI деталки отвечает за состояние загрузки/ошибки/успеха.
 
+## Публичная страница продавца
+
+Входная точка:
+
+- `/sellers/[id]`
+
+Основные слои:
+
+- route: `app/(catalog)/sellers/[id]/page.tsx`;
+- client page: `SellerPageClient`;
+- widgets: `seller-profile`, `product-catalog`;
+- entities: `user`, `product`;
+- features: `add-to-cart`, `toggle-favorite`.
+
+Поведение:
+
+- карточка продавца в деталке товара ведет на `/sellers/[participantId]`;
+- профиль продавца загружается через `userApi.getUserByParams`;
+- товары продавца загружаются через публичный список товаров с фильтром `participantId`;
+- каталог поддерживает фильтр цены, сортировку, infinite scroll и состояния loading/error/empty/success;
+- до расширения `UserFindModel` профильный блок использует временные визуальные значения для описания продавца и количества отзывов.
+
 ## Auth
 
 Входные точки:

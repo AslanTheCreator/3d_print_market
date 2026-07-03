@@ -1,4 +1,4 @@
-import { Grid } from "@mui/material";
+import { Box } from "@mui/material";
 
 interface GridProps {
   children: React.ReactNode;
@@ -6,16 +6,21 @@ interface GridProps {
 }
 
 export const ProductGrid: React.FC<GridProps> = ({ children, isMobile }) => (
-  <Grid
-    container
-    spacing={{ xs: 1, sm: 1.5, md: 2.5 }}
+  <Box
     sx={{
-      margin: isMobile ? "-4px" : undefined,
+      display: "grid",
+      gridTemplateColumns: {
+        xs: "repeat(2, minmax(0, 1fr))",
+        sm: "repeat(auto-fill, minmax(156px, 1fr))",
+        md: "repeat(auto-fill, minmax(190px, 1fr))",
+      },
+      gap: { xs: 1, sm: 1.5, md: 2.5 },
+      margin: isMobile ? "-4px" : 0,
       width: isMobile ? "calc(100% + 8px)" : "100%",
     }}
   >
     {children}
-  </Grid>
+  </Box>
 );
 
 interface GridItemProps {
@@ -35,16 +40,18 @@ export const ProductGridItem: React.FC<GridItemProps> = ({
   md = 3,
   lg = 2,
 }) => (
-  <Grid
-    item
-    xs={xs}
-    sm={sm}
-    md={md}
-    lg={lg}
+  <Box
     sx={{
       padding: isMobile ? "4px" : undefined,
+      minWidth: 0,
+      gridColumn: {
+        xs: xs >= 12 ? "1 / -1" : "span 1",
+        sm: sm >= 6 ? "span 2" : "span 1",
+        md: md >= 6 ? "span 2" : "span 1",
+        lg: lg >= 4 ? "span 2" : "span 1",
+      },
     }}
   >
     {children}
-  </Grid>
+  </Box>
 );

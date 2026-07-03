@@ -215,6 +215,21 @@ theme = createTheme(theme, {
         },
       }),
     },
+    MuiContainer: {
+      styleOverrides: {
+        root: ({ theme }: { theme: Theme }) => ({
+          [theme.breakpoints.up("sm")]: {
+            paddingLeft: 32,
+            paddingRight: 32,
+          },
+        }),
+        maxWidthLg: ({ theme }: { theme: Theme }) => ({
+          [theme.breakpoints.up("lg")]: {
+            maxWidth: 1504,
+          },
+        }),
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: ({ theme }: { theme: Theme }) => ({
