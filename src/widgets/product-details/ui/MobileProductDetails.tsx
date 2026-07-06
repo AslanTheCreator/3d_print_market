@@ -313,7 +313,7 @@ export function MobileProductDetails({
       <Box sx={{ px: 2 }}>
         <ProductTitle
           variant="h5"
-          fontWeight={800}
+          fontWeight={700}
           sx={{
             mb: 1.5,
             lineHeight: 1.3,

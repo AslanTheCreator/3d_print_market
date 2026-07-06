@@ -149,7 +149,7 @@ export const CreateProductFormActions = ({
           spacing={2}
         >
           <Box>
-            <Typography variant="subtitle1" fontWeight={800}>
+            <Typography variant="subtitle1" fontWeight={600}>
               {isEditMode
                 ? "Готовность к сохранению"
                 : "Готовность к публикации"}
@@ -164,7 +164,7 @@ export const CreateProductFormActions = ({
             }`}
             color={allRequirementsDone ? "success" : "default"}
             size="small"
-            sx={{ fontWeight: 800 }}
+            sx={{ fontWeight: 700 }}
           />
         </Stack>
 
@@ -203,7 +203,7 @@ export const CreateProductFormActions = ({
                   <Button
                     disabled
                     size="small"
-                    sx={{ ml: "auto", fontWeight: 700, minWidth: 0 }}
+                    sx={{ ml: "auto", fontWeight: 600, minWidth: 0 }}
                   >
                     {item.actionLabel}
                   </Button>
@@ -212,7 +212,7 @@ export const CreateProductFormActions = ({
                     component={Link}
                     href={item.actionHref}
                     size="small"
-                    sx={{ ml: "auto", fontWeight: 700, minWidth: 0 }}
+                    sx={{ ml: "auto", fontWeight: 600, minWidth: 0 }}
                   >
                     {item.actionLabel}
                   </Button>
@@ -233,7 +233,7 @@ export const CreateProductFormActions = ({
           }
           sx={{
             minHeight: 48,
-            fontWeight: 800,
+            fontWeight: 600,
             borderRadius: 1.5,
             boxShadow: "0 4px 16px rgba(239, 66, 132, 0.22)",
             "&:hover": {
@@ -261,7 +261,7 @@ export const CreateProductFormActions = ({
           startIcon={<RestartAlt />}
           sx={{
             minHeight: 46,
-            fontWeight: 700,
+            fontWeight: 600,
             borderRadius: 1.5,
           }}
         >

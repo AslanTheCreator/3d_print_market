@@ -90,7 +90,7 @@ export const CheckoutSellerGroupCard = ({
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <StorefrontOutlined color="primary" />
           <Box>
-            <Typography variant="subtitle1" fontWeight={700}>
+            <Typography variant="subtitle1" fontWeight={600}>
               {group.sellerLogin}
             </Typography>
             <Typography variant="caption" color="text.secondary">

@@ -246,7 +246,7 @@ export const SellerPageClient = ({ sellerId }: SellerPageClientProps) => {
           sx={{ mb: 2.5 }}
         >
           <Box>
-            <Typography component="h2" variant="h4" fontWeight={800}>
+            <Typography component="h2" variant="h4" fontWeight={700}>
               Товары продавца
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>

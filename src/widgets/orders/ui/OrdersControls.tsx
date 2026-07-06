@@ -64,7 +64,7 @@ export const OrdersControls = ({
                 flexShrink: 0,
                 borderRadius: 1.5,
                 textTransform: "none",
-                fontWeight: 700,
+                fontWeight: 600,
               }}
             >
               <Stack direction="row" spacing={0.75} alignItems="center">
@@ -78,7 +78,7 @@ export const OrdersControls = ({
                       height: 18,
                       minWidth: 18,
                       fontSize: "0.68rem",
-                      fontWeight: 800,
+                      fontWeight: 700,
                     }}
                   />
                 )}

@@ -193,7 +193,7 @@ function SettingsContent() {
               py: { xs: 0.75, sm: 1.5 },
               borderRadius: { xs: 1.5, sm: 0 },
               fontSize: { xs: "0.813rem", sm: "0.875rem" },
-              fontWeight: 800,
+              fontWeight: 500,
               textTransform: "none",
               color: "text.secondary",
               "& .MuiTab-iconWrapper": {
@@ -201,6 +201,7 @@ function SettingsContent() {
                 fontSize: { xs: 19, sm: 22 },
               },
               "&.Mui-selected": {
+                fontWeight: 700,
                 color: { xs: "primary.contrastText", sm: "primary.main" },
                 bgcolor: { xs: "primary.main", sm: "transparent" },
                 boxShadow: {

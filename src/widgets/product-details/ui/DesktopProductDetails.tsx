@@ -196,7 +196,7 @@ export function DesktopProductDetails({
       <ProductTitle
         title={productCard.name}
         variant="h3"
-        fontWeight={800}
+        fontWeight={700}
         sx={{
           mb: 3,
           lineHeight: 1.15,

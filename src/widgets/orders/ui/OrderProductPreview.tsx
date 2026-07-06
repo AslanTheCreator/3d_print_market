@@ -69,7 +69,7 @@ export const OrderProductPreview = ({
       <Box minWidth={0}>
         <Typography
           variant="subtitle2"
-          fontWeight={700}
+          fontWeight={600}
           sx={{
             overflow: "hidden",
             textOverflow: "ellipsis",

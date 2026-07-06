@@ -140,7 +140,7 @@ const SellerStat = ({
       <Box minWidth={0}>
         <Typography
           variant="subtitle2"
-          fontWeight={800}
+          fontWeight={700}
           color="text.primary"
           noWrap
         >
@@ -152,6 +152,7 @@ const SellerStat = ({
           sx={{
             display: "block",
             lineHeight: 1.25,
+            fontWeight: 500,
             whiteSpace: "normal",
             overflowWrap: "anywhere",
           }}
@@ -218,7 +219,7 @@ export const SellerProfileHeader = ({ seller }: SellerProfileHeaderProps) => {
                 bgcolor: imageSrc ? "transparent" : "primary.main",
                 color: "primary.contrastText",
                 fontSize: { xs: 40, sm: 52 },
-                fontWeight: 800,
+                fontWeight: 700,
                 flexShrink: 0,
               }}
             >
@@ -238,7 +239,7 @@ export const SellerProfileHeader = ({ seller }: SellerProfileHeaderProps) => {
               <Typography
                 component="h1"
                 variant="h3"
-                fontWeight={800}
+                fontWeight={700}
                 sx={{
                   fontSize: { xs: "1.55rem", sm: "2rem" },
                   lineHeight: 1.15,
@@ -253,7 +254,7 @@ export const SellerProfileHeader = ({ seller }: SellerProfileHeaderProps) => {
                 color={statusMeta.color}
                 size="small"
                 variant={seller.sellerStatus === "DEFAULT" ? "outlined" : "filled"}
-                sx={{ fontWeight: 800 }}
+                sx={{ fontWeight: 700 }}
               />
             </Stack>
 

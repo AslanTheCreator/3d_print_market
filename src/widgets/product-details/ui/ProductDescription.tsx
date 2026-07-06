@@ -26,7 +26,7 @@ export function ProductDescription({
 
   return (
     <Stack spacing={1.5}>
-      <Typography variant={titleVariant} fontWeight={700}>
+      <Typography variant={titleVariant} fontWeight={600}>
         Описание
       </Typography>
 
@@ -61,7 +61,7 @@ export function ProductDescription({
             alignSelf: "flex-start",
             px: 0,
             minWidth: 0,
-            fontWeight: 700,
+            fontWeight: 600,
             textTransform: "none",
             color: "text.primary",
             borderRadius: 0,

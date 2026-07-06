@@ -48,7 +48,7 @@ function MobileReviewCard({ review }: MobileReviewCardProps) {
           spacing={1.5}
         >
           <Box minWidth={0}>
-            <Typography variant="subtitle2" fontWeight={700} noWrap>
+            <Typography variant="subtitle2" fontWeight={600} noWrap>
               {review.reviewerName || "Покупатель"}
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -213,7 +213,7 @@ export function MobileProductReviewsSection({
                   spacing={1}
                 >
                   <Box minWidth={0}>
-                    <Typography variant="subtitle2" fontWeight={700} noWrap>
+                    <Typography variant="subtitle2" fontWeight={600} noWrap>
                       {previewReview.reviewerName || "Покупатель"}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
@@ -289,7 +289,7 @@ export function MobileProductReviewsSection({
           sx={{ mb: 2 }}
         >
           <Box minWidth={0}>
-            <Typography id={drawerTitleId} variant="h6" fontWeight={800}>
+            <Typography id={drawerTitleId} variant="h6" fontWeight={700}>
               Отзывы
             </Typography>
             <Stack

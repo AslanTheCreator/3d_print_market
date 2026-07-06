@@ -45,7 +45,7 @@ export const PageHeader = ({
         minWidth: "auto",
         px: 0,
         color: "text.secondary",
-        fontWeight: 700,
+        fontWeight: 600,
         textTransform: "none",
         "&:hover": {
           bgcolor: "transparent",
@@ -94,7 +94,7 @@ export const PageHeader = ({
               variant="h4"
               component="h1"
               sx={{
-                fontWeight: 800,
+                fontWeight: 700,
                 lineHeight: 1.15,
                 fontSize: { xs: "1.5rem", sm: "1.875rem" },
               }}

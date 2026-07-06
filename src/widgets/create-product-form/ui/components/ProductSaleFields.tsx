@@ -56,7 +56,7 @@ export const ProductSaleFields = ({
           control={control}
           render={({ field }) => (
             <FormControl fullWidth>
-              <Typography variant="body2" fontWeight={700} sx={{ mb: 0.75 }}>
+              <Typography variant="body2" fontWeight={600} sx={{ mb: 0.75 }}>
                 Доступность
               </Typography>
               <ToggleButtonGroup
@@ -78,9 +78,10 @@ export const ProductSaleFields = ({
                     borderColor: "divider",
                     borderRadius: 1.5,
                     py: 1,
-                    fontWeight: 800,
+                    fontWeight: 600,
                     textTransform: "none",
                     "&.Mui-selected": {
+                      fontWeight: 700,
                       borderColor: "primary.main",
                       color: "primary.main",
                       bgcolor: "primary.50",

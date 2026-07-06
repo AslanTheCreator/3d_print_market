@@ -24,7 +24,7 @@ export const ProfileFormSection = ({
       >
         {icon}
       </Box>
-      <Typography variant="subtitle1" fontWeight={800}>
+      <Typography variant="subtitle1" fontWeight={600}>
         {title}
       </Typography>
     </Stack>

@@ -76,7 +76,7 @@ function ReviewCard({ review }: ReviewCardProps) {
           spacing={2}
         >
           <Box minWidth={0}>
-            <Typography variant="subtitle1" fontWeight={700} noWrap>
+            <Typography variant="subtitle1" fontWeight={600} noWrap>
               {review.reviewerName || "Покупатель"}
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -147,7 +147,7 @@ export function ProductReviewsSection({ reviews }: ProductReviewsSectionProps) {
         sx={{ mb: 3 }}
       >
         <Box>
-          <Typography variant="h4" fontWeight={800}>
+          <Typography variant="h4" fontWeight={700}>
             Отзывы
           </Typography>
 

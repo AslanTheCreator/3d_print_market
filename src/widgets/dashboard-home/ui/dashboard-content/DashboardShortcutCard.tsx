@@ -93,7 +93,7 @@ export const DashboardShortcutCard = ({
               component="h2"
               sx={{
                 mb: 0.25,
-                fontWeight: 800,
+                fontWeight: 600,
                 color: "text.primary",
                 fontSize: { xs: "0.98rem", sm: "1.05rem", md: "1.25rem" },
                 lineHeight: 1.15,

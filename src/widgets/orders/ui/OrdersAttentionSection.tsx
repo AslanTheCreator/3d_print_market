@@ -36,7 +36,7 @@ export const OrdersAttentionSection = ({
     <Box>
       <Typography
         variant="h6"
-        fontWeight={800}
+        fontWeight={700}
         sx={{
           mb: 1.5,
           pl: 1.5,

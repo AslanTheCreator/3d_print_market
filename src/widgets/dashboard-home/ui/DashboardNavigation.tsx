@@ -317,7 +317,7 @@ export const DashboardNavigation: React.FC = () => {
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
                       fontSize: "0.68rem",
-                      fontWeight: isActive ? 800 : 700,
+                      fontWeight: isActive ? 700 : 600,
                       lineHeight: 1.1,
                       textAlign: "center",
                     }}
@@ -363,7 +363,7 @@ export const DashboardNavigation: React.FC = () => {
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
                   fontSize: "0.68rem",
-                  fontWeight: hasActiveSecondaryItem ? 800 : 700,
+                  fontWeight: hasActiveSecondaryItem ? 700 : 600,
                   lineHeight: 1.1,
                   textAlign: "center",
                 }}
@@ -420,7 +420,7 @@ export const DashboardNavigation: React.FC = () => {
               <ListItemText
                 primary={item.text}
                 primaryTypographyProps={{
-                  fontWeight: isActive ? 800 : 600,
+                  fontWeight: isActive ? 700 : 600,
                 }}
               />
             </MenuItem>
@@ -434,7 +434,7 @@ export const DashboardNavigation: React.FC = () => {
           sx={{
             minHeight: 46,
             color: "error.main",
-            fontWeight: 700,
+            fontWeight: 600,
           }}
         >
           <ListItemIcon sx={{ color: "inherit", minWidth: 38 }}>
@@ -446,7 +446,7 @@ export const DashboardNavigation: React.FC = () => {
           </ListItemIcon>
           <ListItemText
             primary={isLoggingOut ? "Выход..." : "Выйти"}
-            primaryTypographyProps={{ fontWeight: 700 }}
+            primaryTypographyProps={{ fontWeight: 600 }}
           />
         </MenuItem>
       </Menu>

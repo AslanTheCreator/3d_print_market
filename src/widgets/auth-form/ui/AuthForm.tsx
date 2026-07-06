@@ -161,7 +161,7 @@ const AuthForm: React.FC<IAuthForm> = ({
       <Typography
         component="h2"
         variant={isMobile ? "h3" : "h2"}
-        fontWeight={500}
+        fontWeight={700}
         textAlign="center"
         sx={{
           fontSize: isMobile ? "1.5rem" : "2rem",

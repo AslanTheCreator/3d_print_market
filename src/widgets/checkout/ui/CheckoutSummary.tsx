@@ -121,7 +121,7 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
         top: 24,
       }}
     >
-      <Typography variant="h6" fontWeight={700} gutterBottom>
+      <Typography variant="h6" fontWeight={600} gutterBottom>
         Ваш заказ
       </Typography>
 

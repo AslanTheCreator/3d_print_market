@@ -280,7 +280,7 @@ const OrderCard = ({
               minHeight: 38,
               borderRadius: 1.5,
               textTransform: "none",
-              fontWeight: 800,
+              fontWeight: 600,
             },
           }}
         >
@@ -307,7 +307,7 @@ export const OrdersTable = ({
     <Box>
       <Typography
         variant="h6"
-        fontWeight={800}
+        fontWeight={700}
         sx={{
           mb: 1.5,
           pl: 1.5,

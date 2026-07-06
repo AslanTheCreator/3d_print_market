@@ -49,7 +49,7 @@ export const CreateProductFormSection = ({
       </Box>
       <Typography
         variant={isMobile ? "body2" : "subtitle1"}
-        fontWeight={700}
+        fontWeight={600}
         sx={{ lineHeight: 1.3 }}
       >
         {title}

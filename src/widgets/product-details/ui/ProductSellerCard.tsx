@@ -58,7 +58,7 @@ export function ProductSellerCard({
             size={avatarSize}
           />
           <Box flex={1} minWidth={0}>
-            <Typography variant="subtitle2" fontWeight={700} noWrap>
+            <Typography variant="subtitle2" fontWeight={600} noWrap>
               {displayName}
             </Typography>
             <Stack
@@ -76,7 +76,7 @@ export function ProductSellerCard({
                 variant="outlined"
                 sx={{
                   height: 24,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   borderColor: hasRating ? "warning.light" : "divider",
                   color: hasRating ? "text.primary" : "text.secondary",
                   bgcolor: "background.paper",
@@ -93,7 +93,7 @@ export function ProductSellerCard({
                 variant="outlined"
                 sx={{
                   height: 24,
-                  fontWeight: 600,
+                  fontWeight: 500,
                   borderColor: "divider",
                   color: "text.secondary",
                   bgcolor: "background.paper",

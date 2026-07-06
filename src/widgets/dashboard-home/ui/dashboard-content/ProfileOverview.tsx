@@ -108,7 +108,7 @@ export const ProfileOverview = ({
                 variant="h4"
                 component="h2"
                 sx={{
-                  fontWeight: 800,
+                  fontWeight: 700,
                   lineHeight: 1.15,
                   mb: { xs: 0.5, sm: 1 },
                   fontSize: { xs: "1.15rem", sm: "2rem" },
@@ -180,7 +180,7 @@ export const ProfileOverview = ({
                 minHeight: { xs: 40, sm: 46 },
                 borderRadius: 1.5,
                 textTransform: "none",
-                fontWeight: 800,
+                fontWeight: 600,
                 width: "100%",
               }}
             >

@@ -126,7 +126,7 @@ export const MultiImageUpload = ({
         sx={{ mb: 2 }}
       >
         <Box>
-          <Typography variant="subtitle1" fontWeight={800}>
+          <Typography variant="subtitle1" fontWeight={600}>
             Фото товара
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -345,7 +345,7 @@ export const MultiImageUpload = ({
                     <Add sx={{ fontSize: 18 }} />
                   </Box>
                 </Box>
-                <Typography variant="body2" fontWeight={800}>
+                <Typography variant="body2" fontWeight={600}>
                   Добавить фото
                 </Typography>
                 {!isMobile && (
