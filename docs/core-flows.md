@@ -1,246 +1,70 @@
 # Core flows
 
-Документ описывает основные MVP-сценарии frontend. Он фиксирует только то, что видно из текущих routes, widgets, features и entities.
+Документ перечисляет реализованные пользовательские сценарии без описания неподтверждённого backend-поведения.
 
-## Общие правила flows
+## Публичная часть
 
-- Route files в `app/` остаются тонкими.
-- Композиция сценариев находится в `widgets`.
-- Пользовательские действия находятся в `features`.
-- Данные и API сущностей находятся в `entities`.
-- API-зависимый UI должен иметь loading, error, empty и success states.
-- Backend-поведение не описывать как факт, если оно не подтверждено кодом или контрактом.
+| Сценарий | Routes | Реализация |
+| --- | --- | --- |
+| Каталог | `/`, `/catalog/category/[...slug]`, `/catalog/search` | server initial data для главной и категории; client search, filters и infinite scroll |
+| Товар | `/catalog/[id]/detail` | server initial product и metadata; корзина, избранное, отзывы и связанные товары |
+| Продавец | `/sellers/[id]` | публичный профиль и товары по `participantId` |
+| Информация | `/about`, `/contacts`, `/privacy`, `/user-agreement` | статические информационные и юридические страницы |
 
-## Публичный каталог
+Adult category требует age gate и не индексируется. API-зависимые страницы должны показывать loading, error, empty и success states.
 
-Входные точки:
+Публичный профиль продавца пока содержит временное описание и визуальный счётчик отзывов: этих полей нет в текущем `UserFindModel`.
 
-- `/`
-- `/catalog/category/[...slug]`
-- `/catalog/search`
+## Auth и доступ
 
-Основные слои:
+Routes: `/auth/login`, `/auth/register`, `/dashboard/*`.
 
-- routes: `app/page.tsx`, `app/(catalog)/catalog/category/[...slug]/page.tsx`, `app/(catalog)/catalog/search/page.tsx`;
-- widgets: `home-products`, `category-products`, `search-products`, `product-catalog`;
-- entities: `product`, `category`;
-- feature: `age-verification` для adult category.
+- login, register, verification и password reset используют общий auth flow;
+- register не отправляется без согласия на обработку персональных данных, но backend payload пока не сохраняет факт согласия;
+- redirect после auth допускает только внутренний путь вне `/auth`;
+- `middleware.ts`, dashboard layout и `RequireAuth` защищают личный кабинет;
+- `/favorites` и `/checkout` доступны как routes, но показывают unauthorized state анониму.
 
-Поведение:
+Текущая защита основана на наличии JS-readable auth cookies. Ограничение описано в [api-and-auth.md](./api-and-auth.md).
 
-- главная и category page получают initial products на сервере;
-- search работает через клиентский widget;
-- category metadata строится по category path;
-- adult category не индексируется и требует отдельной обработки доступа;
-- каталог должен показывать loading/error/empty/success states.
+## Покупатель
 
-## Карточка товара
+### Избранное
 
-Входная точка:
+`/favorites` показывает список товаров, empty state или ошибку с retry. Изменение избранного выполняет feature `toggle-favorite`.
 
-- `/catalog/[id]/detail`
+### Корзина и checkout
 
-Основные слои:
+`/checkout` загружает корзину, пользователя, адреса и способы доставки продавцов.
 
-- route: `app/(catalog)/catalog/[id]/detail/page.tsx`;
-- widget: `product-details`;
-- entities: `product`, `review`, `user`;
-- features: `add-to-cart`, `toggle-favorite`.
-
-Поведение:
-
-- route валидирует numeric product id;
-- initial product загружается на сервере;
-- metadata строится из product data;
-- при ошибке товар считается не найденным для metadata;
-- UI деталки отвечает за состояние загрузки/ошибки/успеха.
-
-## Публичная страница продавца
-
-Входная точка:
-
-- `/sellers/[id]`
-
-Основные слои:
-
-- route: `app/(catalog)/sellers/[id]/page.tsx`;
-- client page: `SellerPageClient`;
-- widgets: `seller-profile`, `product-catalog`;
-- entities: `user`, `product`;
-- features: `add-to-cart`, `toggle-favorite`.
-
-Поведение:
-
-- карточка продавца в деталке товара ведет на `/sellers/[participantId]`;
-- профиль продавца загружается через `userApi.getUserByParams`;
-- товары продавца загружаются через публичный список товаров с фильтром `participantId`;
-- каталог поддерживает фильтр цены, сортировку, infinite scroll и состояния loading/error/empty/success;
-- до расширения `UserFindModel` профильный блок использует временные визуальные значения для описания продавца и количества отзывов.
-
-## Auth
-
-Входные точки:
-
-- `/auth/login`
-- `/auth/register`
-
-Основные слои:
-
-- routes: `app/auth/login`, `app/auth/register`;
-- widget: `auth-form`;
-- feature: `auth`;
-- shared: `authStore`, `tokenStorage`, notification provider.
-
-Поведение:
-
-- login и register используют общий `AuthForm`;
-- после auth используется безопасный redirect из query `redirect`;
-- redirect не допускает внешние URL и `/auth`;
-- register открывает verification dialog после успешной регистрации;
-- login может открыть verification dialog, если backend вернул ожидаемую ошибку подтверждения email;
-- password reset доступен на login flow.
-
-## Protected routes
-
-Входные точки:
-
-- `/dashboard`
-- `/dashboard/*`
-
-Основные слои:
-
-- `middleware.ts`;
-- `app/(user)/dashboard/layout.tsx`;
-- feature: `RequireAuth`;
-- widget: `dashboard-home`.
-
-Поведение:
-
-- middleware редиректит анонима на `/auth/login?redirect=...`;
-- dashboard layout дополнительно проверяет auth cookies на сервере;
-- `RequireAuth` защищает клиентскую часть dashboard;
-- проверка основана на наличии `access_token` или `refresh_token` cookie.
-
-## Избранное
-
-Входная точка:
-
-- `/favorites`
-
-Основные слои:
-
-- route: `app/favorites/page.tsx`;
-- client page: `FavoritesPageClient`;
-- entities: `favorite`, `product`;
-- feature: `toggle-favorite`;
-- widget: `product-catalog`.
-
-Поведение:
-
-- страница публично открывается, но для анонима показывает unauthorized state;
-- авторизованный пользователь видит список избранных товаров;
-- пустой список показывает empty state;
-- ошибки и retry обрабатываются через catalog widget.
-
-## Корзина и checkout
-
-Входная точка:
-
-- `/checkout`
-
-Основные слои:
-
-- route: `app/checkout/page.tsx`;
-- client page: `CheckoutPageClient`;
-- widget: `checkout`;
-- entities: `cart`, `order`, `address`, `transfer`, `user`;
-- features: `order-create`, `add-to-cart`.
-
-Поведение:
-
-- страница публично открывается, но для анонима показывает unauthorized state;
-- checkout загружает корзину и текущего пользователя;
-- пустая корзина показывает empty state;
-- ошибка корзины показывает error state с retry;
-- успешное оформление показывает result dialog или success state;
-- при частичном успехе подтверждённые товары исключаются из повторной отправки в рамках текущей checkout-сессии, даже если refetch корзины вернул устаревшие данные;
-- retry использует неизменяемый snapshot payload только для неудачных товаров, а повторная ошибка заменяет предыдущую и не дублирует позицию в результате;
-- frontend-защита не заменяет backend-идемпотентность при network timeout с неизвестным результатом;
-- после полного успеха переход ведет в `/dashboard/purchase`.
+- пустая корзина и ошибки имеют отдельные состояния;
+- заказ создаётся отдельным запросом для каждой позиции;
+- позиции отправляются параллельно;
+- при частичном успехе повторяются только неудачные immutable payload snapshots;
+- успешные позиции не отправляются повторно в текущей checkout-сессии;
+- сетевой timeout с неизвестным результатом остаётся риском до backend-идемпотентности;
+- после полного успеха пользователь переходит в `/dashboard/purchase`.
 
 ## Личный кабинет
 
-Входные точки:
+| Route | Назначение |
+| --- | --- |
+| `/dashboard` | профиль и сводка |
+| `/dashboard/settings` | адреса, доставка, платёжные аккаунты и соцсети |
+| `/dashboard/security` | смена пароля |
+| `/dashboard/products` | товары продавца |
+| `/dashboard/products/new` | создание товара |
+| `/dashboard/products/[id]/edit` | редактирование товара |
+| `/dashboard/purchase` | заказы покупателя |
+| `/dashboard/sales` | заказы продавца |
 
-- `/dashboard`
-- `/dashboard/settings`
-- `/dashboard/security`
+Создание и редактирование используют одну форму. Действия с заказами вынесены в features; после mutations списки заказов инвалидируются.
 
-Основные слои:
+## Критичные проверки
 
-- widget: `dashboard-home`;
-- widgets: `dashboard-settings`, `dashboard-security`;
-- entities: `user`, `address`, `account`, `transfer`, `social-network`.
-
-Поведение:
-
-- `/dashboard` показывает домашний dashboard;
-- settings управляет профильными настройками, адресами, способами доставки, платежными аккаунтами и соцсетями, если это доступно текущими widgets;
-- security содержит изменение пароля;
-- все dashboard pages требуют auth.
-
-## Товары продавца
-
-Входные точки:
-
-- `/dashboard/products`
-- `/dashboard/products/new`
-- `/dashboard/products/[id]/edit`
-
-Основные слои:
-
-- widgets: `dashboard-products`, `user-products`, `create-product-form`;
-- entity: `product`;
-- features: `image-upload`;
-
-Поведение:
-
-- список товаров продавца показывает user products;
-- создание товара использует `CreateProductForm`;
-- редактирование использует тот же form в `mode="edit"` с `productId`;
-- удаление и продление публикации идут через product mutations;
-- форма не должна придумывать backend fields и должна использовать существующие product form helpers.
-
-## Заказы
-
-Входные точки:
-
-- `/dashboard/purchase`
-- `/dashboard/sales`
-
-Основные слои:
-
-- widget: `orders`;
-- entity: `order`;
-- features: `order-cancel`, `order-confirmation`, `order-payment`, `order-receipt`, `order-shipping`.
-
-Поведение:
-
-- purchase показывает заказы покупателя;
-- sales показывает заказы продавца;
-- действия с заказами вынесены в features;
-- после mutations должны инвалидироваться списки заказов;
-- UI должен различать loading, error, empty и success states.
-
-## Минимальные сценарии для проверки
-
-Для MVP критичны:
-
-- публичный каталог открывается;
-- карточка товара открывается или корректно показывает ошибку;
-- login/register обрабатывают loading и ошибки;
-- protected dashboard routes редиректят анонима;
-- избранное и checkout показывают unauthorized state для анонима;
-- авторизованный checkout не падает на пустой корзине;
-- создание/редактирование товара не меняет backend contract;
-- списки заказов покупателя и продавца показывают состояния загрузки/ошибки/пустого списка.
+- публичные routes открываются без auth;
+- dashboard редиректит анонима;
+- favorites и checkout показывают unauthorized state;
+- checkout корректно обрабатывает empty, partial success и retry;
+- нельзя добавить или оформить собственный товар на уровне UI;
+- create/edit product и order actions сохраняют подтверждённый API payload.
