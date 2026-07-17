@@ -54,41 +54,16 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Smoke tests
-        env:
-          TEST_BASE_URL: http://127.0.0.1:3010
-          CLIENT_API_BASE_URL: http://127.0.0.1:9
-          API_BASE_URL: http://127.0.0.1:9
-          ALLOW_LOCAL_API_URL: "true"
-        run: |
-          set -euo pipefail
-          npx next start -p 3010 > /tmp/figurzilla-next.log 2>&1 &
-          SERVER_PID=$!
-          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
-
-          for i in {1..60}; do
-            if curl -fsS "$TEST_BASE_URL/api/config" >/dev/null; then
-              npm run test:smoke
-              exit 0
-            fi
-            sleep 2
-          done
-
-          cat /tmp/figurzilla-next.log
-          echo "Frontend server did not become ready"
-          exit 1
-
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: E2E tests
+      - name: Standalone smoke and E2E tests
         env:
-          PLAYWRIGHT_USE_PRODUCTION_SERVER: "true"
-          PLAYWRIGHT_PORT: 3011
+          PLAYWRIGHT_PORT: 3010
           CLIENT_API_BASE_URL: http://127.0.0.1:9
           API_BASE_URL: http://127.0.0.1:9
           ALLOW_LOCAL_API_URL: "true"
-        run: npm run test:e2e
+        run: npm run test:standalone
 
       - name: Build Docker image
         run: |

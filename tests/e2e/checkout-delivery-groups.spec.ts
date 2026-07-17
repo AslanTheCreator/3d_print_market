@@ -109,7 +109,7 @@ test("selects delivery independently for each seller", async ({
     { product: createProduct(4, 30, "seller-without-delivery", 4000), count: 1 },
   ];
   const createdOrders: unknown[] = [];
-  let orderResponseMode: "partial" | "failure" = "partial";
+  let orderResponseMode: "partial" | "failure" | "success" = "partial";
 
   await page.route("**/basket/find", (route) => fulfillJson(route, cartItems));
   await page.route("**/auth/profile", (route) =>
@@ -162,7 +162,7 @@ test("selects delivery independently for each seller", async ({
   await page.route("**/order?productId=*", (route) => {
     const productId = Number(new URL(route.request().url()).searchParams.get("productId"));
     const sellerTransfers =
-      productId === 1
+      productId === 1 || productId === 2
         ? sellerOneTransfers
         : productId === 3
           ? sellerTwoTransfers
@@ -185,6 +185,11 @@ test("selects delivery independently for each seller", async ({
     createdOrders.push(requestBody);
 
     if (orderResponseMode === "partial" && requestBody[0]?.productId === 1) {
+      await fulfillJson(route, [createdOrders.length]);
+      return;
+    }
+
+    if (orderResponseMode === "success") {
       await fulfillJson(route, [createdOrders.length]);
       return;
     }
@@ -277,19 +282,81 @@ test("selects delivery independently for each seller", async ({
   await expect(
     page.getByRole("heading", { name: "Оформление заказа" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("checkbox", { name: "Выбрать товар Товар 1" }),
+  ).toHaveCount(0);
   await expect(submitButton).toBeEnabled();
 
   orderResponseMode = "failure";
   await submitButton.click();
-  await expect.poll(() => createdOrders.length).toBe(6);
+  await expect.poll(() => createdOrders.length).toBe(5);
   await expect(page.getByTestId("checkout-result-title")).toHaveText(
     "Не удалось оформить заказы",
   );
-  await page
-    .getByRole("button", { name: "Вернуться к оформлению" })
-    .click();
-  await expect(page.getByTestId("checkout-result-dialog")).toHaveCount(0);
-  await expect(submitButton).toBeEnabled();
+  expect(
+    createdOrders
+      .slice(3, 5)
+      .map((requestBody) => {
+        const [order] = requestBody as Array<{
+          productId: number;
+          count: number;
+        }>;
+        return [order.productId, order.count] as const;
+      })
+      .sort(([left], [right]) => left - right),
+  ).toEqual([
+    [2, 1],
+    [3, 1],
+  ]);
+
+  const retryButton = page.getByRole("button", {
+    name: "Повторить для неудачных",
+  });
+  await retryButton.click();
+  await expect.poll(() => createdOrders.length).toBe(7);
+  await expect(page.getByText("Не удалось оформить (2)")).toBeVisible();
+  expect(
+    createdOrders
+      .slice(5, 7)
+      .map((requestBody) => {
+        const [order] = requestBody as Array<{
+          productId: number;
+          count: number;
+        }>;
+        return [order.productId, order.count] as const;
+      })
+      .sort(([left], [right]) => left - right),
+  ).toEqual([
+    [2, 1],
+    [3, 1],
+  ]);
+
+  orderResponseMode = "success";
+  await retryButton.click();
+  await expect.poll(() => createdOrders.length).toBe(9);
+  await expect(page.getByTestId("checkout-result-title")).toHaveText(
+    "Заказы успешно оформлены!",
+  );
+  await expect(
+    page.getByText(
+      'Все 2 заказа успешно оформлены. Вы можете отслеживать их статус в разделе "Мои покупки".',
+    ),
+  ).toBeVisible();
+  expect(
+    createdOrders
+      .slice(7, 9)
+      .map((requestBody) => {
+        const [order] = requestBody as Array<{
+          productId: number;
+          count: number;
+        }>;
+        return [order.productId, order.count] as const;
+      })
+      .sort(([left], [right]) => left - right),
+  ).toEqual([
+    [2, 1],
+    [3, 1],
+  ]);
 
   const transferByProduct = new Map(
     createdOrders.slice(0, 3).map((requestBody) => {

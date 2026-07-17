@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Typography, Box, CircularProgress } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useRouter } from "next/navigation";
@@ -36,8 +36,19 @@ const Checkout = () => {
     isError: isCurrentUserError,
   } = useProfileUser();
 
+  const [completedProductIds, setCompletedProductIds] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const checkoutCartItems = useMemo(
+    () =>
+      (cartItems ?? []).filter(
+        (item) => !completedProductIds.has(item.product.id),
+      ),
+    [cartItems, completedProductIds],
+  );
+
   const checkoutState = useCheckoutState({
-    cartItems,
+    cartItems: checkoutCartItems,
     currentUserId: currentUser?.id,
     isLoadingCurrentUser,
     isCurrentUserError,
@@ -47,23 +58,53 @@ const Checkout = () => {
   const [orderCompleted, setOrderCompleted] = useState(false);
   const [lastResult, setLastResult] = useState<CheckoutResult | null>(null);
 
+  const rememberSuccessfulOrders = useCallback((result: CheckoutResult) => {
+    if (result.success.length === 0) {
+      return;
+    }
+
+    setCompletedProductIds((currentIds) => {
+      const nextIds = new Set(currentIds);
+
+      for (const order of result.success) {
+        nextIds.add(order.productId);
+      }
+
+      return nextIds.size === currentIds.size ? currentIds : nextIds;
+    });
+  }, []);
+
+  const handleSuccess = useCallback(
+    (result: CheckoutResult) => {
+      rememberSuccessfulOrders(result);
+      setResultDialogOpen(true);
+      setOrderCompleted(true);
+      setLastResult(result);
+    },
+    [rememberSuccessfulOrders],
+  );
+
+  const handlePartialSuccess = useCallback(
+    (result: CheckoutResult) => {
+      rememberSuccessfulOrders(result);
+      setResultDialogOpen(true);
+      setLastResult(result);
+    },
+    [rememberSuccessfulOrders],
+  );
+
+  const handleError = useCallback((result: CheckoutResult) => {
+    setResultDialogOpen(true);
+    setLastResult(result);
+  }, []);
+
   const { handleSubmit, retryFailed, isSubmitting, submitResult, clearResult } =
     useOrderCreateSubmit({
       cartItems: checkoutState.selectedItems,
       checkoutState,
-      onSuccess: (result: CheckoutResult) => {
-        setResultDialogOpen(true);
-        setOrderCompleted(true);
-        setLastResult(result);
-      },
-      onPartialSuccess: (result: CheckoutResult) => {
-        setResultDialogOpen(true);
-        setLastResult(result);
-      },
-      onError: (result: CheckoutResult) => {
-        setResultDialogOpen(true);
-        setLastResult(result);
-      },
+      onSuccess: handleSuccess,
+      onPartialSuccess: handlePartialSuccess,
+      onError: handleError,
     });
 
   const handleCloseResultDialog = () => {
@@ -108,17 +149,17 @@ const Checkout = () => {
   }
 
   // После успешного оформления — показываем OrderSuccessState вместо пустой корзины
-  if (cartItems.length === 0 && orderCompleted) {
+  if (checkoutCartItems.length === 0 && orderCompleted) {
     return (
       <OrderSuccessState
-        orderCount={lastResult?.successCount}
+        orderCount={completedProductIds.size || lastResult?.successCount}
         onGoToOrders={handleGoToOrders}
         onGoHome={handleGoHome}
       />
     );
   }
 
-  if (cartItems.length === 0) {
+  if (checkoutCartItems.length === 0) {
     return (
       <EmptyPageState
         icon={

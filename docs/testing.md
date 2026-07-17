@@ -19,12 +19,14 @@
 npm run dev
 npm run build
 npm run start
+npm run start:standalone
 npm run lint
 npm run typecheck
 npm run architecture:check
 npm run test:smoke
 npm run test:e2e
 npm run test:e2e:ui
+npm run test:standalone
 ```
 
 Ключевые проверки: `lint`, `typecheck`, `architecture:check`, `build`, `test:smoke`, `test:e2e`.
@@ -45,6 +47,14 @@ npm run architecture:check
 
 ```bash
 npm run build
+npm run test:smoke
+```
+
+Для production-like проверки сначала собрать и запустить standalone-артефакт. Команда сама копирует `public` и `.next/static` в структуру, которую ожидает standalone runtime:
+
+```bash
+npm run build
+npm run start:standalone
 npm run test:smoke
 ```
 
@@ -89,8 +99,16 @@ Playwright-конфиг находится в `playwright.config.ts`. Тесты
 Если `TEST_BASE_URL` не задан, Playwright сам запускает web server:
 
 - по умолчанию `npx next dev --turbopack -p 3000`;
-- при `PLAYWRIGHT_USE_PRODUCTION_SERVER=true` — `npx next start -p 3000`;
 - команду можно переопределить через `PLAYWRIGHT_WEB_SERVER_COMMAND`.
+
+Для production-like проверки нужен актуальный build:
+
+```bash
+npm run build
+npm run test:standalone
+```
+
+`test:standalone` поднимает standalone-артефакт на порту из `PLAYWRIGHT_PORT`, ждёт готовности `/api/config`, запускает smoke и e2e через `TEST_BASE_URL`, затем останавливает сервер. В CI используется тот же standalone-формат, что и в Docker image.
 
 Если `TEST_BASE_URL` задан, Playwright проверяет уже запущенный стенд.
 

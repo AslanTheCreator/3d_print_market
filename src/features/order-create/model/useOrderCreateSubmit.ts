@@ -3,10 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { type ProductBasket, useCartQuantityStore } from "@/entities/cart";
 import { orderApi } from "@/entities/order";
-import {
-  buildOrderToCreate,
-  getFailedCartItems,
-} from "./orderCreatePayload";
+import { buildOrderToCreate, getFailedOrders } from "./orderCreatePayload";
 import {
   buildCheckoutResult,
   mergeCheckoutResults,
@@ -33,6 +30,7 @@ export const useOrderCreateSubmit = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<CheckoutResult | null>(null);
   const isSubmittingRef = useRef(false);
+  const failedOrdersRef = useRef<OrderToCreate[]>([]);
   const { getQuantity } = useCartQuantityStore();
   const { syncAfterSubmit, notifySubmitResult } = useOrderCreateSideEffects({
     onSuccess,
@@ -116,6 +114,10 @@ export const useOrderCreateSubmit = ({
       const ordersToCreate = cartItems.map(createOrderPayload);
       const checkoutResult = await executeOrders(ordersToCreate);
 
+      failedOrdersRef.current = getFailedOrders(
+        ordersToCreate,
+        checkoutResult.failed,
+      );
       setSubmitResult(checkoutResult);
       await syncAfterSubmit(checkoutResult.success);
       notifySubmitResult(checkoutResult);
@@ -143,9 +145,9 @@ export const useOrderCreateSubmit = ({
       return;
     }
 
-    const failedItems = getFailedCartItems(cartItems, submitResult.failed);
+    const retryOrders = failedOrdersRef.current;
 
-    if (failedItems.length === 0) {
+    if (retryOrders.length === 0) {
       return;
     }
 
@@ -153,10 +155,13 @@ export const useOrderCreateSubmit = ({
     setIsSubmitting(true);
 
     try {
-      const retryOrders = failedItems.map(createOrderPayload);
       const retryResult = await executeOrders(retryOrders);
       const updatedResult = mergeCheckoutResults(submitResult, retryResult);
 
+      failedOrdersRef.current = getFailedOrders(
+        retryOrders,
+        retryResult.failed,
+      );
       setSubmitResult(updatedResult);
       await syncAfterSubmit(retryResult.success);
       notifySubmitResult(updatedResult);
@@ -168,18 +173,21 @@ export const useOrderCreateSubmit = ({
     }
   }, [
     submitResult,
-    cartItems,
-    createOrderPayload,
     executeOrders,
     syncAfterSubmit,
     notifySubmitResult,
   ]);
+
+  const clearResult = useCallback(() => {
+    failedOrdersRef.current = [];
+    setSubmitResult(null);
+  }, []);
 
   return {
     handleSubmit,
     retryFailed,
     isSubmitting,
     submitResult,
-    clearResult: () => setSubmitResult(null),
+    clearResult,
   };
 };

@@ -159,14 +159,12 @@ Backend не проверялся напрямую. Backend-зависимост
 
 ### 3. Убрать `any` из shared hooks и UI
 
-Найдено 9 вхождений `any`, включая:
+После типизации shared hooks остались 2 вхождения `any`:
 
-- `src/shared/lib/hooks/useFormInitializer.ts`;
-- `src/shared/lib/hooks/useBatchForm.ts`;
 - `src/entities/account/model/queryKeys.ts`;
 - `src/features/auth/ui/PasswordResetDialog.tsx`.
 
-Это не блокер, но shared hooks с `any` размывают strict mode и усложняют безопасные изменения форм.
+Это не блокер, но оставшиеся `any` по-прежнему лучше убрать, чтобы не размывать strict mode.
 
 ### 4. Разгрузить крупные компоненты
 

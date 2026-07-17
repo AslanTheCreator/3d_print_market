@@ -1,20 +1,28 @@
 import { useState, useCallback } from "react";
 
-interface UseBatchFormOptions<T, TCreate> {
+type BatchFormItem = {
+  enabled?: boolean;
+};
+
+interface UseBatchFormOptions<T, TCreate, TFormItem extends BatchFormItem> {
   existingItems: T[];
   getItemKey: (item: T) => string;
-  mapToCreateModel: (data: any, key: string) => TCreate;
+  mapToCreateModel: (data: TFormItem, key: string) => TCreate;
   getItemId: (item: T) => number;
-  compareItemData?: (existing: T, formData: any) => boolean;
+  compareItemData?: (existing: T, formData: TFormItem) => boolean;
 }
 
-export function useBatchForm<T, TCreate>({
+export function useBatchForm<
+  T,
+  TCreate,
+  TFormItem extends BatchFormItem = BatchFormItem,
+>({
   existingItems,
   getItemKey,
   mapToCreateModel,
   getItemId,
   compareItemData,
-}: UseBatchFormOptions<T, TCreate>) {
+}: UseBatchFormOptions<T, TCreate, TFormItem>) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   const toggleExpanded = useCallback((key: string) => {
@@ -35,7 +43,7 @@ export function useBatchForm<T, TCreate>({
   );
 
   const computeChanges = useCallback(
-    (formData: Record<string, any>) => {
+    (formData: Record<string, TFormItem>) => {
       const toCreate: TCreate[] = [];
       const toDelete: number[] = [];
       const toUpdate: Array<{ id: number; data: TCreate }> = [];
@@ -45,7 +53,7 @@ export function useBatchForm<T, TCreate>({
           (item) => getItemKey(item) === key
         );
         const wasEnabled = !!existingItem;
-        const nowEnabled = !!value?.enabled;
+        const nowEnabled = !!value.enabled;
 
         // Создаём новые записи
         if (nowEnabled && !wasEnabled) {

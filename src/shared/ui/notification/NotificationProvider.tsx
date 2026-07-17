@@ -1,6 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  ReactNode,
+} from "react";
 import { Snackbar, Alert, Stack } from "@mui/material";
 
 interface Notification {
@@ -38,26 +46,36 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   maxNotifications = 3,
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const nextNotificationId = useRef(0);
 
-  const showNotification = (
-    message: React.ReactNode,
-    severity: Notification["severity"] = "success",
-  ) => {
-    const id = Date.now().toString();
-    const newNotification: Notification = { id, message, severity };
+  const showNotification = useCallback(
+    (
+      message: React.ReactNode,
+      severity: Notification["severity"] = "success",
+    ) => {
+      const id = `notification-${nextNotificationId.current}`;
+      nextNotificationId.current += 1;
+      const newNotification: Notification = { id, message, severity };
 
-    setNotifications((prev) => {
-      const updated = [...prev, newNotification];
-      return updated.slice(-maxNotifications);
-    });
-  };
+      setNotifications((prev) => {
+        const updated = [...prev, newNotification];
+        return updated.slice(-maxNotifications);
+      });
+    },
+    [maxNotifications],
+  );
 
-  const hideNotification = (id: string) => {
+  const hideNotification = useCallback((id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({ showNotification }),
+    [showNotification],
+  );
 
   return (
-    <NotificationContext.Provider value={{ showNotification }}>
+    <NotificationContext.Provider value={contextValue}>
       {children}
       <Stack
         spacing={1}

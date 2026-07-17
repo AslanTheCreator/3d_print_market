@@ -26,15 +26,13 @@ export const buildOrderToCreate = ({
   };
 };
 
-export const getFailedCartItems = (
-  cartItems: ProductBasket[] | undefined,
-  failedOrders: OrderResult[],
-) => {
-  if (!cartItems?.length) {
-    return [];
-  }
+export const getFailedOrders = (
+  orders: readonly OrderToCreate[],
+  failedResults: readonly OrderResult[],
+): OrderToCreate[] => {
+  const failedProductIds = new Set(
+    failedResults.map((result) => result.productId),
+  );
 
-  const failedProductIds = new Set(failedOrders.map((item) => item.productId));
-
-  return cartItems.filter((item) => failedProductIds.has(item.product.id));
+  return orders.filter((order) => failedProductIds.has(order.productId));
 };

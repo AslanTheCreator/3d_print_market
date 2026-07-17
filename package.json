@@ -10,9 +10,11 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
+    "start:standalone": "node scripts/start-standalone.mjs",
     "test:smoke": "node --test tests/smoke/*.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:standalone": "node scripts/test-standalone.mjs",
     "lint": "eslint app src --ext .ts,.tsx --max-warnings=0",
     "architecture:check": "steiger .",
     "typecheck": "next typegen && tsc -p tsconfig.json --noEmit"

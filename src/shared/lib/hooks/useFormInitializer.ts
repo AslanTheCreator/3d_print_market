@@ -1,19 +1,34 @@
 import { useEffect, useRef } from "react";
-import { UseFormSetValue } from "react-hook-form";
+import type { SetValueConfig } from "react-hook-form";
 
-interface UseFormInitializerOptions<T, TDict> {
+type FormInitializerItem<TFormFields extends object> = TFormFields & {
+  enabled: boolean;
+};
+
+type FormInitializerItems<TFormFields extends object> = Record<
+  string,
+  FormInitializerItem<TFormFields>
+>;
+
+type FormInitializerSetValue<TFormFields extends object> = (
+  name: "items",
+  value: FormInitializerItems<TFormFields>,
+  options?: SetValueConfig
+) => void;
+
+interface UseFormInitializerOptions<T, TDict, TFormFields extends object> {
   dictionaryItems: TDict[] | undefined;
   existingItems: T[];
   isLoading: boolean;
-  setValue: UseFormSetValue<any>;
+  setValue: FormInitializerSetValue<TFormFields>;
   getDictionaryKey: (item: TDict) => string;
   getExistingKey: (item: T) => string;
-  mapExistingToFormData: (item: T) => any;
-  getDefaultFormData: () => any;
+  mapExistingToFormData: (item: T) => TFormFields;
+  getDefaultFormData: () => TFormFields;
   onInitialized?: (expandedKeys: Set<string>) => void;
 }
 
-export function useFormInitializer<T, TDict>({
+export function useFormInitializer<T, TDict, TFormFields extends object>({
   dictionaryItems,
   existingItems,
   isLoading,
@@ -23,7 +38,7 @@ export function useFormInitializer<T, TDict>({
   mapExistingToFormData,
   getDefaultFormData,
   onInitialized,
-}: UseFormInitializerOptions<T, TDict>) {
+}: UseFormInitializerOptions<T, TDict, TFormFields>) {
   const isInitialized = useRef(false);
 
   useEffect(() => {
@@ -33,7 +48,7 @@ export function useFormInitializer<T, TDict>({
       !isLoading &&
       !isInitialized.current
     ) {
-      const formData: Record<string, any> = {};
+      const formData: FormInitializerItems<TFormFields> = {};
       const expanded = new Set<string>();
 
       dictionaryItems.forEach((dictItem) => {
@@ -44,14 +59,14 @@ export function useFormInitializer<T, TDict>({
 
         if (existingItem) {
           formData[key] = {
-            enabled: true,
             ...mapExistingToFormData(existingItem),
+            enabled: true,
           };
           expanded.add(key);
         } else {
           formData[key] = {
-            enabled: false,
             ...getDefaultFormData(),
+            enabled: false,
           };
         }
       });

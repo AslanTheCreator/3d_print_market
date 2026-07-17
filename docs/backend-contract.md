@@ -424,69 +424,7 @@ Content-Type: application/json
 
 ### Идемпотентное создание заказа
 
-Текущий frontend создает заказы через:
-
-```http
-POST /order/BOOKED
-Content-Type: application/json
-```
-
-Request:
-
-```json
-[
-  {
-    "productId": 10,
-    "count": 2,
-    "addressId": 5,
-    "transferId": 7,
-    "comment": "Комментарий"
-  }
-]
-```
-
-Current success response:
-
-```json
-[1001]
-```
-
-Production problem: при повторном клике, retry, сетевом таймауте или обновлении страницы можно создать дубликаты заказов.
-
-Backend должен поддержать идемпотентность:
-
-```http
-Idempotency-Key: uuid-v4
-```
-
-Правила:
-
-- Ключ уникален в рамках пользователя.
-- Один и тот же `Idempotency-Key` с тем же body возвращает тот же результат без создания новых заказов.
-- Один и тот же `Idempotency-Key` с другим body возвращает `409`.
-- TTL ключа: минимум 24 часа.
-- Ключ сохраняется атомарно вместе с результатом создания заказа.
-- При параллельных одинаковых запросах только один создает заказ, остальные получают сохраненный результат.
-
-Success:
-
-- HTTP `200` или `201`
-- response body остается совместимым:
-
-```json
-[1001]
-```
-
-Conflict:
-
-```json
-{
-  "code": "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD",
-  "message": "Idempotency-Key уже использован с другим телом запроса"
-}
-```
-
-После готовности backend frontend добавит генерацию `Idempotency-Key` для checkout submit и retry failed orders.
+Краткие требования вынесены в [backend-checkout-idempotency.md](./backend-checkout-idempotency.md).
 
 ### Целевой checkout-контракт по продавцу
 

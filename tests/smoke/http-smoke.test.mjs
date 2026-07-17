@@ -71,4 +71,29 @@ describe("frontend smoke", () => {
     assert.equal(typeof config.apiUrl, "string");
     assert.ok(config.apiUrl.length > 0);
   });
+
+  it("serves Next.js and public assets", async () => {
+    const html = await assertHtmlResponse("/");
+    const staticAssetPath = html.match(
+      /(?:src|href)="([^"]*\/_next\/static\/[^"]+)"/,
+    )?.[1];
+
+    assert.ok(staticAssetPath, "Expected a Next.js static asset in the page HTML");
+
+    const [staticResponse, publicResponse] = await Promise.all([
+      request(staticAssetPath),
+      request("/fonts/montserrat/Montserrat-Variable.woff2"),
+    ]);
+
+    assert.equal(staticResponse.status, 200);
+    assert.doesNotMatch(
+      staticResponse.headers.get("content-type") ?? "",
+      /text\/html/,
+    );
+    assert.equal(publicResponse.status, 200);
+    assert.match(
+      publicResponse.headers.get("content-type") ?? "",
+      /font\/woff2|application\/font-woff/,
+    );
+  });
 });
