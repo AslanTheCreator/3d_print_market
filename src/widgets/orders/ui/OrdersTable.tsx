@@ -1,7 +1,16 @@
 "use client";
 
 import React from "react";
-import { alpha, Box, Paper, Stack, Typography, useTheme } from "@mui/material";
+import {
+  alpha,
+  Box,
+  Button,
+  Paper,
+  Stack,
+  Typography,
+  useTheme,
+} from "@mui/material";
+import { InfoOutlined } from "@mui/icons-material";
 import {
   getOrderProgressSteps,
   OrderStatusChip,
@@ -23,6 +32,7 @@ interface OrdersTableProps {
   orders: readonly ListOrdersModel[];
   totalCount: number;
   userRole: OrdersUserRole;
+  onOpenDetails: (order: ListOrdersModel) => void;
 }
 
 const getStepIndex = (
@@ -182,9 +192,11 @@ const OrderInfoItem = ({
 const OrderCard = ({
   order,
   userRole,
+  onOpenDetails,
 }: {
   order: ListOrdersModel;
   userRole: OrdersUserRole;
+  onOpenDetails: (order: ListOrdersModel) => void;
 }) => {
   const theme = useTheme();
 
@@ -289,6 +301,16 @@ const OrderCard = ({
           ) : (
             <CustomerActions order={order} />
           )}
+          <Button
+            variant="outlined"
+            startIcon={<InfoOutlined />}
+            fullWidth
+            onClick={() => onOpenDetails(order)}
+            aria-label={`Подробнее о заказе №${order.orderId}`}
+            sx={{ mt: 0.75 }}
+          >
+            Подробнее
+          </Button>
         </Box>
       </Stack>
     </Paper>
@@ -299,6 +321,7 @@ export const OrdersTable = ({
   orders,
   totalCount,
   userRole,
+  onOpenDetails,
 }: OrdersTableProps) => {
   const theme = useTheme();
   const title = userRole === "seller" ? "Все продажи" : "Все покупки";
@@ -349,6 +372,7 @@ export const OrdersTable = ({
                 key={order.orderId}
                 order={order}
                 userRole={userRole}
+                onOpenDetails={onOpenDetails}
               />
             ))}
           </Box>

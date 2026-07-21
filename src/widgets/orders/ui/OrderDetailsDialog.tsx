@@ -1,0 +1,221 @@
+"use client";
+
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
+  Paper,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import {
+  Close,
+  EmailOutlined,
+  LocalShippingOutlined,
+  LocationOnOutlined,
+  PersonOutline,
+  PhoneOutlined,
+} from "@mui/icons-material";
+import {
+  OrderStatusChip,
+  shouldShowPaymentProofForRole,
+  shouldShowTrackingForRole,
+  type ListOrdersModel,
+} from "@/entities/order";
+import { formatPrice } from "@/shared/lib";
+import {
+  formatOrderDate,
+  formatOrderPrice,
+  getOrderPeerLabel,
+  type OrdersUserRole,
+} from "../model/dashboardOrders";
+import {
+  CopyableOrderDetail,
+  OrderDetailsSection,
+} from "./OrderDetailsSection";
+import { OrderHistory } from "./OrderHistory";
+import { OrderPaymentProof } from "./OrderPaymentProof";
+import { OrderProductPreview } from "./OrderProductPreview";
+import { OrderTracking } from "./OrderTracking";
+
+interface OrderDetailsDialogProps {
+  open: boolean;
+  onClose: () => void;
+  order: ListOrdersModel;
+  userRole: OrdersUserRole;
+}
+
+export const OrderDetailsDialog = ({
+  open,
+  onClose,
+  order,
+  userRole,
+}: OrderDetailsDialogProps) => {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const peerLabel = getOrderPeerLabel(userRole);
+  const showTracking = shouldShowTrackingForRole(
+    order.actualStatus,
+    userRole,
+  );
+  const showPaymentProof = shouldShowPaymentProofForRole(
+    order.actualStatus,
+    userRole,
+  );
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullScreen={fullScreen}
+      fullWidth
+      maxWidth="md"
+      aria-labelledby="order-details-title"
+      PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 2.5 } }}
+    >
+      <DialogTitle id="order-details-title" sx={{ pr: 7 }}>
+        <Stack spacing={0.75}>
+          <Typography variant="h6" fontWeight={800}>
+            Детали заказа №{order.orderId}
+          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+            <OrderStatusChip status={order.actualStatus} />
+            <Typography variant="caption" color="text.secondary">
+              Создан {formatOrderDate(order.createdAt)}
+            </Typography>
+          </Stack>
+        </Stack>
+        <IconButton
+          onClick={onClose}
+          aria-label="Закрыть детали заказа"
+          sx={{ position: "absolute", right: 12, top: 12 }}
+        >
+          <Close />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent dividers sx={{ bgcolor: "grey.50" }}>
+        <Stack spacing={2}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2 }}>
+            <OrderProductPreview
+              order={order}
+              userRole={userRole}
+              imageSize={84}
+            />
+            <Divider sx={{ my: 1.5 }} />
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              spacing={2}
+            >
+              <Typography variant="body2" color="text.secondary">
+                Сумма заказа
+              </Typography>
+              <Typography variant="h6" fontWeight={800}>
+                {formatOrderPrice(order)}
+              </Typography>
+            </Stack>
+          </Paper>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+              gap: 2,
+            }}
+          >
+            <OrderDetailsSection
+              title="Контакты"
+              icon={<PersonOutline />}
+              testId="order-contacts"
+            >
+              <Typography variant="caption" color="text.secondary">
+                {peerLabel}
+              </Typography>
+              <CopyableOrderDetail
+                label="Логин"
+                value={order.userInfo.login ?? ""}
+                icon={<PersonOutline fontSize="small" />}
+              />
+              <CopyableOrderDetail
+                label="Телефон"
+                value={order.userInfo.phoneNumber ?? ""}
+                icon={<PhoneOutlined fontSize="small" />}
+              />
+              <CopyableOrderDetail
+                label="Email"
+                value={order.userInfo.mail ?? ""}
+                icon={<EmailOutlined fontSize="small" />}
+              />
+            </OrderDetailsSection>
+
+            <OrderDetailsSection
+              title="Доставка"
+              icon={<LocalShippingOutlined />}
+              testId="order-delivery"
+            >
+              <Stack direction="row" spacing={1} alignItems="flex-start">
+                <LocationOnOutlined
+                  fontSize="small"
+                  sx={{ color: "text.secondary", mt: 0.25 }}
+                />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Адрес
+                  </Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    {order.transfer.address?.trim() || "Не указан"}
+                  </Typography>
+                </Box>
+              </Stack>
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                spacing={2}
+                sx={{ mt: 2 }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Стоимость доставки
+                </Typography>
+                <Typography variant="body2" fontWeight={700}>
+                  {order.transfer.price === 0
+                    ? "Бесплатно"
+                    : formatPrice(
+                        order.transfer.price,
+                        order.transfer.currency,
+                      )}
+                </Typography>
+              </Stack>
+            </OrderDetailsSection>
+          </Box>
+
+          {showTracking && <OrderTracking deliveryUrl={order.deliveryUrl} />}
+
+          {showPaymentProof && (
+            <OrderPaymentProof
+              orderId={order.orderId}
+              imageIds={order.images}
+            />
+          )}
+
+          <OrderHistory order={order} />
+        </Stack>
+      </DialogContent>
+
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button onClick={onClose} variant="contained">
+          Закрыть
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};

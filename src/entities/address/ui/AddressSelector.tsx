@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import {
   Delete,
+  Edit,
   Home,
   RadioButtonChecked,
   RadioButtonUnchecked,
@@ -28,8 +29,10 @@ interface AddressSelectorProps {
   selectedAddressId?: number;
   onAddressSelect: (address: Address) => void;
   onAddNewAddress?: () => void;
+  onEditAddress?: (address: Address) => void;
   onDeleteAddress?: (address: Address) => void;
   showRadio?: boolean;
+  showEditButton?: boolean;
   showDeleteButton?: boolean;
   showAddButton?: boolean;
 }
@@ -39,9 +42,11 @@ export const AddressSelector = ({
   selectedAddressId,
   onAddressSelect,
   onAddNewAddress,
+  onEditAddress,
   onDeleteAddress,
   isLoading,
   showRadio = true,
+  showEditButton = false,
   showDeleteButton = false,
   showAddButton = false,
 }: AddressSelectorProps) => {
@@ -231,25 +236,50 @@ export const AddressSelector = ({
                     </Box>
                   </Box>
 
-                  {/* Кнопка удаления */}
-                  {showDeleteButton && onDeleteAddress && (
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteAddress(address);
-                      }}
-                      sx={{
-                        color: "text.secondary",
-                        transition: "all 0.2s",
-                        "&:hover": {
-                          color: "error.main",
-                          bgcolor: alpha(theme.palette.error.main, 0.08),
-                        },
-                      }}
-                    >
-                      <Delete />
-                    </IconButton>
+                  {(showEditButton || showDeleteButton) && (
+                    <Stack direction="row" spacing={0.5}>
+                      {showEditButton && onEditAddress && (
+                        <IconButton
+                          size="small"
+                          aria-label={`Редактировать адрес: ${address.street} ${address.houseNumber}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onEditAddress(address);
+                          }}
+                          sx={{
+                            color: "text.secondary",
+                            transition: "all 0.2s",
+                            "&:hover": {
+                              color: "primary.main",
+                              bgcolor: alpha(theme.palette.primary.main, 0.08),
+                            },
+                          }}
+                        >
+                          <Edit />
+                        </IconButton>
+                      )}
+
+                      {showDeleteButton && onDeleteAddress && (
+                        <IconButton
+                          size="small"
+                          aria-label={`Удалить адрес: ${address.street} ${address.houseNumber}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onDeleteAddress(address);
+                          }}
+                          sx={{
+                            color: "text.secondary",
+                            transition: "all 0.2s",
+                            "&:hover": {
+                              color: "error.main",
+                              bgcolor: alpha(theme.palette.error.main, 0.08),
+                            },
+                          }}
+                        >
+                          <Delete />
+                        </IconButton>
+                      )}
+                    </Stack>
                   )}
                 </Box>
               </CardContent>

@@ -4,12 +4,8 @@ import React from "react";
 import { Box, Alert, AlertTitle, Card, CardContent } from "@mui/material";
 import { InfoOutlined } from "@mui/icons-material";
 import { AddressManager } from "./AddressManager";
-import { useAddresses } from "@/entities/address";
 
 export const AddressManagerWidget: React.FC = () => {
-  const { data: addresses = [] } = useAddresses();
-  const hasAddresses = addresses.length > 0;
-
   return (
     <Box>
       {/* Инфо */}
@@ -27,9 +23,7 @@ export const AddressManagerWidget: React.FC = () => {
         <AlertTitle sx={{ fontWeight: 600, mb: 0.5 }}>
           Адрес доставки
         </AlertTitle>
-        {hasAddresses
-          ? "Управляйте вашими адресами доставки."
-          : "Добавьте адрес для доставки товаров."}
+        Добавляйте и управляйте адресами доставки.
       </Alert>
 
       {/* Контейнер с адресами */}

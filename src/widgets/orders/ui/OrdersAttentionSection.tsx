@@ -1,7 +1,16 @@
 "use client";
 
 import React from "react";
-import { alpha, Box, Paper, Stack, Typography, useTheme } from "@mui/material";
+import {
+  alpha,
+  Box,
+  Button,
+  Paper,
+  Stack,
+  Typography,
+  useTheme,
+} from "@mui/material";
+import { InfoOutlined } from "@mui/icons-material";
 import {
   getOrderStatusActionHint,
   OrderStatusChip,
@@ -18,11 +27,13 @@ import { SellerActions } from "./SellerActions";
 interface OrdersAttentionSectionProps {
   orders: readonly ListOrdersModel[];
   userRole: OrdersUserRole;
+  onOpenDetails: (order: ListOrdersModel) => void;
 }
 
 export const OrdersAttentionSection = ({
   orders,
   userRole,
+  onOpenDetails,
 }: OrdersAttentionSectionProps) => {
   const theme = useTheme();
 
@@ -118,6 +129,16 @@ export const OrdersAttentionSection = ({
                 ) : (
                   <CustomerActions order={order} />
                 )}
+
+                <Button
+                  variant="outlined"
+                  startIcon={<InfoOutlined />}
+                  fullWidth
+                  onClick={() => onOpenDetails(order)}
+                  aria-label={`Подробнее о заказе №${order.orderId}`}
+                >
+                  Подробнее
+                </Button>
               </Stack>
             </Paper>
           );

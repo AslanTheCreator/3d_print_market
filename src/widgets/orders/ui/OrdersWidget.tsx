@@ -23,6 +23,7 @@ import { OrdersAttentionSection } from "./OrdersAttentionSection";
 import { OrdersControls } from "./OrdersControls";
 import { OrdersSummaryCards } from "./OrdersSummaryCards";
 import { OrdersTable } from "./OrdersTable";
+import { OrderDetailsDialog } from "./OrderDetailsDialog";
 
 interface OrdersWidgetProps {
   query: UseQueryResult<ListOrdersModel[]>;
@@ -32,6 +33,7 @@ interface OrdersWidgetProps {
 export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
   const [activeFilter, setActiveFilter] = useState<OrdersFilterId>("all");
   const [sort, setSort] = useState<OrdersSortId>("attention");
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const { data: orders, isLoading, error } = query;
 
   const title = getOrdersTitle(userRole);
@@ -78,6 +80,15 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
     return sortOrders(filteredOrders, sort, userRole);
   }, [activeFilter, ordersList, sort, userRole]);
 
+  const selectedOrder = useMemo(
+    () =>
+      selectedOrderId === null
+        ? null
+        : (ordersList.find((order) => order.orderId === selectedOrderId) ??
+          null),
+    [ordersList, selectedOrderId],
+  );
+
   if (isLoading) {
     return <LoadingOrderState title={title} itemsCount={3} />;
   }
@@ -120,14 +131,25 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
         <OrdersAttentionSection
           orders={attentionOrders}
           userRole={userRole}
+          onOpenDetails={(order) => setSelectedOrderId(order.orderId)}
         />
 
         <OrdersTable
           orders={visibleOrders}
           totalCount={ordersList.length}
           userRole={userRole}
+          onOpenDetails={(order) => setSelectedOrderId(order.orderId)}
         />
       </Stack>
+
+      {selectedOrder && (
+        <OrderDetailsDialog
+          open
+          order={selectedOrder}
+          userRole={userRole}
+          onClose={() => setSelectedOrderId(null)}
+        />
+      )}
     </Box>
   );
 };
