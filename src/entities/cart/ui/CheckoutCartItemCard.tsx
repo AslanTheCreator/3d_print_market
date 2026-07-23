@@ -51,6 +51,7 @@ export const CheckoutCartItemCard = ({
   // Деструктурируем product из ProductBasket
   const { product } = item;
   const { id, name, price, categories, image, currency } = product;
+  const isStockInsufficient = item.enoughStock === false;
   const productImage = image?.[0] ?? null;
   const productImageSrc = getImageUrl(productImage, "thumbnail");
   const imageSrc = productImageSrc && !hasImageError ? productImageSrc : null;
@@ -70,15 +71,30 @@ export const CheckoutCartItemCard = ({
 
   return (
     <Box
+      data-testid={`checkout-cart-item-${id}`}
+      data-stock-status={isStockInsufficient ? "insufficient" : "enough"}
       sx={{
         display: "flex",
         alignItems: "flex-start",
         gap: { xs: 1.5, sm: 2 },
         py: { xs: 2, sm: 2.5 },
-        borderBottom: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+        px: { xs: 1, sm: 1.5 },
+        mx: { xs: -1, sm: -1.5 },
+        border: `1px solid ${
+          isStockInsufficient
+            ? alpha(theme.palette.error.main, 0.55)
+            : "transparent"
+        }`,
+        borderBottomColor: isStockInsufficient
+          ? alpha(theme.palette.error.main, 0.55)
+          : alpha(theme.palette.divider, 0.8),
+        borderRadius: isStockInsufficient ? 2 : 0,
+        backgroundColor: isStockInsufficient
+          ? alpha(theme.palette.error.main, 0.06)
+          : "transparent",
         opacity: isRemoving ? 0.5 : 1,
         pointerEvents: isRemoving ? "none" : "auto",
-        transition: "opacity 0.2s ease-in-out",
+        transition: "opacity 0.2s ease-in-out, background-color 0.2s ease-in-out",
       }}
     >
       {/* Checkbox */}
@@ -188,6 +204,31 @@ export const CheckoutCartItemCard = ({
                 {name}
               </Typography>
             </Link>
+
+            <Typography
+              data-testid={`checkout-stock-availability-${id}`}
+              variant="caption"
+              color={isStockInsufficient ? "error.main" : "text.secondary"}
+              sx={{ display: "block", mt: 0.75 }}
+            >
+              {item.availableCount === null
+                ? "Количество не ограничено"
+                : `Доступно: ${item.availableCount} шт.`}
+            </Typography>
+
+            {isStockInsufficient && (
+              <Typography
+                data-testid={`checkout-stock-error-${id}`}
+                variant="body2"
+                color="error.main"
+                fontWeight={600}
+                sx={{ mt: 0.5 }}
+              >
+                {item.availableCount === null
+                  ? "Недостаточно товара для выбранного количества"
+                  : `Недостаточно товара: в корзине ${quantity} шт., доступно ${item.availableCount} шт.`}
+              </Typography>
+            )}
           </Box>
 
           {/* Delete button */}
@@ -227,7 +268,9 @@ export const CheckoutCartItemCard = ({
             onIncrement={onQuantityIncrement}
             onDecrement={onQuantityDecrement}
             min={1}
-            max={maxQuantity}
+            max={
+              maxQuantity ?? (isStockInsufficient ? quantity : undefined)
+            }
             size={isMobile ? "small" : "medium"}
           />
         </Stack>

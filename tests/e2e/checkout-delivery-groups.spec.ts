@@ -103,10 +103,30 @@ test("selects delivery independently for each seller", async ({
     },
   ];
   const cartItems = [
-    { product: createProduct(1, 10, "seller-one", 1000), count: 1 },
-    { product: createProduct(2, 10, "seller-one", 2000), count: 1 },
-    { product: createProduct(3, 20, "seller-two", 3000), count: 1 },
-    { product: createProduct(4, 30, "seller-without-delivery", 4000), count: 1 },
+    {
+      product: createProduct(1, 10, "seller-one", 1000),
+      count: 1,
+      availableCount: 5,
+      enoughStock: true,
+    },
+    {
+      product: createProduct(2, 10, "seller-one", 2000),
+      count: 1,
+      availableCount: 5,
+      enoughStock: true,
+    },
+    {
+      product: createProduct(3, 20, "seller-two", 3000),
+      count: 1,
+      availableCount: 5,
+      enoughStock: true,
+    },
+    {
+      product: createProduct(4, 30, "seller-without-delivery", 4000),
+      count: 1,
+      availableCount: 5,
+      enoughStock: true,
+    },
   ];
   const createdOrders: unknown[] = [];
   let orderResponseMode: "partial" | "failure" | "success" = "partial";

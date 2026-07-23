@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { Box, Divider, Paper, Stack, Typography, alpha, useTheme } from "@mui/material";
 import { StorefrontOutlined } from "@mui/icons-material";
 import { useAuth } from "@/features/auth";
@@ -9,6 +10,7 @@ import {
   type ProductBasket,
 } from "@/entities/cart";
 import type { Transfer } from "@/shared/types";
+import { useNotification } from "@/shared/ui/notification";
 import type { SellerCheckoutGroup } from "../model/types";
 import { SellerDeliverySelector } from "./SellerDeliverySelector";
 
@@ -36,9 +38,17 @@ const CheckoutCartItemWrapper = ({
   isRemoving: boolean;
 }) => {
   const { isAuthenticated } = useAuth();
+  const { showNotification } = useNotification();
+  const handleSyncError = useCallback(() => {
+    showNotification(
+      "Не удалось сохранить количество. Восстановлено предыдущее значение",
+      "error",
+    );
+  }, [showNotification]);
   const { quantity, handleIncrement, handleDecrement, maxQuantity } =
     useCartQuantity(item.product.id, isAuthenticated, {
-      maxQuantity: item.product.count,
+      maxQuantity: item.availableCount,
+      onSyncError: handleSyncError,
     });
 
   return (

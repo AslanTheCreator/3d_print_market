@@ -28,8 +28,9 @@ const Checkout = () => {
     data: cartItems,
     isLoading: isCartLoading,
     isError: isCartError,
+    isFetching: isCartFetching,
     refetch: refetchCart,
-  } = useCartProducts();
+  } = useCartProducts({ forceRefetchOnMount: true });
   const {
     data: currentUser,
     isPending: isLoadingCurrentUser,
@@ -52,6 +53,8 @@ const Checkout = () => {
     currentUserId: currentUser?.id,
     isLoadingCurrentUser,
     isCurrentUserError,
+    isRefreshingCart: isCartFetching,
+    isCartValidationError: isCartError && cartItems !== undefined,
   });
 
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
@@ -127,7 +130,7 @@ const Checkout = () => {
   };
 
   // Загрузка корзины
-  if (isCartError) {
+  if (isCartError && cartItems === undefined) {
     return <ErrorState type="cart" onRetry={() => void refetchCart()} />;
   }
 
@@ -215,6 +218,7 @@ const Checkout = () => {
         checkoutState={checkoutState}
         isSubmitting={isSubmitting}
         onSubmit={handleSubmit}
+        onRetryStockValidation={() => void refetchCart()}
       />
 
       <CheckoutResultDialog

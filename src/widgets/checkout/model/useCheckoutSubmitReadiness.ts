@@ -17,6 +17,10 @@ interface UseCheckoutSubmitReadinessProps {
   isLoadingCurrentUser: boolean;
   isCurrentUserError: boolean;
   hasOwnSelectedItems: boolean;
+  hasPendingSelectedItems: boolean;
+  hasNeedsValidationSelectedItems: boolean;
+  hasInsufficientStockSelectedItems: boolean;
+  isRefreshingCart: boolean;
   activeSellerGroups: SellerCheckoutGroup[];
 }
 
@@ -29,6 +33,10 @@ export const useCheckoutSubmitReadiness = ({
   isLoadingCurrentUser,
   isCurrentUserError,
   hasOwnSelectedItems,
+  hasPendingSelectedItems,
+  hasNeedsValidationSelectedItems,
+  hasInsufficientStockSelectedItems,
+  isRefreshingCart,
   activeSellerGroups,
 }: UseCheckoutSubmitReadinessProps): CheckoutSubmitReadiness => {
   return useMemo(
@@ -42,6 +50,10 @@ export const useCheckoutSubmitReadiness = ({
         isLoadingCurrentUser,
         isCurrentUserError,
         hasOwnSelectedItems,
+        hasPendingSelectedItems,
+        hasNeedsValidationSelectedItems,
+        hasInsufficientStockSelectedItems,
+        isRefreshingCart,
         activeSellerGroups,
       }),
     [
@@ -52,6 +64,10 @@ export const useCheckoutSubmitReadiness = ({
       isLoadingCurrentUser,
       isCurrentUserError,
       hasOwnSelectedItems,
+      hasPendingSelectedItems,
+      hasNeedsValidationSelectedItems,
+      hasInsufficientStockSelectedItems,
+      isRefreshingCart,
       selectedAddress,
       selectedItemsCount,
     ],

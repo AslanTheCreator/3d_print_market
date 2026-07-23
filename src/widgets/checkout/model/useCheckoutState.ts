@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ProductBasket } from "@/entities/cart";
+import { ProductBasket, useCartQuantityStore } from "@/entities/cart";
 import { useCheckoutAddress } from "./useCheckoutAddress";
 import { useCheckoutDelivery } from "./useCheckoutDelivery";
 import { useCheckoutSelection } from "./useCheckoutSelection";
@@ -12,6 +12,8 @@ interface UseCheckoutStateProps {
   currentUserId: number | undefined;
   isLoadingCurrentUser: boolean;
   isCurrentUserError: boolean;
+  isRefreshingCart: boolean;
+  isCartValidationError: boolean;
 }
 
 const EMPTY_CART_ITEMS: ProductBasket[] = [];
@@ -21,8 +23,11 @@ export const useCheckoutState = ({
   currentUserId,
   isLoadingCurrentUser,
   isCurrentUserError,
+  isRefreshingCart,
+  isCartValidationError,
 }: UseCheckoutStateProps) => {
   const normalizedCartItems = cartItems ?? EMPTY_CART_ITEMS;
+  const syncStates = useCartQuantityStore((state) => state.syncStates);
   const [comment, setComment] = useState<string>("");
   const {
     selectedAddress,
@@ -49,6 +54,19 @@ export const useCheckoutState = ({
     selectedItems.some((item) => item.product.sellerId === currentUserId);
   const isCurrentUserUnavailable =
     isCurrentUserError || (!isLoadingCurrentUser && currentUserId === undefined);
+  const hasPendingSelectedItems = selectedItems.some(
+    (item) => syncStates[item.product.id]?.status === "pending",
+  );
+  const hasNeedsValidationSelectedItems =
+    isCartValidationError ||
+    selectedItems.some(
+      (item) =>
+        syncStates[item.product.id] === undefined ||
+        syncStates[item.product.id].status === "needsValidation",
+    );
+  const hasInsufficientStockSelectedItems = selectedItems.some(
+    (item) => item.enoughStock === false,
+  );
 
   const { isReadyToSubmit, submitBlockerMessage } =
     useCheckoutSubmitReadiness({
@@ -60,8 +78,18 @@ export const useCheckoutState = ({
       isLoadingCurrentUser,
       isCurrentUserError: isCurrentUserUnavailable,
       hasOwnSelectedItems,
+      hasPendingSelectedItems,
+      hasNeedsValidationSelectedItems,
+      hasInsufficientStockSelectedItems,
+      isRefreshingCart,
       activeSellerGroups: checkoutDelivery.activeSellerGroups,
     });
+
+  const canRetryStockValidation =
+    selectedItems.length > 0 &&
+    !isRefreshingCart &&
+    !hasPendingSelectedItems &&
+    hasNeedsValidationSelectedItems;
 
   return {
     selectedAddress,
@@ -82,6 +110,7 @@ export const useCheckoutState = ({
     ...checkoutDelivery,
     isReadyToSubmit,
     submitBlockerMessage,
+    canRetryStockValidation,
   };
 };
 

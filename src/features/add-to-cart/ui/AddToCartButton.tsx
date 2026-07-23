@@ -51,6 +51,12 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   } = useAuthRequired();
   const { isAuthenticated } = useAuth();
   const { showNotification } = useNotification();
+  const handleQuantitySyncError = React.useCallback(() => {
+    showNotification(
+      "Не удалось сохранить количество. Восстановлено предыдущее значение",
+      "error",
+    );
+  }, [showNotification]);
 
   const {
     handleAddToCart,
@@ -79,7 +85,10 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     handleDecrement,
     handleSetQuantity,
     adjustQuantityToMax,
-  } = useCartQuantity(productId, isAuthenticated, { maxQuantity: stockCount });
+  } = useCartQuantity(productId, isAuthenticated, {
+    maxQuantity: stockCount,
+    onSyncError: handleQuantitySyncError,
+  });
 
   const isPreorder = availability === "PREORDER";
   const isRemoving = removingItemIds.includes(productId);

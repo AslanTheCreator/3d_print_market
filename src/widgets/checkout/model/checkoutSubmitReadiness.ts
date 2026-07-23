@@ -10,6 +10,10 @@ interface GetCheckoutSubmitReadinessParams {
   isLoadingCurrentUser: boolean;
   isCurrentUserError: boolean;
   hasOwnSelectedItems: boolean;
+  hasPendingSelectedItems?: boolean;
+  hasNeedsValidationSelectedItems?: boolean;
+  hasInsufficientStockSelectedItems?: boolean;
+  isRefreshingCart?: boolean;
   activeSellerGroups: SellerCheckoutGroup[];
 }
 
@@ -27,6 +31,10 @@ export function getCheckoutSubmitReadiness({
   isLoadingCurrentUser,
   isCurrentUserError,
   hasOwnSelectedItems,
+  hasPendingSelectedItems,
+  hasNeedsValidationSelectedItems,
+  hasInsufficientStockSelectedItems,
+  isRefreshingCart,
   activeSellerGroups,
 }: GetCheckoutSubmitReadinessParams): CheckoutSubmitReadiness {
   const submitBlockerMessage = getSubmitBlockerMessage({
@@ -38,6 +46,10 @@ export function getCheckoutSubmitReadiness({
     isLoadingCurrentUser,
     isCurrentUserError,
     hasOwnSelectedItems,
+    hasPendingSelectedItems,
+    hasNeedsValidationSelectedItems,
+    hasInsufficientStockSelectedItems,
+    isRefreshingCart,
     activeSellerGroups,
   });
 
@@ -56,10 +68,26 @@ function getSubmitBlockerMessage({
   isLoadingCurrentUser,
   isCurrentUserError,
   hasOwnSelectedItems,
+  hasPendingSelectedItems = false,
+  hasNeedsValidationSelectedItems = false,
+  hasInsufficientStockSelectedItems = false,
+  isRefreshingCart = false,
   activeSellerGroups,
 }: GetCheckoutSubmitReadinessParams): string | null {
   if (selectedItemsCount === 0) {
     return "Выберите хотя бы один товар";
+  }
+
+  if (isRefreshingCart || hasPendingSelectedItems) {
+    return "Синхронизируем количество товаров";
+  }
+
+  if (hasNeedsValidationSelectedItems) {
+    return "Не удалось проверить актуальные остатки";
+  }
+
+  if (hasInsufficientStockSelectedItems) {
+    return "Недостаточно товара для оформления заказа. Измените количество или снимите товар с выбора";
   }
 
   if (selectedAddress === null) {

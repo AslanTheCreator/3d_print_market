@@ -1,13 +1,15 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { debounce } from "lodash";
+import { useCartChecks } from "./useCartChecks";
+import { useCartQuantityStore } from "./cartQuantityStore";
 import {
-  useCartChecks,
-  useCartQuantityStore,
+  UpdateCartQuantityVariables,
   useUpdateCartQuantity,
-} from "@/entities/cart";
+} from "./useCartMutations";
 
-interface UseCartQuantityOptions {
+export interface UseCartQuantityOptions {
   maxQuantity?: number | null;
+  onSyncError?: (error: unknown) => void;
 }
 
 export const useCartQuantity = (
@@ -16,31 +18,47 @@ export const useCartQuantity = (
   options?: UseCartQuantityOptions,
 ) => {
   const { isProductInCart } = useCartChecks(isAuthenticated);
-  const { mutate: updateServerQuantity } = useUpdateCartQuantity();
+  const { mutate: updateServerQuantity } = useUpdateCartQuantity(productId, {
+    onSyncError: options?.onSyncError,
+  });
+  const mutationRef = useRef(updateServerQuantity);
 
-  const {
-    getQuantity,
-    setQuantity,
-    incrementQuantity,
-    decrementQuantity,
-    removeItem,
-  } = useCartQuantityStore();
+  useEffect(() => {
+    mutationRef.current = updateServerQuantity;
+  }, [updateServerQuantity]);
+
+  const quantity = useCartQuantityStore((state) =>
+    state.getQuantity(productId),
+  );
+  const syncStatus = useCartQuantityStore((state) =>
+    state.getSyncStatus(productId),
+  );
+  const getQuantity = useCartQuantityStore((state) => state.getQuantity);
+  const setQuantity = useCartQuantityStore((state) => state.setQuantity);
+  const removeItem = useCartQuantityStore((state) => state.removeItem);
 
   const inCart = isProductInCart(productId);
-  const quantity = getQuantity(productId);
   const maxQuantity = options?.maxQuantity;
 
   const debouncedUpdateRef = useRef(
-    debounce((id: number, count: number) => {
-      updateServerQuantity({ productId: id, count });
+    debounce((variables: UpdateCartQuantityVariables) => {
+      mutationRef.current(variables);
     }, 500),
   );
 
+  useEffect(() => {
+    const debouncedUpdate = debouncedUpdateRef.current;
+
+    return () => {
+      debouncedUpdate.flush();
+    };
+  }, [productId]);
+
   const syncWithServer = useCallback(
-    (newQuantity: number) => {
-      debouncedUpdateRef.current(productId, newQuantity);
+    (newQuantity: number, revision: number) => {
+      debouncedUpdateRef.current({ count: newQuantity, revision });
     },
-    [productId],
+    [],
   );
 
   const canIncrement =
@@ -52,11 +70,20 @@ export const useCartQuantity = (
     quantity >= maxQuantity;
 
   const handleIncrement = useCallback(() => {
-    if (!canIncrement) return;
+    const currentQuantity = getQuantity(productId);
 
-    incrementQuantity(productId);
-    syncWithServer(quantity + 1);
-  }, [canIncrement, incrementQuantity, productId, quantity, syncWithServer]);
+    if (
+      maxQuantity !== null &&
+      maxQuantity !== undefined &&
+      currentQuantity >= maxQuantity
+    ) {
+      return;
+    }
+
+    const nextQuantity = currentQuantity + 1;
+    const revision = setQuantity(productId, nextQuantity);
+    syncWithServer(nextQuantity, revision);
+  }, [getQuantity, maxQuantity, productId, setQuantity, syncWithServer]);
 
   const handleDecrement = useCallback(() => {
     const currentQuantity = getQuantity(productId);
@@ -65,53 +92,36 @@ export const useCartQuantity = (
       return;
     }
 
-    decrementQuantity(productId);
-    syncWithServer(currentQuantity - 1);
-  }, [decrementQuantity, getQuantity, productId, syncWithServer]);
+    const nextQuantity = currentQuantity - 1;
+    const revision = setQuantity(productId, nextQuantity);
+    syncWithServer(nextQuantity, revision);
+  }, [getQuantity, productId, setQuantity, syncWithServer]);
 
   const handleSetQuantity = useCallback(
-    (qty: number) => {
-      if (qty <= 0) {
+    (requestedQuantity: number) => {
+      if (requestedQuantity <= 0) {
         removeItem(productId);
         return;
       }
 
-      const finalQuantity =
+      const nextQuantity =
         maxQuantity !== null && maxQuantity !== undefined
-          ? Math.min(qty, maxQuantity)
-          : qty;
-
-      setQuantity(productId, finalQuantity);
-      syncWithServer(finalQuantity);
+          ? Math.min(requestedQuantity, maxQuantity)
+          : requestedQuantity;
+      const revision = setQuantity(productId, nextQuantity);
+      syncWithServer(nextQuantity, revision);
     },
     [maxQuantity, productId, removeItem, setQuantity, syncWithServer],
   );
 
-  const adjustQuantityToMax = useCallback(() => {
-    if (
-      maxQuantity !== null &&
-      maxQuantity !== undefined &&
-      quantity > maxQuantity
-    ) {
-      if (maxQuantity <= 0) {
-        removeItem(productId);
-      } else {
-        setQuantity(productId, maxQuantity);
-        syncWithServer(maxQuantity);
-      }
-    }
-  }, [
-    maxQuantity,
-    productId,
-    quantity,
-    removeItem,
-    setQuantity,
-    syncWithServer,
-  ]);
+  // Оставлено для совместимости: актуальный остаток не должен автоматически
+  // уменьшать уже выбранное пользователем количество.
+  const adjustQuantityToMax = useCallback(() => undefined, []);
 
   return {
     inCart,
     quantity,
+    syncStatus,
     maxQuantity,
     canIncrement,
     isAtMaxQuantity,

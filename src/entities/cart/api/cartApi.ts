@@ -14,9 +14,9 @@ export const cartApi = {
     );
 
     const withImages = await attachImages(data, (item) => item.product.imageId);
-    return withImages.map((item) => ({
-      product: { ...item.product, image: item.image },
-      count: item.count,
+    return withImages.map(({ image, ...item }) => ({
+      ...item,
+      product: { ...item.product, image },
     }));
   },
 

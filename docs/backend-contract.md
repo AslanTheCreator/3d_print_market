@@ -17,6 +17,17 @@ Auth сейчас использует bearer tokens:
 | `POST /auth/refresh` | refresh token в `X-Refresh-Token`, новый access token в ответе |
 | `POST /auth/password/reset` | email в query params |
 
+Контракт корзины backend v1.28:
+
+| Запрос | Ожидание frontend |
+| --- | --- |
+| `POST /basket/find` | каждая `ProductBasketDto` содержит `availableCount: number \| null` и `enoughStock: boolean` |
+| `PUT /basket` | успешный ответ `200` без body; после него frontend повторяет `POST /basket/find` |
+
+`availableCount` — текущий доступный остаток; `null` означает отсутствие ограниченного остатка. `enoughStock` — серверное решение о достаточности остатка для текущего количества в корзине и имеет приоритет над вычислениями frontend.
+
+Zustand хранит оптимистичное количество для мгновенной синхронизации UI, но подтверждённые количество и остаток берутся из повторного ответа backend. Frontend не уменьшает количество автоматически: при ошибке изменения выполняет rollback, а при ошибке контрольного запроса требует retry. Недостаточный остаток, ожидающее подтверждения количество или непроверенные данные блокируют checkout только для выбранных позиций.
+
 Checkout вызывает `POST /order/BOOKED` отдельно для каждой позиции и ожидает массив ID заказов. `Idempotency-Key` пока не отправляется.
 
 ## Обязательные согласования

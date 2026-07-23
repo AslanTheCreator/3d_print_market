@@ -17,6 +17,8 @@ const productItem = (
   return {
     product: { id, sellerId, sellerLogin },
     count: 1,
+    availableCount: 5,
+    enoughStock: true,
   } as ProductBasket;
 };
 
@@ -268,6 +270,93 @@ test.describe("checkout delivery model", () => {
       isReadyToSubmit: false,
       submitBlockerMessage:
         "Нельзя оформить заказ на собственный товар. Снимите его выбор или удалите из корзины",
+    });
+  });
+
+  test("prioritizes selection and selected-item stock blockers", () => {
+    const commonParams = {
+      ...verifiedUserState,
+      selectedAddress,
+      addressesCount: 1,
+      isLoadingAddresses: false,
+      isAddressesError: false,
+      selectedItemsCount: 1,
+      activeSellerGroups: [sellerGroup()],
+      hasPendingSelectedItems: false,
+      hasNeedsValidationSelectedItems: false,
+      hasInsufficientStockSelectedItems: false,
+      isRefreshingCart: false,
+    };
+
+    expect(
+      getCheckoutSubmitReadiness({
+        ...commonParams,
+        selectedAddress: null,
+        selectedItemsCount: 0,
+        hasPendingSelectedItems: true,
+        hasNeedsValidationSelectedItems: true,
+        hasInsufficientStockSelectedItems: true,
+      }).submitBlockerMessage,
+    ).toBe("Выберите хотя бы один товар");
+
+    expect(
+      getCheckoutSubmitReadiness({
+        ...commonParams,
+        selectedAddress: null,
+        hasPendingSelectedItems: true,
+        hasNeedsValidationSelectedItems: true,
+        hasInsufficientStockSelectedItems: true,
+      }).submitBlockerMessage,
+    ).toBe("Синхронизируем количество товаров");
+
+    expect(
+      getCheckoutSubmitReadiness({
+        ...commonParams,
+        selectedAddress: null,
+        isRefreshingCart: true,
+        hasNeedsValidationSelectedItems: true,
+        hasInsufficientStockSelectedItems: true,
+      }).submitBlockerMessage,
+    ).toBe("Синхронизируем количество товаров");
+
+    expect(
+      getCheckoutSubmitReadiness({
+        ...commonParams,
+        selectedAddress: null,
+        hasNeedsValidationSelectedItems: true,
+        hasInsufficientStockSelectedItems: true,
+      }).submitBlockerMessage,
+    ).toBe("Не удалось проверить актуальные остатки");
+
+    expect(
+      getCheckoutSubmitReadiness({
+        ...commonParams,
+        selectedAddress: null,
+        hasInsufficientStockSelectedItems: true,
+      }).submitBlockerMessage,
+    ).toBe(
+      "Недостаточно товара для оформления заказа. Измените количество или снимите товар с выбора",
+    );
+  });
+
+  test("does not block checkout for unselected pending or stock issues", () => {
+    expect(
+      getCheckoutSubmitReadiness({
+        ...verifiedUserState,
+        selectedAddress,
+        addressesCount: 1,
+        isLoadingAddresses: false,
+        isAddressesError: false,
+        selectedItemsCount: 1,
+        activeSellerGroups: [sellerGroup()],
+        hasPendingSelectedItems: false,
+        hasNeedsValidationSelectedItems: false,
+        hasInsufficientStockSelectedItems: false,
+        isRefreshingCart: false,
+      }),
+    ).toEqual({
+      isReadyToSubmit: true,
+      submitBlockerMessage: null,
     });
   });
 });

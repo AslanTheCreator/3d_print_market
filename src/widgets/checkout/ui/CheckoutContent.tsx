@@ -19,12 +19,14 @@ interface CheckoutContentProps {
   checkoutState: CheckoutState;
   isSubmitting: boolean;
   onSubmit: () => void;
+  onRetryStockValidation: () => void;
 }
 
 export const CheckoutContent: React.FC<CheckoutContentProps> = ({
   checkoutState,
   isSubmitting,
   onSubmit,
+  onRetryStockValidation,
 }) => {
   const theme = useTheme();
 
@@ -94,6 +96,8 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
           submitBlockerMessage={checkoutState.submitBlockerMessage}
           isSubmitting={isSubmitting}
           onSubmit={onSubmit}
+          showStockValidationRetry={checkoutState.canRetryStockValidation}
+          onRetryStockValidation={onRetryStockValidation}
         />
       </Grid>
     </Grid>

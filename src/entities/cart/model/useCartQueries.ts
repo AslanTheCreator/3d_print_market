@@ -2,10 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { cartApi } from "../api/cartApi";
 import { cartKeys } from "./queryKeys";
-import { ProductBasket } from "../model/types";
-import { useCartQuantityStore } from "../model/cartQuantityStore";
+import { ProductBasket } from "./types";
+import { useCartQuantityStore } from "./cartQuantityStore";
 
-export const useCartProducts = (options?: { enabled?: boolean }) => {
+export interface UseCartProductsOptions {
+  enabled?: boolean;
+  forceRefetchOnMount?: boolean;
+}
+
+export const useCartProducts = (options?: UseCartProductsOptions) => {
   const syncWithServer = useCartQuantityStore((state) => state.syncWithServer);
 
   const query = useQuery<ProductBasket[]>({
@@ -14,6 +19,7 @@ export const useCartProducts = (options?: { enabled?: boolean }) => {
     staleTime: 1000 * 60 * 5,
     retry: 1,
     enabled: options?.enabled ?? true,
+    refetchOnMount: options?.forceRefetchOnMount ? "always" : undefined,
   });
 
   // Синхронизируем Zustand с данными сервера при успешной загрузке
@@ -25,7 +31,7 @@ export const useCartProducts = (options?: { enabled?: boolean }) => {
       }));
       syncWithServer(serverItems);
     }
-  }, [query.data, syncWithServer]);
+  }, [query.data, query.dataUpdatedAt, syncWithServer]);
 
   return query;
 };

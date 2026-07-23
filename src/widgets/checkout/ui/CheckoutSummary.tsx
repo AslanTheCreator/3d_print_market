@@ -26,6 +26,8 @@ interface CheckoutSummaryProps {
   submitBlockerMessage: string | null;
   isSubmitting: boolean;
   onSubmit: () => void;
+  showStockValidationRetry: boolean;
+  onRetryStockValidation: () => void;
   isLoading?: boolean;
 }
 
@@ -36,6 +38,8 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
   submitBlockerMessage,
   isSubmitting,
   onSubmit,
+  showStockValidationRetry,
+  onRetryStockValidation,
   isLoading = false,
 }) => {
   const theme = useTheme();
@@ -233,14 +237,27 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
 
       {/* Подсказка если не готово */}
       {submitBlockerMessage && !isSubmitting && (
-        <Typography
-          data-testid="checkout-submit-blocker"
-          variant="caption"
-          color="text.secondary"
-          sx={{ display: "block", textAlign: "center", mt: 1 }}
-        >
-          {submitBlockerMessage}
-        </Typography>
+        <Box sx={{ mt: 1, textAlign: "center" }}>
+          <Typography
+            data-testid="checkout-submit-blocker"
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: "block" }}
+          >
+            {submitBlockerMessage}
+          </Typography>
+          {showStockValidationRetry && (
+            <Button
+              data-testid="checkout-stock-validation-retry"
+              variant="text"
+              size="small"
+              onClick={onRetryStockValidation}
+              sx={{ mt: 0.5, textTransform: "none" }}
+            >
+              Повторить проверку
+            </Button>
+          )}
+        </Box>
       )}
     </Paper>
   );

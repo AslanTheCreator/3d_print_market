@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { type ProductBasket, useCartQuantityStore } from "@/entities/cart";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  cartKeys,
+  type ProductBasket,
+  useCartQuantityStore,
+} from "@/entities/cart";
 import { orderApi } from "@/entities/order";
 import { buildOrderToCreate, getFailedOrders } from "./orderCreatePayload";
 import {
@@ -31,12 +36,63 @@ export const useOrderCreateSubmit = ({
   const [submitResult, setSubmitResult] = useState<CheckoutResult | null>(null);
   const isSubmittingRef = useRef(false);
   const failedOrdersRef = useRef<OrderToCreate[]>([]);
+  const queryClient = useQueryClient();
   const { getQuantity } = useCartQuantityStore();
   const { syncAfterSubmit, notifySubmitResult } = useOrderCreateSideEffects({
     onSuccess,
     onPartialSuccess,
     onError,
   });
+
+  const canSubmitProducts = useCallback(
+    (productIds: number[], fallbackItems: ProductBasket[]) => {
+      const quantityState = useCartQuantityStore.getState();
+      const localProductIds = new Set(
+        quantityState.items.map((item) => item.productId),
+      );
+
+      if (
+        productIds.some(
+          (productId) =>
+            !localProductIds.has(productId) ||
+            quantityState.syncStates[productId] === undefined ||
+            quantityState.getSyncStatus(productId) !== "synced",
+        )
+      ) {
+        return false;
+      }
+
+      const cartQueryState = queryClient.getQueryState(cartKeys.all);
+
+      if (
+        cartQueryState?.fetchStatus === "fetching" ||
+        cartQueryState?.status === "error"
+      ) {
+        return false;
+      }
+
+      const latestCartItems = queryClient.getQueryData<ProductBasket[]>(
+        cartKeys.all,
+      );
+      const latestItemsById = latestCartItems
+        ? new Map(
+            latestCartItems.map((item) => [item.product.id, item] as const),
+          )
+        : null;
+      const fallbackItemsById = new Map(
+        fallbackItems.map((item) => [item.product.id, item] as const),
+      );
+
+      return productIds.every((productId) => {
+        const latestItem = latestItemsById
+          ? latestItemsById.get(productId)
+          : fallbackItemsById.get(productId);
+
+        return latestItem !== undefined && latestItem.enoughStock !== false;
+      });
+    },
+    [queryClient],
+  );
 
   const createOrderPayload = useCallback(
     (item: ProductBasket): OrderToCreate => {
@@ -98,10 +154,16 @@ export const useOrderCreateSubmit = ({
   );
 
   const handleSubmit = useCallback(async () => {
+    const selectedCartItems = cartItems ?? [];
+    const selectedProductIds = selectedCartItems.map(
+      (item) => item.product.id,
+    );
+
     if (
       isSubmittingRef.current ||
-      !cartItems?.length ||
-      !checkoutState.isReadyToSubmit
+      selectedCartItems.length === 0 ||
+      !checkoutState.isReadyToSubmit ||
+      !canSubmitProducts(selectedProductIds, selectedCartItems)
     ) {
       return;
     }
@@ -111,7 +173,7 @@ export const useOrderCreateSubmit = ({
     setSubmitResult(null);
 
     try {
-      const ordersToCreate = cartItems.map(createOrderPayload);
+      const ordersToCreate = selectedCartItems.map(createOrderPayload);
       const checkoutResult = await executeOrders(ordersToCreate);
 
       failedOrdersRef.current = getFailedOrders(
@@ -129,6 +191,7 @@ export const useOrderCreateSubmit = ({
     }
   }, [
     cartItems,
+    canSubmitProducts,
     checkoutState.isReadyToSubmit,
     createOrderPayload,
     executeOrders,
@@ -147,7 +210,13 @@ export const useOrderCreateSubmit = ({
 
     const retryOrders = failedOrdersRef.current;
 
-    if (retryOrders.length === 0) {
+    const retryProductIds = retryOrders.map((order) => order.productId);
+    const fallbackItems = cartItems ?? [];
+
+    if (
+      retryOrders.length === 0 ||
+      !canSubmitProducts(retryProductIds, fallbackItems)
+    ) {
       return;
     }
 
@@ -173,6 +242,8 @@ export const useOrderCreateSubmit = ({
     }
   }, [
     submitResult,
+    cartItems,
+    canSubmitProducts,
     executeOrders,
     syncAfterSubmit,
     notifySubmitResult,
