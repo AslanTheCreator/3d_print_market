@@ -6,7 +6,8 @@
 - [api-and-auth.md](./api-and-auth.md) — текущая HTTP- и auth-реализация.
 - [core-flows.md](./core-flows.md) — основные пользовательские сценарии.
 - [testing.md](./testing.md) — команды и выбор проверок.
-- [deployment.md](./deployment.md) — env, standalone, Docker и CI.
+- [deployment.md](./deployment.md) — env, standalone, Docker, выпуск версий и CI.
+- [CHANGELOG.md](../CHANGELOG.md) — значимые изменения между production-релизами.
 
 ## Согласование с backend
 

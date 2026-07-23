@@ -24,6 +24,14 @@ FROM node:24.15.0-alpine AS runner
 
 WORKDIR /app
 
+ARG APP_VERSION=dev
+ARG VCS_REF=unknown
+
+LABEL org.opencontainers.image.title="Figurzilla frontend" \
+      org.opencontainers.image.source="https://github.com/AslanTheCreator/3d_print_market" \
+      org.opencontainers.image.version=$APP_VERSION \
+      org.opencontainers.image.revision=$VCS_REF
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
