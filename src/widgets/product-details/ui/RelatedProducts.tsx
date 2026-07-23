@@ -15,8 +15,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth";
 import { AddToCartButton } from "@/features/add-to-cart";
+import { ExternalPurchaseButton } from "@/features/external-purchase";
 import { FavoriteButton } from "@/features/toggle-favorite";
 import { Product } from "@/shared/types";
+import { useProfileUser } from "@/entities/user";
 
 interface RelatedProductsProps {
   categoryId: number;
@@ -35,6 +37,20 @@ const RelatedProductsGrid = ({
   const theme = useTheme();
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const hasExternalProducts = products.some(
+    (product) => product.availability === "EXTERNAL_ONLY",
+  );
+  const {
+    data: currentUser,
+    isPending: isOwnerCheckPending,
+    isError: isOwnerCheckError,
+  } = useProfileUser({
+    enabled: isAuthenticated && hasExternalProducts,
+  });
+  const isOwnerCheckUnavailable =
+    isAuthenticated &&
+    hasExternalProducts &&
+    (isOwnerCheckPending || isOwnerCheckError);
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
@@ -62,13 +78,30 @@ const RelatedProductsGrid = ({
               {...product}
               onCardClick={() => router.push(`/catalog/${product.id}/detail`)}
               actions={
-                <AddToCartButton
-                  productId={product.id}
-                  sellerId={product.sellerId}
-                  availability={product.availability}
-                  productName={product.name}
-                  stockCount={product.count}
-                />
+                product.availability === "EXTERNAL_ONLY" ? (
+                  <ExternalPurchaseButton
+                    externalUrl={product.externalUrl}
+                    label={
+                      isAuthenticated && currentUser?.id === product.sellerId
+                        ? "Ваш товар"
+                        : isOwnerCheckError
+                          ? "Недоступно"
+                          : "Купить"
+                    }
+                    disabled={
+                      isOwnerCheckUnavailable ||
+                      (isAuthenticated && currentUser?.id === product.sellerId)
+                    }
+                  />
+                ) : (
+                  <AddToCartButton
+                    productId={product.id}
+                    sellerId={product.sellerId}
+                    availability={product.availability}
+                    productName={product.name}
+                    stockCount={product.count}
+                  />
+                )
               }
             />
             <FavoriteButton

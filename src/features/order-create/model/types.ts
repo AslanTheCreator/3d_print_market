@@ -6,6 +6,8 @@ export interface OrderResult {
   productName: string;
   status: "success" | "error";
   errorMessage?: string;
+  errorCode?: string;
+  retryable?: boolean;
 }
 
 export interface OrderToCreate {

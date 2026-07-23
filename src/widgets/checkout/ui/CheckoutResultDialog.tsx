@@ -59,6 +59,9 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
   const isFullSuccess = result.successCount === result.totalCount;
   const isPartialSuccess =
     result.successCount > 0 && result.successCount < result.totalCount;
+  const hasRetryableFailures = result.failed.some(
+    (item) => item.retryable !== false,
+  );
   const getDialogIcon = () => {
     if (isFullSuccess) {
       return (
@@ -84,9 +87,13 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
       return `Все ${result.totalCount} ${getItemWord(result.totalCount)} успешно оформлены. Вы можете отслеживать их статус в разделе "Мои покупки".`;
     }
     if (isPartialSuccess) {
-      return `Оформлено ${result.successCount} из ${result.totalCount} ${getItemWord(result.totalCount)}. Повторите неудачные заказы или вернитесь к оформлению.`;
+      return hasRetryableFailures
+        ? `Оформлено ${result.successCount} из ${result.totalCount} ${getItemWord(result.totalCount)}. Повторите неудачные заказы или вернитесь к оформлению.`
+        : `Оформлено ${result.successCount} из ${result.totalCount} ${getItemWord(result.totalCount)}. Вернитесь к оформлению, чтобы проверить недоступные товары.`;
     }
-    return "Заказы не были оформлены. Повторите попытку или вернитесь к оформлению, чтобы проверить товары и доставку.";
+    return hasRetryableFailures
+      ? "Заказы не были оформлены. Повторите попытку или вернитесь к оформлению, чтобы проверить товары и доставку."
+      : "Заказы не были оформлены. Вернитесь к оформлению, чтобы проверить недоступные товары.";
   };
 
   return (
@@ -250,7 +257,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
           gap: 1,
         }}
       >
-        {result.failed.length > 0 && onRetry && (
+        {hasRetryableFailures && onRetry && (
           <Button
             variant="outlined"
             color="primary"

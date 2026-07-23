@@ -8,9 +8,12 @@ import {
   useCartQuantityStore,
 } from "@/entities/cart";
 import { orderApi } from "@/entities/order";
+import { productKeys } from "@/entities/product";
+import { ApiError, ErrorCodes } from "@/shared/lib/errorHandler";
 import { buildOrderToCreate, getFailedOrders } from "./orderCreatePayload";
 import {
   buildCheckoutResult,
+  markFailedOrdersNonRetryable,
   mergeCheckoutResults,
 } from "./orderCreateResult";
 import { useOrderCreateSideEffects } from "./useOrderCreateSideEffects";
@@ -24,6 +27,13 @@ import type {
 const UNKNOWN_ERROR_MESSAGE = "Неизвестная ошибка";
 const UNKNOWN_PRODUCT_NAME = "Неизвестный товар";
 const NETWORK_ERROR_MESSAGE = "Ошибка сети";
+const EXTERNAL_PRODUCT_ERROR_MESSAGE =
+  "Этот товар можно приобрести только через Telegram";
+
+interface ProductSubmissionCheck {
+  canSubmit: boolean;
+  externalProductIds: number[];
+}
 
 export const useOrderCreateSubmit = ({
   cartItems,
@@ -44,31 +54,18 @@ export const useOrderCreateSubmit = ({
     onError,
   });
 
-  const canSubmitProducts = useCallback(
-    (productIds: number[], fallbackItems: ProductBasket[]) => {
-      const quantityState = useCartQuantityStore.getState();
-      const localProductIds = new Set(
-        quantityState.items.map((item) => item.productId),
-      );
-
-      if (
-        productIds.some(
-          (productId) =>
-            !localProductIds.has(productId) ||
-            quantityState.syncStates[productId] === undefined ||
-            quantityState.getSyncStatus(productId) !== "synced",
-        )
-      ) {
-        return false;
-      }
-
+  const checkProductsForSubmission = useCallback(
+    (
+      productIds: number[],
+      fallbackItems: ProductBasket[],
+    ): ProductSubmissionCheck => {
       const cartQueryState = queryClient.getQueryState(cartKeys.all);
 
       if (
         cartQueryState?.fetchStatus === "fetching" ||
         cartQueryState?.status === "error"
       ) {
-        return false;
+        return { canSubmit: false, externalProductIds: [] };
       }
 
       const latestCartItems = queryClient.getQueryData<ProductBasket[]>(
@@ -82,14 +79,63 @@ export const useOrderCreateSubmit = ({
       const fallbackItemsById = new Map(
         fallbackItems.map((item) => [item.product.id, item] as const),
       );
-
-      return productIds.every((productId) => {
-        const latestItem = latestItemsById
+      const resolvedItems = productIds.map((productId) =>
+        latestItemsById
           ? latestItemsById.get(productId)
-          : fallbackItemsById.get(productId);
+          : fallbackItemsById.get(productId),
+      );
 
-        return latestItem !== undefined && latestItem.enoughStock !== false;
-      });
+      if (resolvedItems.some((item) => item === undefined)) {
+        return { canSubmit: false, externalProductIds: [] };
+      }
+
+      const externalProductIds = resolvedItems.flatMap((item) =>
+        item?.product.availability === "EXTERNAL_ONLY"
+          ? [item.product.id]
+          : [],
+      );
+
+      if (externalProductIds.length > 0) {
+        return { canSubmit: false, externalProductIds };
+      }
+
+      const quantityState = useCartQuantityStore.getState();
+      const localProductIds = new Set(
+        quantityState.items.map((item) => item.productId),
+      );
+
+      if (
+        productIds.some(
+          (productId) =>
+            !localProductIds.has(productId) ||
+            quantityState.syncStates[productId] === undefined ||
+            quantityState.getSyncStatus(productId) !== "synced",
+        )
+      ) {
+        return { canSubmit: false, externalProductIds: [] };
+      }
+
+      return {
+        canSubmit: resolvedItems.every(
+          (item) => item !== undefined && item.enoughStock !== false,
+        ),
+        externalProductIds: [],
+      };
+    },
+    [queryClient],
+  );
+
+  const refreshNonPurchasableProducts = useCallback(
+    async (productIds: readonly number[]) => {
+      await Promise.allSettled([
+        queryClient.invalidateQueries({ queryKey: cartKeys.all }),
+        queryClient.invalidateQueries({ queryKey: productKeys.all }),
+        ...productIds.map((productId) =>
+          queryClient.invalidateQueries({
+            queryKey: productKeys.detail(productId),
+          }),
+        ),
+      ]);
     },
     [queryClient],
   );
@@ -126,6 +172,22 @@ export const useOrderCreateSubmit = ({
           status: "success",
         };
       } catch (error) {
+        if (
+          error instanceof ApiError &&
+          error.isCode(ErrorCodes.PRODUCT_NOT_PURCHASABLE)
+        ) {
+          await refreshNonPurchasableProducts([order.productId]);
+
+          return {
+            productId: order.productId,
+            productName: order.productName,
+            status: "error",
+            errorCode: ErrorCodes.PRODUCT_NOT_PURCHASABLE,
+            errorMessage: EXTERNAL_PRODUCT_ERROR_MESSAGE,
+            retryable: false,
+          };
+        }
+
         return {
           productId: order.productId,
           productName: order.productName,
@@ -135,7 +197,7 @@ export const useOrderCreateSubmit = ({
         };
       }
     },
-    [],
+    [refreshNonPurchasableProducts],
   );
 
   const executeOrders = useCallback(
@@ -159,11 +221,16 @@ export const useOrderCreateSubmit = ({
       (item) => item.product.id,
     );
 
+    const submissionCheck = checkProductsForSubmission(
+      selectedProductIds,
+      selectedCartItems,
+    );
+
     if (
       isSubmittingRef.current ||
       selectedCartItems.length === 0 ||
       !checkoutState.isReadyToSubmit ||
-      !canSubmitProducts(selectedProductIds, selectedCartItems)
+      !submissionCheck.canSubmit
     ) {
       return;
     }
@@ -191,7 +258,7 @@ export const useOrderCreateSubmit = ({
     }
   }, [
     cartItems,
-    canSubmitProducts,
+    checkProductsForSubmission,
     checkoutState.isReadyToSubmit,
     createOrderPayload,
     executeOrders,
@@ -208,16 +275,44 @@ export const useOrderCreateSubmit = ({
       return;
     }
 
-    const retryOrders = failedOrdersRef.current;
-
+    let retryOrders = failedOrdersRef.current;
+    let resultBeforeRetry = submitResult;
     const retryProductIds = retryOrders.map((order) => order.productId);
     const fallbackItems = cartItems ?? [];
 
-    if (
-      retryOrders.length === 0 ||
-      !canSubmitProducts(retryProductIds, fallbackItems)
-    ) {
-      return;
+    let submissionCheck = checkProductsForSubmission(
+      retryProductIds,
+      fallbackItems,
+    );
+
+    if (submissionCheck.externalProductIds.length > 0) {
+      const externalProductIds = new Set(
+        submissionCheck.externalProductIds,
+      );
+      resultBeforeRetry = markFailedOrdersNonRetryable(
+        resultBeforeRetry,
+        externalProductIds,
+        ErrorCodes.PRODUCT_NOT_PURCHASABLE,
+        EXTERNAL_PRODUCT_ERROR_MESSAGE,
+      );
+
+      retryOrders = retryOrders.filter(
+        (order) => !externalProductIds.has(order.productId),
+      );
+      failedOrdersRef.current = retryOrders;
+      setSubmitResult(resultBeforeRetry);
+      await refreshNonPurchasableProducts(
+        submissionCheck.externalProductIds,
+      );
+
+      submissionCheck = checkProductsForSubmission(
+        retryOrders.map((order) => order.productId),
+        fallbackItems,
+      );
+    }
+
+    if (retryOrders.length === 0 || !submissionCheck.canSubmit) {
+      return resultBeforeRetry;
     }
 
     isSubmittingRef.current = true;
@@ -225,7 +320,10 @@ export const useOrderCreateSubmit = ({
 
     try {
       const retryResult = await executeOrders(retryOrders);
-      const updatedResult = mergeCheckoutResults(submitResult, retryResult);
+      const updatedResult = mergeCheckoutResults(
+        resultBeforeRetry,
+        retryResult,
+      );
 
       failedOrdersRef.current = getFailedOrders(
         retryOrders,
@@ -243,8 +341,9 @@ export const useOrderCreateSubmit = ({
   }, [
     submitResult,
     cartItems,
-    canSubmitProducts,
+    checkProductsForSubmission,
     executeOrders,
+    refreshNonPurchasableProducts,
     syncAfterSubmit,
     notifySubmitResult,
   ]);

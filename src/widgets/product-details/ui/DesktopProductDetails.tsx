@@ -14,10 +14,12 @@ import {
 import { Schedule } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { AddToCartButton } from "@/features/add-to-cart";
+import { ExternalPurchaseButton } from "@/features/external-purchase";
 import { useAuth } from "@/features/auth";
 import { FavoriteButton } from "@/features/toggle-favorite";
 import { buildCategoryPath } from "@/entities/category";
 import { useFavoritesChecks } from "@/entities/favorite";
+import { useProfileUser } from "@/entities/user";
 import { ImageGallery } from "@/shared/ui/image-gallery";
 import type { ImageGalleryImage } from "@/shared/ui/image-gallery";
 import { ProductDetail } from "@/shared/types";
@@ -182,6 +184,18 @@ export function DesktopProductDetails({
 }: DesktopProductDetailsProps) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const {
+    data: currentUser,
+    isPending: isOwnerCheckPending,
+    isError: isOwnerCheckError,
+  } = useProfileUser({
+    enabled:
+      isAuthenticated && productCard.availability === "EXTERNAL_ONLY",
+  });
+  const isOwnerCheckUnavailable =
+    isAuthenticated &&
+    productCard.availability === "EXTERNAL_ONLY" &&
+    (isOwnerCheckPending || isOwnerCheckError);
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
   const primaryCategoryId = productCard.categories[0]?.id;
   const sellerCardMeta = getSellerCardMeta(
@@ -243,14 +257,34 @@ export function DesktopProductDetails({
             />
 
             <Stack spacing={1.5}>
-              <AddToCartButton
-                productId={productCard.id}
-                sellerId={productCard.participantId}
-                availability={productCard.availability}
-                variant="detailed"
-                productName={productCard.name}
-                stockCount={productCard.count}
-              />
+              {productCard.availability === "EXTERNAL_ONLY" ? (
+                <ExternalPurchaseButton
+                  externalUrl={productCard.externalUrl}
+                  label={
+                    isAuthenticated &&
+                    currentUser?.id === productCard.participantId
+                      ? "Ваш товар"
+                      : isOwnerCheckError
+                        ? "Недоступно"
+                        : "Добавить в корзину"
+                  }
+                  variant="detailed"
+                  disabled={
+                    isOwnerCheckUnavailable ||
+                    (isAuthenticated &&
+                      currentUser?.id === productCard.participantId)
+                  }
+                />
+              ) : (
+                <AddToCartButton
+                  productId={productCard.id}
+                  sellerId={productCard.participantId}
+                  availability={productCard.availability}
+                  variant="detailed"
+                  productName={productCard.name}
+                  stockCount={productCard.count}
+                />
+              )}
 
               <FavoriteButton
                 productId={productCard.id}

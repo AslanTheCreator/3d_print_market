@@ -17,7 +17,6 @@ export interface ProductFilter {
   originality?: string;
   participantId?: number;
   priceRange?: PriceRange;
-  imageId?: number;
   dateRange?: DateRange;
 }
 

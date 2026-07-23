@@ -38,13 +38,33 @@ export const useCheckoutDelivery = ({
   );
 
   const sellerQueries = useQueries({
-    queries: sellerCartGroups.map((group) => ({
-      queryKey: orderQueryKeys.orderData(group.items[0].product.id),
-      queryFn: () => orderApi.getOrderData(group.items[0].product.id),
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
-      refetchOnWindowFocus: false,
-    })),
+    queries: sellerCartGroups.map((group) => {
+      const deliveryItem = group.items.find(
+        (item) => item.product.availability !== "EXTERNAL_ONLY",
+      );
+
+      return {
+        queryKey: deliveryItem
+          ? orderQueryKeys.orderData(deliveryItem.product.id)
+          : [
+              ...orderQueryKeys.all,
+              "data",
+              "external-only",
+              group.sellerId,
+            ],
+        queryFn: () => {
+          if (!deliveryItem) {
+            throw new Error("Delivery is not available for an external item");
+          }
+
+          return orderApi.getOrderData(deliveryItem.product.id);
+        },
+        enabled: deliveryItem !== undefined,
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+        refetchOnWindowFocus: false,
+      };
+    }),
   });
 
   const sellerGroups = useMemo<SellerCheckoutGroup[]>(() => {
@@ -62,9 +82,10 @@ export const useCheckoutDelivery = ({
         transfers,
         selectedTransfer,
         isActive: group.items.some((item) =>
+          item.product.availability !== "EXTERNAL_ONLY" &&
           selectedProductIds.has(item.product.id),
         ),
-        isLoading: query?.isLoading ?? true,
+        isLoading: query?.isLoading ?? false,
         isError: query?.isError ?? false,
         errorMessage: getDeliveryErrorMessage(query?.error),
       };
@@ -123,7 +144,11 @@ export const useCheckoutDelivery = ({
   const retrySellerDelivery = useCallback(
     (sellerId: number) => {
       const sellerIndex = sellerCartGroups.findIndex(
-        (group) => group.sellerId === sellerId,
+        (group) =>
+          group.sellerId === sellerId &&
+          group.items.some(
+            (item) => item.product.availability !== "EXTERNAL_ONLY",
+          ),
       );
 
       if (sellerIndex >= 0) {

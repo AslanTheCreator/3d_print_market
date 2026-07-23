@@ -100,6 +100,25 @@ export const mergeCheckoutResults = (
   };
 };
 
+export const markFailedOrdersNonRetryable = (
+  result: CheckoutResult,
+  productIds: ReadonlySet<number>,
+  errorCode: string,
+  errorMessage: string,
+): CheckoutResult => ({
+  ...result,
+  failed: result.failed.map((item) =>
+    productIds.has(item.productId)
+      ? {
+          ...item,
+          errorCode,
+          errorMessage,
+          retryable: false,
+        }
+      : item,
+  ),
+});
+
 const uniqueByProductId = (items: readonly OrderResult[]): OrderResult[] => {
   const uniqueItems = new Map<number, OrderResult>();
 

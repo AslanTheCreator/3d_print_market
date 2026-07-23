@@ -19,6 +19,7 @@ export interface ProductDto {
   expirationDate: string; // ISO date string
   status: Status;
   availability: Availability;
+  externalUrl: string;
   sellerLogin: string;
   sellerRating: number;
   totalReviews: number;

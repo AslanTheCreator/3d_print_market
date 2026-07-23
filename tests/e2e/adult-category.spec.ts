@@ -88,6 +88,7 @@ const mockAdultProducts = async (
           expirationDate: "2030-01-01T00:00:00.000Z",
           status: "ACTIVE",
           availability: "PURCHASABLE",
+          externalUrl: "",
           sellerLogin: "testseller",
           sellerRating: 5,
           totalReviews: 1,

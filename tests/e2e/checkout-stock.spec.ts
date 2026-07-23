@@ -62,12 +62,20 @@ const createCartItem = ({
   count,
   availableCount,
   enoughStock,
+  availability = "PURCHASABLE",
+  externalUrl = "",
+  sellerId = 10,
+  sellerLogin = "stock-seller",
 }: {
   id: number;
   name: string;
   count: number;
   availableCount: number | null;
   enoughStock: boolean;
+  availability?: "PURCHASABLE" | "PREORDER" | "EXTERNAL_ONLY";
+  externalUrl?: string;
+  sellerId?: number;
+  sellerLogin?: string;
 }) => ({
   product: {
     id,
@@ -78,11 +86,12 @@ const createCartItem = ({
     currency: "RUB",
     categories: [{ id: 1, name: "Фигурки", childs: [] }],
     imageId: 0,
-    sellerId: 10,
+    sellerId,
     expirationDate: "2030-01-01T00:00:00.000Z",
     status: "ACTIVE",
-    availability: "PURCHASABLE",
-    sellerLogin: "stock-seller",
+    availability,
+    externalUrl,
+    sellerLogin,
     sellerRating: 5,
     totalReviews: 1,
     createdAt: "2030-01-01T00:00:00.000Z",
@@ -101,6 +110,17 @@ interface CheckoutApiController {
   putGate: Promise<void> | null;
   basketFindRequests: number;
   putRequests: Array<{ productId: number; count: number }>;
+  orderDataProductIds: number[];
+  orderCreateMode: "success" | "product-not-purchasable";
+  orderCreateRequests: Array<
+    Array<{
+      productId: number;
+      count: number;
+      addressId: number;
+      transferId: number;
+      comment: string;
+    }>
+  >;
 }
 
 const setupCheckoutApi = async (
@@ -114,6 +134,9 @@ const setupCheckoutApi = async (
     putGate: null,
     basketFindRequests: 0,
     putRequests: [],
+    orderDataProductIds: [],
+    orderCreateMode: "success",
+    orderCreateRequests: [],
   };
 
   await page.route("**/basket/find", async (route) => {
@@ -202,21 +225,63 @@ const setupCheckoutApi = async (
       },
     ]),
   );
-  await page.route("**/order?productId=*", (route) =>
-    fulfillJson(route, {
+  await page.route("**/order?productId=*", async (route) => {
+    const url = new URL(route.request().url());
+    const productId = Number(url.searchParams.get("productId"));
+    controller.orderDataProductIds.push(productId);
+
+    await fulfillJson(route, {
       addresses: [],
       sellerTransfers: [
         {
-          id: 101,
+          id: 100 + productId,
           sending: "PRODUCT_PICKUP",
           price: 0,
           currency: "RUB",
-          participantId: 10,
+          participantId:
+            controller.cartItems.find(
+              (item) => item.product.id === productId,
+            )?.product.sellerId ?? 10,
           status: "ACTIVE",
         },
       ],
-    }),
-  );
+    });
+  });
+  await page.route("**/order/BOOKED", async (route) => {
+    if (route.request().method() === "OPTIONS") {
+      await fulfillJson(route, null);
+      return;
+    }
+
+    const payload = route.request().postDataJSON() as CheckoutApiController["orderCreateRequests"][number];
+    controller.orderCreateRequests.push(payload);
+
+    if (controller.orderCreateMode === "product-not-purchasable") {
+      const productId = payload[0]?.productId;
+      const item = controller.cartItems.find(
+        (cartItem) => cartItem.product.id === productId,
+      );
+
+      if (item) {
+        item.product.availability = "EXTERNAL_ONLY";
+        item.product.externalUrl = "https://t.me/stock_seller";
+      }
+
+      await route.fulfill({
+        status: 400,
+        headers: corsHeaders,
+        contentType: "application/json",
+        body: JSON.stringify({
+          code: "PRODUCT_NOT_PURCHASABLE",
+          message: "Product is not purchasable",
+          status: 400,
+        }),
+      });
+      return;
+    }
+
+    await fulfillJson(route, [101]);
+  });
 
   return controller;
 };
@@ -459,4 +524,124 @@ test("rolls back a failed PUT and retries failed stock validation", async ({
   await expect(page.getByRole("button", { name: "Оформить заказ" })).toBeEnabled();
   await expect(page.getByTestId("checkout-submit-blocker")).toHaveCount(0);
   await expect(page.getByTestId("checkout-stock-validation-retry")).toHaveCount(0);
+});
+
+test("keeps an external cart item visible but outside quantity, delivery and order flows", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await authenticate(context, baseURL);
+  const controller = await setupCheckoutApi(page, [
+    createCartItem({
+      id: 1,
+      name: "Обычный товар",
+      count: 1,
+      availableCount: 5,
+      enoughStock: true,
+      sellerId: 10,
+      sellerLogin: "internal-seller",
+    }),
+    createCartItem({
+      id: 2,
+      name: "Внешний товар",
+      count: 3,
+      availableCount: null,
+      enoughStock: true,
+      availability: "EXTERNAL_ONLY",
+      externalUrl: "https://t.me/external_seller",
+      sellerId: 20,
+      sellerLogin: "external-seller",
+    }),
+  ]);
+
+  await openReadyCheckout(page);
+
+  const externalItem = page.getByTestId("checkout-cart-item-2");
+  await expect(
+    externalItem.getByTestId("checkout-external-notice-2"),
+  ).toHaveText("Доступно только через Telegram");
+  await expect(
+    externalItem.locator('svg[data-testid="AddIcon"]'),
+  ).toHaveCount(0);
+  await expect(externalItem.getByRole("button", { name: "Купить" })).toBeVisible();
+  await expect(page.getByTestId("checkout-submit-blocker")).toHaveText(
+    "Среди выбранных товаров есть доступные только через Telegram. Снимите их с выбора или перейдите к продавцу",
+  );
+  await expect.poll(() => controller.orderDataProductIds).toEqual([1]);
+  expect(controller.putRequests).toEqual([]);
+
+  await externalItem.getByRole("button", { name: "Купить" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Покупка через Telegram" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Отмена" }).click();
+
+  await page
+    .getByRole("checkbox", { name: "Выбрать товар Внешний товар" })
+    .uncheck();
+
+  const submitButton = page.getByRole("button", { name: "Оформить заказ" });
+  await expect(submitButton).toBeEnabled();
+  await submitButton.click();
+
+  await expect.poll(() => controller.orderCreateRequests.length).toBe(1);
+  expect(controller.orderCreateRequests[0]).toEqual([
+    {
+      productId: 1,
+      count: 1,
+      addressId: 50,
+      transferId: 101,
+      comment: "",
+    },
+  ]);
+  expect(
+    controller.orderCreateRequests.flat().some((order) => order.productId === 2),
+  ).toBe(false);
+  expect(controller.putRequests).toEqual([]);
+});
+
+test("does not offer retry after PRODUCT_NOT_PURCHASABLE and refreshes the cart item", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await authenticate(context, baseURL);
+  const controller = await setupCheckoutApi(page, [
+    createCartItem({
+      id: 1,
+      name: "Ставший внешним товар",
+      count: 1,
+      availableCount: 5,
+      enoughStock: true,
+    }),
+  ]);
+  controller.orderCreateMode = "product-not-purchasable";
+
+  await openReadyCheckout(page);
+  await page.getByRole("button", { name: "Оформить заказ" }).click();
+
+  const resultDialog = page.getByTestId("checkout-result-dialog");
+  await expect(resultDialog).toBeVisible();
+  await expect(resultDialog).toContainText(
+    "Этот товар можно приобрести только через Telegram",
+  );
+  await expect(
+    resultDialog.getByRole("button", {
+      name: "Повторить для неудачных",
+    }),
+  ).toHaveCount(0);
+
+  await resultDialog
+    .getByRole("button", { name: "Вернуться к оформлению" })
+    .click();
+  await expect(page.getByTestId("checkout-external-notice-1")).toHaveText(
+    "Доступно только через Telegram",
+  );
+  await expect(
+    page
+      .getByTestId("checkout-cart-item-1")
+      .locator('svg[data-testid="AddIcon"]'),
+  ).toHaveCount(0);
+  expect(controller.orderCreateRequests).toHaveLength(1);
 });

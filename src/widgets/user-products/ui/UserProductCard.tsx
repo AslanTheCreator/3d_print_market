@@ -265,18 +265,17 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
               reviewCount={totalReviews}
             />
 
-            {count > 0 && (
-              <Chip
-                label={`${count} шт`}
-                size="small"
-                sx={{
-                  height: 18,
-                  fontSize: "0.625rem",
-                  fontWeight: 600,
-                  width: "fit-content",
-                }}
-              />
-            )}
+            <Chip
+              label={count > 0 ? `${count} шт` : "Нет в наличии"}
+              color={count > 0 ? "default" : "error"}
+              size="small"
+              sx={{
+                height: 18,
+                fontSize: "0.625rem",
+                fontWeight: 600,
+                width: "fit-content",
+              }}
+            />
 
             <Tooltip
               title={`Истекает: ${formatExpirationDate(expirationDate)}`}

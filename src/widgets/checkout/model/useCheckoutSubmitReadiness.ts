@@ -17,6 +17,7 @@ interface UseCheckoutSubmitReadinessProps {
   isLoadingCurrentUser: boolean;
   isCurrentUserError: boolean;
   hasOwnSelectedItems: boolean;
+  hasExternalOnlySelectedItems: boolean;
   hasPendingSelectedItems: boolean;
   hasNeedsValidationSelectedItems: boolean;
   hasInsufficientStockSelectedItems: boolean;
@@ -33,6 +34,7 @@ export const useCheckoutSubmitReadiness = ({
   isLoadingCurrentUser,
   isCurrentUserError,
   hasOwnSelectedItems,
+  hasExternalOnlySelectedItems,
   hasPendingSelectedItems,
   hasNeedsValidationSelectedItems,
   hasInsufficientStockSelectedItems,
@@ -50,6 +52,7 @@ export const useCheckoutSubmitReadiness = ({
         isLoadingCurrentUser,
         isCurrentUserError,
         hasOwnSelectedItems,
+        hasExternalOnlySelectedItems,
         hasPendingSelectedItems,
         hasNeedsValidationSelectedItems,
         hasInsufficientStockSelectedItems,
@@ -64,6 +67,7 @@ export const useCheckoutSubmitReadiness = ({
       isLoadingCurrentUser,
       isCurrentUserError,
       hasOwnSelectedItems,
+      hasExternalOnlySelectedItems,
       hasPendingSelectedItems,
       hasNeedsValidationSelectedItems,
       hasInsufficientStockSelectedItems,

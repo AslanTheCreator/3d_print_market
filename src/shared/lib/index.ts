@@ -8,6 +8,7 @@ export {
   extractLastCategoryId,
   normalizeSlugParam,
 } from "./url/parseCategorySlug";
+export { getSafeExternalUrl } from "./url/getSafeExternalUrl";
 export { attachImages } from "./attachImages";
 export { getImageUrl } from "./image/getImageUrl";
 export type { ImageSize } from "./image/getImageUrl";

@@ -49,22 +49,30 @@ export const useCheckoutState = ({
     cartItems: normalizedCartItems,
     selectedProductIds,
   });
+  const orderableSelectedItems = selectedItems.filter(
+    (item) => item.product.availability !== "EXTERNAL_ONLY",
+  );
+  const hasExternalOnlySelectedItems = selectedItems.some(
+    (item) => item.product.availability === "EXTERNAL_ONLY",
+  );
   const hasOwnSelectedItems =
     currentUserId !== undefined &&
-    selectedItems.some((item) => item.product.sellerId === currentUserId);
+    orderableSelectedItems.some(
+      (item) => item.product.sellerId === currentUserId,
+    );
   const isCurrentUserUnavailable =
     isCurrentUserError || (!isLoadingCurrentUser && currentUserId === undefined);
-  const hasPendingSelectedItems = selectedItems.some(
+  const hasPendingSelectedItems = orderableSelectedItems.some(
     (item) => syncStates[item.product.id]?.status === "pending",
   );
   const hasNeedsValidationSelectedItems =
-    isCartValidationError ||
-    selectedItems.some(
+    (isCartValidationError && orderableSelectedItems.length > 0) ||
+    orderableSelectedItems.some(
       (item) =>
         syncStates[item.product.id] === undefined ||
         syncStates[item.product.id].status === "needsValidation",
     );
-  const hasInsufficientStockSelectedItems = selectedItems.some(
+  const hasInsufficientStockSelectedItems = orderableSelectedItems.some(
     (item) => item.enoughStock === false,
   );
 
@@ -78,10 +86,12 @@ export const useCheckoutState = ({
       isLoadingCurrentUser,
       isCurrentUserError: isCurrentUserUnavailable,
       hasOwnSelectedItems,
+      hasExternalOnlySelectedItems,
       hasPendingSelectedItems,
       hasNeedsValidationSelectedItems,
       hasInsufficientStockSelectedItems,
-      isRefreshingCart,
+      isRefreshingCart:
+        isRefreshingCart && orderableSelectedItems.length > 0,
       activeSellerGroups: checkoutDelivery.activeSellerGroups,
     });
 
@@ -102,6 +112,7 @@ export const useCheckoutState = ({
     setComment,
     selectedProductIds,
     selectedItems,
+    orderableSelectedItems,
     selectedCount,
     hasOwnSelectedItems,
     isAllSelected,

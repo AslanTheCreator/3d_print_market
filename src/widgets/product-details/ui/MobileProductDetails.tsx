@@ -14,8 +14,10 @@ import {
 import { ArrowBackIosNew, Schedule } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { AddToCartButton } from "@/features/add-to-cart";
+import { ExternalPurchaseButton } from "@/features/external-purchase";
 import { useAuth } from "@/features/auth";
 import { useFavoritesChecks } from "@/entities/favorite";
+import { useProfileUser } from "@/entities/user";
 import { buildCategoryPath } from "@/entities/category";
 import { FavoriteButton } from "@/features/toggle-favorite";
 import { ImageGallery } from "@/shared/ui/image-gallery";
@@ -62,6 +64,10 @@ const MobileBottomBar = ({
   productId,
   sellerId,
   availability,
+  externalUrl,
+  isOwnProduct,
+  isOwnerCheckUnavailable,
+  isOwnerCheckError,
   productName,
   stockCount,
   price,
@@ -71,6 +77,10 @@ const MobileBottomBar = ({
   productId: number;
   sellerId: number;
   availability: ProductDetail["availability"];
+  externalUrl: string;
+  isOwnProduct: boolean;
+  isOwnerCheckUnavailable: boolean;
+  isOwnerCheckError: boolean;
   productName: string;
   stockCount: number | null;
   price: number;
@@ -132,14 +142,29 @@ const MobileBottomBar = ({
           )}
         </Box>
 
-        <AddToCartButton
-          productId={productId}
-          sellerId={sellerId}
-          availability={availability}
-          variant="detailed"
-          productName={productName}
-          stockCount={stockCount}
-        />
+        {availability === "EXTERNAL_ONLY" ? (
+          <ExternalPurchaseButton
+            externalUrl={externalUrl}
+            label={
+              isOwnProduct
+                ? "Ваш товар"
+                : isOwnerCheckError
+                  ? "Недоступно"
+                  : "Добавить в корзину"
+            }
+            variant="detailed"
+            disabled={isOwnProduct || isOwnerCheckUnavailable}
+          />
+        ) : (
+          <AddToCartButton
+            productId={productId}
+            sellerId={sellerId}
+            availability={availability}
+            variant="detailed"
+            productName={productName}
+            stockCount={stockCount}
+          />
+        )}
       </Stack>
     </Paper>
   );
@@ -248,6 +273,18 @@ export function MobileProductDetails({
 }: MobileProductDetailsProps) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const {
+    data: currentUser,
+    isPending: isOwnerCheckPending,
+    isError: isOwnerCheckError,
+  } = useProfileUser({
+    enabled:
+      isAuthenticated && productCard.availability === "EXTERNAL_ONLY",
+  });
+  const isOwnerCheckUnavailable =
+    isAuthenticated &&
+    productCard.availability === "EXTERNAL_ONLY" &&
+    (isOwnerCheckPending || isOwnerCheckError);
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
   const primaryCategoryId = productCard.categories[0]?.id;
   const sellerCardMeta = getSellerCardMeta(
@@ -393,6 +430,12 @@ export function MobileProductDetails({
         productId={productCard.id}
         sellerId={productCard.participantId}
         availability={productCard.availability}
+        externalUrl={productCard.externalUrl}
+        isOwnProduct={
+          isAuthenticated && currentUser?.id === productCard.participantId
+        }
+        isOwnerCheckUnavailable={isOwnerCheckUnavailable}
+        isOwnerCheckError={isOwnerCheckError}
         productName={productCard.name}
         stockCount={productCard.count}
         price={productCard.price}

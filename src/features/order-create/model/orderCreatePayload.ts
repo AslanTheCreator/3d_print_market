@@ -31,7 +31,9 @@ export const getFailedOrders = (
   failedResults: readonly OrderResult[],
 ): OrderToCreate[] => {
   const failedProductIds = new Set(
-    failedResults.map((result) => result.productId),
+    failedResults
+      .filter((result) => result.retryable !== false)
+      .map((result) => result.productId),
   );
 
   return orders.filter((order) => failedProductIds.has(order.productId));

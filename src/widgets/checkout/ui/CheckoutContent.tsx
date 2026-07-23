@@ -90,7 +90,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
       {/* Правая колонка - итоги */}
       <Grid item xs={12} lg={4}>
         <CheckoutSummary
-          cartItems={checkoutState.selectedItems}
+          cartItems={checkoutState.orderableSelectedItems}
           sellerDeliveries={checkoutState.selectedSellerDeliveries}
           isReadyToSubmit={checkoutState.isReadyToSubmit}
           submitBlockerMessage={checkoutState.submitBlockerMessage}

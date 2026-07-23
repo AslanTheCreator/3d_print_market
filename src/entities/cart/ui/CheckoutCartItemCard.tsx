@@ -14,7 +14,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { ProductBasket } from "../model/types";
 import { formatPrice, getImageUrl } from "@/shared/lib";
 import { QuantityCounter } from "@/shared/ui/quantity-counter";
@@ -30,6 +30,7 @@ interface CheckoutCartItemCardProps {
   onRemove: (id: number) => void;
   isRemoving?: boolean;
   maxQuantity?: number;
+  actionSlot?: ReactNode;
 }
 
 export const CheckoutCartItemCard = ({
@@ -42,6 +43,7 @@ export const CheckoutCartItemCard = ({
   onRemove,
   isRemoving = false,
   maxQuantity,
+  actionSlot,
 }: CheckoutCartItemCardProps) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [hasImageError, setHasImageError] = useState(false);
@@ -51,7 +53,9 @@ export const CheckoutCartItemCard = ({
   // Деструктурируем product из ProductBasket
   const { product } = item;
   const { id, name, price, categories, image, currency } = product;
-  const isStockInsufficient = item.enoughStock === false;
+  const isExternalOnly = product.availability === "EXTERNAL_ONLY";
+  const isStockInsufficient =
+    !isExternalOnly && item.enoughStock === false;
   const productImage = image?.[0] ?? null;
   const productImageSrc = getImageUrl(productImage, "thumbnail");
   const imageSrc = productImageSrc && !hasImageError ? productImageSrc : null;
@@ -205,29 +209,45 @@ export const CheckoutCartItemCard = ({
               </Typography>
             </Link>
 
-            <Typography
-              data-testid={`checkout-stock-availability-${id}`}
-              variant="caption"
-              color={isStockInsufficient ? "error.main" : "text.secondary"}
-              sx={{ display: "block", mt: 0.75 }}
-            >
-              {item.availableCount === null
-                ? "Количество не ограничено"
-                : `Доступно: ${item.availableCount} шт.`}
-            </Typography>
-
-            {isStockInsufficient && (
+            {isExternalOnly ? (
               <Typography
-                data-testid={`checkout-stock-error-${id}`}
+                data-testid={`checkout-external-notice-${id}`}
                 variant="body2"
-                color="error.main"
                 fontWeight={600}
-                sx={{ mt: 0.5 }}
+                color="primary.main"
+                sx={{ mt: 0.75 }}
               >
-                {item.availableCount === null
-                  ? "Недостаточно товара для выбранного количества"
-                  : `Недостаточно товара: в корзине ${quantity} шт., доступно ${item.availableCount} шт.`}
+                Доступно только через Telegram
               </Typography>
+            ) : (
+              <>
+                <Typography
+                  data-testid={`checkout-stock-availability-${id}`}
+                  variant="caption"
+                  color={
+                    isStockInsufficient ? "error.main" : "text.secondary"
+                  }
+                  sx={{ display: "block", mt: 0.75 }}
+                >
+                  {item.availableCount === null
+                    ? "Количество не ограничено"
+                    : `Доступно: ${item.availableCount} шт.`}
+                </Typography>
+
+                {isStockInsufficient && (
+                  <Typography
+                    data-testid={`checkout-stock-error-${id}`}
+                    variant="body2"
+                    color="error.main"
+                    fontWeight={600}
+                    sx={{ mt: 0.5 }}
+                  >
+                    {item.availableCount === null
+                      ? "Недостаточно товара для выбранного количества"
+                      : `Недостаточно товара: в корзине ${quantity} шт., доступно ${item.availableCount} шт.`}
+                  </Typography>
+                )}
+              </>
             )}
           </Box>
 
@@ -260,19 +280,23 @@ export const CheckoutCartItemCard = ({
             fontWeight={700}
             color="text.primary"
           >
-            {formatPrice(price * quantity, currency)}
+            {formatPrice(price * (isExternalOnly ? 1 : quantity), currency)}
           </Typography>
 
-          <QuantityCounter
-            value={quantity}
-            onIncrement={onQuantityIncrement}
-            onDecrement={onQuantityDecrement}
-            min={1}
-            max={
-              maxQuantity ?? (isStockInsufficient ? quantity : undefined)
-            }
-            size={isMobile ? "small" : "medium"}
-          />
+          {isExternalOnly ? (
+            actionSlot
+          ) : (
+            <QuantityCounter
+              value={quantity}
+              onIncrement={onQuantityIncrement}
+              onDecrement={onQuantityDecrement}
+              min={1}
+              max={
+                maxQuantity ?? (isStockInsufficient ? quantity : undefined)
+              }
+              size={isMobile ? "small" : "medium"}
+            />
+          )}
         </Stack>
       </Box>
     </Box>

@@ -10,6 +10,7 @@ interface GetCheckoutSubmitReadinessParams {
   isLoadingCurrentUser: boolean;
   isCurrentUserError: boolean;
   hasOwnSelectedItems: boolean;
+  hasExternalOnlySelectedItems?: boolean;
   hasPendingSelectedItems?: boolean;
   hasNeedsValidationSelectedItems?: boolean;
   hasInsufficientStockSelectedItems?: boolean;
@@ -31,6 +32,7 @@ export function getCheckoutSubmitReadiness({
   isLoadingCurrentUser,
   isCurrentUserError,
   hasOwnSelectedItems,
+  hasExternalOnlySelectedItems,
   hasPendingSelectedItems,
   hasNeedsValidationSelectedItems,
   hasInsufficientStockSelectedItems,
@@ -46,6 +48,7 @@ export function getCheckoutSubmitReadiness({
     isLoadingCurrentUser,
     isCurrentUserError,
     hasOwnSelectedItems,
+    hasExternalOnlySelectedItems,
     hasPendingSelectedItems,
     hasNeedsValidationSelectedItems,
     hasInsufficientStockSelectedItems,
@@ -68,6 +71,7 @@ function getSubmitBlockerMessage({
   isLoadingCurrentUser,
   isCurrentUserError,
   hasOwnSelectedItems,
+  hasExternalOnlySelectedItems = false,
   hasPendingSelectedItems = false,
   hasNeedsValidationSelectedItems = false,
   hasInsufficientStockSelectedItems = false,
@@ -76,6 +80,10 @@ function getSubmitBlockerMessage({
 }: GetCheckoutSubmitReadinessParams): string | null {
   if (selectedItemsCount === 0) {
     return "Выберите хотя бы один товар";
+  }
+
+  if (hasExternalOnlySelectedItems) {
+    return "Среди выбранных товаров есть доступные только через Telegram. Снимите их с выбора или перейдите к продавцу";
   }
 
   if (isRefreshingCart || hasPendingSelectedItems) {

@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { getFailedOrders } from "@/features/order-create/model/orderCreatePayload";
-import { mergeCheckoutResults } from "@/features/order-create/model/orderCreateResult";
+import {
+  markFailedOrdersNonRetryable,
+  mergeCheckoutResults,
+} from "@/features/order-create/model/orderCreateResult";
 import type {
   CheckoutResult,
   OrderResult,
@@ -131,5 +134,70 @@ test.describe("checkout submit model", () => {
 
     expect(failedOrders).toEqual([orders[1]]);
     expect(failedOrders[0]).toBe(orders[1]);
+  });
+
+  test("does not retry a product rejected as not purchasable", () => {
+    const orders: OrderToCreate[] = [
+      {
+        productId: 1,
+        productName: "Внутренний товар",
+        count: 1,
+        addressId: 50,
+        transferId: 101,
+        comment: "",
+      },
+      {
+        productId: 2,
+        productName: "Внешний товар",
+        count: 1,
+        addressId: 50,
+        transferId: 101,
+        comment: "",
+      },
+    ];
+    const failedResults: OrderResult[] = [
+      resultItem(1, "error", "Сетевая ошибка"),
+      {
+        ...resultItem(
+          2,
+          "error",
+          "Этот товар можно приобрести только через Telegram",
+        ),
+        errorCode: "PRODUCT_NOT_PURCHASABLE",
+        retryable: false,
+      },
+    ];
+
+    expect(getFailedOrders(orders, failedResults)).toEqual([orders[0]]);
+  });
+
+  test("marks a stale external product as non-retryable", () => {
+    const initialResult = checkoutResult({
+      failed: [
+        resultItem(1, "error", "Сетевая ошибка"),
+        resultItem(2, "error", "Сетевая ошибка"),
+      ],
+      totalCount: 2,
+    });
+
+    const updatedResult = markFailedOrdersNonRetryable(
+      initialResult,
+      new Set([2]),
+      "PRODUCT_NOT_PURCHASABLE",
+      "Этот товар можно приобрести только через Telegram",
+    );
+
+    expect(updatedResult.failed).toEqual([
+      resultItem(1, "error", "Сетевая ошибка"),
+      {
+        ...resultItem(
+          2,
+          "error",
+          "Этот товар можно приобрести только через Telegram",
+        ),
+        errorCode: "PRODUCT_NOT_PURCHASABLE",
+        retryable: false,
+      },
+    ]);
   });
 });
