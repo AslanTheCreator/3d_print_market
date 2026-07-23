@@ -27,12 +27,12 @@
     "@mui/icons-material": "^5.15.13",
     "@mui/material-nextjs": "^5.15.11",
     "@tanstack/react-query": "^5.67.2",
-    "axios": "^1.17.0",
+    "axios": "^1.18.1",
     "framer-motion": "^12.23.12",
     "js-cookie": "^3.0.7",
     "lodash": "^4.18.1",
     "lucide-react": "^0.511.0",
-    "next": "^15.5.18",
+    "next": "^15.5.21",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.55.0",
@@ -49,13 +49,14 @@
     "@types/react-dom": "19.1.1",
     "cross-env": "^7.0.3",
     "eslint": "^8",
-    "eslint-config-next": "^15.5.18",
+    "eslint-config-next": "^15.5.21",
     "steiger": "^0.5.2",
     "typescript": "^5"
   },
   "overrides": {
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.1",
-    "postcss": "8.5.12"
+    "postcss": "8.5.12",
+    "sharp": "0.35.3"
   }
 }
