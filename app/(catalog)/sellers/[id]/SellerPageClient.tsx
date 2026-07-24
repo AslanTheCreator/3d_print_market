@@ -19,7 +19,7 @@ import type { SelectChangeEvent } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { useProductsInfinite } from "@/entities/product";
 import { useUserById } from "@/entities/user";
-import type { PriceRange, ProductFilter, SortBy } from "@/shared/types";
+import type { PriceRange, ProductFilter, SortBy } from "@/entities/product";
 import { EmptyCatalogState, ErrorState } from "@/shared/ui/states";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { PriceRangeFilter, ProductCatalog } from "@/widgets/product-catalog";

@@ -13,11 +13,11 @@ import {
 import { useFavoritesChecks } from "@/entities/favorite";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/features/auth";
+import { useAuth } from "@/entities/session";
 import { AddToCartButton } from "@/features/add-to-cart";
 import { ExternalPurchaseButton } from "@/features/external-purchase";
 import { FavoriteButton } from "@/features/toggle-favorite";
-import { Product } from "@/shared/types";
+import { Product } from "@/entities/product";
 import { useProfileUser } from "@/entities/user";
 
 interface RelatedProductsProps {

@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { productApi } from "../api/productApi";
 import { productKeys } from "./queryKeys";
-import type { Product, ProductDetail } from "@/shared/types";
-import { ProductFilter, SortBy } from "@/shared/types";
-import { useInfiniteProducts } from "@/shared/hooks";
+import type { Product, ProductDetail } from "./types";
+import type { ProductFilter, SortBy } from "./productRequest";
+import { useInfiniteProducts } from "./useInfiniteProducts";
 
 interface ProductByIdOptions {
   initialProduct?: ProductDetail;

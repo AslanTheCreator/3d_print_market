@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Avatar, Skeleton } from "@mui/material";
-import { useImageMetadataQuery } from "@/shared/api";
+import { useImageMetadataQuery } from "@/entities/image/@x/user";
 import { getImageUrl } from "@/shared/lib";
 import { useUserById } from "../model/useUserQueries";
 

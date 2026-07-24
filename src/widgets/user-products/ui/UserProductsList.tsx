@@ -22,7 +22,7 @@ import {
 import { useNotification } from "@/shared/ui/notification";
 import { EmptyCatalogState } from "@/shared/ui/states";
 import { UserProductCard } from "./UserProductCard";
-import { SortBy } from "@/shared/types";
+import { SortBy } from "@/entities/product";
 
 interface ProductToDelete {
   id: number;

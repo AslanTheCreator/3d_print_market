@@ -4,7 +4,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import { Breadcrumbs, Link, Typography } from "@mui/material";
 import NextLink from "next/link";
 import { buildCategoryPath } from "@/entities/category";
-import { CategoryModel } from "@/shared/types";
+import { CategoryModel } from "@/entities/category";
 
 interface ProductDetailsBreadcrumbsProps {
   categories: CategoryModel[];

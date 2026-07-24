@@ -51,7 +51,10 @@ npm run build
 npm run test:standalone
 ```
 
-`architecture:check` runs Steiger against the real project root, including `app` and `src`.
+`architecture:check` runs Steiger against the FSD layers in `src`. The
+`fsd/insignificant-slice` rule is disabled because the Next.js root `app`
+directory lives outside `src`; imports and composition in that root layer
+require manual review.
 `test:smoke` expects a running app and reads `TEST_BASE_URL`, defaulting to `http://localhost:3000`.
 `test:e2e` starts Playwright's local web server automatically unless `TEST_BASE_URL` is set.
 
@@ -62,10 +65,11 @@ The project follows Feature-Sliced Design:
 - `app` - Next.js routes, layouts, metadata and providers
 - `src/widgets` - composed page blocks
 - `src/features` - user scenarios and actions
-- `src/entities` - domain models and API logic
-- `src/shared` - generic UI, hooks, config and utilities
+- `src/entities` - domain models, DTOs and API logic, including image and session
+- `src/shared` - generic UI, hooks, config, HTTP infrastructure and utilities
 
 Upper layers depend on lower layers only. Prefer public API imports between slices.
+The `@/shared/types` alias contains only the neutral `Currency` type.
 
 ## Docker
 

@@ -3,9 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthForm from "@/widgets/auth-form";
-import { RegisterFormModel, VerificationCodeDialog, authApi } from "@/features/auth";
+import { VerificationCodeDialog } from "@/features/auth";
+import {
+  authApi,
+  RegisterFormModel,
+  useAuthStore,
+} from "@/entities/session";
 import { ApiError } from "@/shared/lib/errorHandler";
-import { useAuthStore } from "@/shared/lib/auth";
 import { useNotification } from "@/shared/ui/notification";
 
 const DEFAULT_POST_AUTH_REDIRECT = "/";

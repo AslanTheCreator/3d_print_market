@@ -1,6 +1,6 @@
 import type React from "react";
 import { Chip } from "@mui/material";
-import type { ShippingMethod } from "@/shared/types";
+import type { ShippingMethod } from "@/entities/transfer";
 import { FREE_METHODS, type TransferFormItem } from "./model";
 
 interface ShippingMethodBadgeProps {

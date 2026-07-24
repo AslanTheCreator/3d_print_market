@@ -11,12 +11,12 @@ import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useRouter } from "next/navigation";
 import { useCartItemRemoval, useCartQuantity } from "@/entities/cart";
-import { useAuth } from "@/shared/lib/auth";
+import { useAuth } from "@/entities/session";
 import { useAuthRequired } from "@/shared/hooks";
 import { AuthRequiredDialog } from "@/shared/ui/auth-required-dialog";
 import { CartCounter } from "@/shared/ui/cart-counter";
 import { useNotification } from "@/shared/ui/notification";
-import { Availability } from "@/shared/types";
+import { Availability } from "@/entities/product";
 import { useAddToCartFeature } from "../model/useAddToCartFeature";
 
 interface AddToCartButtonProps {

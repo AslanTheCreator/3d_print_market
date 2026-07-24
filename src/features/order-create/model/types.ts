@@ -1,5 +1,5 @@
 import type { ProductBasket } from "@/entities/cart";
-import type { Address } from "@/shared/types";
+import type { Address } from "@/entities/address";
 
 export interface OrderResult {
   productId: number;

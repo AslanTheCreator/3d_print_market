@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useProductDetails, ProductDetailsSkeleton } from "@/entities/product";
-import type { ProductDetail } from "@/shared/types";
+import type { ProductDetail } from "@/entities/product";
 import { ErrorState } from "@/shared/ui/states";
 import { MobileProductDetails } from "./MobileProductDetails";
 import { DesktopProductDetails } from "./DesktopProductDetails";

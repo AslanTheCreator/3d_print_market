@@ -2,7 +2,7 @@
 import { accountsApi } from "../api/accountsApi";
 import { accountsKeys } from "./queryKeys";
 import type { AccountsCreateModel } from "./types";
-import { AccountsBaseModel } from "@/shared/types";
+import { AccountsBaseModel } from "./types";
 
 export const useCreateAccount = () => {
   const queryClient = useQueryClient();

@@ -4,7 +4,7 @@ import React from "react";
 import { Typography, Stack, useMediaQuery, useTheme } from "@mui/material";
 import { Star } from "@mui/icons-material";
 import { formatPrice } from "@/shared/lib";
-import { Availability } from "@/shared/types";
+import type { Availability } from "../model/types";
 
 interface ProductPriceDisplayProps {
   price: number;

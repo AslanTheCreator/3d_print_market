@@ -1,7 +1,7 @@
 "use client";
 
 import { Chip } from "@mui/material";
-import { CategoryModel } from "@/shared/types";
+import { CategoryModel } from "@/entities/category";
 
 interface ProductCategoryChipsProps {
   categories: CategoryModel[];

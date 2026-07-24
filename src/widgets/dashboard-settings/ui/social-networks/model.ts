@@ -1,5 +1,5 @@
 import type { DictionaryItem } from "@/entities/dictionary";
-import type { SocialNetwork, SocialNetworkType } from "@/shared/types";
+import type { SocialNetwork, SocialNetworkType } from "@/entities/social-network";
 
 export interface SocialFormItem {
   enabled: boolean;

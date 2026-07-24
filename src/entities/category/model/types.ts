@@ -1,3 +1,9 @@
+export interface CategoryModel {
+  id: number;
+  name: string;
+  childs: CategoryModel[];
+}
+
 export interface BreadcrumbItem {
   id: string;
   name: string;

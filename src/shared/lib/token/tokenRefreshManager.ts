@@ -46,9 +46,9 @@ type RefreshTokenFn = () => Promise<boolean>;
 type LogoutFn = () => void;
 
 interface TokenRefreshManagerConfig {
-  /** Функция обновления токена (из authStore) */
+  /** Функция обновления токена, переданная владельцем session lifecycle */
   refreshToken: RefreshTokenFn;
-  /** Функция logout (из authStore) */
+  /** Функция завершения сессии, переданная владельцем session lifecycle */
   logout: LogoutFn;
   /** Кастомное время жизни токена (опционально) */
   tokenLifetimeMs?: number;

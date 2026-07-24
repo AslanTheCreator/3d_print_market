@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
-import { useAuth } from "@/shared/lib/auth";
+import { useAuth } from "@/entities/session";
 import { useAuthRequired } from "@/shared/hooks";
 import { AuthRequiredDialog } from "@/shared/ui/auth-required-dialog";
 import { useToggleFavorite } from "../model/useToggleFavorite";

@@ -1,6 +1,6 @@
 import React from "react";
 import { LocalShipping, Store, Mail } from "@mui/icons-material";
-import { ShippingMethod } from "@/shared/types";
+import { ShippingMethod } from "../model/types";
 
 /**
  * Иконки для методов доставки

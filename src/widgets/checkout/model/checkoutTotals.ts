@@ -1,5 +1,6 @@
 import { ProductBasket } from "@/entities/cart";
-import { Currency, Transfer } from "@/shared/types";
+import { Currency } from "@/shared/types";
+import { Transfer } from "@/entities/transfer";
 
 interface QuantityItem {
   productId: number;

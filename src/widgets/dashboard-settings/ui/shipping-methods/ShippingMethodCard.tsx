@@ -4,7 +4,7 @@ import { Controller, type Control, type FieldErrors } from "react-hook-form";
 import { SHIPPING_ICONS } from "@/entities/transfer";
 import type { DictionaryItem } from "@/entities/dictionary";
 import { CollapsibleFormCard } from "@/shared/ui/collapsible-form-card";
-import type { ShippingMethod } from "@/shared/types";
+import type { ShippingMethod } from "@/entities/transfer";
 import { ShippingMethodBadge } from "./ShippingMethodBadge";
 import {
   DEFAULT_CURRENCY,

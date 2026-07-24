@@ -28,7 +28,7 @@ import {
   CalendarMonth,
   Info,
 } from "@mui/icons-material";
-import { Product } from "@/shared/types";
+import { Product } from "@/entities/product";
 import { ExtendProductButton } from "./ExtendProductButton";
 import {
   getExpirationStatus,

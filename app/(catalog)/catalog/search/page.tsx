@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { SearchProducts } from "@/widgets/search-products";
+import { SearchProducts } from "@/widgets/product-catalog";
 
 export const metadata: Metadata = {
   title: "Поиск",

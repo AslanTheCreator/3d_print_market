@@ -22,7 +22,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { Inventory } from "@mui/icons-material";
-import { CategoryModel } from "@/shared/types";
+import type { CategoryModel } from "@/entities/category/@x/product";
 import type { Currency } from "@/shared/types";
 import type { EditableAvailability } from "../model/types";
 import {

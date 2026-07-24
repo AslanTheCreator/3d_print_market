@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useMediaQuery, useTheme } from "@mui/material";
-import type { PriceRange } from "@/shared/types";
+import type { PriceRange } from "@/entities/product";
 import { PriceRangeDesktopPanel } from "./price-range-filter/PriceRangeDesktopPanel";
 import { PriceRangeMobileDrawer } from "./price-range-filter/PriceRangeMobileDrawer";
 import { PriceRangeTrigger } from "./price-range-filter/PriceRangeTrigger";

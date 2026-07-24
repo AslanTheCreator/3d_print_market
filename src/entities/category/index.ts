@@ -8,7 +8,11 @@ export { categoryKeys } from "./model/queryKeys";
 export { useCategories, useCategoryById } from "./model/useCategories";
 
 // Types
-export type { BreadcrumbItem, CategoryPath } from "./model/types";
+export type {
+  BreadcrumbItem,
+  CategoryModel,
+  CategoryPath,
+} from "./model/types";
 
 // UI
 export { CategoryBreadcrumbs } from "./ui/CategoryBreadcrumbs";

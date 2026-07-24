@@ -1,4 +1,4 @@
-import { ProductDetail } from "@/shared/types";
+import { ProductDetail } from "@/entities/product";
 
 export const formatMoney = (
   value: number,

@@ -12,12 +12,12 @@ import {
   Typography,
 } from "@mui/material";
 import { Refresh } from "@mui/icons-material";
-import { useImagesQuery } from "@/shared/api";
+import { useImagesQuery } from "@/entities/image";
 import {
   ImageGallery,
   type ImageGalleryImage,
 } from "@/shared/ui/image-gallery";
-import type { ImageResponse } from "@/shared/types";
+import type { ImageResponse } from "@/entities/image";
 
 interface OrderPaymentProofProps {
   orderId: number;

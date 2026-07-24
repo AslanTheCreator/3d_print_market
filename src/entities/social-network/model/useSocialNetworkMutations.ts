@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { SocialNetwork } from "@/shared/types";
+import type { SocialNetwork } from "./types";
 import { socialNetworksApi } from "../api/socialNetworksApi";
 import { socialNetworksKeys } from "./queryKeys";
 import type { SocialNetworkInput } from "./types";

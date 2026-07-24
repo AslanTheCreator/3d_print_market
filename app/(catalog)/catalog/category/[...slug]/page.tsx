@@ -8,8 +8,8 @@ import {
 import { productApi } from "@/entities/product/server";
 import { isAdultCategoryPath } from "@/features/age-verification/server";
 import { SITE_INFO } from "@/shared/config";
-import type { Product } from "@/shared/types";
-import { CategoryProducts } from "@/widgets/category-products";
+import type { Product } from "@/entities/product";
+import { CategoryProducts } from "@/widgets/product-catalog";
 
 interface CategoryPageProps {
   params: Promise<{

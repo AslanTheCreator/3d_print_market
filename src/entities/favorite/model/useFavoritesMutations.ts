@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Product } from "@/shared/types";
+import type { Product } from "@/entities/product/@x/favorite";
 import { favoriteProductKeys } from "@/entities/product/@x/favorite";
 import { favoritesApi } from "../api/favoritesApi";
 import { favoritesKeys } from "./queryKeys";

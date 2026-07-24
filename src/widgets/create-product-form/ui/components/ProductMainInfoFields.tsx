@@ -18,7 +18,7 @@ import {
   productNameRules,
   type ProductFormData,
 } from "@/entities/product";
-import type { CategoryModel } from "@/shared/types";
+import type { CategoryModel } from "@/entities/category";
 import { flattenCategories } from "./productFormHelpers";
 
 interface ProductMainInfoFieldsProps {

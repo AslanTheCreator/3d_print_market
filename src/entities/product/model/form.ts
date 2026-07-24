@@ -1,6 +1,10 @@
 import type { RegisterOptions } from "react-hook-form";
-import type { Currency, ProductDetail } from "@/shared/types";
-import type { EditableAvailability, ProductCreateModel } from "./types";
+import type { Currency } from "@/shared/types";
+import type {
+  EditableAvailability,
+  ProductCreateModel,
+  ProductDetail,
+} from "./types";
 
 /**
  * Данные формы создания/редактирования продукта

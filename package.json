@@ -16,7 +16,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:standalone": "node scripts/test-standalone.mjs",
     "lint": "eslint app src --ext .ts,.tsx --max-warnings=0",
-    "architecture:check": "steiger .",
+    "architecture:check": "steiger src",
     "typecheck": "next typegen && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

@@ -1,4 +1,4 @@
-import { AccountsBaseModel } from "@/shared/types";
+import { AccountsBaseModel } from "../model/types";
 import { AccountsCreateModel } from "../model/types";
 import { authClient } from "@/shared/api";
 

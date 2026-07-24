@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { Box, Checkbox, Paper, Stack, Typography, alpha, useTheme } from "@mui/material";
 import { useCartItemRemoval } from "@/entities/cart";
-import type { Transfer } from "@/shared/types";
+import type { Transfer } from "@/entities/transfer";
 import type { SellerCheckoutGroup } from "../model/types";
 import { CheckoutSellerGroupCard } from "./CheckoutSellerGroupCard";
 

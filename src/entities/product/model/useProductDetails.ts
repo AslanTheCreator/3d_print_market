@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useProductById } from "./useProductQueries";
 import { getImageUrl } from "@/shared/lib";
-import { ProductDetail } from "@/shared/types";
+import type { ProductDetail } from "./types";
 import type { ImageGalleryImage } from "@/shared/ui/image-gallery";
 
 interface UseProductDetailsOptions {

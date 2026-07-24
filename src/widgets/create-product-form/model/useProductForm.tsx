@@ -19,7 +19,7 @@ import {
   useMultipleImageUpload,
 } from "@/features/image-upload";
 import { useNotification } from "@/shared/ui/notification";
-import type { ImageMetadata } from "@/shared/types";
+import type { ImageMetadata } from "@/entities/image";
 import { getImageUrl } from "@/shared/lib";
 import { clearProductFormDraft } from "./productFormDraft";
 import { PRODUCT_IMAGE_LIMIT } from "./constants";

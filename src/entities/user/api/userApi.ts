@@ -4,7 +4,7 @@ import {
   UserProfileModel,
   UserUpdateModel,
 } from "../model/types";
-import { imageApi } from "@/shared/api";
+import { imageApi } from "@/entities/image/@x/user";
 import { authClient, publicClient } from "@/shared/api";
 
 const API_URL = `/participant`;

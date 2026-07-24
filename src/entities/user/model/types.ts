@@ -1,11 +1,13 @@
-import {
-  Address,
-  SocialNetwork,
+import type {
   AccountsBaseModel,
-  ImageMetadata,
   TransferMoney,
-  Transfer,
-} from "@/shared/types";
+} from "@/entities/account/@x/user";
+import type { Address } from "@/entities/address/@x/user";
+import type { ImageMetadata } from "@/entities/image/@x/user";
+import type {
+  SocialNetwork,
+} from "@/entities/social-network/@x/user";
+import type { Transfer } from "@/entities/transfer/@x/user";
 
 type UserStatus = "ACTIVE" | "WAITING_VERIFY" | "BLOCKED" | "DELETED";
 type SellerStatus = "DEFAULT" | "VIP" | "PRO";

@@ -4,7 +4,7 @@ import React, { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useCartChecks } from "@/entities/cart";
 import { useFavoritesChecks } from "@/entities/favorite";
-import { useAuth } from "@/features/auth";
+import { useAuth } from "@/entities/session";
 import {
   Stack,
   IconButton,

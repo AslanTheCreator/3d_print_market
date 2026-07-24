@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import { InfoOutlined } from "@mui/icons-material";
 import type { DictionaryItem } from "@/entities/dictionary";
-import type { SocialNetwork } from "@/shared/types";
+import type { SocialNetwork } from "@/entities/social-network";
 import { SocialNetworksFormFooter } from "./SocialNetworksFormFooter";
 import { SocialNetworksList } from "./SocialNetworksList";
 import { useSocialNetworksForm } from "./useSocialNetworksForm";

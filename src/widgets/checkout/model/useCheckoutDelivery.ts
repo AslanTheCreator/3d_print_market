@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import type { ProductBasket } from "@/entities/cart";
 import { orderApi, orderQueryKeys } from "@/entities/order";
-import type { Transfer } from "@/shared/types";
+import type { Transfer } from "@/entities/transfer";
 import { ApiError } from "@/shared/lib/errorHandler";
 import {
   areTransferSelectionsEqual,

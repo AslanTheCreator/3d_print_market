@@ -1,10 +1,7 @@
 import type { InitialImageUploadState } from "@/features/image-upload";
-import { imageApi } from "@/shared/api";
+import { imageApi } from "@/entities/image";
 import { getImageUrl } from "@/shared/lib";
-import type {
-  ImageMetadata,
-  ImageResponse,
-} from "@/shared/types";
+import type { ImageMetadata, ImageResponse } from "@/entities/image";
 import {
   defaultProductFormValues,
   isEditableAvailability,

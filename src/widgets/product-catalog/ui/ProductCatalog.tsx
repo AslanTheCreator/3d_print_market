@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import {
@@ -7,14 +9,14 @@ import {
   ProductGridItem,
 } from "@/entities/product";
 import { useFavoritesChecks } from "@/entities/favorite";
-import { Product } from "@/shared/types";
+import { Product } from "@/entities/product";
 import { FavoriteButton } from "@/features/toggle-favorite";
 import { AddToCartButton } from "@/features/add-to-cart";
 import { ExternalPurchaseButton } from "@/features/external-purchase";
 import { useProfileUser } from "@/entities/user";
 import { ErrorState, EmptyCatalogState } from "@/shared/ui/states";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/features/auth";
+import { useAuth } from "@/entities/session";
 
 interface ProductCatalogProps {
   products: Product[];

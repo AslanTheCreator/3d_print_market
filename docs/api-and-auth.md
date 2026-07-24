@@ -7,6 +7,7 @@
 Основные файлы:
 
 - `src/shared/api/axios/instances.ts` — Axios clients и interceptors;
+- `src/shared/api/axios/authSessionAdapter.ts` — интерфейс связи HTTP-инфраструктуры с session;
 - `src/shared/config/env.ts` — выбор API URL;
 - `app/api/config/route.ts` — runtime URL для браузера;
 - `src/shared/lib/errorHandler.ts` — нормализация ошибок.
@@ -17,6 +18,11 @@
 - **`authClient`** — защищённые запросы, bearer token и refresh при `401`.
 
 Новый HTTP client без отдельного архитектурного решения не создаётся. Доменные API находятся в `src/entities/<entity>/api` и используют готовые clients.
+
+Auth API, store, `useAuth`, инициализация и refresh lifecycle принадлежат
+`entities/session`. Axios не импортирует эту entity: `AuthProvider` в app layer
+регистрирует `AuthSessionAdapter` с операциями refresh и обработки истёкшей
+сессии. `features/auth` содержит только сценарный UI, guards и auth-действия.
 
 ## Base URL
 
@@ -33,9 +39,10 @@
 
 ## Текущий auth flow
 
+- `AuthProvider` регистрирует session adapter и запускает инициализацию auth;
 - `access_token`, `refresh_token` и `token_created_at` хранятся через `js-cookie`;
 - `authClient` добавляет `Authorization: Bearer <access_token>`;
-- при `401` параллельные запросы ожидают один refresh;
+- при `401` interceptor вызывает refresh через adapter, а параллельные запросы ожидают один refresh;
 - `POST /auth/refresh` получает refresh token в `X-Refresh-Token`;
 - после успешного refresh исходный запрос повторяется;
 - при ошибке токены очищаются и пользователь направляется на `/auth/login`;
@@ -62,13 +69,18 @@
 - DTO mapping хранится рядом с доменом;
 - неподтверждённые поля и статусы не добавляются.
 
+Доменные DTO находятся в `model` соответствующих entities.
+`entities/image` владеет `ImageMetadata`, `ImageResponse`, `ImageTag`, image API,
+query hooks и `attachImages`. В `src/shared/model` остаётся только нейтральный
+тип `Currency`.
+
 Сейчас redaction не централизован: часть login/refresh ошибок логируется как raw error. До подключения production error tracking требуется безопасная нормализация и удаление секретов.
 
 ## Server и client state
 
 TanStack Query хранит backend data, loading/error state, cache и invalidation. Query keys находятся рядом с сущностью.
 
-Zustand используется для auth и локального client state. Исключение — `cartQuantityStore`: он хранит optimistic projection количества, revisions и последнее подтверждённое значение, синхронизируясь с cart query. Это не второй источник истины о корзине; подтверждённые данные и остатки по-прежнему приходят с backend.
+Zustand используется для session state в `entities/session` и другого локального client state. Исключение — `cartQuantityStore`: он хранит optimistic projection количества, revisions и последнее подтверждённое значение, синхронизируясь с cart query. Это не второй источник истины о корзине; подтверждённые данные и остатки по-прежнему приходят с backend.
 
 Auth-bound cache и persisted client state должны очищаться единым session teardown независимо от причины logout. В текущей реализации очистка query cache выполняется UI-кнопками logout, но не является частью `authStore.logout()`.
 

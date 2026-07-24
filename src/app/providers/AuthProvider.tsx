@@ -2,8 +2,19 @@
 
 import { ReactNode, useEffect } from "react";
 import { useCartQuantityStore } from "@/entities/cart";
-import { useAuthStore } from "@/shared/lib/auth";
-import { useTokenRefresh } from "@/shared/lib/token";
+import { useAuthStore, useTokenRefresh } from "@/entities/session";
+import { registerAuthSessionAdapter } from "@/shared/api";
+
+registerAuthSessionAdapter({
+  refreshAccessToken: () => useAuthStore.getState().refreshToken(),
+  onSessionExpired: () => {
+    useAuthStore.getState().logout();
+
+    if (typeof window !== "undefined") {
+      window.location.href = "/auth/login";
+    }
+  },
+});
 
 interface AuthProviderProps {
   children: ReactNode;

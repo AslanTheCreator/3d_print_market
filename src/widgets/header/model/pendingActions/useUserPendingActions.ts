@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/shared/lib/auth";
+import { useAuth } from "@/entities/session";
 import { useSellerOrders, useCustomerOrders } from "@/entities/order";
 import {
   getExpirationStatus,

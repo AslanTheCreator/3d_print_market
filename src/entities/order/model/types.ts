@@ -1,10 +1,7 @@
-import type {
-  Currency,
-  Address,
-  Product,
-  ProductDto,
-  Transfer,
-} from "@/shared/types";
+import type { Address } from "@/entities/address/@x/order";
+import type { Product, ProductDto } from "@/entities/product/@x/order";
+import type { Transfer } from "@/entities/transfer/@x/order";
+import type { Currency } from "@/shared/types";
 
 export type OrderStatus =
   | "BOOKED"

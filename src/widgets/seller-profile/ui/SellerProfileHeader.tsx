@@ -22,7 +22,7 @@ import {
   Storefront,
   WorkspacePremium,
 } from "@mui/icons-material";
-import { useImageMetadataQuery } from "@/shared/api";
+import { useImageMetadataQuery } from "@/entities/image";
 import { getImageUrl } from "@/shared/lib";
 import type { UserFindModel } from "@/entities/user";
 

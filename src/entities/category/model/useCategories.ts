@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { categoryApi } from "../api/categoryApi";
 import { categoryKeys } from "./queryKeys";
-import { CategoryModel } from "@/shared/types";
+import { CategoryModel } from "./types";
 
 interface UseCategoriesOptions {
   enabled?: boolean;

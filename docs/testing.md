@@ -4,12 +4,17 @@
 
 - **`npm run lint`** — ESLint для `app` и `src`.
 - **`npm run typecheck`** — `next typegen` и TypeScript.
-- **`npm run architecture:check`** — FSD-проверка Steiger.
+- **`npm run architecture:check`** — FSD-проверка Steiger для `src`.
 - **`npm run build`** — production build.
 - **`npm run test:smoke`** — HTTP smoke для уже запущенного приложения.
 - **`npm run test:e2e`** — Playwright; без `TEST_BASE_URL` запускает dev server.
 - **`npm run test:standalone`** — smoke и e2e на standalone build.
 - **`npm run test:e2e:ui`** — интерактивный Playwright UI.
+
+Steiger применяет к `src` recommended FSD rules, кроме
+`fsd/insignificant-slice`: эвристика неприменима, поскольку фактический app
+layer находится в корневом `app/`. Этот каталог не входит в автоматическую
+проверку, поэтому его импорты и route-композиция проверяются вручную.
 
 ## Выбор проверок
 
@@ -48,7 +53,9 @@ npm run test:smoke
 npm run test:e2e
 ```
 
-Локальный Playwright server можно переопределить через `PLAYWRIGHT_WEB_SERVER_COMMAND`, порт — через `PLAYWRIGHT_PORT`.
+Локальный Playwright server можно переопределить через
+`PLAYWRIGHT_WEB_SERVER_COMMAND`, порт — через `PLAYWRIGHT_PORT`. Готовность
+сервера проверяется по нейтральному runtime route `/api/config`.
 
 Тесты с реальным backend требуют подходящих env и тестовых данных. Секреты из `.env.local` не выводятся в логи.
 
@@ -56,9 +63,11 @@ npm run test:e2e
 
 Состояние на 2026-07-24:
 
-- standalone-прогон: `15` smoke и `76` Playwright tests;
+- standalone-прогон: `15` smoke и `82` Playwright tests;
 - browser project: только `Desktop Chrome`;
 - browser-сценарии в основном подменяют API и auth cookies;
+- session lifecycle покрывает initialization, login/logout, общий refresh для
+  конкурентных `401`, один retry и redirect при refresh failure;
 - часть `*.spec.ts` является model/contract tests без browser flow, но запускается через Playwright;
 - CI задаёт недоступный API `127.0.0.1:9`, поэтому успешный real-backend сценарий не проверяется;
 - coverage threshold, mobile project, Firefox/WebKit и automated accessibility gate отсутствуют;

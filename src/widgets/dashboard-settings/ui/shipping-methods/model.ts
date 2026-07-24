@@ -1,5 +1,6 @@
 import type { DictionaryItem } from "@/entities/dictionary";
-import type { Currency, ShippingMethod, Transfer } from "@/shared/types";
+import type { Currency } from "@/shared/types";
+import type { ShippingMethod, Transfer } from "@/entities/transfer";
 
 export interface TransferFormItem {
   enabled: boolean;

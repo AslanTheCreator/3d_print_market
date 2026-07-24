@@ -7,4 +7,8 @@ export {
   useDeleteAccount,
   useSaveAccountsBatch,
 } from "./model/useAccountsMutations";
-export * from "./model/types";
+export type {
+  AccountsBaseModel,
+  AccountsCreateModel,
+  TransferMoney,
+} from "./model/types";

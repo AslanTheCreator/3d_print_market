@@ -3,7 +3,7 @@ import { categoryApi, getCategorySlug } from "@/entities/category/server";
 import { productApi } from "@/entities/product/server";
 import { isAdultCategoryName } from "@/features/age-verification/server";
 import { SITE_INFO } from "@/shared/config";
-import type { CategoryModel } from "@/shared/types";
+import type { CategoryModel } from "@/entities/category";
 
 type SitemapEntry = MetadataRoute.Sitemap[number];
 

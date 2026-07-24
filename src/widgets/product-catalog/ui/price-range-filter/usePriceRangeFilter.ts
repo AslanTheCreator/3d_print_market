@@ -1,6 +1,6 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { PriceRange } from "@/shared/types";
+import type { PriceRange } from "@/entities/product";
 import {
   formatDesktopRangeLabel,
   formatInputValue,

@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import { InfoOutlined } from "@mui/icons-material";
 import type { DictionaryItem } from "@/entities/dictionary";
-import type { Transfer } from "@/shared/types";
+import type { Transfer } from "@/entities/transfer";
 import { ShippingMethodsFormFooter } from "./ShippingMethodsFormFooter";
 import { ShippingMethodsList } from "./ShippingMethodsList";
 import { useShippingMethodsForm } from "./useShippingMethodsForm";

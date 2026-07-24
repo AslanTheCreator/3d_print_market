@@ -2,7 +2,7 @@
 import { transferApi } from "../api/transferApi";
 import { transferKeys } from "./queryKeys";
 import type { TransferInput } from "../model/types";
-import { Transfer } from "@/shared/types";
+import { Transfer } from "./types";
 
 export const useCreateTransfer = () => {
   const queryClient = useQueryClient();

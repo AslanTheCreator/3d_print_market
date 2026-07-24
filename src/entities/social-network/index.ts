@@ -6,4 +6,8 @@ export {
   useUpdateSocial,
 } from "./model/useSocialNetworkMutations";
 export { useSocialNetworks } from "./model/useSocialNetworks";
-export type { SocialNetworkInput } from "./model/types";
+export type {
+  SocialNetwork,
+  SocialNetworkInput,
+  SocialNetworkType,
+} from "./model/types";

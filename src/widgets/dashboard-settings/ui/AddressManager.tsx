@@ -22,7 +22,7 @@ import {
   AddressForm,
 } from "@/entities/address";
 import { useNotification } from "@/shared/ui/notification";
-import { Address } from "@/shared/types";
+import { Address } from "@/entities/address";
 
 type ViewMode = "list" | "add" | "edit";
 

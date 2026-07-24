@@ -18,4 +18,9 @@ export {
 export { SHIPPING_ICONS, getDeliveryIcon } from "./lib/shippingIcons";
 
 // Types
-export type { TransferInput } from "./model/types";
+export type {
+  ShippingMethod,
+  Transfer,
+  TransferInput,
+  TransferStatus,
+} from "./model/types";

@@ -4,7 +4,7 @@ import type {
   OrderResult,
   OrderToCreate,
 } from "@/features/order-create";
-import type { Transfer } from "@/shared/types";
+import type { Transfer } from "@/entities/transfer";
 
 export type { CheckoutResult, OrderResult, OrderToCreate };
 

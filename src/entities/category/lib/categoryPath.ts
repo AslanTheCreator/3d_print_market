@@ -1,5 +1,5 @@
 import { extractLastCategoryId, normalizeSlugParam } from "@/shared/lib";
-import type { CategoryModel } from "@/shared/types";
+import type { CategoryModel } from "../model/types";
 import type { CategoryPath } from "../model/types";
 import { createBreadcrumbs, generateCategoryTitle } from "./createBreadcrumbs";
 

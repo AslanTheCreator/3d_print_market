@@ -1,5 +1,5 @@
 import { formatPrice } from "@/shared/lib";
-import type { PriceRange } from "@/shared/types";
+import type { PriceRange } from "@/entities/product";
 
 export const normalizeInputValue = (value: string): string =>
   value.replace(/\D/g, "");

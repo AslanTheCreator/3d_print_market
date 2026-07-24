@@ -1,5 +1,5 @@
 import type { DictionaryItem } from "@/entities/dictionary";
-import type { AccountsBaseModel, TransferMoney } from "@/shared/types";
+import type { AccountsBaseModel, TransferMoney } from "@/entities/account";
 
 export interface AccountFormItem {
   enabled: boolean;

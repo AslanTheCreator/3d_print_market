@@ -18,7 +18,7 @@ import { CheckCircle, InfoOutlined } from "@mui/icons-material";
 import { useDictionary } from "@/entities/dictionary";
 import { getDeliveryIcon } from "@/entities/transfer";
 import { formatPrice } from "@/shared/lib";
-import type { Transfer } from "@/shared/types";
+import type { Transfer } from "@/entities/transfer";
 import type { SellerCheckoutGroup } from "../model/types";
 
 interface SellerDeliverySelectorProps {

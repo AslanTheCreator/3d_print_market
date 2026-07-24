@@ -1,7 +1,8 @@
 import { ProductBasket, ProductBasketDto } from "../model/types";
-import { authClient, buildProductRequest } from "@/shared/api";
-import { attachImages } from "@/shared/lib";
-import { FetchProductsParams } from "@/shared/types";
+import { attachImages } from "@/entities/image/@x/cart";
+import { buildProductRequest } from "@/entities/product/@x/cart";
+import { authClient } from "@/shared/api";
+import type { FetchProductsParams } from "@/entities/product/@x/cart";
 
 const API_URL = `/basket`;
 

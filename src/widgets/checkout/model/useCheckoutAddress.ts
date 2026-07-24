@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAddresses } from "@/entities/address";
-import { Address } from "@/shared/types";
+import { Address } from "@/entities/address";
 
 export const useCheckoutAddress = () => {
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);

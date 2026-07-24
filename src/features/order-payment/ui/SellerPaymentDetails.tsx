@@ -20,7 +20,7 @@ import {
   ContentCopy,
   CheckCircle,
 } from "@mui/icons-material";
-import { AccountsBaseModel, TransferMoney } from "@/shared/types";
+import { AccountsBaseModel, TransferMoney } from "@/entities/account";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Конфигурация способов оплаты

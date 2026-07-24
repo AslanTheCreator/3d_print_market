@@ -4,7 +4,7 @@ import { FavoriteBorderOutlined, SearchOutlined, StorefrontOutlined } from "@mui
 import { Box, CircularProgress, Container, Typography, alpha } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useFavoritesProducts } from "@/entities/favorite";
-import { useAuth } from "@/features/auth";
+import { useAuth } from "@/entities/session";
 import { EmptyPageState, UnauthorizedState } from "@/shared/ui/states";
 import { ProductCatalog } from "@/widgets/product-catalog";
 

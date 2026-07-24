@@ -2,7 +2,7 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import { productApi } from "@/entities/product/server";
 import { SITE_INFO } from "@/shared/config";
-import type { ProductDetail } from "@/shared/types";
+import type { ProductDetail } from "@/entities/product";
 import { ProductDetailsWidget } from "@/widgets/product-details";
 
 interface ProductDetailPageProps {

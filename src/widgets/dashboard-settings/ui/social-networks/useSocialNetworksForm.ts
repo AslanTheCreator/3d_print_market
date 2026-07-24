@@ -10,7 +10,7 @@ import {
   type SocialNetworkInput,
 } from "@/entities/social-network";
 import { useNotification } from "@/shared/ui/notification";
-import type { SocialNetwork, SocialNetworkType } from "@/shared/types";
+import type { SocialNetwork, SocialNetworkType } from "@/entities/social-network";
 import { useInvalidateSellerSettings } from "../../model/useInvalidateSellerSettings";
 import {
   buildDefaultValues,

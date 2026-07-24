@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { ProductBasket } from "@/entities/cart";
-import type { Address, Transfer } from "@/shared/types";
+import type { Address } from "@/entities/address";
+import type { Transfer } from "@/entities/transfer";
 import {
   getActiveTransfers,
   groupCartItemsBySeller,

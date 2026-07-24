@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Address } from "@/shared/types";
+import type { Address } from "@/entities/address";
 import {
   getCheckoutSubmitReadiness,
   type CheckoutSubmitReadiness,

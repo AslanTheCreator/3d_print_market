@@ -17,14 +17,15 @@
 
 ### Готово
 
-- **Build и качество кода** — lint, strict TypeScript, Steiger, runtime dependency audit и build проходят.
+- **Build и качество кода** — lint, strict TypeScript, Steiger для `src`, runtime dependency audit и build проходят.
+- **Архитектурные границы** — варианты каталога объединены без widget-to-widget imports; доменные DTO, image и session находятся в entities, а Axios связан с session через app-level adapter.
 - **Frontend-защита внешних товаров** — write model исключает `EXTERNAL_ONLY`; edit/delete/extend скрыты, прямой edit route заблокирован.
 - **Целостность редактирования внутренних товаров** — form mapper сохраняет подтверждённые `originality` и `externalUrl`.
 
 ### Частично готово
 
 - **Основные buyer/seller flows** — каталог, auth UI, корзина, checkout, товары и заказы реализованы; реальные end-to-end сценарии с backend не проверены.
-- **CI и тесты** — 15 smoke и 76 Playwright tests проходят, но CI работает без реального backend и только в Desktop Chromium.
+- **CI и тесты** — 15 smoke и 82 Playwright tests проходят, но CI работает без реального backend и только в Desktop Chromium.
 - **SEO, performance, accessibility** — metadata/security headers есть; остаются soft 404, устаревший performance baseline и отсутствие mobile/a11y gate.
 
 ### Блокеры
@@ -139,7 +140,6 @@ CI поднимает standalone frontend с недоступным API и ис�
 - **Performance** — нет актуального mobile/production Core Web Vitals и CI budget.
 - **Споры и support** — dispute status отображается, но действия открытия/закрытия спора и подтверждённый support runbook отсутствуют.
 - **Docker/CI** — собранный image не запускается в CI; compose defaults используют исторические frontend/backend tags.
-- **Архитектурные правила** — Steiger проходит, но документация не отражала cart projection и известные widget/shared deviations.
 
 ## Подтверждённые проверки
 
@@ -147,15 +147,20 @@ CI поднимает standalone frontend с недоступным API и ис�
 
 - **`npm run lint`** — пройдено, warnings `0`.
 - **`npm run typecheck`** — пройдено.
-- **`npm run architecture:check`** — пройдено, Steiger problems `0`.
+- **`npm run architecture:check`** — пройдено для `src`, Steiger problems `0`.
 - **`npm audit --omit=dev --audit-level=high`** — `0 vulnerabilities`.
 - **`npm run build`** — production build пройден.
-- **`npm run test:standalone`** — 15 smoke и 76 Playwright tests пройдены.
+- **`npm run test:standalone`** — 15 smoke и 82 Playwright tests пройдены.
 - **`docker compose config --quiet`** — конфигурация валидна.
 - **`docker build -f Dockerfile -t figurzilla-frontend:audit .`** — image собран.
 
 Ограничения этих результатов:
 
+- прежний результат Steiger был false green: команда `steiger .` не
+  анализировала FSD-слои внутри `src`; текущая команда использует
+  `steiger src`;
+- `fsd/insignificant-slice` отключён как неприменимый при внешнем корневом
+  `app/`; сам `app/` остаётся зоной обязательного ручного review;
 - Playwright запускается только в Desktop Chromium;
 - значительная часть API ответов подменяется, model tests также запускаются через Playwright;
 - container entrypoint и production network не smoke-тестируются в CI;

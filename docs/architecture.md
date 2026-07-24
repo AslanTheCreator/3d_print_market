@@ -24,7 +24,7 @@ app -> widgets -> features -> entities -> shared
 ```
 
 - **`shared`**
-  - Ответственность: HTTP clients, config, общие hooks, types и UI.
+  - Ответственность: HTTP clients, config, общие hooks, нейтральные types и UI.
   - Зависимости: только внешние пакеты.
 - **`entities`**
   - Ответственность: доменные API, query keys, модели и небольшой UI.
@@ -47,7 +47,14 @@ app -> widgets -> features -> entities -> shared
 - внутри слайса допустимы короткие относительные imports;
 - `@x` использовать только для узкого межслайсового контракта entities.
 
-Проверка границ настроена в `steiger.config.mjs`; `app/api/**` исключён как зона route handlers.
+Проверка границ настроена в `steiger.config.mjs`. `npm run architecture:check`
+запускает Steiger для `src`; все recommended rules обязательны, кроме
+`fsd/insignificant-slice`. Эта эвристика отключена, потому что фактический
+app layer находится в корневом `app/`, вне `src`.
+
+Корневой `app/` не входит в автоматическую область Steiger. Направление его
+импортов, тонкость route-файлов и композиция нижних слоёв проверяются вручную
+при review.
 
 ## Размещение кода
 
@@ -57,6 +64,16 @@ app -> widgets -> features -> entities -> shared
 - пользовательское действие — `src/features/<slice>`;
 - доменная модель, API, query hooks — `src/entities/<slice>`;
 - общая утилита или нейтральный UI — `src/shared`.
+
+Доменные DTO размещаются в `model` соответствующих entities. `entities/image`
+владеет image DTO, API, query hooks и связыванием изображений с доменными
+данными. `entities/session` владеет auth API, Zustand store, auth hooks,
+инициализацией и refresh lifecycle. В `src/shared/model`, доступном через
+`@/shared/types`, остаётся только нейтральный тип `Currency`.
+
+Axios clients остаются в `shared`. Они не импортируют session store:
+`AuthProvider` регистрирует `AuthSessionAdapter`, через который interceptor
+запрашивает refresh и сообщает об истечении сессии.
 
 Server state хранится в TanStack Query. Zustand используется для клиентского состояния.
 
@@ -85,16 +102,19 @@ Server state хранится в TanStack Query. Zustand используетс�
 - API-зависимый UI должен обрабатывать loading, error, empty и success;
 - payload и validation rules не менять без подтверждённого backend-контракта.
 
-## Известные отклонения
+## Статус прежних отклонений
 
-Эти отклонения описывают текущее состояние, но не являются разрешением расширять паттерн:
+Ранее зафиксированные отклонения устранены:
 
-- `home-products`, `category-products` и `search-products` импортируют `widgets/product-catalog`; формальная матрица не предусматривает widget-to-widget dependencies, а Steiger это правило сейчас не контролирует;
-- часть доменных DTO находится в `src/shared/model`, а auth/image API — в `src/shared/api`, хотя целевая ответственность домена описана для `entities`;
-- `features/auth` частично реэкспортирует реализацию из `shared`;
-- автоматическая архитектурная проверка не заменяет review public API и фактического направления зависимостей.
+- home, category и search варианты объединены в `widgets/product-catalog`;
+  widget-to-widget dependencies удалены;
+- доменные DTO и image-реализация перенесены в соответствующие entities;
+- auth API, store и hooks перенесены в `entities/session`; `features/auth`
+  содержит сценарный UI без проксирующих реэкспортов из `shared`;
+- Axios отделён от session store через adapter, регистрируемый в app layer.
 
-Перед масштабным переносом этих модулей нужен отдельный refactor scope. Новые отклонения без архитектурного решения не добавляются.
+Автоматическая проверка не заменяет review public API, `@x`-контрактов и
+корневого `app/`. Новые отклонения без архитектурного решения не добавляются.
 
 ## Проверки
 

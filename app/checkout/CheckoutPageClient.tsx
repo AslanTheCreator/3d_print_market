@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, CircularProgress, Container } from "@mui/material";
-import { useAuth } from "@/features/auth";
+import { useAuth } from "@/entities/session";
 import { UnauthorizedState } from "@/shared/ui/states";
 import Checkout from "@/widgets/checkout";
 

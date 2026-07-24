@@ -1,5 +1,5 @@
 import { authClient } from "@/shared/api";
-import type { SocialNetwork } from "@/shared/types";
+import type { SocialNetwork } from "../model/types";
 import type { SocialNetworkInput } from "../model/types";
 
 const API_URL = "/social-networks";

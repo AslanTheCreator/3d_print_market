@@ -33,4 +33,5 @@ export {
 } from "./lib/productExpirationUtils";
 
 export { productApi } from "./api/productApi";
+export { buildProductRequest } from "./lib/buildProductRequest";
 export * from "./model";

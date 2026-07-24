@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ErrorCodes } from "@/shared/lib/errorHandler";
-import type { ProductDto, ProductFilter } from "@/shared/types";
+import type { ProductDto, ProductFilter } from "@/entities/product";
 
 type ProductFilterHasImageId = "imageId" extends keyof ProductFilter
   ? true

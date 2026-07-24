@@ -1,4 +1,4 @@
-import type { Address } from "@/shared/types";
+import type { Address } from "@/entities/address";
 import type { SellerCheckoutGroup } from "./types";
 
 interface GetCheckoutSubmitReadinessParams {

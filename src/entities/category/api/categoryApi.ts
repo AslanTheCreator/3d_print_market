@@ -1,5 +1,5 @@
 import { publicClient } from "@/shared/api";
-import { CategoryModel } from "@/shared/types";
+import { CategoryModel } from "../model/types";
 
 const API_URL = `/categories`;
 

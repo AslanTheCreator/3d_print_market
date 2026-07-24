@@ -33,7 +33,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogoutButton } from "@/features/auth";
 import { LAYOUT } from "@/shared/config";
-import { useAuthStore } from "@/shared/lib/auth";
+import { useAuthStore } from "@/entities/session";
 
 interface NavigationItem {
   text: string;

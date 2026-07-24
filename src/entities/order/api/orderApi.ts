@@ -6,8 +6,8 @@ import {
   OrderCancel,
 } from "../model/types";
 import { authClient } from "@/shared/api";
-import { attachImages } from "@/shared/lib";
-import type { ImageMetadata } from "@/shared/types";
+import { attachImages } from "@/entities/image/@x/order";
+import type { ImageMetadata } from "@/entities/image/@x/order";
 
 const API_URL = `/order`;
 

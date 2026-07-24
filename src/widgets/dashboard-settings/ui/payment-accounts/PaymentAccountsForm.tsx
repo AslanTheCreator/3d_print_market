@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import { InfoOutlined } from "@mui/icons-material";
 import type { DictionaryItem } from "@/entities/dictionary";
-import type { AccountsBaseModel } from "@/shared/types";
+import type { AccountsBaseModel } from "@/entities/account";
 import { PaymentAccountsFormFooter } from "./PaymentAccountsFormFooter";
 import { PaymentAccountsList } from "./PaymentAccountsList";
 import { usePaymentAccountsForm } from "./usePaymentAccountsForm";

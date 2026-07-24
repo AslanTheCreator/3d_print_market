@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { favoritesApi } from "../api/favoritesApi";
 import { favoritesKeys } from "./queryKeys";
-import { Product } from "@/shared/types";
+import type { Product } from "@/entities/product/@x/favorite";
 
 export const useFavoritesProducts = (enabled: boolean = true) => {
   return useQuery<Product[]>({

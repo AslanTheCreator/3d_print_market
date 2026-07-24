@@ -6,10 +6,12 @@ import AuthForm from "@/widgets/auth-form";
 import {
   PasswordResetDialog,
   VerificationCodeDialog,
-  VerificationRequiredError,
-  authApi,
 } from "@/features/auth";
-import { useAuthStore } from "@/shared/lib/auth";
+import {
+  authApi,
+  useAuthStore,
+  VerificationRequiredError,
+} from "@/entities/session";
 import { useNotification } from "@/shared/ui/notification";
 
 const DEFAULT_POST_AUTH_REDIRECT = "/";

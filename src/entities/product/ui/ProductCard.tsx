@@ -16,7 +16,7 @@ import {
   Chip,
 } from "@mui/material";
 import { Schedule } from "@mui/icons-material";
-import { Product } from "@/shared/types";
+import type { Product } from "../model/types";
 import { getImageUrl } from "@/shared/lib";
 import { ImageFallback } from "@/shared/ui/image-fallback";
 import { ProductPriceDisplay } from "./ProductPriceDisplay";

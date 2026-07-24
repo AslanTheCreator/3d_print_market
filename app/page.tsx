@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { productApi } from "@/entities/product/server";
 import { SITE_INFO } from "@/shared/config";
-import type { Product } from "@/shared/types";
-import { HomeProducts } from "@/widgets/home-products";
+import type { Product } from "@/entities/product";
+import { HomeProducts } from "@/widgets/product-catalog";
 
 export const dynamic = "force-dynamic";
 

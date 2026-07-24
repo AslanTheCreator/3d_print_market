@@ -3,7 +3,7 @@
 import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Box, CircularProgress, Container } from "@mui/material";
-import { useAuth } from "../model/useAuth";
+import { useAuth } from "@/entities/session";
 
 const LOGIN_PATH = "/auth/login";
 

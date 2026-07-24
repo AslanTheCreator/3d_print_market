@@ -1,5 +1,6 @@
 import { getCurrencySymbol } from "@/entities/product";
-import type { CategoryModel, Currency } from "@/shared/types";
+import type { CategoryModel } from "@/entities/category";
+import type { Currency } from "@/shared/types";
 
 const currencySymbols: Record<Currency, string> = {
   RUB: "₽",

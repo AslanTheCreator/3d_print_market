@@ -8,8 +8,8 @@ import {
 import type {
   ProductCreateModel,
   EditableAvailability,
-} from "@/entities/product/model/types";
-import type { ProductDetail } from "@/shared/types";
+} from "@/entities/product";
+import type { ProductDetail } from "@/entities/product";
 
 type WriteModelAllowsExternal =
   "EXTERNAL_ONLY" extends ProductCreateModel["availability"] ? true : false;

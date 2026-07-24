@@ -13,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { ArrowForwardIos, Close } from "@mui/icons-material";
-import { Review } from "@/shared/types";
+import { Review } from "@/entities/review";
 import {
   formatAverageRating,
   formatReviewDate,

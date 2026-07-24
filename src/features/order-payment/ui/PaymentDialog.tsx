@@ -18,7 +18,7 @@ import {
 import { Close, CloudUpload, Payment, CheckCircle } from "@mui/icons-material";
 import { ListOrdersModel } from "@/entities/order";
 import { useSellerAccounts } from "@/entities/account";
-import { imageApi } from "@/shared/api";
+import { imageApi } from "@/entities/image";
 import {
   createImagePreview,
   revokeImagePreview,

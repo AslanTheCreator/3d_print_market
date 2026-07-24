@@ -10,7 +10,7 @@ import {
 } from "@/entities/transfer";
 import type { DictionaryItem } from "@/entities/dictionary";
 import { useNotification } from "@/shared/ui/notification";
-import type { ShippingMethod, Transfer } from "@/shared/types";
+import type { ShippingMethod, Transfer } from "@/entities/transfer";
 import { useInvalidateSellerSettings } from "../../model/useInvalidateSellerSettings";
 import {
   DEFAULT_CURRENCY,

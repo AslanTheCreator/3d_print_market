@@ -27,7 +27,7 @@ import {
   buildCategoryPath,
 } from "@/entities/category";
 import { getCategoryIcon } from "@/entities/category";
-import { CategoryModel } from "@/shared/types";
+import { CategoryModel } from "@/entities/category";
 
 interface CategoriesMenuProps {
   onClose: () => void;

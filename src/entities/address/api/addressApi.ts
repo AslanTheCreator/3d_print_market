@@ -1,6 +1,6 @@
 import { authClient } from "@/shared/api";
 import type { AddressInput } from "../model/types";
-import { Address } from "@/shared/types";
+import { Address } from "../model/types";
 
 const API_URL = "/address";
 

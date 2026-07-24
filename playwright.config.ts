@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 3000);
 const baseURL = process.env.TEST_BASE_URL ?? `http://127.0.0.1:${PORT}`;
+const webServerHealthUrl = new URL("/api/config", baseURL).toString();
 const fallbackApiBaseUrl = process.env.PLAYWRIGHT_API_BASE_URL ?? "http://127.0.0.1:9";
 const webServerCommand =
   process.env.PLAYWRIGHT_WEB_SERVER_COMMAND ??
@@ -26,7 +27,7 @@ export default defineConfig({
     ? undefined
     : {
         command: webServerCommand,
-        url: baseURL,
+        url: webServerHealthUrl,
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
         env: {

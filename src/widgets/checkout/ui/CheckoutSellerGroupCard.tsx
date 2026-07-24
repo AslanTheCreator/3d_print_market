@@ -3,14 +3,14 @@
 import { useCallback } from "react";
 import { Box, Divider, Paper, Stack, Typography, alpha, useTheme } from "@mui/material";
 import { StorefrontOutlined } from "@mui/icons-material";
-import { useAuth } from "@/features/auth";
+import { useAuth } from "@/entities/session";
 import { ExternalPurchaseButton } from "@/features/external-purchase";
 import {
   CheckoutCartItemCard,
   useCartQuantity,
   type ProductBasket,
 } from "@/entities/cart";
-import type { Transfer } from "@/shared/types";
+import type { Transfer } from "@/entities/transfer";
 import { useNotification } from "@/shared/ui/notification";
 import type { SellerCheckoutGroup } from "../model/types";
 import { SellerDeliverySelector } from "./SellerDeliverySelector";

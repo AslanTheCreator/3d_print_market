@@ -4,8 +4,8 @@ import {
   createImagePreview,
   validateImage,
 } from "@/shared/lib";
-import { ImageTag } from "@/shared/types";
-import { imageApi } from "@/shared/api";
+import { ImageTag } from "@/entities/image";
+import { imageApi } from "@/entities/image";
 
 interface ImageUploadState {
   file: File | null;

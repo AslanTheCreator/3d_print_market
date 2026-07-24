@@ -14,8 +14,7 @@ import axios, {
   AxiosError,
   InternalAxiosRequestConfig,
 } from "axios";
-import { tokenStorage } from "@/shared/lib";
-import { useAuthStore } from "@/shared/lib/auth";
+import { tokenRefreshManager, tokenStorage } from "@/shared/lib";
 import {
   ApiError,
   BackendErrorResponse,
@@ -24,8 +23,7 @@ import {
   ErrorCodes,
 } from "@/shared/lib/errorHandler";
 import { getServerApiBaseUrl } from "@/shared/config/env";
-// Импорт tokenRefreshManager (добавить в shared/lib/index.ts)
-import { tokenRefreshManager } from "@/shared/lib/token/tokenRefreshManager";
+import { getAuthSessionAdapter } from "./authSessionAdapter";
 
 // ============================================================================
 // ТИПЫ
@@ -276,8 +274,17 @@ const setupAuthInterceptor = (instance: AxiosInstance): void => {
       isRefreshing = true;
 
       try {
-        const authStore = useAuthStore.getState();
-        const success = await authStore.refreshToken();
+        const authSessionAdapter = getAuthSessionAdapter();
+
+        if (!authSessionAdapter) {
+          throw new ApiError(
+            "Сессия не инициализирована",
+            ErrorCodes.TOKEN_INVALID_OR_EXPIRED,
+            401,
+          );
+        }
+
+        const success = await authSessionAdapter.refreshAccessToken();
 
         if (success) {
           const newToken = tokenStorage.getAccessToken();
@@ -302,22 +309,14 @@ const setupAuthInterceptor = (instance: AxiosInstance): void => {
           401,
         );
         onRefreshFailure(logoutError);
-        authStore.logout();
-
-        if (typeof window !== "undefined") {
-          window.location.href = "/auth/login";
-        }
+        authSessionAdapter.onSessionExpired();
 
         return Promise.reject(logoutError);
       } catch (refreshError) {
         logError("Error during token refresh", refreshError);
         const apiError = transformToApiError(refreshError);
         onRefreshFailure(apiError);
-        useAuthStore.getState().logout();
-
-        if (typeof window !== "undefined") {
-          window.location.href = "/auth/login";
-        }
+        getAuthSessionAdapter()?.onSessionExpired();
 
         return Promise.reject(apiError);
       } finally {

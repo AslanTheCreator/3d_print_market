@@ -1,6 +1,11 @@
-import type { ImageMetadata } from "@/shared/types";
-
 export type ImageSize = "thumbnail" | "medium" | "original";
+
+export interface ImageUrlSource {
+  thumbnailUrl?: string;
+  mediumUrl?: string;
+  originalUrl?: string;
+  url?: string;
+}
 
 const PRODUCTION_STORAGE_HOST = "77.37.166.117:9000";
 
@@ -13,7 +18,7 @@ const normalizeImageUrl = (url: string | undefined): string | undefined => {
 };
 
 export const getImageUrl = (
-  image: ImageMetadata | null | undefined,
+  image: ImageUrlSource | null | undefined,
   size: ImageSize,
 ): string | undefined => {
   if (!image) {

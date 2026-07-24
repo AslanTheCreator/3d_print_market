@@ -6,7 +6,7 @@ import {
   type BackendErrorResponse,
 } from "@/shared/lib/errorHandler";
 import type { TransferInput } from "../model/types";
-import { Transfer } from "@/shared/types";
+import { Transfer } from "../model/types";
 
 const API_URL = "/transfer";
 

@@ -4,6 +4,8 @@ import { defineConfig } from "steiger";
 export default defineConfig([
   ...fsd.configs.recommended,
   {
-    ignores: ["app/api/**"],
+    rules: {
+      "fsd/insignificant-slice": "off",
+    },
   },
 ]);

@@ -13,7 +13,7 @@ import {
 import { ArrowBackIosNew, ArrowForwardIos } from "@mui/icons-material";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperType } from "swiper";
-import { Review } from "@/shared/types";
+import { Review } from "@/entities/review";
 import {
   formatAverageRating,
   formatReviewDate,

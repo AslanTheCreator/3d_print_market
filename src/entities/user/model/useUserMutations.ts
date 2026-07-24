@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { imageApi } from "@/shared/api";
+import { imageApi } from "@/entities/image/@x/user";
 import { userApi } from "../api/userApi";
 import { userKeys } from "./queryKeys";
 import type {

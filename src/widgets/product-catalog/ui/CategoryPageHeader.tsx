@@ -1,6 +1,6 @@
 import { Box, Typography } from "@mui/material";
 import { CategoryBreadcrumbs, type CategoryPath } from "@/entities/category";
-import type { PriceRange } from "@/shared/types";
+import type { PriceRange } from "@/entities/product";
 import { PriceRangeFilter } from "./PriceRangeFilter";
 
 interface CategoryPageHeaderProps {

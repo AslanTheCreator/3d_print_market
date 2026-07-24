@@ -9,7 +9,7 @@ import {
   useUpdateAccount,
 } from "@/entities/account";
 import { useNotification } from "@/shared/ui/notification";
-import type { AccountsBaseModel, TransferMoney } from "@/shared/types";
+import type { AccountsBaseModel, TransferMoney } from "@/entities/account";
 import { useInvalidateSellerSettings } from "../../model/useInvalidateSellerSettings";
 import {
   buildDefaultValues,

@@ -1,5 +1,5 @@
 import type { ProductBasket } from "@/entities/cart";
-import type { Transfer } from "@/shared/types";
+import type { Transfer } from "@/entities/transfer";
 
 export interface SellerCartGroup {
   sellerId: number;
