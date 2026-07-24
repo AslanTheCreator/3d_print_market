@@ -1,6 +1,6 @@
 # Performance-аудит
 
-Первичный замер: 2026-06-23. Статус сверен с кодом: 2026-07-17.
+Первичный замер: 2026-06-23. Статус сверен с кодом и production build: 2026-07-23.
 
 ## Ограничения исходного замера
 
@@ -10,7 +10,25 @@
 - Холодная загрузка публичных страниц: примерно `1.0–1.1 MB`.
 - В исходный transfer входили `484 kB` старых файлов шрифта; после аудита они заменены одним variable font.
 
-После последующих изменений route metrics не переснимались.
+Исторический network transfer после последующих изменений не переснимался.
+
+## Build snapshot 2026-07-23
+
+`npm run build` завершился успешно. First Load JS:
+
+- **`/`** — `305 kB`.
+- **`/catalog/[id]/detail`** — `333 kB`.
+- **`/catalog/category/[...slug]`** — `305 kB`.
+- **`/catalog/search`** — `301 kB`.
+- **`/checkout`** — `314 kB`.
+- **`/privacy`** — `130 kB`.
+
+Shared First Load JS — `102 kB`. Это build-time размеры Next.js, а не Core Web Vitals и не объём полного network transfer.
+
+Крупнейшие статические brand assets:
+
+- `logo-desktop.png` — `946,540` bytes;
+- `logo.svg` — `151,982` bytes.
 
 ## Выполнено
 
@@ -23,15 +41,22 @@
 
 ## Открыто
 
-| Приоритет | Пункт | Текущее подтверждение |
-| --- | --- | --- |
-| высокий | Повторить замеры | baseline устарел после оптимизаций и исправления standalone runner |
-| высокий | Оптимизировать logo assets | `logo-desktop.png` около `925 kB`, `logo.svg` около `148 kB` |
-| средний | Решить кеширование каталога | `/` и category route используют `force-dynamic` |
-| средний | Проверить protected prefetch | после точечных исправлений повторный network trace не выполнен |
-| средний | Измерить Метрику | production analytics загружается в root layout |
-| низкий | Контролировать icon imports | MUI icons используются во многих client-компонентах; массовая замена без bundle evidence не нужна |
-| низкий | Ввести budget | нет CI-порогов для JS, assets и Web Vitals |
+### Высокий приоритет
+
+- **Повторить production/mobile замеры** — build snapshot обновлён, но baseline network transfer и Core Web Vitals остаётся историческим.
+- **Оптимизировать logo assets** — `logo-desktop.png` около `925 kB`, `logo.svg` около `148 kB`.
+- **Проверить mobile hydration/CLS** — крупные UI-деревья переключаются через `useMediaQuery`, mobile browser project и SSR match strategy отсутствуют.
+
+### Средний приоритет
+
+- **Решить кеширование каталога** — `/` и category route используют `force-dynamic`.
+- **Проверить protected prefetch** — после точечных исправлений повторный network trace не выполнен.
+- **Измерить Метрику** — production analytics загружается в root layout.
+
+### Низкий приоритет
+
+- **Контролировать icon imports** — MUI icons используются во многих client-компонентах; массовая замена без bundle evidence не нужна.
+- **Ввести budget** — нет CI-порогов для JS, assets и Web Vitals.
 
 ## Следующий замер
 

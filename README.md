@@ -1,8 +1,10 @@
 # 3D Print Market
 
-Frontend production marketplace for 3D printing products.
+Frontend marketplace for collectible figures and 3D printing products.
 
 Stack: Next.js 15, React 19, TypeScript, Feature-Sliced Design, MUI, React Query, Zustand.
+
+Current public launch status: **NO-GO**. See the [MVP and production readiness audit](./docs/production-readiness-audit-2026-06-17.md).
 
 ## Requirements
 
@@ -46,6 +48,7 @@ npm run architecture:check
 npm run test:smoke
 npm run test:e2e
 npm run build
+npm run test:standalone
 ```
 
 `architecture:check` runs Steiger against the real project root, including `app` and `src`.
@@ -84,7 +87,7 @@ Run the full local stack with Docker Compose:
 docker compose up -d
 ```
 
-The compose file starts PostgreSQL, MinIO, backend and frontend together. The frontend runtime image uses Next.js standalone output and runs as the non-root `node` user.
+The compose file is local-only and must not be used as a production template. It starts PostgreSQL, MinIO, backend and frontend together. The frontend runtime image uses Next.js standalone output and runs as the non-root `node` user.
 
 Default local values:
 
@@ -98,7 +101,11 @@ ALLOW_LOCAL_API_URL=true
 
 The local compose file expects backend init scripts and MinIO data one level above the frontend repository: `../init-scripts` and `../data`.
 
-Use a `.env` file or shell variables only when the image tag, port or API URLs differ.
+The default frontend/backend image tags are historical and do not validate compatibility with the current release. Set explicit compatible image tags or digests for a release-candidate check.
+
+The tracked compose has a known plaintext credential incident. Rotate the exposed secret and remove it from Git history before sharing or reusing this configuration.
+
+Use a `.env` file or shell variables when image tags, port or API URLs differ.
 
 ## CI
 

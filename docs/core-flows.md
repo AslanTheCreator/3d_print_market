@@ -4,16 +4,26 @@
 
 ## Публичная часть
 
-| Сценарий | Routes | Реализация |
-| --- | --- | --- |
-| Каталог | `/`, `/catalog/category/[...slug]`, `/catalog/search` | server initial data для главной и категории; client search, filters и infinite scroll |
-| Товар | `/catalog/[id]/detail` | server initial product и metadata; корзина, избранное, отзывы и связанные товары |
-| Продавец | `/sellers/[id]` | публичный профиль и товары по `participantId` |
-| Информация | `/about`, `/contacts`, `/privacy`, `/user-agreement` | статические информационные и юридические страницы |
+- **Каталог**
+  - Routes: `/`, `/catalog/category/[...slug]`, `/catalog/search`.
+  - Реализация: server initial data для главной и категории; client search, filters и infinite scroll.
+- **Товар**
+  - Route: `/catalog/[id]/detail`.
+  - Реализация: server initial product и metadata; корзина, избранное, отзывы и связанные товары.
+- **Продавец**
+  - Route: `/sellers/[id]`.
+  - Реализация: публичный профиль и товары по `participantId`.
+- **Информация**
+  - Routes: `/about`, `/contacts`, `/privacy`, `/user-agreement`.
+  - Реализация: статические информационные и юридические страницы.
 
-Adult category требует age gate и не индексируется. API-зависимые страницы должны показывать loading, error, empty и success states.
+Age gate и `noindex` сейчас применяются только в category flow. Главная, seller catalog, related products и `/catalog/[id]/detail` не повторяют проверку категории товара. Прямой detail route успешного adult product индексируется, а product entries в sitemap отдельно по adult category не фильтруются. Это открытый блокер, а не целевая модель.
+
+API-зависимые страницы должны показывать loading, error, empty и success states.
 
 Публичный профиль продавца пока содержит временное описание и визуальный счётчик отзывов: этих полей нет в текущем `UserFindModel`.
+
+Главная также всегда вставляет временную карточку «Розыгрыш фигурки недели» с жёсткой ссылкой `/catalog/1/detail`. Оба вида публичных заглушек должны быть удалены до публичного запуска.
 
 ## Auth и доступ
 
@@ -21,7 +31,7 @@ Routes: `/auth/login`, `/auth/register`, `/dashboard/*`.
 
 - login, register, verification и password reset используют общий auth flow;
 - register не отправляется без согласия на обработку персональных данных, но backend payload пока не сохраняет факт согласия;
-- redirect после auth допускает только внутренний путь вне `/auth`;
+- redirect после auth проверяет начальный `/` и исключает `/auth`, но текущая проверка не отклоняет backslash-вариант внешнего URL; origin-based sanitizer ещё не реализован;
 - `middleware.ts`, dashboard layout и `RequireAuth` защищают личный кабинет;
 - `/favorites` и `/checkout` доступны как routes, но показывают unauthorized state анониму.
 
@@ -35,7 +45,9 @@ Routes: `/auth/login`, `/auth/register`, `/dashboard/*`.
 
 ### Покупка на внешнем сайте
 
-Для товара с `availability: EXTERNAL_ONLY` каталог, избранное, связанные товары и страница товара заменяют действия корзины контекстной кнопкой покупки. Она открывает диалог с предупреждением о покупке через Telegram-канал продавца; переход выполняется в новой вкладке только для абсолютного HTTP/HTTPS `externalUrl`. При отсутствующей или небезопасной ссылке действие отключено. Избранное и переход на внутреннюю страницу товара остаются доступны.
+Для товара с `availability: EXTERNAL_ONLY` каталог, избранное, связанные товары и страница товара заменяют действия корзины контекстной кнопкой покупки. Переход выполняется в новой вкладке только для абсолютного HTTP/HTTPS `externalUrl`; при отсутствующей или небезопасной ссылке действие отключено.
+
+Текущий диалог называет любой разрешённый URL Telegram-каналом, хотя hostname не проверяется и пользователю не показывается. До production нужен один из вариантов: подтверждённый allowlist Telegram-hosts либо нейтральный внешний переход с явным отображением домена.
 
 ### Корзина и checkout
 
@@ -58,20 +70,26 @@ Routes: `/auth/login`, `/auth/register`, `/dashboard/*`.
 
 ## Личный кабинет
 
-| Route | Назначение |
-| --- | --- |
-| `/dashboard` | профиль и сводка |
-| `/dashboard/settings` | адреса, доставка, платёжные аккаунты и соцсети |
-| `/dashboard/security` | смена пароля |
-| `/dashboard/products` | товары продавца |
-| `/dashboard/products/new` | создание товара |
-| `/dashboard/products/[id]/edit` | редактирование товара |
-| `/dashboard/purchase` | заказы покупателя |
-| `/dashboard/sales` | заказы продавца |
+- **`/dashboard`** — профиль и сводка.
+- **`/dashboard/settings`** — адреса, доставка, платёжные аккаунты и соцсети.
+- **`/dashboard/security`** — смена пароля.
+- **`/dashboard/products`** — товары продавца.
+- **`/dashboard/products/new`** — создание товара.
+- **`/dashboard/products/[id]/edit`** — редактирование товара.
+- **`/dashboard/purchase`** — заказы покупателя.
+- **`/dashboard/sales`** — заказы продавца.
 
 В настройках адреса доставки можно добавлять, редактировать и удалять. Ошибка загрузки адресов показывается отдельно от пустого списка и допускает повтор запроса.
 
-Создание и редактирование используют одну форму. Действия с заказами вынесены в features; после mutations списки заказов инвалидируются.
+Загрузка платёжных аккаунтов, социальных сетей и части способов доставки пока не различает error и пустой список. Формы могут открыться с пустыми `existing` после ошибки запроса; это блокер seller settings до публичного MVP.
+
+Создание и редактирование используют одну форму. Черновик нового товара сохраняется в `localStorage` под общим, не user-scoped ключом и не очищается централизованно при автоматическом logout.
+
+Общая форма не сохраняет `externalUrl` и `originality`: mapper update всегда отправляет `originality: "ORIGINAL"`, пустой `externalUrl` и только `PREORDER`/`PURCHASABLE`. Поэтому редактирование `EXTERNAL_ONLY` или товара с иным значением originality до исправления небезопасно.
+
+Действия с заказами вынесены в features; после mutations списки заказов инвалидируются.
+
+Статус спора отображается в заказе, но пользовательских действий для его открытия/закрытия и подтверждённого support-процесса в текущем frontend и документации нет.
 
 В «Моих товарах» нулевой остаток является допустимым ответом backend и показывается статусом «Нет в наличии». Публичный каталог полагается на серверную фильтрацию товаров без остатка и с истёкшим сроком.
 
@@ -82,13 +100,17 @@ Routes: `/auth/login`, `/auth/register`, `/dashboard/*`.
 - продавец видит приложенные подтверждения оплаты только на допустимых статусах;
 - подтверждения оплаты обрабатывают loading, error с retry, empty и success states.
 
+Role-aware отображение подтверждений оплаты является только UI-ограничением. Их загрузка сейчас идёт через общий `publicClient`; backend/object storage authorization по участнику заказа до production должен быть подтверждён отдельно.
+
 ## Критичные проверки
 
 - публичные routes открываются без auth;
 - dashboard редиректит анонима;
 - favorites и checkout показывают unauthorized state;
 - checkout корректно обрабатывает empty, insufficient stock, pending validation, rollback, partial success и retry;
-- `EXTERNAL_ONLY` не вызывает API корзины, использует только безопасный внешний URL и не попадает в запрос создания заказа;
+- `EXTERNAL_ONLY` не вызывает API корзины и не попадает в запрос создания заказа; политика разрешённых внешних доменов остаётся открытой;
 - нельзя добавить или оформить собственный товар на уровне UI;
 - детали заказа не раскрывают подтверждения оплаты покупателю и трекинг продавцу;
-- create/edit product и order actions сохраняют подтверждённый API payload.
+- adult content закрыт на всех входах, включая direct detail, главную, поиск, seller catalog, related products и sitemap — **сейчас не выполнено**;
+- create/edit product сохраняют подтверждённые `availability`, `originality` и `externalUrl` — **сейчас не выполнено**;
+- приватность payment proof и платёжных реквизитов обеспечивается backend object-level authorization — **не подтверждено**.

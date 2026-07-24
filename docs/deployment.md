@@ -8,14 +8,14 @@
 
 Переменные из `.env.example`:
 
-| Переменная | Назначение |
-| --- | --- |
-| `CLIENT_API_BASE_URL` | runtime API URL для браузера через `/api/config` |
-| `NEXT_PUBLIC_API_URL` | build-time fallback |
-| `API_BASE_URL` | server-side API URL |
-| `ALLOW_LOCAL_API_URL` | разрешение local API URL в production-like среде |
+- **`CLIENT_API_BASE_URL`** — runtime API URL для браузера через `/api/config`.
+- **`NEXT_PUBLIC_API_URL`** — build-time fallback.
+- **`API_BASE_URL`** — server-side API URL.
+- **`ALLOW_LOCAL_API_URL`** — разрешение local API URL в production-like среде.
 
 В production local API URL запрещён, если `ALLOW_LOCAL_API_URL` не равен `true`.
+
+Публичный browser API должен использовать HTTPS или same-origin proxy. Это пока эксплуатационное требование: `env.ts` принимает и `http:`, и `https:` и программно блокирует только local hosts. До production validation должна отклонять публичный HTTP URL. Root-relative URL подходит browser proxy, но `API_BASE_URL` для server-side запросов должен быть абсолютным.
 
 ## Локальный запуск
 
@@ -90,7 +90,9 @@ docker compose up -d
 
 `docker-compose.yml` предназначен только для локального full stack: PostgreSQL, MinIO, backend и frontend. Он ожидает `../init-scripts` и `../data` и не является production-шаблоном.
 
-Перед публикацией compose необходимо убрать реальные credentials, использовать secret storage и отдельно определить health checks и эксплуатационные настройки.
+Tracked compose уже содержит plaintext SMTP credential. Это открытый security incident: требуется удалить значение из дерева и истории Git, ротировать его и проверить историю secret scanner'ом. Локальные hardcoded credentials нельзя переносить в публичную среду.
+
+Compose defaults используют исторические frontend/backend image tags и не подтверждают совместимость с текущим frontend `1.25.0`. Для проверки release candidate нужно явно задавать оба совместимых image tags/digests.
 
 ## CI
 
@@ -104,3 +106,31 @@ docker compose up -d
 6. `docker compose config`.
 
 CI использует тот же standalone-формат, что и Docker image.
+
+CI не является CD:
+
+- image собирается, но не публикуется и не запускается в workflow;
+- нет container smoke, production target и post-deploy smoke;
+- нет health/readiness проверки frontend и backend dependency;
+- нет подтверждённого rollback;
+- Playwright artifacts не загружаются;
+- staging acceptance с реальным backend отсутствует.
+
+## Production gate
+
+До публичного deployment должны быть определены и проверены:
+
+1. secret storage и завершённая ротация раскрытых credentials;
+2. fail-fast validation обязательных env;
+3. liveness и readiness, включая различие «процесс жив» и «API-зависимость готова»;
+4. immutable image digest, Git revision и release metadata;
+5. container smoke именно собранного image;
+6. staging real-backend acceptance из [testing.md](./testing.md);
+7. deployment target, canary/rollout, post-deploy smoke и автоматический либо документированный rollback;
+8. error tracking с redaction, structured logs, release correlation, uptime, alerts, SLO и incident owner;
+9. backup/restore и disaster recovery для зависимых backend/storage систем;
+10. юридическое подтверждение документов и analytics consent flow.
+
+Если deployment и runbooks находятся в другом репозитории, здесь должна быть ссылка на точную версию внешней документации. До этого состояние оценивается как неподтверждённое.
+
+Текущий go/no-go status находится в [production-readiness-audit-2026-06-17.md](./production-readiness-audit-2026-06-17.md).

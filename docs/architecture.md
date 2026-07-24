@@ -23,13 +23,21 @@ docs/         документация
 app -> widgets -> features -> entities -> shared
 ```
 
-| Слой | Ответственность | Допустимые зависимости |
-| --- | --- | --- |
-| `shared` | HTTP clients, config, общие hooks, types, UI | только внешние пакеты |
-| `entities` | доменные API, query keys, модели, небольшой UI | `shared` |
-| `features` | действия, формы и сценарии | `entities`, `shared` |
-| `widgets` | композиция экранных блоков | `features`, `entities`, `shared` |
-| `app` | routes, providers и app config | все нижние слои |
+- **`shared`**
+  - Ответственность: HTTP clients, config, общие hooks, types и UI.
+  - Зависимости: только внешние пакеты.
+- **`entities`**
+  - Ответственность: доменные API, query keys, модели и небольшой UI.
+  - Зависимости: `shared`.
+- **`features`**
+  - Ответственность: действия, формы и сценарии.
+  - Зависимости: `entities`, `shared`.
+- **`widgets`**
+  - Ответственность: композиция экранных блоков.
+  - Зависимости: `features`, `entities`, `shared`.
+- **`app`**
+  - Ответственность: routes, providers и app config.
+  - Зависимости: все нижние слои.
 
 Правила:
 
@@ -50,7 +58,9 @@ app -> widgets -> features -> entities -> shared
 - доменная модель, API, query hooks — `src/entities/<slice>`;
 - общая утилита или нейтральный UI — `src/shared`.
 
-Server state хранится в TanStack Query. Zustand используется только для клиентского состояния; query data в него не дублируется.
+Server state хранится в TanStack Query. Zustand используется для клиентского состояния.
+
+Подтверждённое исключение — `cartQuantityStore`: он хранит optimistic projection количества, revisions, sync status и последнее подтверждённое значение, синхронизируясь с cart query. Источником истины об актуальной корзине и остатках остаётся backend/TanStack Query; Zustand не должен превращаться во второй независимый cache.
 
 ## Импорты
 
@@ -74,6 +84,17 @@ Server state хранится в TanStack Query. Zustand используетс�
 - для нетривиальных форм использовать React Hook Form;
 - API-зависимый UI должен обрабатывать loading, error, empty и success;
 - payload и validation rules не менять без подтверждённого backend-контракта.
+
+## Известные отклонения
+
+Эти отклонения описывают текущее состояние, но не являются разрешением расширять паттерн:
+
+- `home-products`, `category-products` и `search-products` импортируют `widgets/product-catalog`; формальная матрица не предусматривает widget-to-widget dependencies, а Steiger это правило сейчас не контролирует;
+- часть доменных DTO находится в `src/shared/model`, а auth/image API — в `src/shared/api`, хотя целевая ответственность домена описана для `entities`;
+- `features/auth` частично реэкспортирует реализацию из `shared`;
+- автоматическая архитектурная проверка не заменяет review public API и фактического направления зависимостей.
+
+Перед масштабным переносом этих модулей нужен отдельный refactor scope. Новые отклонения без архитектурного решения не добавляются.
 
 ## Проверки
 
