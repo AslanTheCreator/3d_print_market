@@ -23,7 +23,8 @@ import {
 } from "@mui/material";
 import { Inventory } from "@mui/icons-material";
 import { CategoryModel } from "@/shared/types";
-import { Currency } from "@/shared/types";
+import type { Currency } from "@/shared/types";
+import type { EditableAvailability } from "../model/types";
 import {
   getCurrencySymbol,
   productCategoryRules,
@@ -38,7 +39,7 @@ interface ProductFormFieldsProps {
   control: Control<ProductFormData>;
   errors: FieldErrors<ProductFormData>;
   categories: CategoryModel[];
-  isPreorder: boolean;
+  availability: EditableAvailability;
   currentCurrency: Currency;
 }
 
@@ -53,7 +54,7 @@ export const ProductFormFields = ({
   control,
   errors,
   categories,
-  isPreorder,
+  availability,
   currentCurrency,
 }: ProductFormFieldsProps) => {
   const theme = useTheme();
@@ -206,14 +207,18 @@ export const ProductFormFields = ({
       <Grid item xs={12} sm={6}>
         <Stack spacing={0.5} sx={{ height: "100%", justifyContent: "center" }}>
           <Controller
-            name="isPreorder"
+            name="availability"
             control={control}
             render={({ field }) => (
               <FormControlLabel
                 control={
                   <Checkbox
-                    checked={field.value}
-                    onChange={field.onChange}
+                    checked={field.value === "PREORDER"}
+                    onChange={(event) =>
+                      field.onChange(
+                        event.target.checked ? "PREORDER" : "PURCHASABLE",
+                      )
+                    }
                     color="primary"
                   />
                 }
@@ -229,7 +234,7 @@ export const ProductFormFields = ({
         </Stack>
       </Grid>
 
-      {isPreorder && (
+      {availability === "PREORDER" && (
         <Grid item xs={12} sm={6}>
           <Controller
             name="prepaymentAmount"

@@ -19,6 +19,7 @@ import {
   productCurrencyRules,
   productPrepaymentRules,
   productPriceRules,
+  type EditableAvailability,
   type ProductFormData,
 } from "@/entities/product";
 import type { Currency } from "@/shared/types";
@@ -28,14 +29,14 @@ interface ProductSaleFieldsProps {
   control: Control<ProductFormData>;
   currentCurrency: Currency;
   errors: FieldErrors<ProductFormData>;
-  isPreorder: boolean;
+  availability: EditableAvailability;
 }
 
 export const ProductSaleFields = ({
   control,
   currentCurrency,
   errors,
-  isPreorder,
+  availability,
 }: ProductSaleFieldsProps): React.ReactElement => {
   const currentSymbol = getReadableCurrencySymbol(currentCurrency);
 
@@ -52,7 +53,7 @@ export const ProductSaleFields = ({
     >
       <Box sx={{ minWidth: 0, gridColumn: "1 / -1" }}>
         <Controller
-          name="isPreorder"
+          name="availability"
           control={control}
           render={({ field }) => (
             <FormControl fullWidth>
@@ -61,13 +62,13 @@ export const ProductSaleFields = ({
               </Typography>
               <ToggleButtonGroup
                 exclusive
-                value={field.value ? "preorder" : "available"}
-                onChange={(_, value: string | null) => {
+                value={field.value}
+                onChange={(_, value: EditableAvailability | null) => {
                   if (!value) {
                     return;
                   }
 
-                  field.onChange(value === "preorder");
+                  field.onChange(value);
                 }}
                 sx={{
                   display: "grid",
@@ -89,8 +90,8 @@ export const ProductSaleFields = ({
                   },
                 }}
               >
-                <ToggleButton value="available">В наличии</ToggleButton>
-                <ToggleButton value="preorder">Предзаказ</ToggleButton>
+                <ToggleButton value="PURCHASABLE">В наличии</ToggleButton>
+                <ToggleButton value="PREORDER">Предзаказ</ToggleButton>
               </ToggleButtonGroup>
             </FormControl>
           )}
@@ -178,7 +179,7 @@ export const ProductSaleFields = ({
         />
       </Box>
 
-      {isPreorder && (
+      {availability === "PREORDER" && (
         <Box sx={{ minWidth: 0 }}>
           <Controller
             name="prepaymentAmount"

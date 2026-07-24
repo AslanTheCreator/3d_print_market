@@ -23,7 +23,8 @@ export const normalizeProductFormValues = (
   ...values,
   categoryIds: values.categoryIds ?? defaultProductFormValues.categoryIds,
   currency: values.currency ?? defaultProductFormValues.currency,
-  isPreorder: values.isPreorder ?? defaultProductFormValues.isPreorder,
+  availability:
+    values.availability ?? defaultProductFormValues.availability,
 });
 
 interface UseProductFormDraftStateOptions {

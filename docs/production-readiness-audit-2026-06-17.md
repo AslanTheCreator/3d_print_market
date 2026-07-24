@@ -1,13 +1,13 @@
 # Готовность MVP и production
 
-Первичный аудит: 2026-06-17. Актуальная сверка frontend `1.25.0`: 2026-07-23.
+Первичный аудит: 2026-06-17. Актуальная сверка frontend `1.25.0`: 2026-07-24.
 
 ## Решение
 
 - **Локальная демонстрация или закрытый staging** — `УСЛОВНО ГОТОВ`.
   - Условия: только тестовые данные, без реальных платежей и с ограниченным набором товаров.
 - **Публичный MVP** — **NO-GO**.
-  - Причина: открыты риски показа 18+ контента, целостности товара, секретов, auth и приватных данных.
+  - Причина: открыты риски показа 18+ контента, секретов, auth, приватных данных и неподтверждённой backend-защиты внешних товаров.
 - **Публичный production** — **NO-GO**.
   - Причина: дополнительно не подтверждены real-backend acceptance, observability, deploy/rollback и юридическая готовность.
 
@@ -18,17 +18,19 @@
 ### Готово
 
 - **Build и качество кода** — lint, strict TypeScript, Steiger, runtime dependency audit и build проходят.
+- **Frontend-защита внешних товаров** — write model исключает `EXTERNAL_ONLY`; edit/delete/extend скрыты, прямой edit route заблокирован.
+- **Целостность редактирования внутренних товаров** — form mapper сохраняет подтверждённые `originality` и `externalUrl`.
 
 ### Частично готово
 
 - **Основные buyer/seller flows** — каталог, auth UI, корзина, checkout, товары и заказы реализованы; реальные end-to-end сценарии с backend не проверены.
-- **CI и тесты** — 15 smoke и 68 Playwright tests проходят, но CI работает без реального backend и только в Desktop Chromium.
+- **CI и тесты** — 15 smoke и 76 Playwright tests проходят, но CI работает без реального backend и только в Desktop Chromium.
 - **SEO, performance, accessibility** — metadata/security headers есть; остаются soft 404, устаревший performance baseline и отсутствие mobile/a11y gate.
 
 ### Блокеры
 
 - **Контент и защита 18+** — age gate действует только в category flow; главная и detail route его обходят.
-- **Целостность данных товара** — edit mapper теряет `externalUrl`, `originality` и преобразует `EXTERNAL_ONLY`.
+- **Backend-защита внешних товаров** — не подтверждён запрет create/update/delete/extend для записей внешнего источника.
 - **Security и приватность** — tracked secret, JS-readable tokens, password в query и неподтверждённый доступ к платёжным данным.
 - **Целостность заказа** — backend не обеспечивает идемпотентность `POST /order/BOOKED`.
 - **Deployment и эксплуатация** — нет подтверждённых CD, health/readiness, post-deploy smoke, rollback, error tracking и алертов.
@@ -56,11 +58,11 @@
 
 Заглушки должны быть удалены либо заменены подтверждёнными backend/content-данными до публичного трафика.
 
-### Редактирование товара
+### Товары внешнего источника
 
-`mapProductDetailToFormData` не переносит `externalUrl` и `originality`, а `mapFormDataToCreateModel` всегда отправляет `originality: "ORIGINAL"`, пустой `externalUrl` и вычисляет только `PREORDER`/`PURCHASABLE`. Редактирование `EXTERNAL_ONLY` или товара с другим признаком оригинальности способно незаметно изменить данные.
+Frontend рассматривает `EXTERNAL_ONLY` как read-only тип: форма и write DTO его не принимают, управляющие действия скрыты, прямой edit route не выполняет mutation.
 
-До запуска create/edit должны сохранять все подтверждённые контрактом поля или явно запрещать неподдерживаемое редактирование.
+До запуска backend должен подтвердить запрет публичных create/update/delete/extend операций для внешнего товара. Проверка update обязана опираться на сохранённое происхождение записи, а не на новый `availability` из payload, иначе ограничение обходится подменой типа. Доверенный import/sync-контур остаётся единственным writer.
 
 ### Секреты
 
@@ -141,14 +143,14 @@ CI поднимает standalone frontend с недоступным API и ис�
 
 ## Подтверждённые проверки
 
-Проверки выполнены 2026-07-23 на clean worktree:
+Проверки выполнены 2026-07-23; lint, typecheck, Steiger, build и standalone-прогон повторены 2026-07-24 для текущего рабочего дерева:
 
 - **`npm run lint`** — пройдено, warnings `0`.
 - **`npm run typecheck`** — пройдено.
 - **`npm run architecture:check`** — пройдено, Steiger problems `0`.
 - **`npm audit --omit=dev --audit-level=high`** — `0 vulnerabilities`.
 - **`npm run build`** — production build пройден.
-- **`npm run test:standalone`** — 15 smoke и 68 Playwright tests пройдены.
+- **`npm run test:standalone`** — 15 smoke и 76 Playwright tests пройдены.
 - **`docker compose config --quiet`** — конфигурация валидна.
 - **`docker build -f Dockerfile -t figurzilla-frontend:audit .`** — image собран.
 
@@ -162,7 +164,7 @@ CI поднимает standalone frontend с недоступным API и ис�
 ## Порядок закрытия
 
 1. Закрыть secret incident и прекратить показ 18+ контента без gate.
-2. Исправить destructive product edit и удалить публичные заглушки.
+2. Удалить публичные заглушки и подтвердить backend-защиту внешних товаров.
 3. Согласовать password/auth, private images, payment accounts и checkout idempotency с backend.
 4. Исправить redirect, session teardown, log redaction, HTTPS/CSP и settings error states.
 5. Развернуть release candidate на staging и пройти real-backend acceptance matrix.

@@ -65,3 +65,14 @@ export const CreateProductFormErrorState = ({
     />
   );
 };
+
+export const CreateProductFormReadOnlyState = (): React.ReactElement => (
+  <ErrorState
+    type="products"
+    title="Редактирование недоступно"
+    description="Этот товар управляется внешним источником. Изменить или удалить его через Figurzilla нельзя."
+    hideRetry
+    minHeight={320}
+    useContainer={false}
+  />
+);

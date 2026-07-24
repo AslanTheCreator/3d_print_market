@@ -11,6 +11,7 @@ import { ProductSaleFields } from "./ProductSaleFields";
 import {
   CreateProductFormErrorState,
   CreateProductFormLoadingState,
+  CreateProductFormReadOnlyState,
 } from "./CreateProductFormState";
 
 type ProductFormState = ReturnType<typeof useProductForm>;
@@ -26,7 +27,7 @@ export const CreateProductFormContent = ({
 }: CreateProductFormContentProps): React.ReactElement => {
   const theme = useTheme();
 
-  if (formState.isProductLoading || formState.isCategoriesLoading) {
+  if (formState.isProductLoading) {
     return (
       <CreateProductFormLoadingState isEditMode={formState.isEditMode} />
     );
@@ -40,6 +41,16 @@ export const CreateProductFormContent = ({
           void formState.retryLoadProduct();
         }}
       />
+    );
+  }
+
+  if (formState.isProductReadOnly) {
+    return <CreateProductFormReadOnlyState />;
+  }
+
+  if (formState.isCategoriesLoading) {
+    return (
+      <CreateProductFormLoadingState isEditMode={formState.isEditMode} />
     );
   }
 
@@ -116,7 +127,7 @@ export const CreateProductFormContent = ({
               <ProductSaleFields
                 control={formState.control}
                 errors={formState.errors}
-                isPreorder={formState.isPreorder}
+                availability={formState.availability}
                 currentCurrency={formState.currentCurrency}
               />
             </Stack>

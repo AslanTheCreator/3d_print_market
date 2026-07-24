@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   type ProductFormData,
   defaultProductFormValues,
+  isEditableAvailability,
   mapProductDetailToFormData,
   useCreateProduct,
   useProductById,
@@ -90,6 +91,10 @@ export const useProductForm = ({
     error: productError,
     refetch: retryLoadProduct,
   } = useProductById(isEditMode ? productId : undefined);
+  const isProductReadOnly =
+    isEditMode &&
+    Boolean(product) &&
+    !isEditableAvailability(product?.availability);
   const { showNotification } = useNotification();
   const { mutate: createProduct, isPending: isCreating } = useCreateProduct();
   const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct();
@@ -176,6 +181,11 @@ export const useProductForm = ({
     }
 
     const nextFormValues = mapProductDetailToFormData(product);
+
+    if (!nextFormValues) {
+      return;
+    }
+
     const nextImages = buildInitialImages(product.imageIds, product.image);
 
     initializedProductIdRef.current = productId;
@@ -185,7 +195,7 @@ export const useProductForm = ({
     setUploadInitialImages(nextImages);
   }, [isEditMode, product, productId, reset, setUploadInitialImages]);
 
-  const isPreorder = watch("isPreorder");
+  const availability = watch("availability");
   const currentCurrency = watch("currency");
   const categoryIds = watch("categoryIds");
   const name = watch("name");
@@ -262,6 +272,7 @@ export const useProductForm = ({
     hasSellerTransfer,
     imageIdsToDelete,
     isEditMode,
+    isProductReadOnly,
     productId,
     resetForm,
     showNotification,
@@ -272,6 +283,7 @@ export const useProductForm = ({
   const hasChanges = isEditMode ? isDirty || hasImageChanges : true;
   const isPending = isCreating || isUpdating;
   const isFormValid =
+    !isProductReadOnly &&
     isDraftReady &&
     !imageUploadState.isUploading &&
     hasChanges &&
@@ -279,6 +291,7 @@ export const useProductForm = ({
   const isSubmitting = isPending || imageUploadState.isUploading;
 
   return {
+    availability,
     categories,
     control,
     currentCurrency,
@@ -291,7 +304,7 @@ export const useProductForm = ({
     isEditMode,
     isFormValid,
     isPending,
-    isPreorder,
+    isProductReadOnly,
     isProductError: isEditMode && Boolean(productError),
     isProductLoading: isEditMode && isProductLoading,
     isSubmitting,

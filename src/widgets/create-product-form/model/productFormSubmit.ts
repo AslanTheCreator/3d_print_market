@@ -24,6 +24,7 @@ interface CreateProductFormSubmitHandlerParams {
   hasSellerTransfer: boolean;
   imageIdsToDelete: number[];
   isEditMode: boolean;
+  isProductReadOnly: boolean;
   productId: string | undefined;
   resetForm: () => void;
   showNotification: ShowNotification;
@@ -39,6 +40,7 @@ export const createProductFormSubmitHandler = ({
   hasSellerTransfer,
   imageIdsToDelete,
   isEditMode,
+  isProductReadOnly,
   productId,
   resetForm,
   showNotification,
@@ -46,6 +48,14 @@ export const createProductFormSubmitHandler = ({
   navigateToProductList,
 }: CreateProductFormSubmitHandlerParams) => {
   return (data: ProductFormData) => {
+    if (isProductReadOnly) {
+      showNotification(
+        "Товар управляется внешним источником и недоступен для редактирования",
+        "info",
+      );
+      return;
+    }
+
     if (!effectiveImageIds.length) {
       showNotification(
         "Пожалуйста, загрузите хотя бы одно изображение товара",
@@ -71,6 +81,14 @@ export const createProductFormSubmitHandler = ({
     }
 
     const productData = mapFormDataToCreateModel(data, effectiveImageIds);
+
+    if (!productData) {
+      showNotification(
+        "Товары с внешней покупкой нельзя создавать или редактировать",
+        "error",
+      );
+      return;
+    }
 
     if (isEditMode && productId) {
       updateProduct(

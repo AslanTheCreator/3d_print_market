@@ -54,9 +54,9 @@ npm run test:e2e
 
 ## Границы текущего набора
 
-Состояние на 2026-07-23:
+Состояние на 2026-07-24:
 
-- standalone-прогон: `15` smoke и `68` Playwright tests;
+- standalone-прогон: `15` smoke и `76` Playwright tests;
 - browser project: только `Desktop Chrome`;
 - browser-сценарии в основном подменяют API и auth cookies;
 - часть `*.spec.ts` является model/contract tests без browser flow, но запускается через Playwright;

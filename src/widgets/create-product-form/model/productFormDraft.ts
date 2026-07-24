@@ -1,9 +1,13 @@
 import type { InitialImageUploadState } from "@/features/image-upload";
 import { imageApi } from "@/shared/api";
 import { getImageUrl } from "@/shared/lib";
-import type { ImageMetadata, ImageResponse } from "@/shared/types";
+import type {
+  ImageMetadata,
+  ImageResponse,
+} from "@/shared/types";
 import {
   defaultProductFormValues,
+  isEditableAvailability,
   type ProductFormData,
 } from "@/entities/product";
 
@@ -22,6 +26,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isCurrency = (value: unknown): value is ProductFormData["currency"] =>
   typeof value === "string" && PRODUCT_FORM_CURRENCIES.includes(value);
+
+const isAvailability = (
+  value: unknown,
+): value is ProductFormData["availability"] =>
+  isEditableAvailability(value);
 
 const readString = (
   source: Record<string, unknown>,
@@ -58,9 +67,11 @@ const isProductFormDraftEmpty = (draft: ProductFormDraft): boolean =>
   draft.values.price === defaultProductFormValues.price &&
   draft.values.currency === defaultProductFormValues.currency &&
   draft.values.description === defaultProductFormValues.description &&
-  draft.values.isPreorder === defaultProductFormValues.isPreorder &&
+  draft.values.availability === defaultProductFormValues.availability &&
   draft.values.prepaymentAmount === defaultProductFormValues.prepaymentAmount &&
-  draft.values.count === defaultProductFormValues.count;
+  draft.values.count === defaultProductFormValues.count &&
+  draft.values.originality === defaultProductFormValues.originality &&
+  draft.values.externalUrl === defaultProductFormValues.externalUrl;
 
 const parseProductFormDraft = (value: unknown): ProductFormDraft | null => {
   if (!isRecord(value) || !isRecord(value.values)) {
@@ -80,12 +91,15 @@ const parseProductFormDraft = (value: unknown): ProductFormDraft | null => {
         ? values.currency
         : defaultProductFormValues.currency,
       description: readString(values, "description"),
-      isPreorder:
-        typeof values.isPreorder === "boolean"
-          ? values.isPreorder
-          : defaultProductFormValues.isPreorder,
+      availability: isAvailability(values.availability)
+        ? values.availability
+        : values.availability === undefined && values.isPreorder === true
+          ? "PREORDER"
+          : defaultProductFormValues.availability,
       prepaymentAmount: readString(values, "prepaymentAmount"),
       count: readString(values, "count"),
+      originality: readString(values, "originality"),
+      externalUrl: readString(values, "externalUrl"),
     },
   };
 };

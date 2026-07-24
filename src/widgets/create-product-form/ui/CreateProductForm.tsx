@@ -22,14 +22,21 @@ export const CreateProductForm = ({
   return (
     <Box sx={{ width: "100%", py: { xs: 2, sm: 3 } }}>
       <PageHeader
-        title={formState.isEditMode ? "Редактировать товар" : "Создать товар"}
+        title={
+          formState.isProductReadOnly
+            ? "Внешний товар"
+            : formState.isEditMode
+              ? "Редактировать товар"
+              : "Создать товар"
+        }
         icon={<SellOutlined />}
         backLabel="К товарам"
         onBack={formState.isEditMode ? formState.handleBack : undefined}
         actions={
           <CreateProductFormHeaderActions
+            availability={formState.availability}
             imageCount={formState.imageUploadState.images.length}
-            isPreorder={formState.isPreorder}
+            isProductReadOnly={formState.isProductReadOnly}
           />
         }
       />

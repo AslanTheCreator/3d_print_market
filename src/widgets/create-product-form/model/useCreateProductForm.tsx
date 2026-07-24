@@ -42,7 +42,7 @@ export const useCreateProductForm = () => {
     defaultValues: defaultProductFormValues,
   });
 
-  const isPreorder = watch("isPreorder");
+  const availability = watch("availability");
   const currentCurrency = watch("currency");
   const categoryIds = watch("categoryIds");
   const name = watch("name");
@@ -83,6 +83,14 @@ export const useCreateProductForm = () => {
       imageUploadState.imageIds,
     );
 
+    if (!productData) {
+      showNotification(
+        "Товары с внешней покупкой нельзя создавать через Figurzilla",
+        "error",
+      );
+      return;
+    }
+
     createProduct(productData, {
       onSuccess: () => {
         showNotification("Товар успешно создан!", "success");
@@ -107,6 +115,7 @@ export const useCreateProductForm = () => {
   const isSubmitting = isPending || imageUploadState.isUploading;
 
   return {
+    availability,
     categories,
     control,
     currentCurrency,
@@ -118,7 +127,6 @@ export const useCreateProductForm = () => {
     isCategoriesLoading,
     isFormValid,
     isPending,
-    isPreorder,
     isSubmitting,
     publishRequirements,
     resetForm,

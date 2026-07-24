@@ -10,9 +10,11 @@ export {
 export { ProductDetailsSkeleton } from "./ui/ProductDetailsSkeleton";
 
 export type { ProductFormData } from "./model/form";
+export type { EditableAvailability } from "./model/types";
 export {
   defaultProductFormValues,
   getCurrencySymbol,
+  isEditableAvailability,
   mapFormDataToCreateModel,
   mapProductDetailToFormData,
   productCategoryRules,

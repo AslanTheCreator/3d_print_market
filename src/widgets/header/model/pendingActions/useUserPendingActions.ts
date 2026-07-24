@@ -4,6 +4,7 @@ import { useAuth } from "@/shared/lib/auth";
 import { useSellerOrders, useCustomerOrders } from "@/entities/order";
 import {
   getExpirationStatus,
+  isEditableAvailability,
   productApi,
   productKeys,
 } from "@/entities/product";
@@ -95,8 +96,10 @@ export const useUserPendingActions = () => {
   const renewalGroup = useMemo((): PendingActionGroup | null => {
     if (!userProducts || !Array.isArray(userProducts)) return null;
 
-    const totalCount = userProducts.filter((product) =>
-      getExpirationStatus(product.expirationDate).shouldShowExtendButton,
+    const totalCount = userProducts.filter(
+      (product) =>
+        isEditableAvailability(product.availability) &&
+        getExpirationStatus(product.expirationDate).shouldShowExtendButton,
     ).length;
 
     if (totalCount === 0) return null;

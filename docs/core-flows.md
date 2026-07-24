@@ -85,7 +85,9 @@ Routes: `/auth/login`, `/auth/register`, `/dashboard/*`.
 
 Создание и редактирование используют одну форму. Черновик нового товара сохраняется в `localStorage` под общим, не user-scoped ключом и не очищается централизованно при автоматическом logout.
 
-Общая форма не сохраняет `externalUrl` и `originality`: mapper update всегда отправляет `originality: "ORIGINAL"`, пустой `externalUrl` и только `PREORDER`/`PURCHASABLE`. Поэтому редактирование `EXTERNAL_ONLY` или товара с иным значением originality до исправления небезопасно.
+`EXTERNAL_ONLY` является read-only типом внешнего источника. Create/update model и форма допускают только `PURCHASABLE` и `PREORDER`; значение `EXTERNAL_ONLY` из старого или изменённого черновика нормализуется в `PURCHASABLE`. Для внешнего товара в «Моих товарах» скрыты редактирование, удаление и продление, а прямой edit route показывает объяснение без формы и mutation.
+
+Mapper редактирования внутренних товаров сохраняет подтверждённые `originality` и `externalUrl`. Frontend-запрет является UX- и client-side защитой; обязательная серверная проверка происхождения товара описана в [backend-contract.md](./backend-contract.md).
 
 Действия с заказами вынесены в features; после mutations списки заказов инвалидируются.
 
@@ -112,5 +114,6 @@ Role-aware отображение подтверждений оплаты явл
 - нельзя добавить или оформить собственный товар на уровне UI;
 - детали заказа не раскрывают подтверждения оплаты покупателю и трекинг продавцу;
 - adult content закрыт на всех входах, включая direct detail, главную, поиск, seller catalog, related products и sitemap — **сейчас не выполнено**;
-- create/edit product сохраняют подтверждённые `availability`, `originality` и `externalUrl` — **сейчас не выполнено**;
+- `EXTERNAL_ONLY` нельзя создать, отредактировать, удалить или продлить через frontend — **выполнено; backend-защита не подтверждена**;
+- edit внутренних товаров сохраняет подтверждённые `originality` и `externalUrl` — **выполнено и покрыто mapper-тестами**;
 - приватность payment proof и платёжных реквизитов обеспечивается backend object-level authorization — **не подтверждено**.

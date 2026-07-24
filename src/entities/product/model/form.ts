@@ -1,7 +1,6 @@
 import type { RegisterOptions } from "react-hook-form";
-import { Currency, Availability } from "@/shared/types";
-import type { ProductDetail } from "@/shared/types";
-import { ProductCreateModel } from "./types";
+import type { Currency, ProductDetail } from "@/shared/types";
+import type { EditableAvailability, ProductCreateModel } from "./types";
 
 /**
  * Данные формы создания/редактирования продукта
@@ -12,9 +11,11 @@ export interface ProductFormData {
   price: string;
   currency: Currency;
   description: string;
-  isPreorder: boolean;
+  availability: EditableAvailability;
   prepaymentAmount: string;
   count: string;
+  originality: string;
+  externalUrl: string;
 }
 
 export const productCurrencies: ReadonlyArray<{
@@ -120,10 +121,10 @@ export const productDescriptionRules: RegisterOptions<
 export const mapFormDataToCreateModel = (
   formData: ProductFormData,
   imageIds: number[],
-): ProductCreateModel => {
-  const availability: Availability = formData.isPreorder
-    ? "PREORDER"
-    : "PURCHASABLE";
+): ProductCreateModel | null => {
+  if (!isEditableAvailability(formData.availability)) {
+    return null;
+  }
 
   return {
     count: parseInt(formData.count, 10) || null,
@@ -133,30 +134,43 @@ export const mapFormDataToCreateModel = (
     price: parseFloat(formData.price),
     currency: formData.currency,
     description: formData.description.trim(),
-    availability,
-    prepaymentAmount: formData.isPreorder
+    availability: formData.availability,
+    prepaymentAmount: formData.availability === "PREORDER"
       ? parseFloat(formData.prepaymentAmount)
       : 0,
-    originality: "ORIGINAL",
-    externalUrl: "", // Можно настроить позже, если потребуется
+    originality: formData.originality,
+    externalUrl: formData.externalUrl,
   };
 };
 
+export const isEditableAvailability = (
+  availability: unknown,
+): availability is EditableAvailability =>
+  availability === "PURCHASABLE" || availability === "PREORDER";
+
 export const mapProductDetailToFormData = (
   product: ProductDetail,
-): ProductFormData => ({
-  categoryIds: product.categories.map((category) => category.id),
-  name: product.name,
-  price: String(product.price),
-  currency: product.currency,
-  description: product.description,
-  isPreorder: product.availability === "PREORDER",
-  prepaymentAmount:
-    product.availability === "PREORDER" && product.prepaymentAmount > 0
-      ? String(product.prepaymentAmount)
-      : "",
-  count: product.count > 0 ? String(product.count) : "",
-});
+): ProductFormData | null => {
+  if (!isEditableAvailability(product.availability)) {
+    return null;
+  }
+
+  return {
+    categoryIds: product.categories.map((category) => category.id),
+    name: product.name,
+    price: String(product.price),
+    currency: product.currency,
+    description: product.description,
+    availability: product.availability,
+    prepaymentAmount:
+      product.availability === "PREORDER" && product.prepaymentAmount > 0
+        ? String(product.prepaymentAmount)
+        : "",
+    count: product.count > 0 ? String(product.count) : "",
+    originality: product.originality,
+    externalUrl: product.externalUrl,
+  };
+};
 
 /**
  * Значения по умолчанию для формы
@@ -167,7 +181,9 @@ export const defaultProductFormValues: ProductFormData = {
   price: "",
   currency: "RUB",
   description: "",
-  isPreorder: false,
+  availability: "PURCHASABLE",
   prepaymentAmount: "",
   count: "",
+  originality: "ORIGINAL",
+  externalUrl: "",
 };

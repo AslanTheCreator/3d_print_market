@@ -1,4 +1,6 @@
-import { Currency, Availability } from "@/shared/types";
+import type { Availability, Currency } from "@/shared/types";
+
+export type EditableAvailability = Exclude<Availability, "EXTERNAL_ONLY">;
 
 export interface ProductCreateModel {
   name: string;
@@ -9,7 +11,7 @@ export interface ProductCreateModel {
   count: number | null; // null - неограниченное количество
   currency: Currency;
   originality: string;
-  availability: Availability;
+  availability: EditableAvailability;
   externalUrl?: string;
   imageIds: number[];
 }

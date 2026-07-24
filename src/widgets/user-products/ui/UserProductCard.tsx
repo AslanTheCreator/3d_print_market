@@ -33,6 +33,7 @@ import { ExtendProductButton } from "./ExtendProductButton";
 import {
   getExpirationStatus,
   formatExpirationDate,
+  isEditableAvailability,
   ProductPriceDisplay,
 } from "@/entities/product";
 import { getImageUrl } from "@/shared/lib";
@@ -68,6 +69,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
   const router = useRouter();
 
   const expirationStatus = getExpirationStatus(expirationDate);
+  const isExternallyManaged = !isEditableAvailability(availability);
   const productImage = image?.[0] ?? null;
   const productImageSrc = getImageUrl(productImage, "medium");
   const imageSrc = productImageSrc && !hasImageError ? productImageSrc : null;
@@ -112,7 +114,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
       default:
         return {
           color: "info",
-          label: "Внешний",
+          label: "Внешний источник",
         } as const;
     }
   };
@@ -205,16 +207,25 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
               zIndex: 2,
             }}
           >
-            <Chip
-              label={availabilityConfig.label}
-              color={availabilityConfig.color}
-              size="small"
-              sx={{
-                fontSize: "0.625rem",
-                height: "20px",
-                fontWeight: 600,
-              }}
-            />
+            <Tooltip
+              title={
+                isExternallyManaged
+                  ? "Товар управляется внешним источником и доступен только для просмотра"
+                  : ""
+              }
+              arrow
+            >
+              <Chip
+                label={availabilityConfig.label}
+                color={availabilityConfig.color}
+                size="small"
+                sx={{
+                  fontSize: "0.625rem",
+                  height: "20px",
+                  fontWeight: 600,
+                }}
+              />
+            </Tooltip>
           </Stack>
         </Box>
 
@@ -302,7 +313,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
             </Tooltip>
           </Stack>
 
-          {expirationStatus.shouldShowExtendButton && (
+          {expirationStatus.shouldShowExtendButton && !isExternallyManaged && (
             <Box
               onClick={(event) => {
                 event.preventDefault();
@@ -321,44 +332,48 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
         </CardContent>
       </Link>
 
-      <IconButton
-        size="small"
-        aria-label="product actions"
-        onClick={handleMenuOpen}
-        sx={{
-          position: "absolute",
-          top: 8,
-          right: 8,
-          zIndex: 2,
-          bgcolor: alpha(theme.palette.background.paper, 0.9),
-          "&:hover": {
-            bgcolor: theme.palette.background.paper,
-          },
-        }}
-      >
-        <MoreVert fontSize="small" />
-      </IconButton>
+      {!isExternallyManaged && (
+        <>
+          <IconButton
+            size="small"
+            aria-label={`Действия с товаром ${name}`}
+            onClick={handleMenuOpen}
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              zIndex: 2,
+              bgcolor: alpha(theme.palette.background.paper, 0.9),
+              "&:hover": {
+                bgcolor: theme.palette.background.paper,
+              },
+            }}
+          >
+            <MoreVert fontSize="small" />
+          </IconButton>
 
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        transformOrigin={{ horizontal: "right", vertical: "top" }}
-        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-      >
-        <MenuItem onClick={handleEditClick}>
-          <ListItemIcon>
-            <Edit fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Редактировать</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={handleDeleteClick} sx={{ color: "error.main" }}>
-          <ListItemIcon>
-            <Delete fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText>Удалить</ListItemText>
-        </MenuItem>
-      </Menu>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            transformOrigin={{ horizontal: "right", vertical: "top" }}
+            anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+          >
+            <MenuItem onClick={handleEditClick}>
+              <ListItemIcon>
+                <Edit fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Редактировать</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={handleDeleteClick} sx={{ color: "error.main" }}>
+              <ListItemIcon>
+                <Delete fontSize="small" color="error" />
+              </ListItemIcon>
+              <ListItemText>Удалить</ListItemText>
+            </MenuItem>
+          </Menu>
+        </>
+      )}
     </Card>
   );
 };
