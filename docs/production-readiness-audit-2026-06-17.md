@@ -146,14 +146,14 @@ CI поднимает standalone frontend с недоступным API и ис�
 
 ## Подтверждённые проверки
 
-Lint, typecheck, Steiger, build и standalone-прогон повторены 2026-07-28 для
+Lint, typecheck, Steiger, build и standalone-прогон повторены 2026-07-29 для
 текущего рабочего дерева:
 
 - **`npm run lint`** — пройдено, warnings `0`.
 - **`npm run typecheck`** — пройдено.
 - **`npm run architecture:check`** — пройдено для `src`, Steiger problems `0`.
-- **`npm audit --omit=dev --audit-level=high`** — последний подтверждённый
-  результат от 2026-07-23: `0 vulnerabilities`.
+- **`npm audit --omit=dev --audit-level=high`** — после обновления PostCSS до
+  `8.5.18` пройдено 2026-07-29: `0 vulnerabilities`.
 - **`npm run build`** — production build пройден.
 - **`npm run test:standalone`** — 15 smoke и 90 Playwright tests пройдены:
   82 desktop и 8 mobile.
