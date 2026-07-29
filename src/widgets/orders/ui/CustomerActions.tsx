@@ -11,9 +11,11 @@ import {
   Box,
   Typography,
   Paper,
+  Alert,
 } from "@mui/material";
 import { Payment, ThumbUp, Cancel, RateReview } from "@mui/icons-material";
 import {
+  getOrderPaymentBreakdown,
   ListOrdersModel,
   getCustomerOrderActionFlags,
 } from "@/entities/order";
@@ -23,6 +25,8 @@ import {
   useOrderPrepaymentAction,
 } from "@/features/order-payment";
 import { useOrderReceiptAction } from "@/features/order-receipt";
+import { transformToApiError } from "@/shared/lib/errorHandler";
+import { formatPrice } from "@/shared/lib";
 import { CancelOrderDialog } from "./CancelOrderDialog";
 import { LeaveReviewDialog } from "./LeaveReviewDialog";
 
@@ -37,6 +41,11 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
   const paymentAction = useOrderPaymentAction();
   const prepaymentAction = useOrderPrepaymentAction();
   const receiptAction = useOrderReceiptAction();
+  const receiptErrorMessage = receiptAction.mutation.error
+    ? transformToApiError(receiptAction.mutation.error).message
+    : null;
+  const paymentBreakdown = getOrderPaymentBreakdown(order);
+  const isReceiptStatusCurrent = order.actualStatus === "ON_THE_WAY";
   const {
     canPay,
     canPrePay,
@@ -46,6 +55,10 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
   } = getCustomerOrderActionFlags(order.actualStatus);
 
   const handleConfirmReceipt = () => {
+    if (!isReceiptStatusCurrent) {
+      return;
+    }
+
     receiptAction.mutation.mutate(
       {
         orderId: order.orderId,
@@ -171,7 +184,11 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
 
       <Dialog
         open={receiptAction.isOpen}
-        onClose={receiptAction.close}
+        onClose={() => {
+          if (!receiptAction.mutation.isPending) {
+            receiptAction.close();
+          }
+        }}
         maxWidth="sm"
         fullWidth
         PaperProps={{
@@ -187,14 +204,51 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {order.product.name}
             </Typography>
-            <Typography variant="h6" color="text.primary" fontWeight={600}>
-              {order.totalPrice} {order.product.currency}
-            </Typography>
+            <Stack spacing={0.25}>
+              <Typography variant="h6" color="text.primary" fontWeight={600}>
+                Стоимость товаров:{" "}
+                {formatPrice(
+                  paymentBreakdown.productTotal,
+                  order.product.currency,
+                )}
+              </Typography>
+              {paymentBreakdown.isPreorder && (
+                <>
+                  <Typography variant="body2" color="text.secondary">
+                    Предоплата:{" "}
+                    {formatPrice(
+                      paymentBreakdown.prepaymentTotal,
+                      order.product.currency,
+                    )}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Остаток:{" "}
+                    {formatPrice(
+                      paymentBreakdown.remainingTotal,
+                      order.product.currency,
+                    )}
+                  </Typography>
+                </>
+              )}
+            </Stack>
           </Paper>
 
           <Typography variant="body2" color="text.secondary">
             Подтвердите получение, если заказ доставлен и всё в порядке.
           </Typography>
+
+          {receiptErrorMessage && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              Не удалось подтвердить получение: {receiptErrorMessage}
+            </Alert>
+          )}
+
+          {!isReceiptStatusCurrent && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              Статус заказа уже обновился. Закройте диалог и проверьте
+              актуальный этап заказа.
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button
@@ -207,7 +261,9 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
             onClick={handleConfirmReceipt}
             variant="contained"
             color="success"
-            disabled={receiptAction.mutation.isPending}
+            disabled={
+              receiptAction.mutation.isPending || !isReceiptStatusCurrent
+            }
           >
             Подтвердить получение
           </Button>

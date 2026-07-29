@@ -14,8 +14,14 @@ export const useOrderReceiptAction = (): OrderReceiptActionResult => {
 
   return {
     isOpen,
-    open: () => setIsOpen(true),
-    close: () => setIsOpen(false),
+    open: () => {
+      mutation.reset();
+      setIsOpen(true);
+    },
+    close: () => {
+      mutation.reset();
+      setIsOpen(false);
+    },
     mutation,
   };
 };

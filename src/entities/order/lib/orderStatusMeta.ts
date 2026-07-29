@@ -38,7 +38,7 @@ const ORDER_STATUS_META: Record<OrderStatus, OrderStatusMeta> = {
   AWAITING_PREPAYMENT_APPROVAL: {
     label: "Ожидает подтверждение предоплаты",
     chipColor: "info",
-    isActive: false,
+    isActive: true,
   },
   AWAITING_PAYMENT: {
     label: "Ожидает оплату",
@@ -200,9 +200,16 @@ export const getOrderProgressSteps = (isPreorder: boolean) => {
 export const getOrderStatusActionHint = (
   status: OrderStatus,
   userRole: OrderUserRole,
+  isPreorder = false,
 ) => {
   switch (status) {
     case "BOOKED":
+      if (isPreorder) {
+        return userRole === "seller"
+          ? "Подтвердите предзаказ, чтобы покупатель смог перейти к предоплате"
+          : "Ожидайте подтверждения предзаказа продавцом";
+      }
+
       return userRole === "seller"
         ? "Подтвердите заказ, чтобы покупатель смог перейти к оплате"
         : "Ожидайте подтверждения заказа продавцом";
@@ -212,7 +219,7 @@ export const getOrderStatusActionHint = (
         : "Ожидайте предоплату от покупателя";
     case "AWAITING_PREPAYMENT_APPROVAL":
       return userRole === "seller"
-        ? "Проверьте предоплату и подтвердите предзаказ"
+        ? "Проверьте и подтвердите предоплату, чтобы покупатель оплатил остаток"
         : "Ожидайте подтверждения предоплаты продавцом";
     case "AWAITING_PAYMENT":
       return userRole === "customer"

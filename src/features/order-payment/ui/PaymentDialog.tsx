@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -16,14 +17,19 @@ import {
   FormHelperText,
 } from "@mui/material";
 import { Close, CloudUpload, Payment, CheckCircle } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order";
+import {
+  getOrderPaymentBreakdown,
+  type ListOrdersModel,
+} from "@/entities/order";
 import { useSellerAccounts } from "@/entities/account";
 import { imageApi } from "@/entities/image";
 import {
   createImagePreview,
+  formatPrice,
   revokeImagePreview,
   validateImage,
 } from "@/shared/lib";
+import { transformToApiError } from "@/shared/lib/errorHandler";
 import { UseMutationResult } from "@tanstack/react-query";
 import { SellerPaymentDetails } from "./SellerPaymentDetails";
 
@@ -88,11 +94,30 @@ export const PaymentDialog = ({
   const [imageId, setImageId] = useState<number | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isDeletingImage, setIsDeletingImage] = useState(false);
+  const [hasAmbiguousMutationAttempt, setHasAmbiguousMutationAttempt] =
+    useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
     null,
   );
 
   const config = paymentConfig[paymentType];
+  const paymentBreakdown = getOrderPaymentBreakdown(order);
+  const amountToPay =
+    paymentType === "prepayment"
+      ? paymentBreakdown.prepaymentTotal
+      : paymentBreakdown.remainingTotal;
+  const mutationApiError = paymentMutation.error
+    ? transformToApiError(paymentMutation.error)
+    : null;
+  const hasAmbiguousMutationError =
+    mutationApiError?.code === "NETWORK_ERROR" ||
+    mutationApiError?.code === "TIMEOUT";
+  const expectedOrderStatus =
+    paymentType === "prepayment"
+      ? "AWAITING_PREPAYMENT"
+      : "AWAITING_PAYMENT";
+  const isExpectedOrderStatus = order.actualStatus === expectedOrderStatus;
   const fileInputId = `payment-proof-upload-${paymentType}-${order.orderId}`;
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -104,7 +129,31 @@ export const PaymentDialog = ({
     data: sellerAccounts,
     isLoading: isAccountsLoading,
     isError: isAccountsError,
+    isFetching: isAccountsFetching,
+    refetch: refetchSellerAccounts,
   } = useSellerAccounts(open ? order.userInfo.id : undefined);
+
+  useEffect(() => {
+    if (!open || !sellerAccounts) return;
+
+    setSelectedAccountId((currentAccountId) => {
+      if (sellerAccounts.length === 1) {
+        return sellerAccounts[0].id;
+      }
+
+      return sellerAccounts.some(
+        (account) => account.id === currentAccountId,
+      )
+        ? currentAccountId
+        : null;
+    });
+  }, [open, sellerAccounts]);
+
+  useEffect(() => {
+    if (hasAmbiguousMutationError) {
+      setHasAmbiguousMutationAttempt(true);
+    }
+  }, [hasAmbiguousMutationError]);
 
   useEffect(() => {
     return () => {
@@ -124,6 +173,22 @@ export const PaymentDialog = ({
     setImageId(null);
   };
 
+  const deleteUnlinkedImage = async (unlinkedImageId: number) => {
+    try {
+      setIsDeletingImage(true);
+      await imageApi.deleteImages([unlinkedImageId], "ORDER");
+      return true;
+    } catch (error) {
+      console.error("Ошибка при удалении неподтверждённого изображения:", error);
+      setImageError(
+        "Не удалось удалить предыдущий чек. Повторите попытку, чтобы не создавать лишние файлы.",
+      );
+      return false;
+    } finally {
+      setIsDeletingImage(false);
+    }
+  };
+
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -133,10 +198,31 @@ export const PaymentDialog = ({
     const validation = validateImage(file);
 
     if (!validation.isValid) {
-      resetImageState();
       setImageError(validation.error ?? "Invalid image");
       event.target.value = "";
       return;
+    }
+
+    if (
+      paymentMutation.isPending ||
+      hasAmbiguousMutationError ||
+      hasAmbiguousMutationAttempt
+    ) {
+      setImageError(
+        "Статус платежа уточняется. Повторите подтверждение с тем же чеком.",
+      );
+      event.target.value = "";
+      return;
+    }
+
+    if (imageId) {
+      const wasDeleted = await deleteUnlinkedImage(imageId);
+      if (!wasDeleted) {
+        event.target.value = "";
+        return;
+      }
+
+      paymentMutation.reset();
     }
 
     setImageError(null);
@@ -162,6 +248,10 @@ export const PaymentDialog = ({
   // ──────────────────────────────────────────────────────────────────────────
 
   const handleConfirmPayment = () => {
+    if (!selectedAccountId || !isExpectedOrderStatus) {
+      return;
+    }
+
     if (!imageId) {
       setImageError(
         `Пожалуйста, загрузите подтверждение ${
@@ -179,32 +269,67 @@ export const PaymentDialog = ({
       },
       {
         onSuccess: () => {
-          handleClose();
+          void handleClose({ keepUploadedImage: true });
         },
       },
     );
   };
 
-  const handleClose = () => {
+  const handleClose = async ({
+    keepUploadedImage = false,
+  }: {
+    keepUploadedImage?: boolean;
+  } = {}) => {
+    if (
+      (!keepUploadedImage && paymentMutation.isPending) ||
+      isUploadingImage ||
+      isDeletingImage
+    ) {
+      return;
+    }
+
+    if (
+      imageId &&
+      !keepUploadedImage &&
+      !hasAmbiguousMutationError &&
+      !hasAmbiguousMutationAttempt
+    ) {
+      const wasDeleted = await deleteUnlinkedImage(imageId);
+      if (!wasDeleted) return;
+    }
+
     setComment("");
     setSelectedImage(null);
     setImagePreview(null);
     setImageId(null);
     setImageError(null);
     setIsUploadingImage(false);
+    setIsDeletingImage(false);
+    setHasAmbiguousMutationAttempt(false);
     setSelectedAccountId(null);
+    paymentMutation.reset();
     onClose();
   };
 
+  const hasSelectedAccount =
+    !!selectedAccountId &&
+    !!sellerAccounts?.some((account) => account.id === selectedAccountId);
+  const accountsArePending = isAccountsLoading || isAccountsFetching;
   const canConfirmPayment =
     !!imageId &&
+    hasSelectedAccount &&
+    !accountsArePending &&
+    !isAccountsError &&
+    isExpectedOrderStatus &&
     !paymentMutation.isPending &&
-    !isUploadingImage;
+    !isUploadingImage &&
+    !isDeletingImage;
+  const mutationErrorMessage = mutationApiError?.message ?? null;
 
   return (
     <Dialog
       open={open}
-      onClose={handleClose}
+      onClose={() => void handleClose()}
       maxWidth="sm"
       fullWidth
       PaperProps={{
@@ -221,7 +346,7 @@ export const PaymentDialog = ({
             <Payment color="primary" />
             <Typography variant="h6">{config.title}</Typography>
           </Stack>
-          <IconButton onClick={handleClose} size="small">
+          <IconButton onClick={() => void handleClose()} size="small">
             <Close />
           </IconButton>
         </Stack>
@@ -237,8 +362,36 @@ export const PaymentDialog = ({
             {order.product.name}
           </Typography>
           <Typography variant="h6" color="text.primary" fontWeight={600}>
-            {config.amountLabel} {order.totalPrice} {order.product.currency}
+            {paymentBreakdown.isPreorder && paymentType === "payment"
+              ? "Остаток к оплате:"
+              : config.amountLabel}{" "}
+            {formatPrice(amountToPay, order.product.currency)}
           </Typography>
+          {paymentBreakdown.isPreorder && (
+            <Stack spacing={0.25} sx={{ mt: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                Предоплата:{" "}
+                {formatPrice(
+                  paymentBreakdown.prepaymentTotal,
+                  order.product.currency,
+                )}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Остаток после предоплаты:{" "}
+                {formatPrice(
+                  paymentBreakdown.remainingTotal,
+                  order.product.currency,
+                )}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Стоимость товаров:{" "}
+                {formatPrice(
+                  paymentBreakdown.productTotal,
+                  order.product.currency,
+                )}
+              </Typography>
+            </Stack>
+          )}
         </Paper>
 
         <Typography
@@ -252,11 +405,27 @@ export const PaymentDialog = ({
         {/* ── Реквизиты продавца (список с выбором) ── */}
         <SellerPaymentDetails
           accounts={sellerAccounts}
-          isLoading={isAccountsLoading}
+          isLoading={accountsArePending}
           isError={isAccountsError}
           selectedAccountId={selectedAccountId}
           onSelectAccount={setSelectedAccountId}
+          onRetry={() => {
+            void refetchSellerAccounts();
+          }}
         />
+
+        {mutationErrorMessage && (
+          <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2 }}>
+            {mutationErrorMessage}
+          </Alert>
+        )}
+
+        {!isExpectedOrderStatus && (
+          <Alert severity="info" sx={{ mb: 2.5, borderRadius: 2 }}>
+            Статус заказа уже обновился. Закройте диалог и проверьте актуальный
+            этап заказа.
+          </Alert>
+        )}
 
         {/* Загрузка чека */}
         <Box sx={{ mb: 3 }}>
@@ -270,7 +439,13 @@ export const PaymentDialog = ({
             id={fileInputId}
             type="file"
             onChange={handleImageUpload}
-            disabled={isUploadingImage}
+            disabled={
+              isUploadingImage ||
+              isDeletingImage ||
+              paymentMutation.isPending ||
+              hasAmbiguousMutationError ||
+              hasAmbiguousMutationAttempt
+            }
           />
 
           <label htmlFor={fileInputId}>
@@ -289,11 +464,13 @@ export const PaymentDialog = ({
                 },
               }}
             >
-              {isUploadingImage ? (
+              {isUploadingImage || isDeletingImage ? (
                 <Stack alignItems="center" spacing={1}>
                   <CircularProgress size={48} />
                   <Typography variant="body2" color="text.secondary">
-                    Загрузка изображения...
+                    {isDeletingImage
+                      ? "Удаление предыдущего изображения..."
+                      : "Загрузка изображения..."}
                   </Typography>
                 </Stack>
               ) : imagePreview ? (
@@ -349,14 +526,18 @@ export const PaymentDialog = ({
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           sx={{ mb: 1 }}
-          disabled={isUploadingImage}
+          disabled={isUploadingImage || isDeletingImage}
         />
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button
-          onClick={handleClose}
-          disabled={paymentMutation.isPending || isUploadingImage}
+          onClick={() => void handleClose()}
+          disabled={
+            paymentMutation.isPending ||
+            isUploadingImage ||
+            isDeletingImage
+          }
         >
           Отмена
         </Button>

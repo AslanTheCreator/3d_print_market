@@ -2,7 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { Box, Chip, Stack, Typography } from "@mui/material";
-import type { ListOrdersModel } from "@/entities/order";
+import {
+  getOrderPaymentBreakdown,
+  type ListOrdersModel,
+} from "@/entities/order";
 import { getImageUrl } from "@/shared/lib";
 import { ImageFallback } from "@/shared/ui/image-fallback";
 import {
@@ -29,6 +32,7 @@ export const OrderProductPreview = ({
   const imageSrc =
     productImageSrc && !hasImageError ? productImageSrc : null;
   const categoryName = order.product.categories[0]?.name ?? "Без категории";
+  const { quantity } = getOrderPaymentBreakdown(order);
 
   useEffect(() => {
     setHasImageError(false);
@@ -109,6 +113,13 @@ export const OrderProductPreview = ({
           )}
           <Typography variant="caption" color="text.secondary">
             {getOrderPeerLabel(userRole)}: {order.userInfo.login}
+          </Typography>
+          <Typography
+            data-testid={`order-quantity-${order.orderId}`}
+            variant="caption"
+            color="text.secondary"
+          >
+            Количество: {quantity} шт.
           </Typography>
         </Stack>
       </Box>

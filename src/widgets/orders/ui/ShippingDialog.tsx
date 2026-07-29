@@ -17,6 +17,7 @@ import {
   Select,
   MenuItem,
   Chip,
+  Alert,
 } from "@mui/material";
 import {
   Close,
@@ -25,8 +26,14 @@ import {
   CheckCircle,
   ContentCopy,
 } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order";
+import {
+  getOrderPaymentBreakdown,
+  type ListOrdersModel,
+} from "@/entities/order";
 import { useOrderShippingAction } from "@/features/order-shipping";
+import { formatPrice } from "@/shared/lib";
+import { transformToApiError } from "@/shared/lib/errorHandler";
+import { getSafeTrackingUrl } from "../model/orderDetails";
 
 interface ShippingDialogProps {
   open: boolean;
@@ -39,6 +46,11 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
   const [comment, setComment] = useState("");
   const [deliveryService, setDeliveryService] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
+  const paymentBreakdown = getOrderPaymentBreakdown(order);
+  const isExpectedOrderStatus = order.actualStatus === "ASSEMBLING";
+  const safeDeliveryUrl = getSafeTrackingUrl(deliveryUrl);
+  const hasDeliveryUrlError =
+    deliveryUrl.trim().length > 0 && safeDeliveryUrl === null;
 
   const deliveryServices = [
     {
@@ -90,37 +102,53 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
     }
   };
 
-  const handleSendOrder = () => {
-    if (!deliveryUrl.trim()) {
-      return;
-    }
-
-    shippingAction.sendOrder(
-      {
-        orderId: order.orderId,
-        deliveryUrl: deliveryUrl.trim(),
-        comment: comment.trim(),
-      },
-    );
-  };
-
-  const handleClose = () => {
+  const resetForm = () => {
     setDeliveryUrl("");
     setComment("");
     setDeliveryService("");
     setTrackingNumber("");
-    onClose();
   };
 
   const shippingAction = useOrderShippingAction({
-    onSuccess: handleClose,
+    onSuccess: () => {
+      resetForm();
+      onClose();
+    },
   });
+
+  const handleSendOrder = () => {
+    if (!safeDeliveryUrl || !isExpectedOrderStatus) {
+      return;
+    }
+
+    shippingAction.sendOrder({
+      orderId: order.orderId,
+      deliveryUrl: safeDeliveryUrl,
+      comment: comment.trim(),
+    });
+  };
+
+  const handleClose = () => {
+    if (shippingAction.isPending) {
+      return;
+    }
+
+    resetForm();
+    shippingAction.reset();
+    onClose();
+  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
 
-  const canSendOrder = deliveryUrl.trim() && !shippingAction.isPending;
+  const canSendOrder =
+    !!safeDeliveryUrl &&
+    isExpectedOrderStatus &&
+    !shippingAction.isPending;
+  const shippingErrorMessage = shippingAction.error
+    ? transformToApiError(shippingAction.error).message
+    : null;
 
   return (
     <Dialog
@@ -164,12 +192,71 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 {order.product.name}
               </Typography>
+              <Typography
+                data-testid={`shipping-order-quantity-${order.orderId}`}
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mb: 0.75 }}
+              >
+                Количество: {paymentBreakdown.quantity} шт.
+              </Typography>
               <Chip label="Оплачено" color="success" size="small" />
             </Box>
-            <Typography variant="h6" color="text.primary" fontWeight={600}>
-              {order.totalPrice} {order.product.currency}
-            </Typography>
+            <Box textAlign="right">
+              <Typography variant="caption" color="text.secondary">
+                {paymentBreakdown.isPreorder
+                  ? "Стоимость товаров"
+                  : "Сумма заказа"}
+              </Typography>
+              <Typography variant="h6" color="text.primary" fontWeight={600}>
+                {formatPrice(
+                  paymentBreakdown.productTotal,
+                  order.product.currency,
+                )}
+              </Typography>
+            </Box>
           </Stack>
+
+          {paymentBreakdown.isPreorder && (
+            <Stack
+              data-testid="shipping-payment-breakdown"
+              spacing={0.75}
+              sx={{ mb: 1.5 }}
+            >
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                spacing={2}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Предоплата
+                </Typography>
+                <Typography variant="body2" fontWeight={700}>
+                  {formatPrice(
+                    paymentBreakdown.prepaymentTotal,
+                    order.product.currency,
+                  )}
+                </Typography>
+              </Stack>
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                spacing={2}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Оплата остатка
+                </Typography>
+                <Typography variant="body2" fontWeight={700}>
+                  {formatPrice(
+                    paymentBreakdown.remainingTotal,
+                    order.product.currency,
+                  )}
+                </Typography>
+              </Stack>
+            </Stack>
+          )}
 
           <Box sx={{ p: 1.5, bgcolor: "background.paper", borderRadius: 1 }}>
             <Typography variant="body2" sx={{ mb: 0.75 }}>
@@ -239,17 +326,22 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
           value={deliveryUrl}
           onChange={(e) => setDeliveryUrl(e.target.value)}
           sx={{ mb: 2 }}
+          error={hasDeliveryUrlError}
           InputProps={{
             startAdornment: (
               <LinkIcon sx={{ mr: 1, color: "text.secondary" }} />
             ),
           }}
-          helperText="Ссылка, по которой покупатель сможет отследить посылку"
+          helperText={
+            hasDeliveryUrlError
+              ? "Укажите абсолютную ссылку, начинающуюся с http:// или https://"
+              : "Ссылка, по которой покупатель сможет отследить посылку"
+          }
           required
         />
 
         {/* Предпросмотр ссылки */}
-        {deliveryUrl && (
+        {safeDeliveryUrl && (
           <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: "success.50" }}>
             <Stack direction="row" alignItems="center" spacing={1}>
               <CheckCircle color="success" sx={{ fontSize: 16 }} />
@@ -265,7 +357,7 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
                 fontSize: "0.75rem",
               }}
             >
-              {deliveryUrl}
+              {safeDeliveryUrl}
             </Typography>
           </Paper>
         )}
@@ -281,6 +373,19 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
           onChange={(e) => setComment(e.target.value)}
           sx={{ mb: 1 }}
         />
+
+        {shippingErrorMessage && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            Не удалось отправить данные о доставке: {shippingErrorMessage}
+          </Alert>
+        )}
+
+        {!isExpectedOrderStatus && (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            Статус заказа уже обновился. Закройте диалог и проверьте актуальный
+            этап заказа.
+          </Alert>
+        )}
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>

@@ -123,9 +123,7 @@ export const orderApi = {
 
   // Получение заказов продавца
   getSellerOrders: async () => {
-    const { data } = await authClient.get<ListOrdersDto[]>(
-      `${API_URL}/seller`,
-    );
+    const { data } = await authClient.get<ListOrdersDto[]>(`${API_URL}/seller`);
     return attachOrderProductImages(data);
   },
 
@@ -136,20 +134,4 @@ export const orderApi = {
     );
     return attachOrderProductImages(data);
   },
-  // createDispute: async (
-  //   orderId: number,
-  //   comment: string,
-  //   imageIds: number[],
-  // ) => {
-  //   const { data } = await authClient.post<number>(
-  //     `${API_URL}/orders/${orderId}/DISPUTED?imageIds=${encodeURIComponent(imageIds.join(","))}&comment=${encodeURIComponent(comment)}`,
-  //   );
-  //   return data;
-  // },
-  // closeDispute: async (orderId: number, comment: string) => {
-  //   const { data } = await authClient.post<number>(
-  //     `${API_URL}/orders/${orderId}/DISPUTE_CLOSED?comment=${encodeURIComponent(comment)}`,
-  //   );
-  //   return data;
-  // },
 };

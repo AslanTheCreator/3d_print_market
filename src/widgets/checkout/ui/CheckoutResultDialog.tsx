@@ -39,6 +39,7 @@ interface CheckoutResultDialogProps {
   onGoHome: () => void;
   onGoToOrders: () => void;
   isRetrying?: boolean;
+  hasPreorderSuccess?: boolean;
 }
 
 export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
@@ -49,6 +50,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
   onGoHome,
   onGoToOrders,
   isRetrying = false,
+  hasPreorderSuccess = false,
 }) => {
   const theme = useTheme();
 
@@ -82,12 +84,20 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
 
   const getDialogDescription = () => {
     if (isFullSuccess) {
-      return `Все ${result.totalCount} ${getItemWord(result.totalCount)} успешно оформлены. Вы можете отслеживать их статус в разделе "Мои покупки".`;
+      const baseDescription = `Все ${result.totalCount} ${getItemWord(result.totalCount)} успешно оформлены.`;
+
+      return hasPreorderSuccess
+        ? `${baseDescription} Для предзаказа продавец сначала подтвердит заказ, затем потребуется внести предоплату и после её подтверждения — оплатить остаток. Следите за этапами в разделе "Мои покупки".`
+        : `${baseDescription} Вы можете отслеживать их статус в разделе "Мои покупки".`;
     }
     if (isPartialSuccess) {
-      return hasRetryableFailures
+      const baseDescription = hasRetryableFailures
         ? `Оформлено ${result.successCount} из ${result.totalCount} ${getItemWord(result.totalCount)}. Повторите неудачные заказы или вернитесь к оформлению.`
         : `Оформлено ${result.successCount} из ${result.totalCount} ${getItemWord(result.totalCount)}. Вернитесь к оформлению, чтобы проверить недоступные товары.`;
+
+      return hasPreorderSuccess
+        ? `${baseDescription} Для оформленных предзаказов следующим этапом будет подтверждение продавцом, затем предоплата и оплата остатка.`
+        : baseDescription;
     }
     return hasRetryableFailures
       ? "Заказы не были оформлены. Повторите попытку или вернитесь к оформлению, чтобы проверить товары и доставку."

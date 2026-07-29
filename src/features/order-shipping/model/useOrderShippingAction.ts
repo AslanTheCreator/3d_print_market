@@ -13,6 +13,9 @@ interface UseOrderShippingActionOptions {
 interface OrderShippingActionResult {
   sendOrder: (params: OrderShippingParams) => void;
   isPending: boolean;
+  isError: boolean;
+  error: unknown;
+  reset: () => void;
 }
 
 export const useOrderShippingAction = ({
@@ -31,5 +34,8 @@ export const useOrderShippingAction = ({
   return {
     sendOrder,
     isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
   };
 };

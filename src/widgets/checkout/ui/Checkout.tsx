@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Typography, Box, CircularProgress } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useRouter } from "next/navigation";
@@ -20,6 +26,9 @@ import {
   ShoppingCartOutlined,
   StorefrontOutlined,
   FavoriteBorderOutlined,
+  CheckCircleOutline,
+  Receipt,
+  Home,
 } from "@mui/icons-material";
 
 const Checkout = () => {
@@ -36,6 +45,15 @@ const Checkout = () => {
     isPending: isLoadingCurrentUser,
     isError: isCurrentUserError,
   } = useProfileUser();
+  const preorderProductIdsRef = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    for (const item of cartItems ?? []) {
+      if (item.product.availability === "PREORDER") {
+        preorderProductIdsRef.current.add(item.product.id);
+      }
+    }
+  }, [cartItems]);
 
   const [completedProductIds, setCompletedProductIds] = useState<Set<number>>(
     () => new Set(),
@@ -59,27 +77,37 @@ const Checkout = () => {
 
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
+  const [hasCompletedPreorder, setHasCompletedPreorder] = useState(false);
+  const [lastResultHasPreorder, setLastResultHasPreorder] = useState(false);
   const [lastResult, setLastResult] = useState<CheckoutResult | null>(null);
 
   const rememberSuccessfulOrders = useCallback((result: CheckoutResult) => {
-    if (result.success.length === 0) {
-      return;
+    const hasPreorder = result.success.some((order) =>
+      preorderProductIdsRef.current.has(order.productId),
+    );
+
+    if (result.success.length > 0) {
+      setCompletedProductIds((currentIds) => {
+        const nextIds = new Set(currentIds);
+
+        for (const order of result.success) {
+          nextIds.add(order.productId);
+        }
+
+        return nextIds.size === currentIds.size ? currentIds : nextIds;
+      });
     }
 
-    setCompletedProductIds((currentIds) => {
-      const nextIds = new Set(currentIds);
+    if (hasPreorder) {
+      setHasCompletedPreorder(true);
+    }
 
-      for (const order of result.success) {
-        nextIds.add(order.productId);
-      }
-
-      return nextIds.size === currentIds.size ? currentIds : nextIds;
-    });
+    return hasPreorder;
   }, []);
 
   const handleSuccess = useCallback(
     (result: CheckoutResult) => {
-      rememberSuccessfulOrders(result);
+      setLastResultHasPreorder(rememberSuccessfulOrders(result));
       setResultDialogOpen(true);
       setOrderCompleted(true);
       setLastResult(result);
@@ -89,7 +117,7 @@ const Checkout = () => {
 
   const handlePartialSuccess = useCallback(
     (result: CheckoutResult) => {
-      rememberSuccessfulOrders(result);
+      setLastResultHasPreorder(rememberSuccessfulOrders(result));
       setResultDialogOpen(true);
       setLastResult(result);
     },
@@ -97,6 +125,7 @@ const Checkout = () => {
   );
 
   const handleError = useCallback((result: CheckoutResult) => {
+    setLastResultHasPreorder(false);
     setResultDialogOpen(true);
     setLastResult(result);
   }, []);
@@ -153,6 +182,44 @@ const Checkout = () => {
 
   // После успешного оформления — показываем OrderSuccessState вместо пустой корзины
   if (checkoutCartItems.length === 0 && orderCompleted) {
+    if (hasCompletedPreorder) {
+      return (
+        <EmptyPageState
+          icon={
+            <CheckCircleOutline
+              sx={{
+                fontSize: { xs: 56, sm: 68 },
+                color: "success.main",
+              }}
+            />
+          }
+          title="Заказы оформлены!"
+          description="Заказы успешно созданы. Для предзаказов продавец сначала подтвердит заказ, после чего вам потребуется внести предоплату и затем оплатить остаток."
+          actions={[
+            {
+              label: "Мои покупки",
+              icon: <Receipt />,
+              onClick: handleGoToOrders,
+            },
+            {
+              label: "На главную",
+              icon: <Home />,
+              onClick: handleGoHome,
+              variant: "outlined",
+            },
+          ]}
+          tips={{
+            title: "Что дальше с предзаказом",
+            items: [
+              "Дождитесь подтверждения заказа продавцом",
+              "Внесите предоплату на следующем этапе",
+              "После подтверждения предоплаты оплатите остаток",
+            ],
+          }}
+        />
+      );
+    }
+
     return (
       <OrderSuccessState
         orderCount={completedProductIds.size || lastResult?.successCount}
@@ -229,6 +296,7 @@ const Checkout = () => {
         onGoHome={handleGoHome}
         onGoToOrders={handleGoToOrders}
         isRetrying={isSubmitting}
+        hasPreorderSuccess={lastResultHasPreorder}
       />
     </>
   );

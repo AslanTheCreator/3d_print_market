@@ -10,9 +10,15 @@ import {
   IconButton,
   Typography,
   Paper,
+  Alert,
 } from "@mui/material";
 import { Close, CheckCircle } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order";
+import {
+  getOrderPaymentBreakdown,
+  type ListOrdersModel,
+} from "@/entities/order";
+import { formatPrice } from "@/shared/lib";
+import { transformToApiError } from "@/shared/lib/errorHandler";
 import { UseMutationResult } from "@tanstack/react-query";
 
 // Типы для различных видов подтверждения
@@ -69,26 +75,41 @@ interface ConfirmationConfig {
   buttonLoadingText: string;
 }
 
-interface ConfirmationConfigMap {
-  order: ConfirmationConfig;
-  preorder: ConfirmationConfig;
-}
-
-const confirmationConfig: ConfirmationConfigMap = {
-  order: {
+const confirmationConfig = {
+  regularOrder: {
     title: "Подтвердить заказ",
     description:
       "Вы уверены, что хотите подтвердить заказ #{orderId}? После подтверждения покупатель сможет перейти к оплате.",
     buttonText: "Подтвердить заказ",
     buttonLoadingText: "Подтверждение...",
   },
-  preorder: {
+  initialPreorder: {
     title: "Подтвердить предзаказ",
     description:
       "Вы уверены, что хотите подтвердить предзаказ #{orderId}? После подтверждения покупатель сможет перейти к предоплате.",
     buttonText: "Подтвердить предзаказ",
     buttonLoadingText: "Подтверждение...",
   },
+  prepaymentApproval: {
+    title: "Подтвердить предоплату",
+    description:
+      "Вы уверены, что хотите подтвердить предоплату по заказу #{orderId}? После подтверждения покупатель сможет перейти к оплате остатка.",
+    buttonText: "Подтвердить предоплату",
+    buttonLoadingText: "Подтверждение...",
+  },
+};
+
+const getConfirmationConfig = (
+  confirmationType: ConfirmationType,
+  isPreorder: boolean,
+): ConfirmationConfig => {
+  if (confirmationType === "preorder") {
+    return confirmationConfig.prepaymentApproval;
+  }
+
+  return isPreorder
+    ? confirmationConfig.initialPreorder
+    : confirmationConfig.regularOrder;
 };
 
 export const ConfirmationDialog = ({
@@ -98,10 +119,30 @@ export const ConfirmationDialog = ({
   confirmationType,
   confirmationMutation,
 }: ConfirmationDialogProps) => {
-  // Получаем конфигурацию для текущего типа подтверждения
-  const config = confirmationConfig[confirmationType];
+  const config = getConfirmationConfig(
+    confirmationType,
+    order.product.availability === "PREORDER",
+  );
+  const mutationErrorMessage = confirmationMutation.error
+    ? transformToApiError(confirmationMutation.error).message
+    : null;
+  const paymentBreakdown = getOrderPaymentBreakdown(order);
+  const expectedOrderStatus =
+    confirmationType === "preorder"
+      ? "AWAITING_PREPAYMENT_APPROVAL"
+      : "BOOKED";
+  const isExpectedOrderStatus = order.actualStatus === expectedOrderStatus;
+
+  const handleClose = () => {
+    confirmationMutation.reset();
+    onClose();
+  };
 
   const handleConfirm = () => {
+    if (!isExpectedOrderStatus) {
+      return;
+    }
+
     if (confirmationType === "order") {
       confirmationMutation.mutate(
         {
@@ -109,7 +150,7 @@ export const ConfirmationDialog = ({
         },
         {
           onSuccess: () => {
-            onClose();
+            handleClose();
           },
         },
       );
@@ -120,7 +161,7 @@ export const ConfirmationDialog = ({
         },
         {
           onSuccess: () => {
-            onClose();
+            handleClose();
           },
         },
       );
@@ -130,7 +171,7 @@ export const ConfirmationDialog = ({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       maxWidth="sm"
       fullWidth
       PaperProps={{
@@ -147,7 +188,11 @@ export const ConfirmationDialog = ({
             <CheckCircle color="primary" />
             <Typography variant="h6">{config.title}</Typography>
           </Stack>
-          <IconButton onClick={onClose} size="small">
+          <IconButton
+            onClick={handleClose}
+            size="small"
+            disabled={confirmationMutation.isPending}
+          >
             <Close />
           </IconButton>
         </Stack>
@@ -161,24 +206,66 @@ export const ConfirmationDialog = ({
           <Typography variant="body2" color="text.secondary" gutterBottom>
             {order.product.name}
           </Typography>
-          <Typography variant="h6" color="text.primary" fontWeight={600}>
-            {order.totalPrice} {order.product.currency}
-          </Typography>
+          <Stack spacing={0.25}>
+            <Typography variant="h6" color="text.primary" fontWeight={600}>
+              Стоимость товаров:{" "}
+              {formatPrice(
+                paymentBreakdown.productTotal,
+                order.product.currency,
+              )}
+            </Typography>
+            {paymentBreakdown.isPreorder && (
+              <>
+                <Typography variant="body2" color="text.secondary">
+                  Предоплата:{" "}
+                  {formatPrice(
+                    paymentBreakdown.prepaymentTotal,
+                    order.product.currency,
+                  )}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Остаток:{" "}
+                  {formatPrice(
+                    paymentBreakdown.remainingTotal,
+                    order.product.currency,
+                  )}
+                </Typography>
+              </>
+            )}
+          </Stack>
         </Paper>
 
         <Typography variant="body2" color="text.secondary">
           {config.description.replace("{orderId}", order.orderId.toString())}
         </Typography>
+
+        {mutationErrorMessage && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            Не удалось выполнить подтверждение: {mutationErrorMessage}
+          </Alert>
+        )}
+
+        {!isExpectedOrderStatus && (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            Статус заказа уже обновился. Закройте диалог и проверьте актуальный
+            этап заказа.
+          </Alert>
+        )}
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button onClick={onClose} disabled={confirmationMutation.isPending}>
+        <Button
+          onClick={handleClose}
+          disabled={confirmationMutation.isPending}
+        >
           Отмена
         </Button>
         <Button
           onClick={handleConfirm}
           variant="contained"
-          disabled={confirmationMutation.isPending}
+          disabled={
+            confirmationMutation.isPending || !isExpectedOrderStatus
+          }
           startIcon={confirmationMutation.isPending ? null : <CheckCircle />}
         >
           {confirmationMutation.isPending

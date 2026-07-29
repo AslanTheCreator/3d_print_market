@@ -21,6 +21,8 @@ export {
 
 export { OrderStatusChip } from "./ui/OrderStatusChip";
 export { OrdersEmptyState } from "./ui/OrdersEmptyState";
+export { getOrderPaymentBreakdown } from "./lib/orderPaymentBreakdown";
+export type { OrderPaymentBreakdown } from "./lib/orderPaymentBreakdown";
 export {
   getOrderStatusMeta,
   orderNeedsAttention,

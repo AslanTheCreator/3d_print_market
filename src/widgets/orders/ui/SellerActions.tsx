@@ -22,6 +22,7 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
 
   const confirmationAction = useOrderConfirmationAction();
   const preOrderConfirmationAction = useOrderPreOrderConfirmationAction();
+  const isPreorder = order.product.availability === "PREORDER";
   const { canConfirmOrder, canConfirmPreOrder, canShipOrder, canCancel } =
     getSellerOrderActionFlags(order.actualStatus);
 
@@ -38,7 +39,9 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
         >
           {confirmationAction.mutation.isPending
             ? "Подтверждение..."
-            : "Подтвердить заказ"}
+            : isPreorder
+              ? "Подтвердить предзаказ"
+              : "Подтвердить заказ"}
         </Button>
       )
     : canConfirmPreOrder
@@ -54,7 +57,7 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
           >
             {preOrderConfirmationAction.mutation.isPending
               ? "Подтверждение..."
-              : "Подтвердить предзаказ"}
+              : "Подтвердить предоплату"}
           </Button>
         )
       : canShipOrder

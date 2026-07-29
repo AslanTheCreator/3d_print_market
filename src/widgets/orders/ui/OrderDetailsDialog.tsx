@@ -22,6 +22,7 @@ import {
   PhoneOutlined,
 } from "@mui/icons-material";
 import {
+  getOrderPaymentBreakdown,
   OrderStatusChip,
   shouldShowPaymentProofForRole,
   shouldShowTrackingForRole,
@@ -30,7 +31,6 @@ import {
 import { formatPrice } from "@/shared/lib";
 import {
   formatOrderDate,
-  formatOrderPrice,
   getOrderPeerLabel,
   type OrdersUserRole,
 } from "../model/dashboardOrders";
@@ -65,6 +65,8 @@ export const OrderDetailsDialog = ({
     order.actualStatus,
     userRole,
   );
+  const paymentBreakdown = getOrderPaymentBreakdown(order);
+  const orderCurrency = order.product.currency;
 
   return (
     <Dialog
@@ -115,17 +117,61 @@ export const OrderDetailsDialog = ({
             />
             <Divider sx={{ my: 1.5 }} />
             <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-              spacing={2}
+              data-testid="order-payment-breakdown"
+              spacing={paymentBreakdown.isPreorder ? 1 : 0}
             >
-              <Typography variant="body2" color="text.secondary">
-                Сумма заказа
-              </Typography>
-              <Typography variant="h6" fontWeight={800}>
-                {formatOrderPrice(order)}
-              </Typography>
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                spacing={2}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  {paymentBreakdown.isPreorder
+                    ? "Стоимость товаров"
+                    : "Сумма заказа"}
+                </Typography>
+                <Typography variant="h6" fontWeight={800}>
+                  {formatPrice(paymentBreakdown.productTotal, orderCurrency)}
+                </Typography>
+              </Stack>
+
+              {paymentBreakdown.isPreorder && (
+                <>
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    spacing={2}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Предоплата
+                    </Typography>
+                    <Typography variant="body2" fontWeight={700}>
+                      {formatPrice(
+                        paymentBreakdown.prepaymentTotal,
+                        orderCurrency,
+                      )}
+                    </Typography>
+                  </Stack>
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    spacing={2}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Остаток к оплате
+                    </Typography>
+                    <Typography variant="body2" fontWeight={700}>
+                      {formatPrice(
+                        paymentBreakdown.remainingTotal,
+                        orderCurrency,
+                      )}
+                    </Typography>
+                  </Stack>
+                </>
+              )}
             </Stack>
           </Paper>
 

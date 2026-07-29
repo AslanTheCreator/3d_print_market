@@ -68,7 +68,11 @@ export const OrdersAttentionSection = ({
         }}
       >
         {orders.map((order) => {
-          const hint = getOrderStatusActionHint(order.actualStatus, userRole);
+          const hint = getOrderStatusActionHint(
+            order.actualStatus,
+            userRole,
+            order.product.availability === "PREORDER",
+          );
 
           return (
             <Paper

@@ -42,6 +42,11 @@ interface OrderFixtureOptions {
   imageIds?: number[];
   histories: OrderHistoryFixture[];
   availability?: "PURCHASABLE" | "PREORDER";
+  quantity?: number;
+  unitPrice?: number;
+  prepaymentAmount?: number;
+  totalPrice?: number;
+  createdAt?: string;
 }
 
 interface ImageFixture {
@@ -88,6 +93,23 @@ const fulfillJson = async (route: Route, body: unknown) => {
   });
 };
 
+const fulfillServerError = async (route: Route) => {
+  if (route.request().method() === "OPTIONS") {
+    await route.fulfill({ status: 204, headers: corsHeaders });
+    return;
+  }
+
+  await route.fulfill({
+    status: 500,
+    headers: corsHeaders,
+    contentType: "application/json",
+    body: JSON.stringify({
+      code: "ORDER_ACTION_FAILED",
+      message: "Order action failed",
+    }),
+  });
+};
+
 const createOrderFixture = ({
   orderId,
   actualStatus,
@@ -100,11 +122,18 @@ const createOrderFixture = ({
   imageIds = [],
   histories,
   availability = "PURCHASABLE",
+  quantity = 1,
+  unitPrice = 12_500,
+  prepaymentAmount = availability === "PREORDER" ? 2_500 : 0,
+  totalPrice = availability === "PREORDER"
+    ? (unitPrice - prepaymentAmount) * quantity
+    : unitPrice * quantity,
+  createdAt = "2026-07-10T10:00:00.000Z",
 }: OrderFixtureOptions) => ({
   orderId,
   actualStatus,
-  totalPrice: 12_900,
-  createdAt: "2026-07-10T10:00:00.000Z",
+  totalPrice,
+  createdAt,
   userInfo: {
     id: peerId,
     imageId: 0,
@@ -115,9 +144,9 @@ const createOrderFixture = ({
   product: {
     id: orderId + 1_000,
     name: `Тестовый товар ${orderId}`,
-    count: 1,
-    price: 12_500,
-    prepaymentAmount: availability === "PREORDER" ? 2_500 : 0,
+    count: quantity,
+    price: unitPrice,
+    prepaymentAmount,
     currency: "RUB",
     categories: [{ id: 1, name: "Фигурки", childs: [] }],
     imageId: 0,
@@ -412,5 +441,252 @@ test.describe("order details", () => {
     ).toHaveCount(0);
     await expect(dialog.getByTestId("order-tracking")).toHaveCount(0);
     expect(requestedProofIds).toHaveLength(proofRequestCount);
+  });
+
+  test("shows order quantity and the preorder payment breakdown", async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    await authenticate(context, baseURL);
+
+    const preorder = createOrderFixture({
+      orderId: 301,
+      actualStatus: "AWAITING_PAYMENT",
+      peerId: 10,
+      peerLogin: "seller-preorder",
+      peerPhone: "+7 900 444-55-66",
+      peerMail: "seller-preorder@example.com",
+      deliveryAddress: "Россия, Москва, ул. Предзаказа, 1",
+      histories: [],
+      availability: "PREORDER",
+      quantity: 2,
+      unitPrice: 12_500,
+      prepaymentAmount: 2_500,
+      totalPrice: 20_000,
+      createdAt: "17.07.2026 12:34:56",
+    });
+
+    await mockDashboardApi(page, { customerOrders: [preorder] });
+    await page.goto("/dashboard/purchase", { waitUntil: "domcontentloaded" });
+    await page
+      .getByRole("button", { name: "Подробнее о заказе №301" })
+      .first()
+      .click();
+
+    const dialog = page.getByRole("dialog", {
+      name: "Детали заказа №301",
+    });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).not.toContainText("Дата неизвестна");
+    await expect(dialog.getByTestId("order-quantity-301")).toHaveText(
+      "Количество: 2 шт.",
+    );
+
+    const paymentBreakdown = dialog.getByTestId("order-payment-breakdown");
+    await expect(paymentBreakdown).toContainText("Стоимость товаров");
+    await expect(paymentBreakdown).toContainText("Предоплата");
+    await expect(paymentBreakdown).toContainText("Остаток к оплате");
+    await expect(paymentBreakdown).toContainText(/25\s*000/);
+    await expect(paymentBreakdown).toContainText(/5\s*000/);
+    await expect(paymentBreakdown).toContainText(/20\s*000/);
+  });
+
+  test("uses preorder-aware confirmation copy and keeps an error dialog open", async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    await authenticate(context, baseURL);
+
+    const bookedPreorder = createOrderFixture({
+      orderId: 501,
+      actualStatus: "BOOKED",
+      peerId: 31,
+      peerLogin: "buyer-booked-preorder",
+      peerPhone: "+7 900 501-00-00",
+      peerMail: "buyer-501@example.com",
+      deliveryAddress: "Россия, Москва, ул. Предзаказа, 501",
+      histories: [],
+      availability: "PREORDER",
+    });
+    const prepaymentApproval = createOrderFixture({
+      orderId: 502,
+      actualStatus: "AWAITING_PREPAYMENT_APPROVAL",
+      peerId: 32,
+      peerLogin: "buyer-prepayment",
+      peerPhone: "+7 900 502-00-00",
+      peerMail: "buyer-502@example.com",
+      deliveryAddress: "Россия, Москва, ул. Предзаказа, 502",
+      histories: [],
+      availability: "PREORDER",
+    });
+    let confirmationRequests = 0;
+
+    await mockDashboardApi(page, {
+      sellerOrders: [bookedPreorder, prepaymentApproval],
+    });
+    await page.route(
+      "**/order/501/AWAITING_PREPAYMENT?*",
+      async (route) => {
+        if (route.request().method() !== "OPTIONS") {
+          confirmationRequests += 1;
+        }
+        await fulfillServerError(route);
+      },
+    );
+
+    await page.goto("/dashboard/sales", { waitUntil: "domcontentloaded" });
+    await page
+      .getByRole("button", { name: "Подтвердить предзаказ", exact: true })
+      .first()
+      .click();
+
+    let dialog = page.getByRole("dialog", {
+      name: "Подтвердить предзаказ",
+    });
+    await expect(dialog).toContainText("перейти к предоплате");
+    await dialog
+      .getByRole("button", { name: "Подтвердить предзаказ", exact: true })
+      .click();
+    await expect(dialog.getByRole("alert")).toContainText(
+      "Не удалось выполнить подтверждение",
+    );
+    await expect(dialog).toBeVisible();
+    expect(confirmationRequests).toBe(1);
+
+    await dialog.getByRole("button", { name: "Отмена" }).click();
+    await page
+      .getByRole("button", { name: "Подтвердить предоплату", exact: true })
+      .first()
+      .click();
+
+    dialog = page.getByRole("dialog", {
+      name: "Подтвердить предоплату",
+    });
+    await expect(dialog).toContainText("перейти к оплате остатка");
+  });
+
+  test("validates tracking and preserves shipping input after an error", async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    await authenticate(context, baseURL);
+
+    const assemblingPreorder = createOrderFixture({
+      orderId: 503,
+      actualStatus: "ASSEMBLING",
+      peerId: 33,
+      peerLogin: "buyer-shipping",
+      peerPhone: "+7 900 503-00-00",
+      peerMail: "buyer-503@example.com",
+      deliveryAddress: "Россия, Москва, ул. Доставки, 503",
+      histories: [],
+      availability: "PREORDER",
+      quantity: 2,
+      totalPrice: 20_000,
+    });
+    let shippingRequests = 0;
+
+    await mockDashboardApi(page, { sellerOrders: [assemblingPreorder] });
+    await page.route("**/order/503/ON_THE_WAY?*", async (route) => {
+      if (route.request().method() !== "OPTIONS") {
+        shippingRequests += 1;
+      }
+      await fulfillServerError(route);
+    });
+
+    await page.goto("/dashboard/sales", { waitUntil: "domcontentloaded" });
+    await page
+      .getByRole("button", { name: "Отправить товар", exact: true })
+      .first()
+      .click();
+
+    const dialog = page.getByRole("dialog", { name: "Отправка товара" });
+    const trackingInput = dialog.getByLabel("Ссылка для отслеживания");
+    const commentInput = dialog.getByLabel("Комментарий (необязательно)");
+    const submitButton = dialog.getByRole("button", {
+      name: "Отправить товар",
+      exact: true,
+    });
+
+    await expect(dialog.getByTestId("shipping-order-quantity-503")).toHaveText(
+      "Количество: 2 шт.",
+    );
+    await expect(dialog.getByTestId("shipping-payment-breakdown")).toContainText(
+      "Предоплата",
+    );
+    await expect(dialog.getByTestId("shipping-payment-breakdown")).toContainText(
+      "Оплата остатка",
+    );
+
+    await trackingInput.fill("javascript:alert(1)");
+    await expect(dialog).toContainText(
+      "Укажите абсолютную ссылку, начинающуюся с http:// или https://",
+    );
+    await expect(submitButton).toBeDisabled();
+
+    await trackingInput.fill("https://tracking.example.com/order/503");
+    await commentInput.fill("Хрупкий груз");
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+
+    await expect(dialog.getByRole("alert")).toContainText(
+      "Не удалось отправить данные о доставке",
+    );
+    await expect(trackingInput).toHaveValue(
+      "https://tracking.example.com/order/503",
+    );
+    await expect(commentInput).toHaveValue("Хрупкий груз");
+    expect(shippingRequests).toBe(1);
+  });
+
+  test("keeps receipt confirmation open when the request fails", async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    await authenticate(context, baseURL);
+
+    const deliveredOrder = createOrderFixture({
+      orderId: 504,
+      actualStatus: "ON_THE_WAY",
+      peerId: 34,
+      peerLogin: "seller-receipt",
+      peerPhone: "+7 900 504-00-00",
+      peerMail: "seller-504@example.com",
+      deliveryAddress: "Россия, Москва, ул. Получения, 504",
+      deliveryUrl: "https://tracking.example.com/order/504",
+      histories: [],
+    });
+    let receiptRequests = 0;
+
+    await mockDashboardApi(page, { customerOrders: [deliveredOrder] });
+    await page.route("**/order/504/COMPLETED?*", async (route) => {
+      if (route.request().method() !== "OPTIONS") {
+        receiptRequests += 1;
+      }
+      await fulfillServerError(route);
+    });
+
+    await page.goto("/dashboard/purchase", { waitUntil: "domcontentloaded" });
+    await page
+      .getByRole("button", { name: "Подтвердить получение", exact: true })
+      .first()
+      .click();
+
+    const dialog = page.getByRole("dialog", {
+      name: "Подтвердить получение заказа",
+    });
+    await dialog
+      .getByRole("button", { name: "Подтвердить получение", exact: true })
+      .click();
+
+    await expect(dialog.getByRole("alert")).toContainText(
+      "Не удалось подтвердить получение",
+    );
+    await expect(dialog).toBeVisible();
+    expect(receiptRequests).toBe(1);
   });
 });

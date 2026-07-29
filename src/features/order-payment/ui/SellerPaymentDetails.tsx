@@ -7,6 +7,7 @@ import {
   Stack,
   Skeleton,
   Alert,
+  Button,
   Chip,
   IconButton,
   Tooltip,
@@ -227,6 +228,7 @@ interface SellerPaymentDetailsProps {
   isError: boolean;
   selectedAccountId: number | null;
   onSelectAccount: (id: number) => void;
+  onRetry: () => void;
 }
 
 export const SellerPaymentDetails: React.FC<SellerPaymentDetailsProps> = ({
@@ -235,6 +237,7 @@ export const SellerPaymentDetails: React.FC<SellerPaymentDetailsProps> = ({
   isError,
   selectedAccountId,
   onSelectAccount,
+  onRetry,
 }) => {
   if (isLoading) {
     return <PaymentDetailsSkeleton />;
@@ -242,8 +245,16 @@ export const SellerPaymentDetails: React.FC<SellerPaymentDetailsProps> = ({
 
   if (isError) {
     return (
-      <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-        Не удалось загрузить реквизиты продавца. Попробуйте обновить страницу.
+      <Alert
+        severity="error"
+        sx={{ mb: 3, borderRadius: 2 }}
+        action={
+          <Button color="inherit" size="small" onClick={onRetry}>
+            Повторить
+          </Button>
+        }
+      >
+        Не удалось загрузить реквизиты продавца.
       </Alert>
     );
   }

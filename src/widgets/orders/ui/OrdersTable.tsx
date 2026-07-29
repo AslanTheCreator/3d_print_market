@@ -262,7 +262,7 @@ const OrderCard = ({
             value={order.userInfo.login}
           />
           <OrderInfoItem
-            label="Сумма"
+            label="Стоимость товаров"
             value={formatOrderPrice(order)}
             highlight
           />

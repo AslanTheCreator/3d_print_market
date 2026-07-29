@@ -5,14 +5,15 @@ import { orderQueryKeys } from "./queryKeys";
 
 const invalidateOrdersLists = (
   queryClient: ReturnType<typeof useQueryClient>,
-) => {
-  queryClient.invalidateQueries({
-    queryKey: orderQueryKeys.sellerOrders(),
-  });
-  queryClient.invalidateQueries({
-    queryKey: orderQueryKeys.customerOrders(),
-  });
-};
+): Promise<void> =>
+  Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: orderQueryKeys.sellerOrders(),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: orderQueryKeys.customerOrders(),
+    }),
+  ]).then(() => undefined);
 
 const logMutationError = (message: string) => {
   return (error: unknown) => {
@@ -51,7 +52,7 @@ export const useConfirmOrderBySeller = () => {
       orderId: number;
       comment?: string;
     }) => orderApi.confirmOrderBySeller(orderId, comment),
-    onSuccess: () => invalidateOrdersLists(queryClient),
+    onSettled: () => invalidateOrdersLists(queryClient),
     onError: logMutationError("Ошибка подтверждения заказа продавцом:"),
   });
 };
@@ -68,7 +69,7 @@ export const useConfirmPreOrderBySeller = () => {
       orderId: number;
       comment?: string;
     }) => orderApi.confirmPreOrderBySeller(orderId, comment),
-    onSuccess: () => invalidateOrdersLists(queryClient),
+    onSettled: () => invalidateOrdersLists(queryClient),
     onError: logMutationError("Ошибка подтверждения предзаказа продавцом:"),
   });
 };
@@ -87,7 +88,7 @@ export const useConfirmPrepaymentByCustomer = () => {
       imageId: number;
       comment?: string;
     }) => orderApi.confirmPrepaymentByCustomer(orderId, imageId, comment),
-    onSuccess: () => invalidateOrdersLists(queryClient),
+    onSettled: () => invalidateOrdersLists(queryClient),
     onError: logMutationError("Ошибка подтверждения предоплаты:"),
   });
 };
@@ -106,7 +107,7 @@ export const useConfirmPaymentByCustomer = () => {
       imageId: number;
       comment?: string;
     }) => orderApi.confirmPaymentByCustomer(orderId, imageId, comment),
-    onSuccess: () => invalidateOrdersLists(queryClient),
+    onSettled: () => invalidateOrdersLists(queryClient),
     onError: logMutationError("Ошибка подтверждения оплаты:"),
   });
 };
@@ -123,7 +124,7 @@ export const useConfirmReceiptByCustomer = () => {
       orderId: number;
       comment?: string;
     }) => orderApi.confirmReceiptByCustomer(orderId, comment),
-    onSuccess: () => invalidateOrdersLists(queryClient),
+    onSettled: () => invalidateOrdersLists(queryClient),
     onError: logMutationError("Ошибка подтверждения получения заказа:"),
   });
 };
@@ -142,7 +143,7 @@ export const useSendOrderBySeller = () => {
       deliveryUrl: string;
       comment?: string;
     }) => orderApi.sendOrderBySeller(orderId, deliveryUrl, comment),
-    onSuccess: () => invalidateOrdersLists(queryClient),
+    onSettled: () => invalidateOrdersLists(queryClient),
     onError: logMutationError("Ошибка отправки заказа:"),
   });
 };

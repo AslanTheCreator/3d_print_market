@@ -142,7 +142,11 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
           <Typography variant="body1" color="text.secondary">
             {itemsCount} {getItemsWord(itemsCount)}
           </Typography>
-          <Typography variant="body1" fontWeight={500}>
+          <Typography
+            data-testid="checkout-summary-products-total"
+            variant="body1"
+            fontWeight={500}
+          >
             {formattedProductTotal}
           </Typography>
         </Box>
@@ -204,7 +208,12 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
         <Typography variant="h6" fontWeight={600}>
           Итого
         </Typography>
-        <Typography variant="h5" fontWeight={700} color="text.primary">
+        <Typography
+          data-testid="checkout-summary-order-total"
+          variant="h5"
+          fontWeight={700}
+          color="text.primary"
+        >
           {formattedOrderTotal}
         </Typography>
       </Box>

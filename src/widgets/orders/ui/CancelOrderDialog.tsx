@@ -16,8 +16,12 @@ import {
   Chip,
 } from "@mui/material";
 import { Close, Cancel, Warning } from "@mui/icons-material";
-import { ListOrdersModel } from "@/entities/order";
+import {
+  getOrderPaymentBreakdown,
+  type ListOrdersModel,
+} from "@/entities/order";
 import { useOrderCancelAction } from "@/features/order-cancel";
+import { formatPrice } from "@/shared/lib";
 type UserRole = "seller" | "customer";
 
 interface CancelOrderDialogProps {
@@ -51,6 +55,7 @@ export const CancelOrderDialog = ({
 }: CancelOrderDialogProps) => {
   const [reason, setReason] = useState("");
   const [comment, setComment] = useState("");
+  const paymentBreakdown = getOrderPaymentBreakdown(order);
 
   const handleClose = () => {
     setReason("");
@@ -112,8 +117,30 @@ export const CancelOrderDialog = ({
             {order.product.name}
           </Typography>
           <Typography variant="body2" fontWeight={500}>
-            Сумма: {order.totalPrice} {order.product.currency}
+            Стоимость товаров:{" "}
+            {formatPrice(
+              paymentBreakdown.productTotal,
+              order.product.currency,
+            )}
           </Typography>
+          {paymentBreakdown.isPreorder && (
+            <>
+              <Typography variant="body2" color="text.secondary">
+                Предоплата:{" "}
+                {formatPrice(
+                  paymentBreakdown.prepaymentTotal,
+                  order.product.currency,
+                )}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Остаток:{" "}
+                {formatPrice(
+                  paymentBreakdown.remainingTotal,
+                  order.product.currency,
+                )}
+              </Typography>
+            </>
+          )}
         </Paper>
 
         {/* Предупреждение */}

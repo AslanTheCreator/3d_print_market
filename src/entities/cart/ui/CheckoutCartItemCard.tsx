@@ -3,6 +3,7 @@
 import {
   Box,
   Checkbox,
+  Chip,
   IconButton,
   Stack,
   Typography,
@@ -52,8 +53,14 @@ export const CheckoutCartItemCard = ({
   const { product } = item;
   const { id, name, price, categories, image, currency } = product;
   const isExternalOnly = product.availability === "EXTERNAL_ONLY";
+  const isPreorder = product.availability === "PREORDER";
   const isStockInsufficient =
     !isExternalOnly && item.enoughStock === false;
+  const displayQuantity = isExternalOnly ? 1 : quantity;
+  const fullPrice = price * displayQuantity;
+  const preorderPrepayment = product.prepaymentAmount * displayQuantity;
+  const preorderRemainder =
+    (price - product.prepaymentAmount) * displayQuantity;
   const productImage = image?.[0] ?? null;
   const productImageSrc = getImageUrl(productImage, "thumbnail");
   const imageSrc = productImageSrc && !hasImageError ? productImageSrc : null;
@@ -182,6 +189,16 @@ export const CheckoutCartItemCard = ({
                 {categoryName}
               </Typography>
             )}
+            {isPreorder && (
+              <Chip
+                data-testid={`checkout-preorder-badge-${id}`}
+                label="Предзаказ"
+                color="primary"
+                variant="outlined"
+                size="small"
+                sx={{ mb: 0.75, fontWeight: 600 }}
+              />
+            )}
             <Link
               href={`/catalog/${id}/detail`}
               style={{ textDecoration: "none" }}
@@ -270,19 +287,45 @@ export const CheckoutCartItemCard = ({
 
         {/* Price and Quantity */}
         <Stack
-          direction="row"
+          direction={{ xs: "column", sm: "row" }}
           justifyContent="space-between"
-          alignItems="center"
+          alignItems={{ xs: "stretch", sm: "center" }}
+          gap={1.5}
           sx={{ mt: { xs: 1.5, sm: 2 } }}
         >
-          <Typography
-            variant="h6"
-            component="p"
-            fontWeight={700}
-            color="text.primary"
-          >
-            {formatPrice(price * (isExternalOnly ? 1 : quantity), currency)}
-          </Typography>
+          {isPreorder ? (
+            <Stack
+              data-testid={`checkout-preorder-finance-${id}`}
+              spacing={0.5}
+              sx={{ flex: 1, maxWidth: 360 }}
+            >
+              <PriceRow
+                testId={`checkout-preorder-total-${id}`}
+                label="Полная стоимость"
+                value={formatPrice(fullPrice, currency)}
+                emphasized
+              />
+              <PriceRow
+                testId={`checkout-preorder-prepayment-${id}`}
+                label="Предоплата"
+                value={formatPrice(preorderPrepayment, currency)}
+              />
+              <PriceRow
+                testId={`checkout-preorder-remainder-${id}`}
+                label="Остаток после предоплаты"
+                value={formatPrice(preorderRemainder, currency)}
+              />
+            </Stack>
+          ) : (
+            <Typography
+              variant="h6"
+              component="p"
+              fontWeight={700}
+              color="text.primary"
+            >
+              {formatPrice(fullPrice, currency)}
+            </Typography>
+          )}
 
           {isExternalOnly ? (
             actionSlot
@@ -303,3 +346,41 @@ export const CheckoutCartItemCard = ({
     </Box>
   );
 };
+
+interface PriceRowProps {
+  testId: string;
+  label: string;
+  value: string;
+  emphasized?: boolean;
+}
+
+const PriceRow = ({
+  testId,
+  label,
+  value,
+  emphasized = false,
+}: PriceRowProps) => (
+  <Stack
+    data-testid={testId}
+    direction="row"
+    justifyContent="space-between"
+    alignItems="baseline"
+    gap={2}
+  >
+    <Typography
+      variant={emphasized ? "body1" : "caption"}
+      color={emphasized ? "text.primary" : "text.secondary"}
+      fontWeight={emphasized ? 700 : 500}
+    >
+      {label}
+    </Typography>
+    <Typography
+      variant={emphasized ? "h6" : "body2"}
+      color="text.primary"
+      fontWeight={emphasized ? 700 : 600}
+      sx={{ whiteSpace: "nowrap" }}
+    >
+      {value}
+    </Typography>
+  </Stack>
+);

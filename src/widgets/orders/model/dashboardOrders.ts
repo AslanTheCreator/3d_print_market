@@ -6,11 +6,13 @@ import {
   ORDER_PAYMENT_STATUSES,
   ORDER_PROCESSING_STATUSES,
   ORDER_SHIPPING_STATUSES,
+  getOrderPaymentBreakdown,
   isActiveOrderStatus,
   orderNeedsAttention,
   type ListOrdersModel,
   type OrderStatus,
 } from "@/entities/order";
+import { parseOrderDateTimestamp } from "./orderDate";
 
 export type OrdersUserRole = "seller" | "customer";
 
@@ -101,16 +103,18 @@ const dateTimeFormatter = new Intl.DateTimeFormat("ru-RU", {
 });
 
 export const formatOrderPrice = (order: ListOrdersModel) =>
-  `${priceFormatter.format(order.totalPrice)} ${order.product.currency}`;
+  `${priceFormatter.format(getOrderPaymentBreakdown(order).productTotal)} ${
+    order.product.currency
+  }`;
 
 export const formatOrderDate = (date: string) => {
-  const parsedDate = new Date(date);
+  const timestamp = parseOrderDateTimestamp(date);
 
-  if (Number.isNaN(parsedDate.getTime())) {
+  if (timestamp === null) {
     return "Дата неизвестна";
   }
 
-  return dateTimeFormatter.format(parsedDate);
+  return dateTimeFormatter.format(new Date(timestamp));
 };
 
 export const getOrderPeerLabel = (userRole: OrdersUserRole) =>
@@ -181,8 +185,16 @@ export const sortOrders = (
       }
     }
 
-    const firstCreatedAt = new Date(first.createdAt).getTime();
-    const secondCreatedAt = new Date(second.createdAt).getTime();
+    const firstCreatedAt = parseOrderDateTimestamp(first.createdAt);
+    const secondCreatedAt = parseOrderDateTimestamp(second.createdAt);
+
+    if (firstCreatedAt === null || secondCreatedAt === null) {
+      if (firstCreatedAt === secondCreatedAt) {
+        return 0;
+      }
+
+      return firstCreatedAt === null ? 1 : -1;
+    }
 
     if (sortId === "oldest") {
       return firstCreatedAt - secondCreatedAt;
