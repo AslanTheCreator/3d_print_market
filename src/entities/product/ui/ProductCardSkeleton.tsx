@@ -5,15 +5,10 @@ import {
   CardContent,
   Skeleton,
   Box,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import React from "react";
 
 export const ProductCardSkeleton: React.FC = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
   return (
     <Card
       sx={{
@@ -31,7 +26,7 @@ export const ProductCardSkeleton: React.FC = () => {
       <Box
         sx={{
           width: "100%",
-          aspectRatio: isMobile ? "1/1.2" : "1/1.33",
+          aspectRatio: { xs: "1/1.2", sm: "1/1.33" },
         }}
       >
         <Skeleton
@@ -47,7 +42,7 @@ export const ProductCardSkeleton: React.FC = () => {
           p: { xs: 1.25, sm: 1.5 },
           display: "flex",
           flexDirection: "column",
-          gap: isMobile ? 1 : 1.25,
+          gap: { xs: 1, sm: 1.25 },
         }}
       >
         <Skeleton variant="text" width="52%" height={12} />

@@ -18,19 +18,15 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useSearch } from "../model/useSearch";
 
 interface SearchFormProps {
-  isMobile?: boolean;
   placeholder?: string;
 }
 
 export const SearchForm = ({
-  isMobile = false,
   placeholder = "Поиск",
 }: SearchFormProps) => {
   const theme = useTheme();
   const searchFormRef = React.useRef<HTMLFormElement | null>(null);
-  const suggestionsId = isMobile
-    ? "mobile-product-search-suggestions"
-    : "desktop-product-search-suggestions";
+  const suggestionsId = "product-search-suggestions";
   const {
     searchQuery,
     productNameSuggestions,
@@ -67,8 +63,8 @@ export const SearchForm = ({
           display: "flex",
           alignItems: "center",
           width: "100%",
-          height: isMobile ? 35 : 58,
-          borderRadius: isMobile ? 1 : 2,
+          height: { xs: 35, md: 58 },
+          borderRadius: { xs: 1, md: 2 },
           backgroundColor: "white",
           boxShadow: "none",
           border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
@@ -109,8 +105,8 @@ export const SearchForm = ({
             flex: 1,
             color: theme.palette.text.primary,
             "& .MuiInputBase-input": {
-              padding: isMobile ? "8px 0" : "10px 0",
-              fontSize: isMobile ? "0.875rem" : "1rem",
+              padding: { xs: "8px 0", md: "10px 0" },
+              fontSize: { xs: "0.875rem", md: "1rem" },
               "&::placeholder": {
                 color: theme.palette.text.secondary,
                 opacity: 1,
@@ -204,7 +200,7 @@ export const SearchForm = ({
                   onMouseEnter={() => handleSuggestionMouseEnter(index)}
                   onClick={() => handleSuggestionSelect(suggestion)}
                   sx={{
-                    py: isMobile ? 0.75 : 1,
+                    py: { xs: 0.75, md: 1 },
                     px: 2,
                     "&.Mui-selected": {
                       bgcolor: alpha(theme.palette.primary.main, 0.08),

@@ -11,8 +11,6 @@ import {
   DialogContentText,
   DialogTitle,
   Tooltip,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import { getSafeExternalUrl } from "@/shared/lib";
 
@@ -37,8 +35,6 @@ export function ExternalPurchaseButton({
   disabled = false,
 }: ExternalPurchaseButtonProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const safeExternalUrl = getSafeExternalUrl(externalUrl);
   const hasInvalidUrl = safeExternalUrl === null;
 
@@ -62,22 +58,20 @@ export function ExternalPurchaseButton({
       startIcon={
         variant === "default" ? (
           <ShoppingCartOutlinedIcon
-            sx={{ fontSize: isMobile ? "0.875rem" : "1rem" }}
+            sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
           />
         ) : undefined
       }
       sx={{
         fontWeight: 600,
         transition: "all 0.2s ease-in-out",
-        py: variant === "detailed" ? 1.5 : isMobile ? 0.75 : 1,
+        py: variant === "detailed" ? 1.5 : { xs: 0.75, sm: 1 },
         fontSize:
           variant === "detailed"
             ? "16px"
-            : isMobile
-              ? "0.75rem"
-              : "0.875rem",
+            : { xs: "0.75rem", sm: "0.875rem" },
         borderRadius:
-          variant === "detailed" ? "12px" : isMobile ? 1 : 1.5,
+          variant === "detailed" ? "12px" : { xs: 1, sm: 1.5 },
         "&:hover": {
           bgcolor: "primary.dark",
         },

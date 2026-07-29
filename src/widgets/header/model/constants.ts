@@ -11,11 +11,6 @@ export const LOGO_SIZES = {
   desktop: { width: 69, height: 85 },
 } as const;
 
-export const SITE_LOGO_SIZES = {
-  mobile: { width: 50, height: 50 },
-  desktop: { width: 116, height: 58 },
-} as const;
-
 export const ICON_SIZES = {
   mobile: 28,
   desktop: 24,

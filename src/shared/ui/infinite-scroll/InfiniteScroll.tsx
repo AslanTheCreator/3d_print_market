@@ -7,8 +7,6 @@ import {
   CircularProgress,
   Fade,
   Skeleton,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 
 interface InfiniteScrollProps {
@@ -26,9 +24,6 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
   children,
   showSkeletons = true,
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
   const { ref, entry } = useIntersectionObserver({
     threshold: 0.1,
   });
@@ -38,11 +33,6 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
       onLoadMore();
     }
   }, [entry, hasNextPage, isFetchingNextPage, onLoadMore]);
-
-  const getSkeletonCount = () => {
-    if (isMobile) return 4;
-    return 6;
-  };
 
   return (
     <div>
@@ -63,7 +53,7 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
                   gap: { xs: 1, sm: 1.5, md: 2.5 },
                 }}
               >
-                {Array.from({ length: getSkeletonCount() }).map((_, index) => (
+                {Array.from({ length: 6 }).map((_, index) => (
                   <Skeleton
                     key={`loading-skeleton-${index}`}
                     variant="rounded"
@@ -71,7 +61,9 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
                     sx={{
                       width: "100%",
                       borderRadius: 2,
-                      aspectRatio: isMobile ? "0.72" : "0.7",
+                      aspectRatio: { xs: "0.72", sm: "0.7" },
+                      display:
+                        index >= 4 ? { xs: "none", sm: "block" } : "block",
                     }}
                   />
                 ))}

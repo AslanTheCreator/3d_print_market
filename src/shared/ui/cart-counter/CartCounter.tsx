@@ -3,7 +3,7 @@
 "use client";
 
 import React from "react";
-import { Box, Typography, useTheme, useMediaQuery, alpha } from "@mui/material";
+import { Box, Typography, useTheme, alpha } from "@mui/material";
 import { Add, Remove } from "@mui/icons-material";
 
 interface CartCounterProps {
@@ -41,8 +41,6 @@ export const CartCounter: React.FC<CartCounterProps> = ({
   size = "compact",
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const device = isMobile ? "mobile" : "desktop";
   const config = sizeConfig[size];
 
   const handleDecrement = (e: React.MouseEvent) => {
@@ -68,9 +66,12 @@ export const CartCounter: React.FC<CartCounterProps> = ({
         alignItems: "center",
         justifyContent: "space-between",
         width: "100%",
-        height: config.height[device],
+        height: { xs: config.height.mobile, sm: config.height.desktop },
         bgcolor: alpha(theme.palette.primary.main, 0.1),
-        borderRadius: config.borderRadius[device],
+        borderRadius: {
+          xs: config.borderRadius.mobile,
+          sm: config.borderRadius.desktop,
+        },
         overflow: "hidden",
         opacity: disabled ? 0.6 : 1,
         transition: "all 0.2s ease-in-out",
@@ -82,7 +83,10 @@ export const CartCounter: React.FC<CartCounterProps> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          width: config.buttonWidth[device],
+          width: {
+            xs: config.buttonWidth.mobile,
+            sm: config.buttonWidth.desktop,
+          },
           height: "100%",
           cursor: disabled ? "not-allowed" : "pointer",
           transition: "background-color 0.15s ease",
@@ -100,7 +104,10 @@ export const CartCounter: React.FC<CartCounterProps> = ({
       >
         <Remove
           sx={{
-            fontSize: config.iconSize[device],
+            fontSize: {
+              xs: config.iconSize.mobile,
+              sm: config.iconSize.desktop,
+            },
             color: theme.palette.primary.main,
           }}
         />
@@ -111,7 +118,10 @@ export const CartCounter: React.FC<CartCounterProps> = ({
           flex: 1,
           textAlign: "center",
           fontWeight: 700,
-          fontSize: config.fontSize[device],
+          fontSize: {
+            xs: config.fontSize.mobile,
+            sm: config.fontSize.desktop,
+          },
           color: theme.palette.primary.main,
           userSelect: "none",
         }}
@@ -125,7 +135,10 @@ export const CartCounter: React.FC<CartCounterProps> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          width: config.buttonWidth[device],
+          width: {
+            xs: config.buttonWidth.mobile,
+            sm: config.buttonWidth.desktop,
+          },
           height: "100%",
           cursor: disabled || isAtMax ? "not-allowed" : "pointer",
           opacity: isAtMax ? 0.5 : 1,
@@ -146,7 +159,10 @@ export const CartCounter: React.FC<CartCounterProps> = ({
       >
         <Add
           sx={{
-            fontSize: config.iconSize[device],
+            fontSize: {
+              xs: config.iconSize.mobile,
+              sm: config.iconSize.desktop,
+            },
             color: theme.palette.primary.main,
           }}
         />

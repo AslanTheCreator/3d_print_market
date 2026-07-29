@@ -1,6 +1,15 @@
 "use client";
 
-import { Box, Chip, Paper, Stack, SxProps, Theme, Typography } from "@mui/material";
+import {
+  Box,
+  Chip,
+  Paper,
+  Stack,
+  StackProps,
+  SxProps,
+  Theme,
+  Typography,
+} from "@mui/material";
 import { Star, TrendingUp } from "@mui/icons-material";
 import Link from "next/link";
 import { SellerAvatar } from "@/entities/user";
@@ -13,8 +22,9 @@ interface ProductSellerCardProps {
   reviewsLabel: string;
   hasRating: boolean;
   avatarSize: number;
+  compactAvatarSize?: number;
   paperSx?: SxProps<Theme>;
-  rootSpacing?: number;
+  rootSpacing?: StackProps["spacing"];
 }
 
 export function ProductSellerCard({
@@ -25,6 +35,7 @@ export function ProductSellerCard({
   reviewsLabel,
   hasRating,
   avatarSize,
+  compactAvatarSize = avatarSize,
   paperSx,
   rootSpacing = 1.5,
 }: ProductSellerCardProps) {
@@ -52,11 +63,28 @@ export function ProductSellerCard({
         }}
       >
         <Stack direction="row" alignItems="center" spacing={rootSpacing}>
-          <SellerAvatar
-            participantId={participantId}
-            sellerLogin={sellerLogin}
-            size={avatarSize}
-          />
+          <Box
+            sx={{
+              width: { xs: compactAvatarSize, sm: avatarSize },
+              height: { xs: compactAvatarSize, sm: avatarSize },
+              flexShrink: 0,
+              "& > *": {
+                width: { xs: compactAvatarSize, sm: avatarSize },
+                height: { xs: compactAvatarSize, sm: avatarSize },
+                fontSize: {
+                  xs: compactAvatarSize * 0.4,
+                  sm: avatarSize * 0.4,
+                },
+              },
+            }}
+          >
+            <SellerAvatar
+              participantId={participantId}
+              sellerLogin={sellerLogin}
+              size={avatarSize}
+              compactSize={compactAvatarSize}
+            />
+          </Box>
           <Box flex={1} minWidth={0}>
             <Typography variant="subtitle2" fontWeight={600} noWrap>
               {displayName}

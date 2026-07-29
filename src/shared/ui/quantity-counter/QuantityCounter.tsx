@@ -8,7 +8,7 @@ interface QuantityCounterProps {
   disabled?: boolean;
   min?: number;
   max?: number;
-  size?: "small" | "medium";
+  size?: "small" | "medium" | "responsive";
 }
 
 export const QuantityCounter = ({
@@ -25,15 +25,27 @@ export const QuantityCounter = ({
   const isMinReached = value <= min;
   const isMaxReached = max !== undefined && value >= max;
 
-  const buttonSize = size === "small" ? 28 : 36;
-  const iconSize = size === "small" ? 16 : 20;
+  const buttonSize =
+    size === "responsive" ? { xs: 28, sm: 36 } : size === "small" ? 28 : 36;
+  const iconSize =
+    size === "responsive" ? { xs: 16, sm: 20 } : size === "small" ? 16 : 20;
+  const gap =
+    size === "responsive" ? { xs: 1, sm: 1.5 } : size === "small" ? 1 : 1.5;
+  const valueMinWidth =
+    size === "responsive" ? { xs: 24, sm: 32 } : size === "small" ? 24 : 32;
+  const valueFontSize =
+    size === "responsive"
+      ? { xs: "0.875rem", sm: "1rem" }
+      : size === "small"
+        ? "0.875rem"
+        : "1rem";
 
   return (
     <Box
       sx={{
         display: "inline-flex",
         alignItems: "center",
-        gap: size === "small" ? 1 : 1.5,
+        gap,
       }}
       onClick={(e) => {
         e.preventDefault();
@@ -66,10 +78,10 @@ export const QuantityCounter = ({
 
       <Typography
         sx={{
-          minWidth: size === "small" ? 24 : 32,
+          minWidth: valueMinWidth,
           textAlign: "center",
           fontWeight: 600,
-          fontSize: size === "small" ? "0.875rem" : "1rem",
+          fontSize: valueFontSize,
           color: theme.palette.text.primary,
           userSelect: "none",
         }}

@@ -8,7 +8,6 @@ import {
   Stack,
   Button,
   useTheme,
-  useMediaQuery,
   alpha,
   Fade,
   Grow,
@@ -32,7 +31,6 @@ export const OrderSuccessState: React.FC<OrderSuccessStateProps> = ({
   onGoHome,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
@@ -55,8 +53,8 @@ export const OrderSuccessState: React.FC<OrderSuccessStateProps> = ({
           <Grow in timeout={800}>
             <Box
               sx={{
-                width: isMobile ? 100 : 120,
-                height: isMobile ? 100 : 120,
+                width: { xs: 100, sm: 120 },
+                height: { xs: 100, sm: 120 },
                 borderRadius: "50%",
                 bgcolor: alpha(theme.palette.success.main, 0.1),
                 display: "flex",
@@ -67,7 +65,7 @@ export const OrderSuccessState: React.FC<OrderSuccessStateProps> = ({
             >
               <CheckCircleOutline
                 sx={{
-                  fontSize: isMobile ? 56 : 68,
+                  fontSize: { xs: 56, sm: 68 },
                   color: theme.palette.success.main,
                 }}
               />
@@ -78,9 +76,11 @@ export const OrderSuccessState: React.FC<OrderSuccessStateProps> = ({
           <Fade in={showContent} timeout={500}>
             <Stack spacing={1.5} alignItems="center" sx={{ mb: 4 }}>
               <Typography
-                variant={isMobile ? "h5" : "h4"}
+                variant="h4"
+                component="h2"
                 fontWeight={700}
                 color="text.primary"
+                sx={{ fontSize: { xs: "1.125rem", sm: "1.25rem" } }}
               >
                 Заказ оформлен!
               </Typography>
@@ -155,9 +155,9 @@ export const OrderSuccessState: React.FC<OrderSuccessStateProps> = ({
           {/* Кнопки */}
           <Fade in={showContent} timeout={900}>
             <Stack
-              direction={isMobile ? "column" : "row"}
+              direction={{ xs: "column", sm: "row" }}
               spacing={2}
-              sx={{ width: isMobile ? "100%" : "auto" }}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
             >
               <Button
                 variant="contained"
@@ -165,7 +165,7 @@ export const OrderSuccessState: React.FC<OrderSuccessStateProps> = ({
                 startIcon={<Receipt />}
                 onClick={onGoToOrders}
                 sx={{
-                  minWidth: isMobile ? "100%" : 200,
+                  minWidth: { xs: "100%", sm: 200 },
                   textTransform: "none",
                   py: 1.5,
                 }}
@@ -179,7 +179,7 @@ export const OrderSuccessState: React.FC<OrderSuccessStateProps> = ({
                 startIcon={<Home />}
                 onClick={onGoHome}
                 sx={{
-                  minWidth: isMobile ? "100%" : 200,
+                  minWidth: { xs: "100%", sm: 200 },
                   textTransform: "none",
                   py: 1.5,
                 }}

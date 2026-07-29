@@ -12,7 +12,6 @@ import {
   Skeleton,
   useTheme,
   alpha,
-  useMediaQuery,
   Chip,
 } from "@mui/material";
 import { Schedule } from "@mui/icons-material";
@@ -41,7 +40,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
   const [hasImageError, setHasImageError] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const isPreorder = availability === "PREORDER";
   const productImage = image?.[0] ?? null;
@@ -99,7 +97,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           sx={{
             position: "relative",
             width: "100%",
-            aspectRatio: isMobile ? "1/1.2" : "1/1.33",
+            aspectRatio: { xs: "1/1.2", sm: "1/1.33" },
             overflow: "hidden",
             backgroundColor: alpha(theme.palette.primary.main, 0.04),
           }}
@@ -148,8 +146,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 bgcolor: alpha(theme.palette.preorder.main, 0.92),
                 color: theme.palette.preorder.contrastText,
                 fontWeight: 700,
-                fontSize: isMobile ? "0.65rem" : "0.7rem",
-                height: isMobile ? 22 : 24,
+                fontSize: { xs: "0.65rem", sm: "0.7rem" },
+                height: { xs: 22, sm: 24 },
                 borderRadius: 1.5,
                 backdropFilter: "blur(4px)",
                 boxShadow: "0 4px 12px rgba(15, 23, 42, 0.12)",
@@ -179,7 +177,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   textOverflow: "ellipsis",
                   overflow: "hidden",
                   whiteSpace: "nowrap",
-                  fontSize: isMobile ? "0.625rem" : "0.7rem",
+                  fontSize: { xs: "0.625rem", sm: "0.7rem" },
                   fontWeight: 500,
                   letterSpacing: "0.02em",
                 }}
@@ -189,11 +187,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )}
 
             <Typography
-              fontSize={isMobile ? "0.82rem" : "0.92rem"}
               fontWeight={500}
               color="text.primary"
               noWrap
-              sx={{ lineHeight: 1.3 }}
+              sx={{
+                fontSize: { xs: "0.82rem", sm: "0.92rem" },
+                lineHeight: 1.3,
+              }}
             >
               {name}
             </Typography>

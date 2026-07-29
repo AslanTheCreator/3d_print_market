@@ -4,7 +4,6 @@ import {
   Button,
   Stack,
   Tooltip,
-  useMediaQuery,
   useTheme,
 } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
@@ -41,7 +40,6 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   stockCount,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const router = useRouter();
   const {
     isOpen,
@@ -147,9 +145,9 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
 
     return {
       ...baseStyles,
-      py: isMobile ? 0.75 : 1,
-      fontSize: isMobile ? "0.75rem" : "0.875rem",
-      borderRadius: isMobile ? 1 : 1.5,
+      py: { xs: 0.75, sm: 1 },
+      fontSize: { xs: "0.75rem", sm: "0.875rem" },
+      borderRadius: { xs: 1, sm: 1.5 },
     };
   };
 
@@ -208,7 +206,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       const detailedContent = (
         <Stack
           direction="row"
-          spacing={isMobile ? 1 : 2}
+          spacing={{ xs: 1, sm: 2 }}
           alignItems="center"
           onClick={(e) => {
             e.preventDefault();
@@ -216,7 +214,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
           }}
           sx={{ width: fullWidth ? "100%" : "auto" }}
         >
-          <Box sx={{ flexShrink: 0, minWidth: isMobile ? 132 : 156 }}>
+          <Box sx={{ flexShrink: 0, minWidth: { xs: 132, sm: 156 } }}>
             <CartCounter
               value={quantity}
               onIncrement={handleIncrementClick}
@@ -230,24 +228,32 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
           <Button
             variant="contained"
             onClick={() => router.push("/checkout")}
-            endIcon={isMobile ? undefined : <ChevronRightIcon />}
+            endIcon={<ChevronRightIcon />}
             fullWidth
             sx={{
               minWidth: 0,
               borderRadius: 3,
-              fontSize: isMobile ? "14px" : "16px",
+              fontSize: { xs: "14px", sm: "16px" },
               fontWeight: 600,
-              height: isMobile ? 44 : 48,
-              px: isMobile ? 1.5 : 2,
+              height: { xs: 44, sm: 48 },
+              px: { xs: 1.5, sm: 2 },
               whiteSpace: "nowrap",
               textOverflow: "ellipsis",
               overflow: "hidden",
+              "& .MuiButton-endIcon": {
+                display: { xs: "none", sm: "inherit" },
+              },
               "&:hover": {
                 bgcolor: "primary.dark",
               },
             }}
           >
-            {isMobile ? "Оформить" : "В корзине"}
+            <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
+              Оформить
+            </Box>
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+              В корзине
+            </Box>
           </Button>
         </Stack>
       );
@@ -318,7 +324,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
           !isOwnProduct &&
           !isOwnerCheckError ? (
             <ShoppingCartOutlinedIcon
-              sx={{ fontSize: isMobile ? "0.875rem" : "1rem" }}
+              sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
             />
           ) : undefined
         }

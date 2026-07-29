@@ -5,7 +5,6 @@ import {
   Typography,
   Stack,
   useTheme,
-  useMediaQuery,
   Button,
   SvgIconProps,
 } from "@mui/material";
@@ -96,11 +95,11 @@ interface ErrorStateProps {
   useContainer?: boolean;
 }
 
-const getIconSize = (size: "small" | "medium" | "large", isMobile: boolean) => {
+const getIconSize = (size: "small" | "medium" | "large") => {
   const sizes = {
-    small: isMobile ? 48 : 56,
-    medium: isMobile ? 64 : 80,
-    large: isMobile ? 80 : 96,
+    small: { xs: 48, sm: 56 },
+    medium: { xs: 64, sm: 80 },
+    large: { xs: 80, sm: 96 },
   };
   return sizes[size];
 };
@@ -118,7 +117,6 @@ export const ErrorState = ({
   useContainer = true,
 }: ErrorStateProps) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // Получаем конфигурацию на основе типа
   const config = errorConfigs[type];
@@ -145,7 +143,7 @@ export const ErrorState = ({
     >
       <IconComponent
         sx={{
-          fontSize: getIconSize(iconSize, isMobile),
+          fontSize: getIconSize(iconSize),
           color: theme.palette.error.main,
           opacity: 0.8,
         }}
@@ -153,18 +151,21 @@ export const ErrorState = ({
 
       <Stack spacing={2} alignItems="center" maxWidth={500}>
         <Typography
-          variant={isMobile ? "h6" : "h5"}
+          variant="h5"
+          component="h2"
           fontWeight={700}
           color="text.primary"
           gutterBottom={false}
+          sx={{ fontSize: { xs: "1rem", sm: "1.125rem" } }}
         >
           {finalTitle}
         </Typography>
 
         <Typography
-          variant={isMobile ? "body2" : "body1"}
+          variant="body1"
           color="text.secondary"
           sx={{
+            fontSize: { xs: "0.875rem", sm: "1rem" },
             lineHeight: 1.6,
             maxWidth: 400,
             textAlign: "center",
@@ -181,10 +182,12 @@ export const ErrorState = ({
           variant="contained"
           startIcon={<RefreshIcon />}
           onClick={onRetry}
-          size={isMobile ? "medium" : "large"}
+          size="large"
           sx={{
             textTransform: "none",
             minWidth: 120,
+            fontSize: { xs: "0.875rem", sm: "0.9375rem" },
+            py: { xs: 1, sm: 1.25 },
           }}
         >
           {finalRetryText}
@@ -194,7 +197,7 @@ export const ErrorState = ({
       {/* Дополнительные действия */}
       {actions && (
         <Stack
-          direction={isMobile ? "column" : "row"}
+          direction={{ xs: "column", sm: "row" }}
           spacing={2}
           alignItems="center"
         >

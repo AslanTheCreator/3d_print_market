@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useMediaQuery, useTheme } from "@mui/material";
+import { useTheme } from "@mui/material";
 import type { PriceRange } from "@/entities/product";
 import { PriceRangeDesktopPanel } from "./price-range-filter/PriceRangeDesktopPanel";
 import { PriceRangeMobileDrawer } from "./price-range-filter/PriceRangeMobileDrawer";
@@ -20,11 +20,10 @@ export const PriceRangeFilter = ({
   onApply,
 }: PriceRangeFilterProps): React.ReactElement => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const filter = usePriceRangeFilter({
     value,
     availableRange,
-    isMobile,
+    compactBreakpoint: theme.breakpoints.values.sm,
     onApply,
   });
 
@@ -44,7 +43,7 @@ export const PriceRangeFilter = ({
         onBlur={filter.handleTriggerBlur}
       />
 
-      {isMobile ? (
+      {filter.surface === "mobile" ? (
         <PriceRangeMobileDrawer
           open={filter.isOpen}
           minPriceInput={filter.minPriceInput}
@@ -55,7 +54,9 @@ export const PriceRangeFilter = ({
           onReset={filter.handleReset}
           onClose={filter.handleMobileClose}
         />
-      ) : (
+      ) : null}
+
+      {filter.surface === "desktop" ? (
         <PriceRangeDesktopPanel
           open={filter.isOpen}
           anchorEl={filter.triggerWrapperRef.current}
@@ -71,7 +72,7 @@ export const PriceRangeFilter = ({
           onFocus={filter.handlePopoverFocus}
           onBlur={filter.handlePopoverBlur}
         />
-      )}
+      ) : null}
     </>
   );
 };

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Add, Inventory2Outlined } from "@mui/icons-material";
-import { Box, Button, useMediaQuery, useTheme } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/shared/ui/page-header";
 
@@ -13,9 +13,7 @@ interface DashboardProductsWidgetProps {
 export const DashboardProductsWidget = ({
   children,
 }: DashboardProductsWidgetProps) => {
-  const theme = useTheme();
   const router = useRouter();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleCreateProduct = () => {
     router.push("/dashboard/products/new");
@@ -31,9 +29,10 @@ export const DashboardProductsWidget = ({
             variant="contained"
             startIcon={<Add />}
             onClick={handleCreateProduct}
-            size={isMobile ? "medium" : "large"}
-            fullWidth={isMobile}
+            size="large"
             sx={{
+              width: { xs: "100%", sm: "auto" },
+              py: { xs: 1, sm: 1.25 },
               fontWeight: 600,
               boxShadow: 2,
               "&:hover": {

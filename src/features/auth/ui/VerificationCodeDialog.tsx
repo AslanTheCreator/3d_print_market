@@ -9,7 +9,6 @@ import {
   Typography,
   Box,
   IconButton,
-  useMediaQuery,
   useTheme,
   alpha,
   TextField,
@@ -35,7 +34,6 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
   isLoading = false,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [code, setCode] = useState(["", "", "", "", ""]);
   const [error, setError] = useState("");
@@ -152,8 +150,8 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
           borderRadius: "16px",
           overflow: "visible",
           position: "relative",
-          mx: isMobile ? 2 : 3,
-          my: isMobile ? 2 : 3,
+          mx: { xs: 2, sm: 3 },
+          my: { xs: 2, sm: 3 },
         },
       }}
     >
@@ -175,8 +173,8 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
 
       <DialogContent
         sx={{
-          p: isMobile ? 3 : 4,
-          pb: isMobile ? 2 : 3,
+          p: { xs: 3, sm: 4 },
+          pb: { xs: 2, sm: 3 },
           textAlign: "center",
         }}
       >
@@ -189,8 +187,8 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
         >
           <Box
             sx={{
-              width: isMobile ? 64 : 80,
-              height: isMobile ? 64 : 80,
+              width: { xs: 64, sm: 80 },
+              height: { xs: 64, sm: 80 },
               borderRadius: "50%",
               backgroundColor: alpha(theme.palette.primary.main, 0.1),
               display: "flex",
@@ -201,7 +199,7 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
           >
             <Email
               sx={{
-                fontSize: isMobile ? 28 : 36,
+                fontSize: { xs: 28, sm: 36 },
                 color: theme.palette.primary.main,
               }}
             />
@@ -236,7 +234,7 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
             fontWeight: 700,
             mb: 1.5,
             color: theme.palette.text.primary,
-            fontSize: isMobile ? "1.25rem" : "1.5rem",
+            fontSize: { xs: "1.25rem", sm: "1.5rem" },
           }}
         >
           Подтверждение email
@@ -248,7 +246,7 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
             color: theme.palette.text.secondary,
             mb: 3,
             lineHeight: 1.6,
-            fontSize: isMobile ? "0.875rem" : "1rem",
+            fontSize: { xs: "0.875rem", sm: "1rem" },
           }}
         >
           Мы отправили код подтверждения на
@@ -259,7 +257,7 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
         <Box
           sx={{
             display: "flex",
-            gap: isMobile ? 1 : 1.5,
+            gap: { xs: 1, sm: 1.5 },
             justifyContent: "center",
             mb: 2,
           }}
@@ -276,15 +274,9 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
               onPaste={index === 0 ? handlePaste : undefined}
               inputProps={{
                 maxLength: 1,
-                style: {
-                  textAlign: "center",
-                  fontSize: isMobile ? "1.25rem" : "1.5rem",
-                  fontWeight: 600,
-                  padding: isMobile ? "12px 8px" : "16px 12px",
-                },
               }}
               sx={{
-                width: isMobile ? 40 : 48,
+                width: { xs: 40, sm: 48 },
                 "& .MuiOutlinedInput-root": {
                   borderRadius: "12px",
                   "&.Mui-focused": {
@@ -298,6 +290,12 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
                       borderColor: theme.palette.error.main,
                     },
                   },
+                },
+                "& .MuiInputBase-input": {
+                  textAlign: "center",
+                  fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                  fontWeight: 600,
+                  padding: { xs: "12px 8px", sm: "16px 12px" },
                 },
               }}
               error={!!error}
@@ -336,25 +334,25 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
 
       <DialogActions
         sx={{
-          p: isMobile ? 3 : 4,
+          p: { xs: 3, sm: 4 },
           pt: 0,
           gap: 1.5,
-          flexDirection: isMobile ? "column" : "row",
+          flexDirection: { xs: "column", sm: "row" },
         }}
       >
         <Button
           onClick={handleResend}
           variant="outlined"
-          fullWidth={isMobile}
           disabled={isResendDisabled}
           sx={{
+            width: { xs: "100%", sm: "auto" },
             borderRadius: "12px",
             py: 1.25,
             px: 3,
-            fontSize: isMobile ? "0.875rem" : "1rem",
+            fontSize: { xs: "0.875rem", sm: "1rem" },
             fontWeight: 600,
-            order: isMobile ? 2 : 1,
-            minWidth: isMobile ? "auto" : 120,
+            order: { xs: 2, sm: 1 },
+            minWidth: { xs: "auto", sm: 120 },
             position: "relative",
           }}
         >
@@ -369,16 +367,16 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
         <Button
           onClick={handleVerify}
           variant="contained"
-          fullWidth={isMobile}
           disabled={!isCodeComplete || isLoading}
           sx={{
+            width: { xs: "100%", sm: "auto" },
             borderRadius: "12px",
             py: 1.25,
             px: 3,
-            fontSize: isMobile ? "0.875rem" : "1rem",
+            fontSize: { xs: "0.875rem", sm: "1rem" },
             fontWeight: 600,
-            order: isMobile ? 1 : 2,
-            minWidth: isMobile ? "auto" : 140,
+            order: { xs: 1, sm: 2 },
+            minWidth: { xs: "auto", sm: 140 },
             boxShadow: "0 4px 16px rgba(239, 66, 132, 0.3)",
             "&:hover": {
               boxShadow: "0 6px 20px rgba(239, 66, 132, 0.4)",

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Typography, Stack, useMediaQuery, useTheme } from "@mui/material";
+import { Typography, Stack } from "@mui/material";
 import { Star } from "@mui/icons-material";
 import { formatPrice } from "@/shared/lib";
 import type { Availability } from "../model/types";
@@ -21,8 +21,6 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
   rating,
   reviewCount,
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isPreorder = availability === "PREORDER";
 
   const hasRating =
@@ -48,9 +46,11 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
           {/* Основная цена */}
           <Typography
             fontWeight={800}
-            fontSize={isMobile ? "1.125rem" : "1.25rem"}
             color="text.primary"
-            sx={{ lineHeight: 1.2 }}
+            sx={{
+              fontSize: { xs: "1.125rem", sm: "1.25rem" },
+              lineHeight: 1.2,
+            }}
           >
             {formatPrice(price)} ₽
           </Typography>
@@ -59,7 +59,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
             variant="caption"
             color="text.primary"
             sx={{
-              fontSize: isMobile ? "0.75rem" : "0.8rem",
+              fontSize: { xs: "0.75rem", sm: "0.8rem" },
               fontWeight: 600,
             }}
           >
@@ -70,9 +70,11 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
         <>
           <Typography
             fontWeight={800}
-            fontSize={isMobile ? "1rem" : "1.125rem"}
             color="text.primary"
-            sx={{ lineHeight: 1.2 }}
+            sx={{
+              fontSize: { xs: "1rem", sm: "1.125rem" },
+              lineHeight: 1.2,
+            }}
           >
             {formatPrice(price)} ₽
           </Typography>
@@ -82,7 +84,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
             variant="caption"
             sx={{
               visibility: "hidden",
-              fontSize: isMobile ? "0.75rem" : "0.8rem",
+              fontSize: { xs: "0.75rem", sm: "0.8rem" },
             }}
           >
             placeholder
@@ -99,14 +101,14 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
       >
         <Star
           sx={{
-            fontSize: isMobile ? "1rem" : "1.125rem",
+            fontSize: { xs: "1rem", sm: "1.125rem" },
             color: "warning.main",
           }}
         />
         <Typography
           variant="caption"
           sx={{
-            fontSize: isMobile ? "0.75rem" : "0.8rem",
+            fontSize: { xs: "0.75rem", sm: "0.8rem" },
             fontWeight: 600,
             color: "text.primary",
           }}
@@ -116,7 +118,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
         <Typography
           variant="caption"
           sx={{
-            fontSize: isMobile ? "0.7rem" : "0.75rem",
+            fontSize: { xs: "0.7rem", sm: "0.75rem" },
             color: "text.secondary",
           }}
         >
@@ -126,7 +128,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
           variant="caption"
           color="text.secondary"
           sx={{
-            fontSize: isMobile ? "0.7rem" : "0.75rem",
+            fontSize: { xs: "0.7rem", sm: "0.75rem" },
             fontWeight: 500,
           }}
         >

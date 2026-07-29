@@ -70,17 +70,11 @@ export const HomeProducts = ({
         >
           <ProductCatalog
             products={products}
-            leadingContent={(isMobile) => (
-              <ProductGridItem
-                isMobile={isMobile}
-                xs={12}
-                sm={6}
-                md={6}
-                lg={4}
-              >
+            leadingContent={
+              <ProductGridItem xs={12} sm={6} md={6} lg={4}>
                 <GiveawayCard />
               </ProductGridItem>
-            )}
+            }
             isLoading={isCatalogLoading}
             isError={hasError}
             onRetry={handleRetry}

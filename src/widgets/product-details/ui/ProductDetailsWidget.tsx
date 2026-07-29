@@ -4,15 +4,13 @@ import {
   Button,
   Container,
   Stack,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useProductDetails, ProductDetailsSkeleton } from "@/entities/product";
+import { useProductDetails } from "@/entities/product";
 import type { ProductDetail } from "@/entities/product";
 import { ErrorState } from "@/shared/ui/states";
-import { MobileProductDetails } from "./MobileProductDetails";
-import { DesktopProductDetails } from "./DesktopProductDetails";
+import { ProductDetailsContent } from "./ProductDetailsContent";
+import { ProductDetailsSkeleton } from "./ProductDetailsSkeleton";
 
 interface ProductDetailsWidgetProps {
   productId?: string;
@@ -27,8 +25,6 @@ export function ProductDetailsWidget({
   initialDataUpdatedAt,
   initialError,
 }: ProductDetailsWidgetProps) {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const router = useRouter();
 
   const { productCard, allImages, isLoading, isError } = useProductDetails({
@@ -60,7 +56,7 @@ export function ProductDetailsWidget({
               <Button
                 variant="contained"
                 onClick={() => router.push("/")}
-                fullWidth={isMobile}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
               >
                 На главную
               </Button>
@@ -71,14 +67,7 @@ export function ProductDetailsWidget({
     );
   }
 
-  const commonProps = {
-    productCard,
-    allImages,
-  };
-
-  return isMobile ? (
-    <MobileProductDetails {...commonProps} />
-  ) : (
-    <DesktopProductDetails {...commonProps} />
+  return (
+    <ProductDetailsContent productCard={productCard} allImages={allImages} />
   );
 }

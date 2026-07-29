@@ -4,13 +4,11 @@ import {
   Skeleton,
   Stack,
   useTheme,
-  useMediaQuery,
   alpha,
 } from "@mui/material";
 
 export const CartItemSkeleton: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
     <Paper
@@ -34,14 +32,13 @@ export const CartItemSkeleton: React.FC = () => {
         />
 
         <Stack flexGrow={1} spacing={0.5} justifyContent="flex-start">
-          <Skeleton variant="text" width={80} height={isMobile ? 16 : 18} />
-          <Skeleton variant="text" width="90%" height={isMobile ? 20 : 24} />
-          <Skeleton variant="text" width="60%" height={isMobile ? 20 : 24} />
+          <Skeleton variant="text" width={80} sx={{ height: { xs: 16, sm: 18 } }} />
+          <Skeleton variant="text" width="90%" sx={{ height: { xs: 20, sm: 24 } }} />
+          <Skeleton variant="text" width="60%" sx={{ height: { xs: 20, sm: 24 } }} />
           <Skeleton
             variant="text"
             width={100}
-            height={isMobile ? 18 : 20}
-            sx={{ mt: 0.5 }}
+            sx={{ mt: 0.5, height: { xs: 18, sm: 20 } }}
           />
         </Stack>
       </Stack>
@@ -51,28 +48,36 @@ export const CartItemSkeleton: React.FC = () => {
       <Stack direction="row" justifyContent="space-between" alignItems="center">
         <Skeleton
           variant="rectangular"
-          width={isMobile ? 32 : 40}
-          height={isMobile ? 32 : 40}
-          sx={{ borderRadius: "8px" }}
+          sx={{
+            width: { xs: 32, sm: 40 },
+            height: { xs: 32, sm: 40 },
+            borderRadius: "8px",
+          }}
         />
 
         <Stack direction="row" alignItems="center" spacing={1}>
           <Skeleton
             variant="rectangular"
-            width={isMobile ? 30 : 36}
-            height={isMobile ? 30 : 36}
-            sx={{ borderRadius: "8px" }}
+            sx={{
+              width: { xs: 30, sm: 36 },
+              height: { xs: 30, sm: 36 },
+              borderRadius: "8px",
+            }}
           />
           <Skeleton
             variant="text"
-            width={isMobile ? 24 : 28}
-            height={isMobile ? 20 : 24}
+            sx={{
+              width: { xs: 24, sm: 28 },
+              height: { xs: 20, sm: 24 },
+            }}
           />
           <Skeleton
             variant="rectangular"
-            width={isMobile ? 30 : 36}
-            height={isMobile ? 30 : 36}
-            sx={{ borderRadius: "8px" }}
+            sx={{
+              width: { xs: 30, sm: 36 },
+              height: { xs: 30, sm: 36 },
+              borderRadius: "8px",
+            }}
           />
         </Stack>
       </Stack>

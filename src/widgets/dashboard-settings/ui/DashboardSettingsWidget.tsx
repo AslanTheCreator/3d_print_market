@@ -7,7 +7,6 @@ import {
   Tab,
   Box,
   useTheme,
-  useMediaQuery,
   Skeleton,
   Stack,
 } from "@mui/material";
@@ -111,7 +110,6 @@ const TabPanel = ({ children, value, index }: TabPanelProps) => {
 
 function SettingsContent() {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab") as TabKey | null;
@@ -151,8 +149,8 @@ function SettingsContent() {
       <Tabs
         value={activeTab}
         onChange={handleTabChange}
-        variant={isMobile ? "scrollable" : "standard"}
-        scrollButtons={isMobile ? "auto" : false}
+        variant="scrollable"
+        scrollButtons="auto"
         allowScrollButtonsMobile
         sx={{
           borderBottom: 1,
@@ -163,6 +161,7 @@ function SettingsContent() {
           py: { xs: 1, sm: 0 },
           "& .MuiTabs-flexContainer": {
             gap: { xs: 1, sm: 0 },
+            justifyContent: "flex-start",
           },
           "& .MuiTabs-indicator": {
             display: { xs: "none", sm: "block" },
@@ -171,6 +170,7 @@ function SettingsContent() {
           },
           "& .MuiTabs-scrollButtons": {
             width: 28,
+            display: { xs: "inline-flex", sm: "none" },
             "&.Mui-disabled": {
               opacity: 0.2,
             },
@@ -182,7 +182,22 @@ function SettingsContent() {
             key={tab.key}
             icon={tab.icon}
             iconPosition="start"
-            label={isMobile ? tab.mobileLabel : tab.label}
+            label={
+              <Box component="span">
+                <Box
+                  component="span"
+                  sx={{ display: { xs: "inline", sm: "none" } }}
+                >
+                  {tab.mobileLabel}
+                </Box>
+                <Box
+                  component="span"
+                  sx={{ display: { xs: "none", sm: "inline" } }}
+                >
+                  {tab.label}
+                </Box>
+              </Box>
+            }
             id={`settings-tab-${index}`}
             aria-controls={`settings-tabpanel-${index}`}
             sx={{

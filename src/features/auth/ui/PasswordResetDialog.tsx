@@ -9,7 +9,6 @@ import {
   Typography,
   Box,
   IconButton,
-  useMediaQuery,
   useTheme,
   alpha,
   TextField,
@@ -34,7 +33,6 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
   onSubmit,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -94,8 +92,8 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
           borderRadius: "16px",
           overflow: "visible",
           position: "relative",
-          mx: isMobile ? 2 : 3,
-          my: isMobile ? 2 : 3,
+          mx: { xs: 2, sm: 3 },
+          my: { xs: 2, sm: 3 },
         },
       }}
     >
@@ -117,8 +115,8 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
 
       <DialogContent
         sx={{
-          p: isMobile ? 3 : 4,
-          pb: isMobile ? 2 : 3,
+          p: { xs: 3, sm: 4 },
+          pb: { xs: 2, sm: 3 },
           textAlign: "center",
         }}
       >
@@ -132,8 +130,8 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
         >
           <Box
             sx={{
-              width: isMobile ? 64 : 80,
-              height: isMobile ? 64 : 80,
+              width: { xs: 64, sm: 80 },
+              height: { xs: 64, sm: 80 },
               borderRadius: "50%",
               backgroundColor: alpha(
                 isSuccess
@@ -149,14 +147,14 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
             {isSuccess ? (
               <CheckCircle
                 sx={{
-                  fontSize: isMobile ? 36 : 44,
+                  fontSize: { xs: 36, sm: 44 },
                   color: theme.palette.success.main,
                 }}
               />
             ) : (
               <LockReset
                 sx={{
-                  fontSize: isMobile ? 28 : 36,
+                  fontSize: { xs: 28, sm: 36 },
                   color: theme.palette.primary.main,
                 }}
               />
@@ -171,7 +169,7 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
             fontWeight: 700,
             mb: 1.5,
             color: theme.palette.text.primary,
-            fontSize: isMobile ? "1.25rem" : "1.5rem",
+            fontSize: { xs: "1.25rem", sm: "1.5rem" },
           }}
         >
           {isSuccess ? "Проверьте почту" : "Забыли пароль?"}
@@ -184,7 +182,7 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
             color: theme.palette.text.secondary,
             mb: 3,
             lineHeight: 1.6,
-            fontSize: isMobile ? "0.875rem" : "1rem",
+            fontSize: { xs: "0.875rem", sm: "1rem" },
           }}
         >
           {isSuccess ? (
@@ -237,10 +235,10 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
 
       <DialogActions
         sx={{
-          p: isMobile ? 3 : 4,
+          p: { xs: 3, sm: 4 },
           pt: 0,
           gap: 1.5,
-          flexDirection: isMobile ? "column" : "row",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: isSuccess ? "center" : "space-between",
         }}
       >
@@ -248,14 +246,14 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
           <Button
             onClick={handleClose}
             variant="contained"
-            fullWidth={isMobile}
             sx={{
+              width: { xs: "100%", sm: "auto" },
               borderRadius: "12px",
               py: 1.25,
               px: 4,
-              fontSize: isMobile ? "0.875rem" : "1rem",
+              fontSize: { xs: "0.875rem", sm: "1rem" },
               fontWeight: 600,
-              minWidth: isMobile ? "auto" : 200,
+              minWidth: { xs: "auto", sm: 200 },
               boxShadow: "0 4px 16px rgba(239, 66, 132, 0.3)",
               "&:hover": {
                 boxShadow: "0 6px 20px rgba(239, 66, 132, 0.4)",
@@ -271,16 +269,16 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
             <Button
               onClick={handleClose}
               variant="outlined"
-              fullWidth={isMobile}
               disabled={isLoading}
               sx={{
+                width: { xs: "100%", sm: "auto" },
                 borderRadius: "12px",
                 py: 1.25,
                 px: 3,
-                fontSize: isMobile ? "0.875rem" : "1rem",
+                fontSize: { xs: "0.875rem", sm: "1rem" },
                 fontWeight: 600,
-                order: isMobile ? 2 : 1,
-                minWidth: isMobile ? "auto" : 120,
+                order: { xs: 2, sm: 1 },
+                minWidth: { xs: "auto", sm: 120 },
               }}
             >
               Отмена
@@ -288,16 +286,16 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
             <Button
               onClick={handleSubmit}
               variant="contained"
-              fullWidth={isMobile}
               disabled={isLoading || !email.trim()}
               sx={{
+                width: { xs: "100%", sm: "auto" },
                 borderRadius: "12px",
                 py: 1.25,
                 px: 3,
-                fontSize: isMobile ? "0.875rem" : "1rem",
+                fontSize: { xs: "0.875rem", sm: "1rem" },
                 fontWeight: 600,
-                order: isMobile ? 1 : 2,
-                minWidth: isMobile ? "auto" : 180,
+                order: { xs: 1, sm: 2 },
+                minWidth: { xs: "auto", sm: 180 },
                 boxShadow: "0 4px 16px rgba(239, 66, 132, 0.3)",
                 "&:hover": {
                   boxShadow: "0 6px 20px rgba(239, 66, 132, 0.4)",

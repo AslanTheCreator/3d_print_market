@@ -26,7 +26,11 @@ export function ProductDescription({
 
   return (
     <Stack spacing={1.5}>
-      <Typography variant={titleVariant} fontWeight={600}>
+      <Typography
+        variant={titleVariant}
+        fontWeight={600}
+        sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+      >
         Описание
       </Typography>
 
@@ -43,7 +47,7 @@ export function ProductDescription({
             !expanded && {
               display: "-webkit-box",
               WebkitBoxOrient: "vertical",
-              WebkitLineClamp: collapsedLines,
+              WebkitLineClamp: { xs: Math.min(collapsedLines, 4), sm: collapsedLines },
               overflow: "hidden",
             }),
         }}
@@ -53,6 +57,7 @@ export function ProductDescription({
 
       {canCollapse && (
         <Button
+          data-testid="product-description-toggle"
           variant="text"
           onClick={() => setExpanded((prev) => !prev)}
           aria-expanded={expanded}

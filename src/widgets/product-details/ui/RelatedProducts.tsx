@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Typography, Paper, useMediaQuery, useTheme } from "@mui/material";
+import { Box, Typography, Paper } from "@mui/material";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { useIntersectionObserver } from "usehooks-ts";
 import {
@@ -34,7 +34,6 @@ const RelatedProductsGrid = ({
   products,
   isLoading,
 }: RelatedProductsGridProps) => {
-  const theme = useTheme();
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const hasExternalProducts = products.some(
@@ -52,16 +51,21 @@ const RelatedProductsGrid = ({
     hasExternalProducts &&
     (isOwnerCheckPending || isOwnerCheckError);
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
-
-  const skeletonCount = isMobile ? 4 : isTablet ? 6 : 8;
 
   if (isLoading) {
     return (
-      <ProductGrid isMobile={isMobile}>
-        {Array.from({ length: skeletonCount }).map((_, index) => (
-          <ProductGridItem key={index} isMobile={isMobile}>
+      <ProductGrid>
+        {Array.from({ length: 8 }).map((_, index) => (
+          <ProductGridItem
+            key={index}
+            sx={{
+              display: {
+                xs: index < 4 ? "block" : "none",
+                sm: index < 6 ? "block" : "none",
+                md: "block",
+              },
+            }}
+          >
             <ProductCardSkeleton />
           </ProductGridItem>
         ))}
@@ -70,9 +74,9 @@ const RelatedProductsGrid = ({
   }
 
   return (
-    <ProductGrid isMobile={isMobile}>
+    <ProductGrid>
       {products.map((product) => (
-        <ProductGridItem key={product.id} isMobile={isMobile}>
+        <ProductGridItem key={product.id}>
           <Box sx={{ position: "relative" }}>
             <ProductCard
               {...product}

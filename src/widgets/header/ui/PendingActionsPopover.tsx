@@ -76,6 +76,7 @@ export const PendingActionsPopover: React.FC<PendingActionsPopoverProps> = ({
 
   return (
     <Popper
+      data-testid="pending-actions-popover"
       open={open}
       anchorEl={anchorEl}
       placement="bottom"

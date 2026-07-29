@@ -22,6 +22,7 @@ import type { ImageGalleryImage } from "./types";
 interface ImageGalleryProps {
   images: ImageGalleryImage[];
   alt?: string;
+  imageSizes?: string;
 }
 
 const LazyFullscreenImageViewer = dynamic(
@@ -89,6 +90,7 @@ const imageGallerySwiperStyles = (theme: Theme) => ({
 export function ImageGallery({
   images,
   alt = "Изображение товара",
+  imageSizes,
 }: ImageGalleryProps) {
   const theme = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -268,6 +270,7 @@ export function ImageGallery({
                   src={image.previewSrc}
                   alt={`${alt} ${index + 1}`}
                   priority={index === 0}
+                  sizes={imageSizes}
                 />
               </SwiperSlide>
             ))}

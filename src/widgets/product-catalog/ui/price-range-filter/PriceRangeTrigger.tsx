@@ -9,7 +9,7 @@ interface PriceRangeTriggerProps {
   label: string;
   hasActiveValue: boolean;
   isOpen: boolean;
-  onClick: () => void;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onClearIndicatorClick: (event: React.MouseEvent<HTMLElement>) => void;
   onMouseEnter: () => void;
   onMouseLeave: (event: React.MouseEvent<HTMLElement>) => void;
@@ -38,10 +38,12 @@ export const PriceRangeTrigger = ({
       sx={{ display: "inline-flex" }}
     >
       <Button
+        data-testid="price-range-trigger"
         ref={triggerRef}
         onClick={onClick}
         onFocus={onFocus}
         onBlur={onBlur}
+        aria-expanded={isOpen}
         endIcon={
           hasActiveValue ? (
             <Box
@@ -107,7 +109,12 @@ export const PriceRangeTrigger = ({
           },
         }}
       >
-        {label}
+        <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
+          Цена
+        </Box>
+        <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+          {label}
+        </Box>
       </Button>
     </Box>
   );

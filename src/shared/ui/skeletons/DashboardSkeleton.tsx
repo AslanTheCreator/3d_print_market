@@ -1,56 +1,40 @@
-import { Container, Grid, Skeleton } from "@mui/material";
+import { Box, Container, Skeleton } from "@mui/material";
 import React from "react";
 
-interface DashboardSkeletonProps {
-  isMobile: boolean;
-}
-
-export const DashboardSkeleton: React.FC<DashboardSkeletonProps> = ({
-  isMobile,
-}) => (
-  <Container maxWidth={isMobile ? "sm" : "xl"} sx={{ py: 4 }}>
-    <Grid container spacing={3}>
-      {isMobile ? (
-        <Grid item xs={12}>
-          <Skeleton
-            variant="rectangular"
-            height={200}
-            sx={{ borderRadius: 2, mb: 2 }}
-          />
-          <Skeleton
-            variant="rectangular"
-            height={400}
-            sx={{ borderRadius: 2, mb: 2 }}
-          />
-          <Skeleton
-            variant="rectangular"
-            height={300}
-            sx={{ borderRadius: 2 }}
-          />
-        </Grid>
-      ) : (
-        <>
-          <Grid item xs={12} md={4}>
-            <Skeleton
-              variant="rectangular"
-              height={200}
-              sx={{ borderRadius: 2, mb: 3 }}
-            />
-            <Skeleton
-              variant="rectangular"
-              height={500}
-              sx={{ borderRadius: 2 }}
-            />
-          </Grid>
-          <Grid item xs={12} md={8}>
-            <Skeleton
-              variant="rectangular"
-              height={600}
-              sx={{ borderRadius: 2 }}
-            />
-          </Grid>
-        </>
-      )}
-    </Grid>
+export const DashboardSkeleton: React.FC = () => (
+  <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Box
+      sx={{
+        display: "grid",
+        gap: { xs: 2, md: 3 },
+        gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) minmax(0, 2fr)" },
+        gridTemplateAreas: {
+          xs: '"profile" "details" "activity"',
+          md: '"profile activity" "details activity"',
+        },
+        alignItems: "start",
+      }}
+    >
+      <Skeleton
+        variant="rectangular"
+        sx={{ gridArea: "profile", borderRadius: 2, height: 200 }}
+      />
+      <Skeleton
+        variant="rectangular"
+        sx={{
+          gridArea: "details",
+          borderRadius: 2,
+          height: { xs: 400, md: 500 },
+        }}
+      />
+      <Skeleton
+        variant="rectangular"
+        sx={{
+          gridArea: "activity",
+          borderRadius: 2,
+          height: { xs: 300, md: 600 },
+        }}
+      />
+    </Box>
   </Container>
 );

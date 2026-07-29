@@ -4,8 +4,6 @@ import {
   IconButton,
   CircularProgress,
   Alert,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import { PhotoCamera, Delete } from "@mui/icons-material";
 import { useState, useRef } from "react";
@@ -31,8 +29,6 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   onImageChange,
   onDeleteImage,
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -128,33 +124,48 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
                 </AvatarOverlay>
               </Box>
               <Typography variant="caption" color="text.secondary">
-                {isMobile
-                  ? "Нажмите, чтобы обновить фото"
-                  : "Нажмите или перетащите новое фото, чтобы обновить аватар"}
+                <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
+                  Нажмите, чтобы обновить фото
+                </Box>
+                <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                  Нажмите или перетащите новое фото, чтобы обновить аватар
+                </Box>
               </Typography>
             </>
           ) : (
             <>
               <AvatarPreview>
                 {isUploading ? (
-                  <CircularProgress size={isMobile ? 34 : 40} />
+                  <Box sx={{ width: { xs: 34, sm: 40 }, height: { xs: 34, sm: 40 } }}>
+                    <CircularProgress size="100%" />
+                  </Box>
                 ) : (
                   <PhotoCamera
-                    sx={{ fontSize: isMobile ? "2.4rem" : "3rem", color: "text.secondary" }}
+                    sx={{
+                      fontSize: { xs: "2.4rem", sm: "3rem" },
+                      color: "text.secondary",
+                    }}
                   />
                 )}
               </AvatarPreview>
               <Box sx={{ textAlign: "center" }}>
                 <Typography
-                  variant={isMobile ? "body2" : "subtitle1"}
-                  sx={{ fontWeight: 700, mb: 0.25 }}
+                  variant="subtitle1"
+                  sx={{
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                    fontWeight: 700,
+                    mb: 0.25,
+                  }}
                 >
                   {isUploading ? "Загрузка..." : "Загрузить фото"}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {isMobile
-                    ? "JPG, PNG, WEBP до 5 МБ"
-                    : "Перетащите файл сюда или нажмите для выбора. JPG, PNG, WEBP до 5 МБ"}
+                  <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
+                    JPG, PNG, WEBP до 5 МБ
+                  </Box>
+                  <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                    Перетащите файл сюда или нажмите для выбора. JPG, PNG, WEBP до 5 МБ
+                  </Box>
                 </Typography>
               </Box>
             </>

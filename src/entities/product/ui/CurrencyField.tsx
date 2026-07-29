@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Controller, Control, FieldError } from "react-hook-form";
 import {
   TextField,
@@ -11,8 +10,6 @@ import {
   FormHelperText,
   InputAdornment,
   Grid,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import {
   getCurrencySymbol,
@@ -30,34 +27,13 @@ interface CurrencyFieldProps {
   currentCurrency: Currency;
 }
 
-type FocusField = "price" | "currency";
-
 export const CurrencyField = ({
   control,
   priceError,
   currencyError,
   currentCurrency,
 }: CurrencyFieldProps) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const currentSymbol = getCurrencySymbol(currentCurrency);
-  const [focusedField, setFocusedField] = useState<FocusField | null>(null);
-
-  const getHelperText = (
-    field: FocusField,
-    errorMessage: string | undefined,
-    defaultMessage: string,
-  ) => {
-    if (errorMessage) {
-      return errorMessage;
-    }
-
-    if (!isMobile || focusedField === field) {
-      return defaultMessage;
-    }
-
-    return undefined;
-  };
 
   return (
     <>
@@ -75,15 +51,20 @@ export const CurrencyField = ({
               type="text"
               placeholder="Например: 1490"
               error={!!priceError}
-              helperText={getHelperText(
-                "price",
-                priceError?.message,
-                "Итоговая цена за одну единицу.",
-              )}
-              onFocus={() => setFocusedField("price")}
-              onBlur={(event) => {
-                field.onBlur();
-                setFocusedField((prev) => (prev === "price" ? null : prev));
+              helperText={
+                priceError?.message ?? "Итоговая цена за одну единицу."
+              }
+              FormHelperTextProps={{
+                sx: {
+                  display: priceError
+                    ? "block"
+                    : { xs: "none", sm: "block" },
+                },
+              }}
+              sx={{
+                "&:focus-within .MuiFormHelperText-root": {
+                  display: "block",
+                },
               }}
               InputProps={{
                 startAdornment: (
@@ -109,8 +90,16 @@ export const CurrencyField = ({
             <FormControl
               fullWidth
               error={!!currencyError}
-              onFocus={() => setFocusedField("currency")}
-              onBlur={() => setFocusedField((prev) => (prev === "currency" ? null : prev))}
+              sx={{
+                "& .MuiFormHelperText-root": {
+                  display: currencyError
+                    ? "block"
+                    : { xs: "none", sm: "block" },
+                },
+                "&:focus-within .MuiFormHelperText-root": {
+                  display: "block",
+                },
+              }}
             >
               <InputLabel id="currency-label">Валюта</InputLabel>
               <Select
@@ -126,11 +115,8 @@ export const CurrencyField = ({
                 ))}
               </Select>
               <FormHelperText>
-                {getHelperText(
-                  "currency",
-                  currencyError?.message,
-                  "В этой валюте покупатель увидит цену.",
-                )}
+                {currencyError?.message ??
+                  "В этой валюте покупатель увидит цену."}
               </FormHelperText>
             </FormControl>
           )}

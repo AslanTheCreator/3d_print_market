@@ -1,33 +1,40 @@
 "use client";
 
 import { Inventory2Outlined } from "@mui/icons-material";
-import { Stack, Typography, TypographyProps } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { getStockColor } from "./productDetailsFormatters";
 
 interface ProductStockIndicatorProps {
   stockCount: number | null;
   label: string;
-  iconSize: number;
-  textVariant: TypographyProps["variant"];
+  compactLabel: string;
 }
 
 export function ProductStockIndicator({
   stockCount,
   label,
-  iconSize,
-  textVariant,
+  compactLabel,
 }: ProductStockIndicatorProps) {
   const stockColor = getStockColor(stockCount);
 
   return (
     <Stack direction="row" spacing={1} alignItems="center">
-      <Inventory2Outlined sx={{ fontSize: iconSize }} color={stockColor} />
+      <Inventory2Outlined
+        sx={{ fontSize: { xs: 16, sm: 20 } }}
+        color={stockColor}
+      />
       <Typography
-        variant={textVariant}
+        variant="body2"
         fontWeight={600}
         color={`${stockColor}.main`}
+        sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
       >
-        {label}
+        <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
+          {compactLabel}
+        </Box>
+        <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+          {label}
+        </Box>
       </Typography>
     </Stack>
   );

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Controller, Control, FieldErrors } from "react-hook-form";
 import {
   TextField,
@@ -18,8 +17,6 @@ import {
   OutlinedInput,
   Stack,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import { Inventory } from "@mui/icons-material";
 import type { CategoryModel } from "@/entities/category/@x/product";
@@ -43,13 +40,6 @@ interface ProductFormFieldsProps {
   currentCurrency: Currency;
 }
 
-type FocusField =
-  | "categoryIds"
-  | "name"
-  | "count"
-  | "prepaymentAmount"
-  | "description";
-
 export const ProductFormFields = ({
   control,
   errors,
@@ -57,26 +47,7 @@ export const ProductFormFields = ({
   availability,
   currentCurrency,
 }: ProductFormFieldsProps) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const currentSymbol = getCurrencySymbol(currentCurrency);
-  const [focusedField, setFocusedField] = useState<FocusField | null>(null);
-
-  const getHelperText = (
-    field: FocusField,
-    errorMessage: string | undefined,
-    defaultMessage: string,
-  ) => {
-    if (errorMessage) {
-      return errorMessage;
-    }
-
-    if (!isMobile || focusedField === field) {
-      return defaultMessage;
-    }
-
-    return undefined;
-  };
 
   return (
     <>
@@ -89,8 +60,16 @@ export const ProductFormFields = ({
             <FormControl
               fullWidth
               error={!!errors.categoryIds}
-              onFocus={() => setFocusedField("categoryIds")}
-              onBlur={() => setFocusedField((prev) => (prev === "categoryIds" ? null : prev))}
+              sx={{
+                "& .MuiFormHelperText-root": {
+                  display: errors.categoryIds
+                    ? "block"
+                    : { xs: "none", sm: "block" },
+                },
+                "&:focus-within .MuiFormHelperText-root": {
+                  display: "block",
+                },
+              }}
             >
               <InputLabel id="category-label">Категории товара</InputLabel>
               <Select
@@ -126,11 +105,8 @@ export const ProductFormFields = ({
                 ))}
               </Select>
               <FormHelperText>
-                {getHelperText(
-                  "categoryIds",
-                  errors.categoryIds?.message,
-                  "Можно выбрать несколько категорий.",
-                )}
+                {errors.categoryIds?.message ??
+                  "Можно выбрать несколько категорий."}
               </FormHelperText>
             </FormControl>
           )}
@@ -150,15 +126,21 @@ export const ProductFormFields = ({
               label="Название товара"
               placeholder="Например: Подставка для телефона из PLA"
               error={!!errors.name}
-              helperText={getHelperText(
-                "name",
-                errors.name?.message,
-                "Короткое и понятное название помогает быстрее найти товар.",
-              )}
-              onFocus={() => setFocusedField("name")}
-              onBlur={(event) => {
-                field.onBlur();
-                setFocusedField((prev) => (prev === "name" ? null : prev));
+              helperText={
+                errors.name?.message ??
+                "Короткое и понятное название помогает быстрее найти товар."
+              }
+              FormHelperTextProps={{
+                sx: {
+                  display: errors.name
+                    ? "block"
+                    : { xs: "none", sm: "block" },
+                },
+              }}
+              sx={{
+                "&:focus-within .MuiFormHelperText-root": {
+                  display: "block",
+                },
               }}
             />
           )}
@@ -179,15 +161,20 @@ export const ProductFormFields = ({
               type="text"
               placeholder="Например: 5"
               error={!!errors.count}
-              helperText={getHelperText(
-                "count",
-                errors.count?.message,
-                "Сколько единиц готовы продать сейчас.",
-              )}
-              onFocus={() => setFocusedField("count")}
-              onBlur={(event) => {
-                field.onBlur();
-                setFocusedField((prev) => (prev === "count" ? null : prev));
+              helperText={
+                errors.count?.message ?? "Сколько единиц готовы продать сейчас."
+              }
+              FormHelperTextProps={{
+                sx: {
+                  display: errors.count
+                    ? "block"
+                    : { xs: "none", sm: "block" },
+                },
+              }}
+              sx={{
+                "&:focus-within .MuiFormHelperText-root": {
+                  display: "block",
+                },
               }}
               InputProps={{
                 startAdornment: (
@@ -226,11 +213,13 @@ export const ProductFormFields = ({
               />
             )}
           />
-          {!isMobile && (
-            <Typography variant="caption" color="text.secondary">
-              Включите, если товар изготавливается после заказа.
-            </Typography>
-          )}
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: { xs: "none", sm: "block" } }}
+          >
+            Включите, если товар изготавливается после заказа.
+          </Typography>
         </Stack>
       </Grid>
 
@@ -249,20 +238,22 @@ export const ProductFormFields = ({
                 type="text"
                 placeholder="Например: 500"
                 error={!!errors.prepaymentAmount}
-                helperText={getHelperText(
-                  "prepaymentAmount",
-                  errors.prepaymentAmount?.message,
-                  "Сумма, которую покупатель платит сразу.",
-                )}
-                onFocus={() => setFocusedField("prepaymentAmount")}
-                onBlur={() =>
-                  {
-                    field.onBlur();
-                    setFocusedField((prev) =>
-                      prev === "prepaymentAmount" ? null : prev,
-                    );
-                  }
+                helperText={
+                  errors.prepaymentAmount?.message ??
+                  "Сумма, которую покупатель платит сразу."
                 }
+                FormHelperTextProps={{
+                  sx: {
+                    display: errors.prepaymentAmount
+                      ? "block"
+                      : { xs: "none", sm: "block" },
+                  },
+                }}
+                sx={{
+                  "&:focus-within .MuiFormHelperText-root": {
+                    display: "block",
+                  },
+                }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -294,15 +285,21 @@ export const ProductFormFields = ({
               rows={4}
               placeholder="Материал, размеры, цвет, срок изготовления..."
               error={!!errors.description}
-              helperText={getHelperText(
-                "description",
-                errors.description?.message,
-                "Материал, размер и важные детали для покупателя.",
-              )}
-              onFocus={() => setFocusedField("description")}
-              onBlur={(event) => {
-                field.onBlur();
-                setFocusedField((prev) => (prev === "description" ? null : prev));
+              helperText={
+                errors.description?.message ??
+                "Материал, размер и важные детали для покупателя."
+              }
+              FormHelperTextProps={{
+                sx: {
+                  display: errors.description
+                    ? "block"
+                    : { xs: "none", sm: "block" },
+                },
+              }}
+              sx={{
+                "&:focus-within .MuiFormHelperText-root": {
+                  display: "block",
+                },
               }}
             />
           )}

@@ -10,23 +10,21 @@ import {
 interface UsePriceRangeFilterOptions {
   value?: PriceRange;
   availableRange?: PriceRange;
-  isMobile: boolean;
+  compactBreakpoint: number;
   onApply: (value?: PriceRange) => void;
 }
+
+type PriceRangeSurface = "mobile" | "desktop" | null;
 
 export const usePriceRangeFilter = ({
   value,
   availableRange,
-  isMobile,
+  compactBreakpoint,
   onApply,
 }: UsePriceRangeFilterOptions) => {
   const [minPriceInput, setMinPriceInput] = useState("");
   const [maxPriceInput, setMaxPriceInput] = useState("");
-  const [isTriggerHovered, setIsTriggerHovered] = useState(false);
-  const [isPopoverHovered, setIsPopoverHovered] = useState(false);
-  const [isTriggerFocused, setIsTriggerFocused] = useState(false);
-  const [isPopoverFocused, setIsPopoverFocused] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [surface, setSurface] = useState<PriceRangeSurface>(null);
 
   const triggerWrapperRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -36,23 +34,16 @@ export const usePriceRangeFilter = ({
     () => value?.minPrice !== undefined || value?.maxPrice !== undefined,
     [value?.maxPrice, value?.minPrice],
   );
+  const isOpen = surface !== null;
+  const triggerLabel = useMemo(
+    () => (hasActiveValue ? formatDesktopRangeLabel(value) : "Цена, ₽"),
+    [hasActiveValue, value],
+  );
 
-  const desktopIsOpen =
-    Boolean(triggerWrapperRef.current) &&
-    (isTriggerHovered ||
-      isPopoverHovered ||
-      isTriggerFocused ||
-      isPopoverFocused);
-
-  const isOpen = isMobile ? isMobileOpen : desktopIsOpen;
-
-  const triggerLabel = useMemo(() => {
-    if (isMobile) {
-      return "Цена";
-    }
-
-    return hasActiveValue ? formatDesktopRangeLabel(value) : "Цена, ₽";
-  }, [hasActiveValue, isMobile, value]);
+  const isCompactViewport = () =>
+    window.matchMedia(
+      `(max-width: ${compactBreakpoint - 0.05}px)`,
+    ).matches;
 
   const isMovingToElement = (
     relatedTarget: EventTarget | null,
@@ -80,82 +71,81 @@ export const usePriceRangeFilter = ({
     }
   }, [isOpen, syncDraftValues]);
 
+  const closeSurface = () => {
+    setSurface(null);
+  };
+
   const closeDesktopPopover = () => {
-    setIsTriggerHovered(false);
-    setIsPopoverHovered(false);
-    setIsTriggerFocused(false);
-    setIsPopoverFocused(false);
+    closeSurface();
   };
 
   const handleMobileClose = () => {
-    setIsMobileOpen(false);
+    closeSurface();
     syncDraftValues();
   };
 
   const handleTriggerMouseEnter = () => {
-    if (isMobile) {
+    if (surface !== null || isCompactViewport()) {
       return;
     }
 
     syncDraftValues();
-    setIsTriggerHovered(true);
+    setSurface("desktop");
   };
 
   const handleTriggerMouseLeave = (event: React.MouseEvent<HTMLElement>) => {
-    if (isMobile) {
+    if (surface !== "desktop") {
       return;
     }
-
-    setIsTriggerHovered(false);
 
     if (isMovingToElement(event.relatedTarget, popoverPaperRef.current)) {
-      setIsPopoverHovered(true);
       return;
     }
 
+    closeSurface();
     syncDraftValues();
   };
 
   const handleTriggerFocus = (event: React.FocusEvent<HTMLElement>) => {
-    if (isMobile || !event.currentTarget.matches(":focus-visible")) {
+    if (
+      surface !== null ||
+      isCompactViewport() ||
+      !event.currentTarget.matches(":focus-visible")
+    ) {
       return;
     }
 
-    setIsTriggerFocused(true);
+    setSurface("desktop");
   };
 
   const handleTriggerBlur = (event: React.FocusEvent<HTMLElement>) => {
-    if (isMobile) {
+    if (surface !== "desktop") {
       return;
     }
-
-    setIsTriggerFocused(false);
 
     if (isMovingToElement(event.relatedTarget, popoverPaperRef.current)) {
-      setIsPopoverFocused(true);
       return;
     }
 
+    closeSurface();
     syncDraftValues();
   };
 
   const handlePopoverMouseEnter = () => {
-    setIsPopoverHovered(true);
+    setSurface("desktop");
   };
 
   const handlePopoverMouseLeave = (event: React.MouseEvent<HTMLElement>) => {
-    setIsPopoverHovered(false);
-
     if (isMovingToElement(event.relatedTarget, triggerWrapperRef.current)) {
-      setIsTriggerHovered(true);
       return;
     }
 
+    closeSurface();
     syncDraftValues();
   };
 
   const handlePopoverFocus = () => {
-    setIsPopoverFocused(true);
+    setSurface("desktop");
   };
 
   const handlePopoverBlur = (event: React.FocusEvent<HTMLElement>) => {
@@ -163,13 +153,11 @@ export const usePriceRangeFilter = ({
       return;
     }
 
-    setIsPopoverFocused(false);
-
     if (isMovingToElement(event.relatedTarget, triggerRef.current)) {
-      setIsTriggerFocused(true);
       return;
     }
 
+    closeSurface();
     syncDraftValues();
   };
 
@@ -178,11 +166,9 @@ export const usePriceRangeFilter = ({
     setMaxPriceInput("");
     onApply(undefined);
 
-    if (isMobile) {
-      return;
+    if (surface === "desktop") {
+      closeDesktopPopover();
     }
-
-    closeDesktopPopover();
   };
 
   const handleApply = () => {
@@ -199,13 +185,7 @@ export const usePriceRangeFilter = ({
 
     if (minPrice === undefined && maxPrice === undefined) {
       onApply(undefined);
-
-      if (isMobile) {
-        setIsMobileOpen(false);
-      } else {
-        closeDesktopPopover();
-      }
-
+      closeDesktopPopover();
       return;
     }
 
@@ -213,12 +193,7 @@ export const usePriceRangeFilter = ({
       ...(minPrice !== undefined ? { minPrice } : {}),
       ...(maxPrice !== undefined ? { maxPrice } : {}),
     });
-
-    if (isMobile) {
-      setIsMobileOpen(false);
-    } else {
-      closeDesktopPopover();
-    }
+    closeDesktopPopover();
   };
 
   const handleClearIndicatorClick = (
@@ -230,19 +205,15 @@ export const usePriceRangeFilter = ({
     setMinPriceInput("");
     setMaxPriceInput("");
     onApply(undefined);
-
-    if (isMobile) {
-      setIsMobileOpen(false);
-    } else {
-      closeDesktopPopover();
-    }
+    closeDesktopPopover();
   };
 
-  const handleTriggerClick = () => {
-    if (isMobile) {
-      syncDraftValues();
-      setIsMobileOpen(true);
-    }
+  const handleTriggerClick = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.stopPropagation();
+    syncDraftValues();
+    setSurface(isCompactViewport() ? "mobile" : "desktop");
   };
 
   return {
@@ -266,6 +237,7 @@ export const usePriceRangeFilter = ({
     popoverPaperRef,
     setMaxPriceInput,
     setMinPriceInput,
+    surface,
     triggerLabel,
     triggerRef,
     triggerWrapperRef,

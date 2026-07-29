@@ -18,7 +18,6 @@ import {
   Fade,
   Grow,
   useTheme,
-  useMediaQuery,
   alpha,
 } from "@mui/material";
 import {
@@ -208,7 +207,6 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
   onSuccess,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const { dialogState, form, handleSubmit, isPending, isError, closeDialog } =
     useLeaveReview({
@@ -235,10 +233,14 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
       onClose={dialogState === "form" ? handleClose : undefined}
       maxWidth="sm"
       fullWidth
-      fullScreen={isMobile}
       PaperProps={{
         sx: {
-          borderRadius: isMobile ? 0 : 3,
+          m: { xs: 0, sm: 4 },
+          width: { xs: "100%", sm: "calc(100% - 64px)" },
+          maxWidth: { xs: "none", sm: 600 },
+          height: { xs: "100%", sm: "auto" },
+          maxHeight: { xs: "100%", sm: "calc(100% - 64px)" },
+          borderRadius: { xs: 0, sm: 3 },
         },
       }}
     >

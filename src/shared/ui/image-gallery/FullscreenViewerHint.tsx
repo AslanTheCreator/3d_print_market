@@ -3,16 +3,14 @@ import { Box, Fade, Typography } from "@mui/material";
 
 interface FullscreenViewerHintProps {
   open: boolean;
-  isMobile: boolean;
   zoom: number;
 }
 
 export const FullscreenViewerHint = ({
   open,
-  isMobile,
   zoom,
 }: FullscreenViewerHintProps): React.ReactElement | null => {
-  if (isMobile || zoom !== 1) {
+  if (zoom !== 1) {
     return null;
   }
 
@@ -25,6 +23,7 @@ export const FullscreenViewerHint = ({
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 1,
+          display: { xs: "none", sm: "block" },
           textAlign: "center",
           color: "rgba(255,255,255,0.6)",
           fontSize: "0.875rem",

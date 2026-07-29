@@ -16,7 +16,6 @@ import {
   Divider,
   alpha,
   useTheme,
-  useMediaQuery,
   Chip,
   CircularProgress,
 } from "@mui/material";
@@ -52,7 +51,6 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
   isRetrying = false,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   if (!result) return null;
 
@@ -103,10 +101,14 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
       onClose={isRetrying ? undefined : onClose}
       maxWidth="sm"
       fullWidth
-      fullScreen={isMobile}
       PaperProps={{
         sx: {
-          borderRadius: isMobile ? 0 : 3,
+          m: { xs: 0, sm: 4 },
+          width: { xs: "100%", sm: "calc(100% - 64px)" },
+          maxWidth: { xs: "none", sm: 600 },
+          height: { xs: "100%", sm: "auto" },
+          maxHeight: { xs: "100%", sm: "calc(100% - 64px)" },
+          borderRadius: { xs: 0, sm: 3 },
         },
       }}
     >
@@ -253,7 +255,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
       <DialogActions
         sx={{
           p: 2,
-          flexDirection: isMobile ? "column" : "row",
+          flexDirection: { xs: "column", sm: "row" },
           gap: 1,
         }}
       >
@@ -266,7 +268,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
             }
             onClick={onRetry}
             disabled={isRetrying}
-            fullWidth={isMobile}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             {isRetrying ? "Повторяем..." : "Повторить для неудачных"}
           </Button>
@@ -279,7 +281,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
             startIcon={<ArrowBack />}
             onClick={onClose}
             disabled={isRetrying}
-            fullWidth={isMobile}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             Вернуться к оформлению
           </Button>
@@ -291,7 +293,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
             color="primary"
             startIcon={<Receipt />}
             onClick={onGoToOrders}
-            fullWidth={isMobile}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             Мои покупки
           </Button>
@@ -301,7 +303,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
           variant={result.failed.length > 0 ? "text" : "outlined"}
           startIcon={<Home />}
           onClick={onGoHome}
-          fullWidth={isMobile}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
         >
           На главную
         </Button>

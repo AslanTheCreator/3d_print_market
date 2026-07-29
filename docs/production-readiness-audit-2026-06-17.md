@@ -1,6 +1,6 @@
 # Готовность MVP и production
 
-Первичный аудит: 2026-06-17. Актуальная сверка frontend `1.25.0`: 2026-07-24.
+Первичный аудит: 2026-06-17. Актуальная сверка frontend `1.25.0`: 2026-07-28.
 
 ## Решение
 
@@ -25,8 +25,11 @@
 ### Частично готово
 
 - **Основные buyer/seller flows** — каталог, auth UI, корзина, checkout, товары и заказы реализованы; реальные end-to-end сценарии с backend не проверены.
-- **CI и тесты** — 15 smoke и 82 Playwright tests проходят, но CI работает без реального backend и только в Desktop Chromium.
-- **SEO, performance, accessibility** — metadata/security headers есть; остаются soft 404, устаревший performance baseline и отсутствие mobile/a11y gate.
+- **CI и тесты** — 15 smoke и 90 Playwright tests проходят в desktop и
+  curated mobile Chromium, но CI работает без реального backend.
+- **SEO, performance, accessibility** — metadata/security headers и mobile
+  Lab CLS gate есть; остаются soft 404, отсутствие production field data и
+  automated accessibility gate.
 
 ### Блокеры
 
@@ -136,23 +139,28 @@ CI поднимает standalone frontend с недоступным API и ис�
 - **HTTP status/SEO** — invalid product, category и seller routes рендерят client error state с HTTP 200; это soft 404.
 - **Индексация private routes** — dashboard запрещён в `robots.txt`, но layout не задаёт `noindex` и наследует root metadata.
 - **Accessibility implementation** — найдены auth inputs без label, icon buttons без accessible name, keyboard-недоступный avatar upload и touch targets меньше 44 px.
-- **Mobile rendering** — нет mobile browser project; разные desktop/mobile trees выбираются через `useMediaQuery` без подтверждённой SSR match strategy и CLS-замера.
-- **Performance** — нет актуального mobile/production Core Web Vitals и CI budget.
+- **Performance** — локальный mobile Lab CLS gate добавлен и проходит, но нет
+  production Core Web Vitals/RUM и budgets для LCP, INP, JS или assets.
 - **Споры и support** — dispute status отображается, но действия открытия/закрытия спора и подтверждённый support runbook отсутствуют.
 - **Docker/CI** — собранный image не запускается в CI; compose defaults используют исторические frontend/backend tags.
 
 ## Подтверждённые проверки
 
-Проверки выполнены 2026-07-23; lint, typecheck, Steiger, build и standalone-прогон повторены 2026-07-24 для текущего рабочего дерева:
+Lint, typecheck, Steiger, build и standalone-прогон повторены 2026-07-28 для
+текущего рабочего дерева:
 
 - **`npm run lint`** — пройдено, warnings `0`.
 - **`npm run typecheck`** — пройдено.
 - **`npm run architecture:check`** — пройдено для `src`, Steiger problems `0`.
-- **`npm audit --omit=dev --audit-level=high`** — `0 vulnerabilities`.
+- **`npm audit --omit=dev --audit-level=high`** — последний подтверждённый
+  результат от 2026-07-23: `0 vulnerabilities`.
 - **`npm run build`** — production build пройден.
-- **`npm run test:standalone`** — 15 smoke и 82 Playwright tests пройдены.
-- **`docker compose config --quiet`** — конфигурация валидна.
-- **`docker build -f Dockerfile -t figurzilla-frontend:audit .`** — image собран.
+- **`npm run test:standalone`** — 15 smoke и 90 Playwright tests пройдены:
+  82 desktop и 8 mobile.
+- **`docker compose config --quiet`** — последний подтверждённый результат от
+  2026-07-23: конфигурация валидна.
+- **`docker build -f Dockerfile -t figurzilla-frontend:audit .`** — последний
+  подтверждённый результат от 2026-07-23: image собран.
 
 Ограничения этих результатов:
 
@@ -161,8 +169,11 @@ CI поднимает standalone frontend с недоступным API и ис�
   `steiger src`;
 - `fsd/insignificant-slice` отключён как неприменимый при внешнем корневом
   `app/`; сам `app/` остаётся зоной обязательного ручного review;
-- Playwright запускается только в Desktop Chromium;
+- Playwright запускается в desktop Chromium и отдельном Pixel 5 mobile
+  Chromium project; Firefox/WebKit не покрыты;
 - значительная часть API ответов подменяется, model tests также запускаются через Playwright;
+- CLS `0` в локальном Lab-прогоне `/about` и fixture product detail не
+  является production field p75;
 - container entrypoint и production network не smoke-тестируются в CI;
 - не выполнялись load, penetration, disaster recovery и юридический аудит.
 
@@ -175,7 +186,8 @@ CI поднимает standalone frontend с недоступным API и ис�
 5. Развернуть release candidate на staging и пройти real-backend acceptance matrix.
 6. Подключить observability, health checks, immutable deploy, post-deploy smoke и rollback.
 7. Получить юридическое подтверждение документов и consent flow.
-8. Выполнить mobile/accessibility/performance проверку и только затем повторить go/no-go review.
+8. Выполнить accessibility и production performance/RUM проверку и только
+   затем повторить go/no-go review.
 
 Публичный запуск разрешается только после закрытия всех P0 и успешного повторного аудита.
 

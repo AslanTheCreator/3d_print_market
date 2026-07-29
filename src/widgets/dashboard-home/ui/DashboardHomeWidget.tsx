@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Box, useMediaQuery } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { Box } from "@mui/material";
 import { motion } from "framer-motion";
 import { useCurrentUser } from "@/entities/user";
 import { ErrorState } from "@/shared/ui/states";
@@ -11,13 +10,11 @@ import { DashboardContent } from "./DashboardContent";
 import { ProfileForm } from "./ProfileForm";
 
 export const DashboardHomeWidget = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { data: userData, isLoading, error } = useCurrentUser();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   if (isLoading) {
-    return <DashboardSkeleton isMobile={isMobile} />;
+    return <DashboardSkeleton />;
   }
 
   if (error || !userData) {

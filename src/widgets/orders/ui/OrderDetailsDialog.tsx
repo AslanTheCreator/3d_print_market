@@ -12,8 +12,6 @@ import {
   Paper,
   Stack,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import {
   Close,
@@ -58,8 +56,6 @@ export const OrderDetailsDialog = ({
   order,
   userRole,
 }: OrderDetailsDialogProps) => {
-  const theme = useTheme();
-  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const peerLabel = getOrderPeerLabel(userRole);
   const showTracking = shouldShowTrackingForRole(
     order.actualStatus,
@@ -74,11 +70,19 @@ export const OrderDetailsDialog = ({
     <Dialog
       open={open}
       onClose={onClose}
-      fullScreen={fullScreen}
       fullWidth
       maxWidth="md"
       aria-labelledby="order-details-title"
-      PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 2.5 } }}
+      PaperProps={{
+        sx: {
+          m: { xs: 0, sm: 4 },
+          width: { xs: "100%", sm: "calc(100% - 64px)" },
+          maxWidth: { xs: "none", sm: 900 },
+          height: { xs: "100%", sm: "auto" },
+          maxHeight: { xs: "100%", sm: "calc(100% - 64px)" },
+          borderRadius: { xs: 0, sm: 2.5 },
+        },
+      }}
     >
       <DialogTitle id="order-details-title" sx={{ pr: 7 }}>
         <Stack spacing={0.75}>

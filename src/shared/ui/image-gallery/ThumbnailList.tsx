@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Paper, useTheme, useMediaQuery } from "@mui/material";
+import { Box, Paper, useTheme } from "@mui/material";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { ImageFallback } from "@/shared/ui/image-fallback";
@@ -19,12 +19,6 @@ export function ThumbnailList({
   onImageSelect,
   alt,
 }: ThumbnailListProps) {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
-
-  const thumbnailSize = isMobile ? 60 : isTablet ? 80 : 100;
-
   const handleClick = useCallback(
     (index: number) => {
       onImageSelect(index);
@@ -69,7 +63,6 @@ export function ThumbnailList({
             key={index}
             src={image.thumbnailSrc ?? image.previewSrc}
             alt={`${alt} миниатюра ${index + 1}`}
-            size={thumbnailSize}
             isActive={currentIndex === index}
             onClick={() => handleClick(index)}
           />
@@ -82,7 +75,6 @@ export function ThumbnailList({
 interface ThumbnailItemProps {
   src: string;
   alt: string;
-  size: number;
   isActive: boolean;
   onClick: () => void;
 }
@@ -90,12 +82,10 @@ interface ThumbnailItemProps {
 function ThumbnailItem({
   src,
   alt,
-  size,
   isActive,
   onClick,
 }: ThumbnailItemProps) {
   const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
   const [hasImageError, setHasImageError] = useState(false);
 
   useEffect(() => {
@@ -108,10 +98,11 @@ function ThumbnailItem({
     <Box
       component="button"
       onClick={onClick}
+      aria-pressed={isActive}
       sx={{
         flexShrink: 0,
-        width: size,
-        height: size,
+        width: { xs: 60, sm: 80, md: 100 },
+        height: { xs: 60, sm: 80, md: 100 },
         position: "relative",
         cursor: "pointer",
         borderRadius: { xs: 1, sm: 1.25, md: 1.5 },
@@ -122,7 +113,10 @@ function ThumbnailItem({
         bgcolor: "transparent",
         p: 0,
         "&:hover": {
-          transform: isDesktop ? "scale(1.08) translateY(-2px)" : "scale(1.05)",
+          transform: {
+            xs: "scale(1.05)",
+            md: "scale(1.08) translateY(-2px)",
+          },
           boxShadow: isActive ? theme.shadows[8] : theme.shadows[4],
           borderColor: isActive ? "primary.dark" : "primary.light",
         },
@@ -141,7 +135,7 @@ function ThumbnailItem({
           src={imageSrc}
           alt={alt}
           fill
-          sizes={`${size}px`}
+          sizes="(max-width: 599px) 60px, (max-width: 899px) 80px, 100px"
           style={{
             objectFit: "cover",
           }}

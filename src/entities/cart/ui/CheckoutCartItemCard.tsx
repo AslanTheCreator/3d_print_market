@@ -7,7 +7,6 @@ import {
   Stack,
   Typography,
   useTheme,
-  useMediaQuery,
   alpha,
   Skeleton,
 } from "@mui/material";
@@ -48,7 +47,6 @@ export const CheckoutCartItemCard = ({
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [hasImageError, setHasImageError] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // Деструктурируем product из ProductBasket
   const { product } = item;
@@ -189,9 +187,11 @@ export const CheckoutCartItemCard = ({
               style={{ textDecoration: "none" }}
             >
               <Typography
-                variant={isMobile ? "body2" : "body1"}
+                variant="body1"
                 fontWeight={600}
                 sx={{
+                  fontSize: { xs: "0.875rem", sm: "1rem" },
+                  lineHeight: { xs: 1.57, sm: 1.5 },
                   display: "-webkit-box",
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: "vertical",
@@ -276,7 +276,8 @@ export const CheckoutCartItemCard = ({
           sx={{ mt: { xs: 1.5, sm: 2 } }}
         >
           <Typography
-            variant={isMobile ? "body1" : "h6"}
+            variant="h6"
+            component="p"
             fontWeight={700}
             color="text.primary"
           >
@@ -294,7 +295,7 @@ export const CheckoutCartItemCard = ({
               max={
                 maxQuantity ?? (isStockInsufficient ? quantity : undefined)
               }
-              size={isMobile ? "small" : "medium"}
+              size="responsive"
             />
           )}
         </Stack>

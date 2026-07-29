@@ -7,8 +7,6 @@ export {
   ProductFormFields,
   ProductPriceDisplay,
 } from "./ui";
-export { ProductDetailsSkeleton } from "./ui/ProductDetailsSkeleton";
-
 export type { ProductFormData } from "./model/form";
 export type { EditableAvailability } from "./model/types";
 export {

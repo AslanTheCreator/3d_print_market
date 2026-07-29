@@ -5,7 +5,6 @@ import {
   Box,
   Typography,
   alpha,
-  useMediaQuery,
   useTheme,
 } from "@mui/material";
 
@@ -19,7 +18,6 @@ export const CreateProductFormSection = ({
   title,
 }: CreateProductFormSectionProps) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
     <Box
@@ -41,16 +39,19 @@ export const CreateProductFormSection = ({
           alignItems: "center",
           justifyContent: "center",
           "& svg": {
-            fontSize: isMobile ? 18 : 20,
+            fontSize: { xs: 18, sm: 20 },
           },
         }}
       >
         {icon}
       </Box>
       <Typography
-        variant={isMobile ? "body2" : "subtitle1"}
+        variant="subtitle1"
         fontWeight={600}
-        sx={{ lineHeight: 1.3 }}
+        sx={{
+          fontSize: { xs: "0.875rem", sm: "1rem" },
+          lineHeight: 1.3,
+        }}
       >
         {title}
       </Typography>

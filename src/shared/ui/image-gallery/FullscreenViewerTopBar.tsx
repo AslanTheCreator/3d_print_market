@@ -5,7 +5,6 @@ import { Close, ZoomIn, ZoomOut } from "@mui/icons-material";
 interface FullscreenViewerTopBarProps {
   currentIndex: number;
   imageCount: number;
-  isMobile: boolean;
   zoom: number;
   onClose: () => void;
   onZoomIn: () => void;
@@ -27,7 +26,6 @@ const controlButtonSx = {
 export const FullscreenViewerTopBar = ({
   currentIndex,
   imageCount,
-  isMobile,
   zoom,
   onClose,
   onZoomIn,
@@ -60,25 +58,33 @@ export const FullscreenViewerTopBar = ({
         </Typography>
 
         <Stack direction="row" spacing={1}>
-          {!isMobile && (
-            <>
-              <IconButton
-                onClick={onZoomOut}
-                disabled={zoom <= 1}
-                sx={controlButtonSx}
-              >
-                <ZoomOut />
-              </IconButton>
-              <IconButton
-                onClick={onZoomIn}
-                disabled={zoom >= 3}
-                sx={controlButtonSx}
-              >
-                <ZoomIn />
-              </IconButton>
-            </>
-          )}
-          <IconButton onClick={onClose} sx={controlButtonSx}>
+          <IconButton
+            onClick={onZoomOut}
+            disabled={zoom <= 1}
+            aria-label="Уменьшить изображение"
+            sx={{
+              ...controlButtonSx,
+              display: { xs: "none", sm: "inline-flex" },
+            }}
+          >
+            <ZoomOut />
+          </IconButton>
+          <IconButton
+            onClick={onZoomIn}
+            disabled={zoom >= 3}
+            aria-label="Увеличить изображение"
+            sx={{
+              ...controlButtonSx,
+              display: { xs: "none", sm: "inline-flex" },
+            }}
+          >
+            <ZoomIn />
+          </IconButton>
+          <IconButton
+            onClick={onClose}
+            aria-label="Закрыть полноэкранную галерею"
+            sx={controlButtonSx}
+          >
             <Close />
           </IconButton>
         </Stack>

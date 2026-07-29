@@ -8,6 +8,7 @@
 - **`npm run build`** — production build.
 - **`npm run test:smoke`** — HTTP smoke для уже запущенного приложения.
 - **`npm run test:e2e`** — Playwright; без `TEST_BASE_URL` запускает dev server.
+- **`npm run test:e2e:mobile`** — только curated mobile Chromium scenarios.
 - **`npm run test:standalone`** — smoke и e2e на standalone build.
 - **`npm run test:e2e:ui`** — интерактивный Playwright UI.
 
@@ -39,7 +40,9 @@ npm run build
 npm run test:standalone
 ```
 
-`test:standalone` копирует `public` и `.next/static` в standalone runtime, поднимает сервер, запускает smoke и e2e, затем останавливает его.
+`test:standalone` копирует `public` и `.next/static` в standalone runtime,
+поднимает локальный SSR API fixture и сервер приложения, запускает smoke и
+оба Playwright-проекта, затем останавливает оба процесса.
 
 ## Smoke и E2E
 
@@ -56,24 +59,47 @@ npm run test:e2e
 Локальный Playwright server можно переопределить через
 `PLAYWRIGHT_WEB_SERVER_COMMAND`, порт — через `PLAYWRIGHT_PORT`. Готовность
 сервера проверяется по нейтральному runtime route `/api/config`.
+Порт SSR fixture задаётся через `PLAYWRIGHT_FIXTURE_API_PORT`, по умолчанию это
+порт приложения плюс один. Fixture реализует только подтверждённые контрактом
+`GET /product/901` и `GET /images/metadata`; неизвестные запросы возвращают
+JSON `404`. При запуске против произвольного `TEST_BASE_URL` зависящие от
+fixture сценарии пропускаются, если `PLAYWRIGHT_FIXTURE_API_URL` не задан явно.
 
 Тесты с реальным backend требуют подходящих env и тестовых данных. Секреты из `.env.local` не выводятся в логи.
 
 ## Границы текущего набора
 
-Состояние на 2026-07-24:
+Состояние на 2026-07-28:
 
-- standalone-прогон: `15` smoke и `82` Playwright tests;
-- browser project: только `Desktop Chrome`;
+- набор: `15` smoke и `90` Playwright tests — `82` desktop и `8` mobile;
+- browser projects: Desktop Chrome и `mobile-chromium` на профиле Pixel 5
+  (`393×727`, mobile UA, touch);
+- `*.mobile.spec.ts` запускаются только в mobile project; desktop suite в нём
+  не дублируется;
+- mobile rendering покрывает SSR без JavaScript, hydration diagnostics,
+  сохранение DOM/state на `599/600`, `899/900`, `1375/1376`, смену ориентации,
+  horizontal overflow и overlay interactions;
+- Lab CLS вычисляется через `PerformanceObserver` по session-window алгоритму;
+  CI gate — `≤0.1`. LCP и transfer size сохраняются как диагностика, но пока
+  не имеют hard budget;
+- standalone-прогон 2026-07-28 дал CLS `0` для `/about` под Slow 4G /
+  CPU ×4 и CLS `0` для fixture product detail. Диагностические значения этого
+  запуска: LCP `784 ms` / transfer `447,368 B` для `/about` и LCP `224 ms` /
+  transfer `626,659 B` для product detail; это локальные Lab-данные, не
+  production field p75. Внешний тег Яндекс Метрики в E2E заменяется локальным
+  пустым ответом и в transfer size не входит;
 - browser-сценарии в основном подменяют API и auth cookies;
 - session lifecycle покрывает initialization, login/logout, общий refresh для
   конкурентных `401`, один retry и redirect при refresh failure;
 - часть `*.spec.ts` является model/contract tests без browser flow, но запускается через Playwright;
-- CI задаёт недоступный API `127.0.0.1:9`, поэтому успешный real-backend сценарий не проверяется;
-- coverage threshold, mobile project, Firefox/WebKit и automated accessibility gate отсутствуют;
-- trace, screenshot и video настраиваются локально, но CI workflow не публикует `playwright-report` и `test-results` как artifacts.
+- browser API по умолчанию остаётся недоступным `127.0.0.1:9`, а SSR success
+  product detail проверяется локальным fixture; real-backend сценарий не
+  проверяется;
+- coverage threshold, Firefox/WebKit и automated accessibility gate отсутствуют;
+- CI публикует `playwright-report` и `test-results` с retention `7` дней.
 
-Эти тесты хорошо ловят frontend regressions, но не являются production acceptance.
+Lab CLS не заменяет production field p75. Набор хорошо ловит frontend
+regressions, но не является production acceptance.
 
 ## Release acceptance на staging
 

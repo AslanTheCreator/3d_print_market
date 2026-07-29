@@ -102,6 +102,24 @@ Server state хранится в TanStack Query. Zustand используетс�
 - API-зависимый UI должен обрабатывать loading, error, empty и success;
 - payload и validation rules не менять без подтверждённого backend-контракта.
 
+## Responsive rendering
+
+Тема задаёт единый набор breakpoints: `xs=0`, `sm=600`, `md=900`,
+`lg=1376`, `xl=1536`. Для описания режимов используются границы compact
+`<600`, medium `600–899` и wide `>=900`; двухколоночная карточка товара
+включается с `lg=1376`.
+
+SSR-visible UI строится CSS-first: сервер и первый клиентский render должны
+иметь одно DOM-дерево, а размеры, порядок и видимость представительных
+элементов задаются responsive `sx`, Grid/Flex и media queries в CSS.
+`useMediaQuery`, UA detection и серверное угадывание viewport не используются
+для выбора JSX-ветки, текста, количества детей или загружаемого asset.
+
+`window.matchMedia` допустим только после mount для поведения без изменения
+первоначального DOM, например для scroll listener, либо в момент открытия
+разных overlay surfaces. Responsive изображения с разными файлами оформляются
+через art direction (`picture`/`source`), чтобы браузер не загружал оба варианта.
+
 ## Статус прежних отклонений
 
 Ранее зафиксированные отклонения устранены:

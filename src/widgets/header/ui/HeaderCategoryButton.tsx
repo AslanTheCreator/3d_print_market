@@ -15,13 +15,7 @@ const LazyCategoriesDrawer = dynamic(
   },
 );
 
-interface HeaderCategoryButtonProps {
-  isMobile: boolean;
-}
-
-export const HeaderCategoryButton = ({
-  isMobile,
-}: HeaderCategoryButtonProps) => {
+export const HeaderCategoryButton = () => {
   const theme = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [shouldMountDrawer, setShouldMountDrawer] = useState(false);
@@ -39,13 +33,14 @@ export const HeaderCategoryButton = ({
     <>
       <IconButton
         onClick={isOpen ? handleClose : handleOpen}
-        aria-label="Открыть категории"
+        aria-label={isOpen ? "Закрыть категории" : "Открыть категории"}
+        aria-expanded={isOpen}
         sx={{
           backgroundColor: theme.palette.primary.main,
           color: theme.palette.primary.contrastText,
           borderRadius: 2,
-          width: isMobile ? 33 : 58,
-          height: isMobile ? 33 : 58,
+          width: { xs: 33, md: 58 },
+          height: { xs: 33, md: 58 },
           transition: theme.transitions.create(
             ["background-color", "transform"],
             {
@@ -64,11 +59,7 @@ export const HeaderCategoryButton = ({
         {isOpen ? <CloseIcon /> : <MenuIcon />}
       </IconButton>
       {shouldMountDrawer && (
-        <LazyCategoriesDrawer
-          open={isOpen}
-          onClose={handleClose}
-          isMobile={isMobile}
-        />
+        <LazyCategoriesDrawer open={isOpen} onClose={handleClose} />
       )}
     </>
   );

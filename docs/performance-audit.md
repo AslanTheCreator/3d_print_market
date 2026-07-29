@@ -1,6 +1,7 @@
 # Performance-аудит
 
-Первичный замер: 2026-06-23. Статус сверен с кодом и production build: 2026-07-23.
+Первичный замер: 2026-06-23. Статус сверен с кодом, production build и
+standalone Lab-прогоном: 2026-07-28.
 
 ## Ограничения исходного замера
 
@@ -12,15 +13,15 @@
 
 Исторический network transfer после последующих изменений не переснимался.
 
-## Build snapshot 2026-07-23
+## Build snapshot 2026-07-28
 
 `npm run build` завершился успешно. First Load JS:
 
-- **`/`** — `305 kB`.
-- **`/catalog/[id]/detail`** — `333 kB`.
-- **`/catalog/category/[...slug]`** — `305 kB`.
-- **`/catalog/search`** — `301 kB`.
-- **`/checkout`** — `314 kB`.
+- **`/`** — `286 kB`.
+- **`/catalog/[id]/detail`** — `305 kB`.
+- **`/catalog/category/[...slug]`** — `286 kB`.
+- **`/catalog/search`** — `286 kB`.
+- **`/checkout`** — `309 kB`.
 - **`/privacy`** — `130 kB`.
 
 Shared First Load JS — `102 kB`. Это build-time размеры Next.js, а не Core Web Vitals и не объём полного network transfer.
@@ -38,6 +39,27 @@ Shared First Load JS — `102 kB`. Это build-time размеры Next.js, а 
 - Для части protected links отключён prefetch.
 - Production-like проверки переведены на standalone runner.
 - Крупные checkout, settings, product form и gallery компоненты декомпозированы.
+- Header и product detail переведены на одно CSS-first DOM-дерево без
+  render-time `useMediaQuery`; responsive asset для header выбирается через
+  `picture`.
+- Добавлен отдельный Pixel 5 Playwright project, no-JS SSR-проверка и CI gate
+  CLS `≤0.1` по session-window алгоритму.
+
+## Lab snapshot 2026-07-28
+
+Один локальный standalone-прогон с fixture API подтвердил:
+
+- `/about`, Slow 4G / CPU ×4: CLS `0`, LCP `784 ms`, transfer `447,368 B`;
+- fixture product detail, без throttling: CLS `0`, LCP `224 ms`, transfer
+  `626,659 B`;
+- mobile browser не запросил `logo-desktop`, а cold desktop не запросил
+  compact-only logo assets.
+
+В E2E внешний тег Яндекс Метрики заменён локальным пустым ответом, поэтому
+transfer size отражает frontend assets, но не production analytics traffic.
+
+Это диагностические Lab-значения одного запуска. Они не являются production
+Core Web Vitals, field p75 или performance budget.
 
 ## Открыто
 
@@ -45,7 +67,6 @@ Shared First Load JS — `102 kB`. Это build-time размеры Next.js, а 
 
 - **Повторить production/mobile замеры** — build snapshot обновлён, но baseline network transfer и Core Web Vitals остаётся историческим.
 - **Оптимизировать logo assets** — `logo-desktop.png` около `925 kB`, `logo.svg` около `148 kB`.
-- **Проверить mobile hydration/CLS** — крупные UI-деревья переключаются через `useMediaQuery`, mobile browser project и SSR match strategy отсутствуют.
 
 ### Средний приоритет
 
@@ -56,11 +77,13 @@ Shared First Load JS — `102 kB`. Это build-time размеры Next.js, а 
 ### Низкий приоритет
 
 - **Контролировать icon imports** — MUI icons используются во многих client-компонентах; массовая замена без bundle evidence не нужна.
-- **Ввести budget** — нет CI-порогов для JS, assets и Web Vitals.
+- **Расширить budget** — CLS gate добавлен, но нет CI-порогов для JS, assets,
+  LCP и INP.
 
 ## Следующий замер
 
-1. Собрать проект и запустить `npm run test:standalone`.
-2. Измерить `/`, поиск, карточку товара, checkout и privacy на mobile и desktop.
-3. Зафиксировать JS, fonts, images, failed requests, LCP, CLS и INP/TBT.
-4. Только после нового baseline установить performance budget.
+1. Измерить `/`, поиск, карточку товара, checkout и privacy на staging с
+   совместимым backend на mobile и desktop.
+2. Зафиксировать JS, fonts, images, failed requests, LCP, CLS и INP/TBT.
+3. Собрать production field p75 через RUM без чувствительных данных.
+4. Только после репрезентативного baseline установить дополнительные budgets.

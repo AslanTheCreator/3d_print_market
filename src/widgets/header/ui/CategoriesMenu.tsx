@@ -298,6 +298,7 @@ export const CategoriesMenu: React.FC<CategoriesMenuProps> = ({
             onClick={onClose}
             aria-label="Закрыть меню категорий"
             sx={{
+              display: { xs: "inline-flex", md: "none" },
               width: 44,
               height: 44,
               flexShrink: 0,

@@ -11,7 +11,6 @@ import {
   IconButton,
   FormHelperText,
   CircularProgress,
-  useMediaQuery,
   useTheme,
 } from "@mui/material";
 import Link from "next/link";
@@ -79,7 +78,6 @@ const AuthForm: React.FC<IAuthForm> = ({
   requirePersonalDataConsent = false,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -150,32 +148,38 @@ const AuthForm: React.FC<IAuthForm> = ({
 
   return (
     <Box
-      pt={isMobile ? 3 : 4}
-      pb={isMobile ? 3 : 4}
-      px={isMobile ? 2 : 0}
       display="flex"
       flexDirection="column"
       alignItems="center"
       width="100%"
+      sx={{
+        pt: { xs: 3, sm: 4 },
+        pb: { xs: 3, sm: 4 },
+        px: { xs: 2, sm: 0 },
+      }}
     >
       <Typography
         component="h2"
-        variant={isMobile ? "h3" : "h2"}
+        variant="h2"
         fontWeight={700}
         textAlign="center"
         sx={{
-          fontSize: isMobile ? "1.5rem" : "2rem",
-          lineHeight: isMobile ? 1.3 : 1.2,
+          fontSize: { xs: "1.5rem", sm: "2rem" },
+          lineHeight: { xs: 1.3, sm: 1.2 },
         }}
       >
         {title}
       </Typography>
 
-      <Box mt={1} textAlign="center" maxWidth={isMobile ? "100%" : "450px"}>
+      <Box
+        mt={1}
+        textAlign="center"
+        sx={{ maxWidth: { xs: "100%", sm: "450px" } }}
+      >
         <Typography
           component="span"
           variant="body1"
-          sx={{ fontSize: isMobile ? "0.875rem" : "1rem" }}
+          sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
         >
           {subtitle}{" "}
         </Typography>
@@ -184,7 +188,7 @@ const AuthForm: React.FC<IAuthForm> = ({
             component="span"
             color="primary"
             sx={{
-              fontSize: isMobile ? "0.875rem" : "1rem",
+              fontSize: { xs: "0.875rem", sm: "1rem" },
               textDecoration: "underline",
               fontWeight: 500,
               transition: "color 0.2s ease",
@@ -205,10 +209,12 @@ const AuthForm: React.FC<IAuthForm> = ({
         display="flex"
         flexDirection="column"
         width="100%"
-        maxWidth={isMobile ? "100%" : "320px"}
-        mt={isMobile ? 3 : 5}
+        sx={{
+          maxWidth: { xs: "100%", sm: "320px" },
+          mt: { xs: 3, sm: 5 },
+        }}
       >
-        <Stack spacing={isMobile ? 1.5 : 2}>
+        <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <Box>
             <TextField
               fullWidth
@@ -226,7 +232,7 @@ const AuthForm: React.FC<IAuthForm> = ({
               InputProps={{
                 sx: {
                   borderRadius: theme.shape.borderRadius,
-                  fontSize: isMobile ? "0.875rem" : "1rem",
+                  fontSize: { xs: "0.875rem", sm: "1rem" },
                 },
               }}
             />
@@ -264,8 +270,9 @@ const AuthForm: React.FC<IAuthForm> = ({
                     <IconButton
                       onClick={handleTogglePassword}
                       edge="end"
-                      size={isMobile ? "small" : "medium"}
+                      size="medium"
                       aria-label="toggle password visibility"
+                      sx={{ p: { xs: 0.625, sm: 1 } }}
                     >
                       {showPassword ? (
                         <VisibilityOffIcon />
@@ -277,7 +284,7 @@ const AuthForm: React.FC<IAuthForm> = ({
                 ),
                 sx: {
                   borderRadius: theme.shape.borderRadius,
-                  fontSize: isMobile ? "0.875rem" : "1rem",
+                  fontSize: { xs: "0.875rem", sm: "1rem" },
                 },
               }}
             />
@@ -319,7 +326,7 @@ const AuthForm: React.FC<IAuthForm> = ({
                 InputProps={{
                   sx: {
                     borderRadius: theme.shape.borderRadius,
-                    fontSize: isMobile ? "0.875rem" : "1rem",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
                   },
                 }}
               />
@@ -362,7 +369,7 @@ const AuthForm: React.FC<IAuthForm> = ({
                   background: "none",
                   border: "none",
                   padding: 0,
-                  fontSize: isMobile ? "0.8rem" : "0.875rem",
+                  fontSize: { xs: "0.8rem", sm: "0.875rem" },
                   fontWeight: 500,
                   color: "primary.main",
                   textDecoration: "none",
@@ -384,11 +391,11 @@ const AuthForm: React.FC<IAuthForm> = ({
             type="submit"
             disabled={isSubmitting || isLoading}
             sx={{
-              minHeight: isMobile ? "48px" : "56px",
-              mt: isMobile ? 2 : 3,
+              minHeight: { xs: "48px", sm: "56px" },
+              mt: { xs: 2, sm: 3 },
               position: "relative",
               fontWeight: 600,
-              fontSize: isMobile ? "0.875rem" : "1rem",
+              fontSize: { xs: "0.875rem", sm: "1rem" },
               transition: "all 0.2s ease",
             }}
           >

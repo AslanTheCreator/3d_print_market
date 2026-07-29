@@ -1,6 +1,6 @@
 "use client";
 
-import { Dialog, Fade, useMediaQuery, useTheme } from "@mui/material";
+import { Dialog, Fade } from "@mui/material";
 import { FullscreenViewerHint } from "./FullscreenViewerHint";
 import { FullscreenViewerImageStage } from "./FullscreenViewerImageStage";
 import { FullscreenViewerIndicators } from "./FullscreenViewerIndicators";
@@ -24,8 +24,6 @@ export function FullscreenImageViewer({
   onClose,
   alt = "Изображение товара",
 }: FullscreenImageViewerProps) {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const viewer = useFullscreenImageViewer({
     images,
     initialIndex,
@@ -53,7 +51,6 @@ export function FullscreenImageViewer({
       <FullscreenViewerTopBar
         currentIndex={viewer.currentIndex}
         imageCount={images.length}
-        isMobile={isMobile}
         zoom={viewer.zoom}
         onClose={onClose}
         onZoomIn={viewer.handleZoomIn}
@@ -92,7 +89,6 @@ export function FullscreenImageViewer({
 
       <FullscreenViewerHint
         open={open}
-        isMobile={isMobile}
         zoom={viewer.zoom}
       />
     </Dialog>

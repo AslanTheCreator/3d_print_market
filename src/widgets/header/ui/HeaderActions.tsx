@@ -33,10 +33,6 @@ const LazyPendingActionsPopover = dynamic(
   },
 );
 
-interface HeaderActionsProps {
-  isMobile: boolean;
-}
-
 interface HeaderIconConfig {
   url: string;
   icon: React.ReactNode;
@@ -51,7 +47,7 @@ interface HeaderIconConfig {
   triggerRef?: React.Ref<HTMLAnchorElement>;
 }
 
-export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
+export const HeaderActions = () => {
   const { isAuthenticated } = useAuth();
 
   const { getCartItemsCount } = useCartChecks(isAuthenticated);
@@ -176,8 +172,6 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
     setIsPopoverFocused(false);
   }, []);
 
-  const iconSize = isMobile ? ICON_SIZES.mobile : ICON_SIZES.desktop;
-
   const headerIcons: HeaderIconConfig[] = [
     {
       url: "/favorites",
@@ -185,8 +179,8 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
         <Image
           src={FavoritesCustomIcon}
           alt="Избранное"
-          width={iconSize}
-          height={iconSize}
+          width={ICON_SIZES.mobile}
+          height={ICON_SIZES.mobile}
           style={{ objectFit: "contain" }}
         />
       ),
@@ -199,8 +193,8 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
         <Image
           src={PersonCustomIcon}
           alt="Профиль"
-          width={iconSize}
-          height={iconSize}
+          width={ICON_SIZES.mobile}
+          height={ICON_SIZES.mobile}
           style={{ objectFit: "contain" }}
         />
       ),
@@ -219,8 +213,8 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
         <Image
           src={ShoppingCartCustomIcon}
           alt="Корзина"
-          width={iconSize}
-          height={iconSize}
+          width={ICON_SIZES.mobile}
+          height={ICON_SIZES.mobile}
           style={{ objectFit: "contain" }}
         />
       ),
@@ -234,7 +228,7 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
       <Stack
         component="nav"
         direction="row"
-        spacing={isMobile ? 0.5 : 1}
+        spacing={{ xs: 0.5, md: 1 }}
         alignItems="center"
         sx={{
           minHeight: { xs: 40, sm: 50 },
@@ -242,7 +236,7 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
         aria-label="Действия в шапке сайта"
       >
         {headerIcons.map((item) => (
-          <HeaderActionItem key={item.label} {...item} isMobile={isMobile} />
+          <HeaderActionItem key={item.label} {...item} />
         ))}
       </Stack>
 
@@ -267,16 +261,13 @@ export const HeaderActions = ({ isMobile }: HeaderActionsProps) => {
   );
 };
 
-interface HeaderActionItemProps extends HeaderIconConfig {
-  isMobile: boolean;
-}
+type HeaderActionItemProps = HeaderIconConfig;
 
 const HeaderActionItem = ({
   url,
   icon,
   label,
   badge,
-  isMobile,
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -333,6 +324,14 @@ const HeaderActionItem = ({
                 transform: "scale(0.95)",
               },
               "& img": {
+                width: {
+                  xs: ICON_SIZES.mobile,
+                  md: ICON_SIZES.desktop,
+                },
+                height: {
+                  xs: ICON_SIZES.mobile,
+                  md: ICON_SIZES.desktop,
+                },
                 transition: theme.transitions.create(["filter", "transform"], {
                   duration: theme.transitions.duration.shorter,
                 }),
@@ -353,24 +352,23 @@ const HeaderActionItem = ({
             )}
           </IconButton>
 
-          {!isMobile && (
-            <Typography
-              variant="caption"
-              sx={{
-                color: "#ffffff",
-                fontWeight: 500,
-                fontSize: "0.78rem",
-                letterSpacing: 0,
-                textAlign: "center",
-                lineHeight: 1.2,
-                transition: theme.transitions.create(["color"], {
-                  duration: theme.transitions.duration.shorter,
-                }),
-              }}
-            >
-              {label}
-            </Typography>
-          )}
+          <Typography
+            variant="caption"
+            sx={{
+              display: { xs: "none", md: "block" },
+              color: "#ffffff",
+              fontWeight: 500,
+              fontSize: "0.78rem",
+              letterSpacing: 0,
+              textAlign: "center",
+              lineHeight: 1.2,
+              transition: theme.transitions.create(["color"], {
+                duration: theme.transitions.duration.shorter,
+              }),
+            }}
+          >
+            {label}
+          </Typography>
         </Box>
       </Link>
     </Box>

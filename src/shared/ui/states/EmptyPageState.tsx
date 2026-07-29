@@ -8,7 +8,6 @@ import {
   Stack,
   Button,
   useTheme,
-  useMediaQuery,
   alpha,
 } from "@mui/material";
 
@@ -38,7 +37,6 @@ export const EmptyPageState: React.FC<EmptyPageStateProps> = ({
   tips,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
     <Container maxWidth="sm" sx={{ py: { xs: 4, sm: 6 } }}>
@@ -53,8 +51,8 @@ export const EmptyPageState: React.FC<EmptyPageStateProps> = ({
         {/* Иконка */}
         <Box
           sx={{
-            width: isMobile ? 100 : 120,
-            height: isMobile ? 100 : 120,
+            width: { xs: 100, sm: 120 },
+            height: { xs: 100, sm: 120 },
             borderRadius: "50%",
             bgcolor: alpha(theme.palette.primary.main, 0.08),
             display: "flex",
@@ -69,9 +67,11 @@ export const EmptyPageState: React.FC<EmptyPageStateProps> = ({
         {/* Текст */}
         <Stack spacing={1.5} alignItems="center" sx={{ mb: 4 }}>
           <Typography
-            variant={isMobile ? "h5" : "h4"}
+            variant="h4"
+            component="h2"
             fontWeight={700}
             color="text.primary"
+            sx={{ fontSize: { xs: "1.125rem", sm: "1.25rem" } }}
           >
             {title}
           </Typography>
@@ -86,9 +86,9 @@ export const EmptyPageState: React.FC<EmptyPageStateProps> = ({
 
         {/* Кнопки */}
         <Stack
-          direction={isMobile ? "column" : "row"}
+          direction={{ xs: "column", sm: "row" }}
           spacing={2}
-          sx={{ width: isMobile ? "100%" : "auto", mb: tips ? 5 : 0 }}
+          sx={{ width: { xs: "100%", sm: "auto" }, mb: tips ? 5 : 0 }}
         >
           {actions.map((action, index) => (
             <Button
@@ -100,7 +100,7 @@ export const EmptyPageState: React.FC<EmptyPageStateProps> = ({
               startIcon={action.icon}
               onClick={action.onClick}
               sx={{
-                minWidth: isMobile ? "100%" : 200,
+                minWidth: { xs: "100%", sm: 200 },
                 textTransform: "none",
                 py: 1.5,
               }}

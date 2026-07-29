@@ -14,7 +14,6 @@ import {
   useTheme,
   Stack,
   Chip,
-  useMediaQuery,
 } from "@mui/material";
 import { Add, CheckCircle, Delete, ImageOutlined } from "@mui/icons-material";
 import { UseMultipleImageUploadReturn } from "@/features/image-upload";
@@ -29,7 +28,6 @@ export const MultiImageUpload = ({
   maxImages,
 }: MultiImageUploadProps) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -348,11 +346,12 @@ export const MultiImageUpload = ({
                 <Typography variant="body2" fontWeight={600}>
                   Добавить фото
                 </Typography>
-                {!isMobile && (
-                  <Typography variant="caption">
-                    Перетащите или выберите файл
-                  </Typography>
-                )}
+                <Typography
+                  variant="caption"
+                  sx={{ display: { xs: "none", sm: "block" } }}
+                >
+                  Перетащите или выберите файл
+                </Typography>
               </Stack>
             </Paper>
           </Grid>

@@ -4,8 +4,6 @@ import {
   Container,
   Typography,
   Stack,
-  useTheme,
-  useMediaQuery,
   Button,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
@@ -61,8 +59,6 @@ export const UnauthorizedState = ({
   type: UnauthorizedStateType;
 }) => {
   const router = useRouter();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const config = configs[type];
   const getAuthPath = (authPath: "/auth/login" | "/auth/register") => {
@@ -91,7 +87,7 @@ export const UnauthorizedState = ({
       >
         <LockOutlinedIcon
           sx={{
-            fontSize: isMobile ? 64 : 80,
+            fontSize: { xs: 64, sm: 80 },
             color: "primary.main",
             opacity: 0.7,
           }}
@@ -99,9 +95,11 @@ export const UnauthorizedState = ({
 
         <Stack spacing={2} alignItems="center">
           <Typography
-            variant={isMobile ? "h6" : "h5"}
+            variant="h5"
+            component="h2"
             fontWeight={700}
             color="text.primary"
+            sx={{ fontSize: { xs: "1rem", sm: "1.125rem" } }}
           >
             Войдите в аккаунт
           </Typography>
@@ -116,16 +114,20 @@ export const UnauthorizedState = ({
         </Stack>
 
         <Stack
-          direction={isMobile ? "column" : "row"}
+          direction={{ xs: "column", sm: "row" }}
           spacing={2}
-          sx={{ width: isMobile ? "100%" : "auto" }}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
         >
           <Button
             variant="contained"
             startIcon={<LoginIcon />}
             onClick={() => router.push(getAuthPath("/auth/login"))}
-            size={isMobile ? "medium" : "large"}
-            sx={{ minWidth: isMobile ? "100%" : 140, textTransform: "none" }}
+            size="large"
+            sx={{
+              minWidth: { xs: "100%", sm: 140 },
+              py: { xs: 1, sm: 1.25 },
+              textTransform: "none",
+            }}
           >
             Войти
           </Button>
@@ -134,8 +136,12 @@ export const UnauthorizedState = ({
             variant="outlined"
             startIcon={<PersonAddOutlinedIcon />}
             onClick={() => router.push(getAuthPath("/auth/register"))}
-            size={isMobile ? "medium" : "large"}
-            sx={{ minWidth: isMobile ? "100%" : 140, textTransform: "none" }}
+            size="large"
+            sx={{
+              minWidth: { xs: "100%", sm: 140 },
+              py: { xs: 1, sm: 1.25 },
+              textTransform: "none",
+            }}
           >
             Регистрация
           </Button>

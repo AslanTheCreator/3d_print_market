@@ -7,7 +7,6 @@ import {
   Typography,
   Box,
   IconButton,
-  useMediaQuery,
   useTheme,
   alpha,
 } from "@mui/material";
@@ -26,7 +25,6 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
   productName,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const router = useRouter();
 
   const handleLogin = () => {
@@ -49,8 +47,8 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
           borderRadius: "16px",
           overflow: "visible",
           position: "relative",
-          mx: isMobile ? 2 : 3,
-          my: isMobile ? 2 : 3,
+          mx: { xs: 2, sm: 3 },
+          my: { xs: 2, sm: 3 },
         },
       }}
     >
@@ -73,8 +71,8 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
 
       <DialogContent
         sx={{
-          p: isMobile ? 3 : 4,
-          pb: isMobile ? 2 : 3,
+          p: { xs: 3, sm: 4 },
+          pb: { xs: 2, sm: 3 },
           textAlign: "center",
         }}
       >
@@ -88,8 +86,8 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
         >
           <Box
             sx={{
-              width: isMobile ? 64 : 80,
-              height: isMobile ? 64 : 80,
+              width: { xs: 64, sm: 80 },
+              height: { xs: 64, sm: 80 },
               borderRadius: "50%",
               backgroundColor: alpha(theme.palette.primary.main, 0.1),
               display: "flex",
@@ -100,7 +98,7 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
           >
             <LockOutlined
               sx={{
-                fontSize: isMobile ? 28 : 36,
+                fontSize: { xs: 28, sm: 36 },
                 color: theme.palette.primary.main,
               }}
             />
@@ -140,7 +138,7 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
             fontWeight: 700,
             mb: 1.5,
             color: theme.palette.text.primary,
-            fontSize: isMobile ? "1.25rem" : "1.5rem",
+            fontSize: { xs: "1.25rem", sm: "1.5rem" },
           }}
         >
           Требуется авторизация
@@ -153,7 +151,7 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
             color: theme.palette.text.secondary,
             mb: 3,
             lineHeight: 1.6,
-            fontSize: isMobile ? "0.875rem" : "1rem",
+            fontSize: { xs: "0.875rem", sm: "1rem" },
           }}
         >
           {productName ? (
@@ -166,17 +164,17 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
           )}
         </Typography>
 
-        {!isMobile && (
-          <Box
-            sx={{
-              textAlign: "left",
-              mb: 3,
-              backgroundColor: alpha(theme.palette.primary.main, 0.04),
-              borderRadius: "12px",
-              p: 2,
-            }}
-          >
-            <Typography
+        <Box
+          sx={{
+            display: { xs: "none", sm: "block" },
+            textAlign: "left",
+            mb: 3,
+            backgroundColor: alpha(theme.palette.primary.main, 0.04),
+            borderRadius: "12px",
+            p: 2,
+          }}
+        >
+          <Typography
               variant="subtitle2"
               sx={{
                 fontWeight: 600,
@@ -204,30 +202,29 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
               <li>Сохранять избранные товары</li>
               <li>Отслеживать заказы</li>
             </Box>
-          </Box>
-        )}
+        </Box>
       </DialogContent>
 
       <DialogActions
         sx={{
-          p: isMobile ? 3 : 4,
+          p: { xs: 3, sm: 4 },
           pt: 0,
           gap: 1.5,
-          flexDirection: isMobile ? "column" : "row",
+          flexDirection: { xs: "column", sm: "row" },
         }}
       >
         <Button
           onClick={handleClose}
           variant="outlined"
-          fullWidth={isMobile}
           sx={{
+            width: { xs: "100%", sm: "auto" },
             borderRadius: "12px",
             py: 1.25,
             px: 3,
-            fontSize: isMobile ? "0.875rem" : "1rem",
+            fontSize: { xs: "0.875rem", sm: "1rem" },
             fontWeight: 600,
-            order: isMobile ? 2 : 1,
-            minWidth: isMobile ? "auto" : 120,
+            order: { xs: 2, sm: 1 },
+            minWidth: { xs: "auto", sm: 120 },
           }}
         >
           Отмена
@@ -235,16 +232,16 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
         <Button
           onClick={handleLogin}
           variant="contained"
-          fullWidth={isMobile}
           startIcon={<Login />}
           sx={{
+            width: { xs: "100%", sm: "auto" },
             borderRadius: "12px",
             py: 1.25,
             px: 3,
-            fontSize: isMobile ? "0.875rem" : "1rem",
+            fontSize: { xs: "0.875rem", sm: "1rem" },
             fontWeight: 600,
-            order: isMobile ? 1 : 2,
-            minWidth: isMobile ? "auto" : 140,
+            order: { xs: 1, sm: 2 },
+            minWidth: { xs: "auto", sm: 140 },
             boxShadow: "0 4px 16px rgba(239, 66, 132, 0.3)",
             "&:hover": {
               boxShadow: "0 6px 20px rgba(239, 66, 132, 0.4)",

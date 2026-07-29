@@ -9,9 +9,15 @@ interface MainImageProps {
   src?: string;
   alt: string;
   priority?: boolean;
+  sizes?: string;
 }
 
-export function MainImage({ src, alt, priority = false }: MainImageProps) {
+export function MainImage({
+  src,
+  alt,
+  priority = false,
+  sizes = "(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw",
+}: MainImageProps) {
   const [hasImageError, setHasImageError] = useState(false);
 
   useEffect(() => {
@@ -37,7 +43,7 @@ export function MainImage({ src, alt, priority = false }: MainImageProps) {
           alt={alt}
           fill
           priority={priority}
-          sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
+          sizes={sizes}
           style={{
             objectFit: "contain",
             transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",

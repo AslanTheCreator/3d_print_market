@@ -1,10 +1,10 @@
 ﻿import React from "react";
 import {
+  Box,
   IconButton,
   CircularProgress,
   useTheme,
   alpha,
-  useMediaQuery,
   Fab,
   Button,
 } from "@mui/material";
@@ -20,7 +20,13 @@ interface FavoriteButtonProps {
   isFavorite: boolean;
   className?: string;
   productName?: string;
-  variant?: "default" | "fab" | "detailed" | "bar" | "overlay";
+  variant?:
+    | "default"
+    | "fab"
+    | "detailed"
+    | "bar"
+    | "overlay"
+    | "product-details";
 }
 
 export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
@@ -31,7 +37,6 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   variant = "default",
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { isAuthenticated } = useAuth();
   const { toggleFavorite, isLoading } = useToggleFavorite(isAuthenticated);
   const {
@@ -60,9 +65,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
           ? 24
           : variant === "bar" || variant === "overlay"
             ? 20
-            : isMobile
-              ? 16
-              : 20
+            : 20
       }
       thickness={4}
       sx={{
@@ -85,9 +88,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
             ? "1.5rem"
             : variant === "bar" || variant === "overlay"
               ? "1.25rem"
-              : isMobile
-                ? "1rem"
-                : "1.25rem",
+              : { xs: "1rem", sm: "1.25rem" },
       }}
     />
   ) : (
@@ -104,9 +105,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
             ? "1.5rem"
             : variant === "bar" || variant === "overlay"
               ? "1.25rem"
-              : isMobile
-                ? "1rem"
-                : "1.25rem",
+              : { xs: "1rem", sm: "1.25rem" },
       }}
     />
   );
@@ -170,6 +169,69 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
         >
           {isFavorite ? "В избранном" : "В избранное"}
         </Button>
+      ) : variant === "product-details" ? (
+        <Button
+          className={className}
+          variant="outlined"
+          fullWidth
+          startIcon={
+            isLoading ? (
+              <CircularProgress size={20} thickness={4} color="inherit" />
+            ) : isFavorite ? (
+              <FavoriteIcon />
+            ) : (
+              <FavoriteBorderIcon />
+            )
+          }
+          onClick={handleClick}
+          disabled={isLoading}
+          aria-label={
+            isFavorite ? "Удалить из избранного" : "Добавить в избранное"
+          }
+          sx={(theme) => ({
+            width: { xs: 44, sm: "100%" },
+            minWidth: { xs: 44, sm: 64 },
+            height: { xs: 44, sm: "auto" },
+            p: { xs: 0, sm: 1.5 },
+            borderRadius: { xs: 2.5, sm: "12px" },
+            fontWeight: 600,
+            fontSize: "16px",
+            textTransform: "none",
+            color: {
+              xs: isFavorite ? "error.main" : "text.secondary",
+              sm: isFavorite ? "common.white" : "primary.main",
+            },
+            borderColor: isFavorite ? "error.light" : "primary.main",
+            bgcolor: {
+              xs: alpha(theme.palette.background.paper, 0.92),
+              sm: isFavorite
+                ? theme.palette.error.main
+                : alpha(theme.palette.primary.main, 0.08),
+            },
+            backdropFilter: { xs: "blur(10px)", sm: "none" },
+            boxShadow: {
+              xs: "0 8px 24px rgba(15, 23, 42, 0.12)",
+              sm: "none",
+            },
+            "& .MuiButton-startIcon": {
+              m: { xs: 0, sm: "0 8px 0 -4px" },
+              color: "inherit",
+            },
+            "&:hover": {
+              borderColor: isFavorite ? "error.main" : "primary.main",
+              bgcolor: {
+                xs: alpha(theme.palette.background.paper, 0.98),
+                sm: isFavorite
+                  ? theme.palette.error.dark
+                  : alpha(theme.palette.primary.main, 0.15),
+              },
+            },
+          })}
+        >
+          <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+            {isFavorite ? "В избранном" : "В избранное"}
+          </Box>
+        </Button>
       ) : variant === "bar" ? (
         <IconButton
           className={className}
@@ -225,14 +287,14 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
           className={className}
           sx={{
             position: "absolute",
-            top: isMobile ? 4 : 10,
-            right: isMobile ? 4 : 10,
+            top: { xs: 4, sm: 10 },
+            right: { xs: 4, sm: 10 },
             zIndex: 2,
             bgcolor: alpha(theme.palette.background.paper, 0.7),
             backdropFilter: "blur(4px)",
-            width: isMobile ? 28 : 36,
-            height: isMobile ? 28 : 36,
-            padding: isMobile ? "4px" : "8px",
+            width: { xs: 28, sm: 36 },
+            height: { xs: 28, sm: 36 },
+            padding: { xs: "4px", sm: "8px" },
             "&:hover": {
               bgcolor: alpha(theme.palette.background.paper, 0.9),
             },
