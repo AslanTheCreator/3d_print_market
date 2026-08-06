@@ -170,7 +170,11 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
             <LocalShipping color="primary" />
             <Typography variant="h6">Отправка товара</Typography>
           </Stack>
-          <IconButton onClick={handleClose} size="small">
+          <IconButton
+            onClick={handleClose}
+            size="small"
+            aria-label="Закрыть окно отправки товара"
+          >
             <Close />
           </IconButton>
         </Stack>
@@ -273,6 +277,7 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
               </Typography>
               <IconButton
                 size="small"
+                aria-label="Скопировать адрес и данные получателя"
                 onClick={() =>
                   copyToClipboard(
                     `${order.transfer.address}\n${order.userInfo.login}\n${order.userInfo.phoneNumber}`

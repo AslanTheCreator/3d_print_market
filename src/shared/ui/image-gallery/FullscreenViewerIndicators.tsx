@@ -1,5 +1,5 @@
 import type React from "react";
-import { Box } from "@mui/material";
+import { Box, ButtonBase } from "@mui/material";
 
 interface FullscreenViewerIndicatorsProps {
   currentIndex: number;
@@ -25,32 +25,50 @@ export const FullscreenViewerIndicators = ({
         transform: "translateX(-50%)",
         zIndex: 2,
         display: "flex",
-        gap: 1,
-        p: 1.5,
+        maxWidth: "calc(100% - 32px)",
+        overflowX: "auto",
+        p: 0.5,
         bgcolor: "rgba(255,255,255,0.1)",
         backdropFilter: "blur(10px)",
         borderRadius: 3,
+        scrollbarWidth: "thin",
       }}
     >
       {Array.from({ length: imageCount }, (_, index) => (
-        <Box
+        <ButtonBase
           key={index}
           onClick={() => onSelect(index)}
+          aria-label={`Показать изображение ${index + 1} из ${imageCount}`}
+          aria-current={currentIndex === index ? "true" : undefined}
           sx={{
-            width: { xs: 8, sm: 10 },
-            height: { xs: 8, sm: 10 },
-            borderRadius: "50%",
-            bgcolor:
-              currentIndex === index ? "white" : "rgba(255,255,255,0.3)",
-            cursor: "pointer",
-            transition: "all 0.3s ease",
-            "&:hover": {
+            flex: "0 0 44px",
+            width: 44,
+            height: 44,
+            borderRadius: 2,
+            "&.Mui-focusVisible": {
+              outline: "3px solid rgba(255,255,255,0.8)",
+              outlineOffset: -3,
+            },
+            "&:hover > span": {
               bgcolor:
                 currentIndex === index ? "white" : "rgba(255,255,255,0.5)",
               transform: "scale(1.2)",
             },
           }}
-        />
+        >
+          <Box
+            component="span"
+            aria-hidden
+            sx={{
+              width: { xs: 8, sm: 10 },
+              height: { xs: 8, sm: 10 },
+              borderRadius: "50%",
+              bgcolor:
+                currentIndex === index ? "white" : "rgba(255,255,255,0.3)",
+              transition: "all 0.2s ease",
+            }}
+          />
+        </ButtonBase>
       ))}
     </Box>
   );

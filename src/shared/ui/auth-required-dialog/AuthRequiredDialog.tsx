@@ -55,6 +55,7 @@ export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
       {/* Close button */}
       <IconButton
         onClick={handleClose}
+        aria-label="Закрыть окно входа"
         sx={{
           position: "absolute",
           right: 8,

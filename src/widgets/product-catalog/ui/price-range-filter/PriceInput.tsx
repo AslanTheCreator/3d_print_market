@@ -31,7 +31,8 @@ export const PriceInput = ({
         sx={{
           px: compact ? 1.5 : 2,
           py: compact ? 0.875 : 1.5,
-          height: compact ? 36 : "auto",
+          minHeight: 44,
+          height: compact ? 44 : "auto",
           boxSizing: "border-box",
           display: "flex",
           alignItems: "center",

@@ -272,6 +272,7 @@ export const CheckoutCartItemCard = ({
           <IconButton
             onClick={handleRemove}
             disabled={isRemoving}
+            aria-label={`Удалить товар ${name} из корзины`}
             size="small"
             sx={{
               color: theme.palette.grey[500],
@@ -339,6 +340,7 @@ export const CheckoutCartItemCard = ({
                 maxQuantity ?? (isStockInsufficient ? quantity : undefined)
               }
               size="responsive"
+              itemName={name}
             />
           )}
         </Stack>

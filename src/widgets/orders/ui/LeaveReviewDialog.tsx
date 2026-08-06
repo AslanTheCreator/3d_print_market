@@ -263,7 +263,11 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
                   Оставить отзыв
                 </Typography>
               </Stack>
-              <IconButton onClick={handleClose} size="small">
+              <IconButton
+                onClick={handleClose}
+                size="small"
+                aria-label="Закрыть окно отзыва"
+              >
                 <Close />
               </IconButton>
             </Stack>

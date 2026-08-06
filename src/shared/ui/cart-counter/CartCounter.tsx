@@ -3,7 +3,13 @@
 "use client";
 
 import React from "react";
-import { Box, Typography, useTheme, alpha } from "@mui/material";
+import {
+  alpha,
+  Box,
+  IconButton,
+  Typography,
+  useTheme,
+} from "@mui/material";
 import { Add, Remove } from "@mui/icons-material";
 
 interface CartCounterProps {
@@ -13,12 +19,13 @@ interface CartCounterProps {
   disabled?: boolean;
   isAtMax?: boolean;
   size?: "compact" | "large";
+  itemName?: string;
 }
 
 const sizeConfig = {
   compact: {
-    height: { mobile: 32, desktop: 36 },
-    buttonWidth: { mobile: 36, desktop: 44 },
+    height: { mobile: 44, desktop: 44 },
+    buttonWidth: { mobile: 44, desktop: 44 },
     iconSize: { mobile: "1.125rem", desktop: "1.25rem" },
     fontSize: { mobile: "0.875rem", desktop: "1rem" },
     borderRadius: { mobile: 1, desktop: 1.5 },
@@ -39,24 +46,25 @@ export const CartCounter: React.FC<CartCounterProps> = ({
   disabled = false,
   isAtMax = false,
   size = "compact",
+  itemName,
 }) => {
   const theme = useTheme();
   const config = sizeConfig[size];
+  const accessibleItemName = itemName?.trim() || "товара";
+  const counterLabel = itemName?.trim()
+    ? `Количество товара «${accessibleItemName}»`
+    : "Количество товара";
 
-  const handleDecrement = (e: React.MouseEvent) => {
+  const handleDecrement = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!disabled) {
-      onDecrement();
-    }
+    onDecrement();
   };
 
-  const handleIncrement = (e: React.MouseEvent) => {
+  const handleIncrement = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!disabled && !isAtMax) {
-      onIncrement();
-    }
+    onIncrement();
   };
 
   return (
@@ -76,29 +84,34 @@ export const CartCounter: React.FC<CartCounterProps> = ({
         opacity: disabled ? 0.6 : 1,
         transition: "all 0.2s ease-in-out",
       }}
+      role="group"
+      aria-label={counterLabel}
     >
-      <Box
+      <IconButton
+        type="button"
         onClick={handleDecrement}
+        disabled={disabled}
+        aria-label={`Уменьшить количество ${accessibleItemName}`}
+        size="small"
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           width: {
             xs: config.buttonWidth.mobile,
             sm: config.buttonWidth.desktop,
           },
+          minWidth: 44,
+          minHeight: 44,
           height: "100%",
-          cursor: disabled ? "not-allowed" : "pointer",
+          borderRadius: 0,
+          color: theme.palette.primary.main,
           transition: "background-color 0.15s ease",
           "&:hover": {
-            bgcolor: disabled
-              ? "transparent"
-              : alpha(theme.palette.primary.main, 0.15),
+            bgcolor: alpha(theme.palette.primary.main, 0.15),
           },
           "&:active": {
-            bgcolor: disabled
-              ? "transparent"
-              : alpha(theme.palette.primary.main, 0.25),
+            bgcolor: alpha(theme.palette.primary.main, 0.25),
+          },
+          "&.Mui-disabled": {
+            color: theme.palette.action.disabled,
           },
         }}
       >
@@ -108,10 +121,10 @@ export const CartCounter: React.FC<CartCounterProps> = ({
               xs: config.iconSize.mobile,
               sm: config.iconSize.desktop,
             },
-            color: theme.palette.primary.main,
+            color: "inherit",
           }}
         />
-      </Box>
+      </IconButton>
 
       <Typography
         sx={{
@@ -129,31 +142,32 @@ export const CartCounter: React.FC<CartCounterProps> = ({
         {value}
       </Typography>
 
-      <Box
+      <IconButton
+        type="button"
         onClick={handleIncrement}
+        disabled={disabled || isAtMax}
+        aria-label={`Увеличить количество ${accessibleItemName}`}
+        size="small"
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           width: {
             xs: config.buttonWidth.mobile,
             sm: config.buttonWidth.desktop,
           },
+          minWidth: 44,
+          minHeight: 44,
           height: "100%",
-          cursor: disabled || isAtMax ? "not-allowed" : "pointer",
+          borderRadius: 0,
+          color: theme.palette.primary.main,
           opacity: isAtMax ? 0.5 : 1,
           transition: "background-color 0.15s ease",
           "&:hover": {
-            bgcolor:
-              disabled || isAtMax
-                ? "transparent"
-                : alpha(theme.palette.primary.main, 0.15),
+            bgcolor: alpha(theme.palette.primary.main, 0.15),
           },
           "&:active": {
-            bgcolor:
-              disabled || isAtMax
-                ? "transparent"
-                : alpha(theme.palette.primary.main, 0.25),
+            bgcolor: alpha(theme.palette.primary.main, 0.25),
+          },
+          "&.Mui-disabled": {
+            color: theme.palette.action.disabled,
           },
         }}
       >
@@ -163,10 +177,10 @@ export const CartCounter: React.FC<CartCounterProps> = ({
               xs: config.iconSize.mobile,
               sm: config.iconSize.desktop,
             },
-            color: theme.palette.primary.main,
+            color: "inherit",
           }}
         />
-      </Box>
+      </IconButton>
     </Box>
   );
 };

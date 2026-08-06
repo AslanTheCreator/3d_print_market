@@ -621,8 +621,8 @@ test("product state survives orientation and product breakpoints", async ({
   await expect(descriptionToggle).toHaveAttribute("aria-expanded", "true");
 
   await gallery
-    .getByRole("button", { name: "Галерея изображений товара" })
-    .click({ position: { x: 180, y: 100 } });
+    .getByRole("button", { name: "Открыть полноэкранную галерею" })
+    .click();
   const fullscreenDialog = page.getByRole("dialog");
   await expect(fullscreenDialog).toBeVisible();
   await expect(fullscreenDialog.getByText("2 / 2")).toBeVisible();

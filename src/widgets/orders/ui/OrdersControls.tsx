@@ -90,6 +90,7 @@ export const OrdersControls = ({
 
       <TextField
         select
+        label="Сортировка заказов"
         value={sort}
         onChange={(event) => onSortChange(event.target.value as OrdersSortId)}
         size="small"

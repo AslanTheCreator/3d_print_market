@@ -25,7 +25,7 @@
 ### Частично готово
 
 - **Основные buyer/seller flows** — каталог, auth UI, корзина, checkout, товары и заказы реализованы; реальные end-to-end сценарии с backend не проверены.
-- **CI и тесты** — 15 smoke и 90 Playwright tests проходят в desktop и
+- **CI и тесты** — 15 smoke и 115 Playwright tests проходят в desktop и
   curated mobile Chromium, но CI работает без реального backend.
 - **SEO, performance, accessibility** — metadata/security headers и mobile
   Lab CLS gate есть; остаются soft 404, отсутствие production field data и
@@ -138,7 +138,11 @@ CI поднимает standalone frontend с недоступным API и ис�
 - **External purchase** — разрешён любой HTTP(S) host, но UI обещает Telegram и не показывает фактический домен.
 - **HTTP status/SEO** — invalid product, category и seller routes рендерят client error state с HTTP 200; это soft 404.
 - **Индексация private routes** — dashboard запрещён в `robots.txt`, но layout не задаёт `noindex` и наследует root metadata.
-- **Accessibility implementation** — найдены auth inputs без label, icon buttons без accessible name, keyboard-недоступный avatar upload и touch targets меньше 44 px.
+- **Accessibility scan** — implementation-дефекты исправлены 2026-07-30:
+  auth/OTP inputs имеют labels и связанные ошибки, icon actions — явные имена,
+  составные controls доступны с клавиатуры, standalone touch targets — не
+  меньше `44×44 px`. Общий automated accessibility scan всё ещё отсутствует и
+  остаётся открытым release-control gap.
 - **Performance** — локальный mobile Lab CLS gate добавлен и проходит, но нет
   production Core Web Vitals/RUM и budgets для LCP, INP, JS или assets.
 - **Споры и support** — dispute status отображается, но действия открытия/закрытия спора и подтверждённый support runbook отсутствуют.
@@ -146,7 +150,7 @@ CI поднимает standalone frontend с недоступным API и ис�
 
 ## Подтверждённые проверки
 
-Lint, typecheck, Steiger, build и standalone-прогон повторены 2026-07-29 для
+Lint, typecheck, Steiger, build и полный E2E-прогон повторены 2026-07-30 для
 текущего рабочего дерева:
 
 - **`npm run lint`** — пройдено, warnings `0`.
@@ -155,8 +159,8 @@ Lint, typecheck, Steiger, build и standalone-прогон повторены 20
 - **`npm audit --omit=dev --audit-level=high`** — после обновления PostCSS до
   `8.5.18` пройдено 2026-07-29: `0 vulnerabilities`.
 - **`npm run build`** — production build пройден.
-- **`npm run test:standalone`** — 15 smoke и 90 Playwright tests пройдены:
-  82 desktop и 8 mobile.
+- **`npm run test:e2e -- --workers=2`** — 115 Playwright tests пройдены:
+  105 desktop и 10 mobile.
 - **`docker compose config --quiet`** — последний подтверждённый результат от
   2026-07-23: конфигурация валидна.
 - **`docker build -f Dockerfile -t figurzilla-frontend:audit .`** — последний

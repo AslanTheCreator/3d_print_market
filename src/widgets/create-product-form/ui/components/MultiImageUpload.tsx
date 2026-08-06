@@ -223,6 +223,7 @@ export const MultiImageUpload = ({
                   size="small"
                   onClick={() => removeImage(index)}
                   disabled={image.isUploading}
+                  aria-label={`Удалить изображение ${index + 1}`}
                   sx={{
                     position: "absolute",
                     top: 8,

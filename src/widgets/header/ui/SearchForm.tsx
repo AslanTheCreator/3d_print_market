@@ -56,6 +56,7 @@ export const SearchForm = ({
   return (
     <Box sx={{ position: "relative", width: "100%" }}>
       <Paper
+        data-testid="header-search-surface"
         ref={searchFormRef}
         component="form"
         onSubmit={handleSubmit}
@@ -64,6 +65,7 @@ export const SearchForm = ({
           alignItems: "center",
           width: "100%",
           height: { xs: 35, md: 58 },
+          overflow: "visible",
           borderRadius: { xs: 1, md: 2 },
           backgroundColor: "white",
           boxShadow: "none",
@@ -103,9 +105,13 @@ export const SearchForm = ({
           sx={{
             ml: 2,
             flex: 1,
+            height: { xs: 44, md: 58 },
+            minHeight: 44,
             color: theme.palette.text.primary,
             "& .MuiInputBase-input": {
-              padding: { xs: "8px 0", md: "10px 0" },
+              boxSizing: "border-box",
+              height: { xs: 44, md: 58 },
+              padding: { xs: "12px 0", md: "10px 0" },
               fontSize: { xs: "0.875rem", md: "1rem" },
               "&::placeholder": {
                 color: theme.palette.text.secondary,

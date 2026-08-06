@@ -67,6 +67,23 @@ fixture сценарии пропускаются, если `PLAYWRIGHT_FIXTURE_
 
 Тесты с реальным backend требуют подходящих env и тестовых данных. Секреты из `.env.local` не выводятся в логи.
 
+## Accessibility и touch
+
+Playwright-регрессия для accessibility проверяет:
+
+- видимые labels auth-полей, программную связь ошибок, пять именованных OTP
+  inputs и динамические имена password visibility;
+- keyboard-управление avatar upload/delete, счётчиками количества, очисткой
+  цены, fullscreen-галереей и раскрываемыми settings cards;
+- отсутствие вложенных `button` в изменённых составных controls и нативные
+  disabled-состояния;
+- mobile touch targets самостоятельных controls не меньше `44×44 px`;
+- неизменные mobile-размеры шапки: `119 px` по высоте, `35 px` у видимой
+  search surface и `33×33 px` у видимой кнопки категорий.
+
+ESLint требует явное accessible name у `IconButton`. Общего automated
+accessibility scan (например, axe по матрице routes/states) пока нет.
+
 ## Order flow: этапы 1–5
 
 Изменения финансового отображения и lifecycle заказа проверяются на трёх уровнях.
@@ -110,9 +127,9 @@ npm run test:e2e
 
 ## Границы текущего набора
 
-Состояние на 2026-07-28:
+Состояние на 2026-07-30:
 
-- набор: `15` smoke и `90` Playwright tests — `82` desktop и `8` mobile;
+- набор: `15` smoke и `115` Playwright tests — `105` desktop и `10` mobile;
 - browser projects: Desktop Chrome и `mobile-chromium` на профиле Pixel 5
   (`393×727`, mobile UA, touch);
 - `*.mobile.spec.ts` запускаются только в mobile project; desktop suite в нём

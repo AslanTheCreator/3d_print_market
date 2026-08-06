@@ -327,8 +327,8 @@ test.describe("session lifecycle", () => {
       exact: true,
     });
     await waitForReactHydration(submitButton);
-    await page.getByPlaceholder("Email").fill("user@example.com");
-    await page.getByPlaceholder("Пароль").fill("password");
+    await page.getByLabel(/^Email/).fill("user@example.com");
+    await page.getByLabel(/^Пароль/).fill("password");
     await submitButton.click();
 
     await expect(page).toHaveURL(/\/about$/, { timeout: 15_000 });

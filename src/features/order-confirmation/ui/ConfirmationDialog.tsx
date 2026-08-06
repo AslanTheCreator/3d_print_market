@@ -192,6 +192,7 @@ export const ConfirmationDialog = ({
             onClick={handleClose}
             size="small"
             disabled={confirmationMutation.isPending}
+            aria-label={`Закрыть окно «${config.title}»`}
           >
             <Close />
           </IconButton>

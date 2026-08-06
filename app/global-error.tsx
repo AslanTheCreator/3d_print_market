@@ -102,6 +102,7 @@ export default function GlobalErrorPage({
                 borderRadius: "10px",
                 backgroundColor: "#ef4284",
                 color: "#ffffff",
+                minHeight: "44px",
                 padding: "12px 20px",
                 fontSize: "15px",
                 fontWeight: 600,
@@ -116,10 +117,15 @@ export default function GlobalErrorPage({
                 borderRadius: "10px",
                 border: "1px solid #ef4284",
                 color: "#ef4284",
+                minHeight: "44px",
                 padding: "12px 20px",
                 fontSize: "15px",
                 fontWeight: 600,
                 textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxSizing: "border-box",
               }}
             >
               На главную

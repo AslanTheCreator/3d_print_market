@@ -29,6 +29,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
   onRetryStockValidation,
 }) => {
   const theme = useTheme();
+  const commentLabelId = React.useId();
 
   return (
     <Grid container spacing={3}>
@@ -67,7 +68,12 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
               backgroundColor: theme.palette.background.paper,
             }}
           >
-            <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Typography
+              id={commentLabelId}
+              variant="h6"
+              fontWeight={600}
+              gutterBottom
+            >
               Комментарий к заказу
             </Typography>
             <TextField
@@ -77,6 +83,9 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
               placeholder="Добавьте комментарий к заказу (необязательно)"
               value={checkoutState.comment}
               onChange={(e) => checkoutState.setComment(e.target.value)}
+              inputProps={{
+                "aria-labelledby": commentLabelId,
+              }}
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 2,

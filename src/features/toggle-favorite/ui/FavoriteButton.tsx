@@ -292,9 +292,9 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
             zIndex: 2,
             bgcolor: alpha(theme.palette.background.paper, 0.7),
             backdropFilter: "blur(4px)",
-            width: { xs: 28, sm: 36 },
-            height: { xs: 28, sm: 36 },
-            padding: { xs: "4px", sm: "8px" },
+            width: 44,
+            height: 44,
+            padding: { xs: "8px", sm: "10px" },
             "&:hover": {
               bgcolor: alpha(theme.palette.background.paper, 0.9),
             },

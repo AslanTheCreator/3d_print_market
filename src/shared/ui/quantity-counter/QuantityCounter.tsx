@@ -9,6 +9,7 @@ interface QuantityCounterProps {
   min?: number;
   max?: number;
   size?: "small" | "medium" | "responsive";
+  itemName?: string;
 }
 
 export const QuantityCounter = ({
@@ -19,14 +20,17 @@ export const QuantityCounter = ({
   min = 1,
   max,
   size = "medium",
+  itemName,
 }: QuantityCounterProps) => {
   const theme = useTheme();
 
   const isMinReached = value <= min;
   const isMaxReached = max !== undefined && value >= max;
+  const accessibleItemName = itemName?.trim() || "товара";
+  const counterLabel = itemName?.trim()
+    ? `Количество товара «${accessibleItemName}»`
+    : "Количество товара";
 
-  const buttonSize =
-    size === "responsive" ? { xs: 28, sm: 36 } : size === "small" ? 28 : 36;
   const iconSize =
     size === "responsive" ? { xs: 16, sm: 20 } : size === "small" ? 16 : 20;
   const gap =
@@ -47,6 +51,8 @@ export const QuantityCounter = ({
         alignItems: "center",
         gap,
       }}
+      role="group"
+      aria-label={counterLabel}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -55,10 +61,13 @@ export const QuantityCounter = ({
       <IconButton
         onClick={onDecrement}
         disabled={disabled || isMinReached}
+        aria-label={`Уменьшить количество ${accessibleItemName}`}
         size="small"
         sx={{
-          width: buttonSize,
-          height: buttonSize,
+          width: 44,
+          height: 44,
+          minWidth: 44,
+          minHeight: 44,
           backgroundColor: alpha(theme.palette.primary.main, 0.1),
           color: theme.palette.primary.main,
           border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
@@ -92,10 +101,13 @@ export const QuantityCounter = ({
       <IconButton
         onClick={onIncrement}
         disabled={disabled || isMaxReached}
+        aria-label={`Увеличить количество ${accessibleItemName}`}
         size="small"
         sx={{
-          width: buttonSize,
-          height: buttonSize,
+          width: 44,
+          height: 44,
+          minWidth: 44,
+          minHeight: 44,
           backgroundColor: alpha(theme.palette.primary.main, 0.1),
           color: theme.palette.primary.main,
           border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,

@@ -115,6 +115,7 @@ const CopyableField: React.FC<CopyableFieldProps> = ({ label, value }) => {
         <IconButton
           size="small"
           onClick={handleCopy}
+          aria-label={`Скопировать данные поля «${label}»`}
           sx={{ ml: 1, flexShrink: 0 }}
         >
           {copied ? (

@@ -1,7 +1,7 @@
 import type React from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { alpha, Box, Button } from "@mui/material";
+import { alpha, Box, Button, IconButton } from "@mui/material";
 
 interface PriceRangeTriggerProps {
   wrapperRef: React.RefObject<HTMLDivElement | null>;
@@ -35,9 +35,10 @@ export const PriceRangeTrigger = ({
       ref={wrapperRef}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      sx={{ display: "inline-flex" }}
+      sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
     >
       <Button
+        type="button"
         data-testid="price-range-trigger"
         ref={triggerRef}
         onClick={onClick}
@@ -45,33 +46,12 @@ export const PriceRangeTrigger = ({
         onBlur={onBlur}
         aria-expanded={isOpen}
         endIcon={
-          hasActiveValue ? (
-            <Box
-              onClick={onClearIndicatorClick}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 18,
-                height: 18,
-                borderRadius: "50%",
-                color: "primary.main",
-                transition: "background-color 0.2s ease",
-                "&:hover": {
-                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
-                },
-              }}
-            >
-              <CloseIcon sx={{ fontSize: 16 }} />
-            </Box>
-          ) : (
-            <ExpandMoreIcon
-              sx={{
-                transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                transition: "transform 0.2s ease",
-              }}
-            />
-          )
+          <ExpandMoreIcon
+            sx={{
+              transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 0.2s ease",
+            }}
+          />
         }
         sx={{
           minWidth: 0,
@@ -116,6 +96,30 @@ export const PriceRangeTrigger = ({
           {label}
         </Box>
       </Button>
+
+      {hasActiveValue ? (
+        <IconButton
+          type="button"
+          aria-label="Сбросить фильтр цены"
+          onClick={onClearIndicatorClick}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          sx={{
+            width: 44,
+            height: 44,
+            flexShrink: 0,
+            color: "primary.main",
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+            border: "1px solid",
+            borderColor: (theme) => alpha(theme.palette.primary.main, 0.18),
+            "&:hover": {
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+            },
+          }}
+        >
+          <CloseIcon sx={{ fontSize: 18 }} />
+        </IconButton>
+      ) : null}
     </Box>
   );
 };

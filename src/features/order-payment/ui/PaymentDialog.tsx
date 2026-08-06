@@ -346,7 +346,11 @@ export const PaymentDialog = ({
             <Payment color="primary" />
             <Typography variant="h6">{config.title}</Typography>
           </Stack>
-          <IconButton onClick={() => void handleClose()} size="small">
+          <IconButton
+            onClick={() => void handleClose()}
+            size="small"
+            aria-label={`Закрыть окно «${config.title}»`}
+          >
             <Close />
           </IconButton>
         </Stack>

@@ -111,8 +111,8 @@ export const HeaderLogo = () => {
       <Box
         sx={{
           position: { xs: "absolute", md: "static" },
-          bottom: { xs: 4, md: "auto" },
-          left: { xs: 17, md: "auto" },
+          bottom: { xs: -1.5, md: "auto" },
+          left: { xs: 11.5, md: "auto" },
           display: "flex",
         }}
       >

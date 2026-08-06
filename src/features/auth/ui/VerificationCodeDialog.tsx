@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useRef, KeyboardEvent, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  KeyboardEvent,
+  useEffect,
+  useId,
+} from "react";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +40,8 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
   isLoading = false,
 }) => {
   const theme = useTheme();
+  const titleId = useId();
+  const errorId = useId();
 
   const [code, setCode] = useState(["", "", "", "", ""]);
   const [error, setError] = useState("");
@@ -143,6 +151,7 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
     <Dialog
       open={open}
       onClose={handleClose}
+      aria-labelledby={titleId}
       maxWidth="sm"
       fullWidth
       PaperProps={{
@@ -156,6 +165,7 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
       }}
     >
       <IconButton
+        aria-label="Закрыть окно подтверждения email"
         onClick={handleClose}
         sx={{
           position: "absolute",
@@ -229,6 +239,7 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
         </Box>
 
         <Typography
+          id={titleId}
           variant="h5"
           sx={{
             fontWeight: 700,
@@ -255,6 +266,9 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
         </Typography>
 
         <Box
+          role="group"
+          aria-label="Код подтверждения"
+          aria-describedby={error ? errorId : undefined}
           sx={{
             display: "flex",
             gap: { xs: 1, sm: 1.5 },
@@ -274,9 +288,13 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
               onPaste={index === 0 ? handlePaste : undefined}
               inputProps={{
                 maxLength: 1,
+                inputMode: "numeric",
+                "aria-label": `Цифра ${index + 1} из 5`,
+                "aria-describedby": error ? errorId : undefined,
+                "aria-invalid": !!error,
               }}
               sx={{
-                width: { xs: 40, sm: 48 },
+                width: { xs: 44, sm: 48 },
                 "& .MuiOutlinedInput-root": {
                   borderRadius: "12px",
                   "&.Mui-focused": {
@@ -305,6 +323,8 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
 
         {error && (
           <Typography
+            id={errorId}
+            role="alert"
             variant="caption"
             sx={{
               color: theme.palette.error.main,

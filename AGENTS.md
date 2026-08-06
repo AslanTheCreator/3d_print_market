@@ -113,6 +113,11 @@ app -> widgets -> features -> entities -> shared
 - Entity-specific UI держать в `entities`.
 - Scenario-specific UI держать в `features`.
 - Композицию страниц и крупных блоков держать в `widgets`.
+- Самостоятельные интерактивные элементы должны иметь touch target не меньше
+  `44×44 px`; inline-текстовые ссылки являются исключением.
+- Icon-only actions должны иметь явное accessible name. Кастомные
+  интерактивные элементы должны использовать нативную keyboard-семантику и
+  видимый `focus-visible`, без вложенных кнопок.
 
 ## Команды
 

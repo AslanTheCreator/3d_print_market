@@ -235,6 +235,7 @@ theme = createTheme(theme, {
         root: ({ theme }: { theme: Theme }) => ({
           borderRadius: "8px",
           padding: "8px 16px",
+          minHeight: 44,
           fontWeight: 600,
           boxShadow: "none",
           "&.Mui-focusVisible": {
@@ -305,6 +306,9 @@ theme = createTheme(theme, {
       styleOverrides: {
         root: {
           fontWeight: 500,
+          "&.MuiChip-clickable, &.MuiChip-deletable": {
+            minHeight: 44,
+          },
         },
         sizeSmall: {
           height: "24px",
@@ -314,6 +318,8 @@ theme = createTheme(theme, {
     MuiIconButton: {
       styleOverrides: {
         root: ({ theme }: { theme: Theme }) => ({
+          minWidth: 44,
+          minHeight: 44,
           "&:hover": {
             backgroundColor: alpha(theme.palette.primary.main, 0.04),
           },
@@ -322,6 +328,58 @@ theme = createTheme(theme, {
             outlineOffset: 2,
           },
         }),
+      },
+    },
+    MuiCheckbox: {
+      styleOverrides: {
+        root: {
+          minWidth: 44,
+          minHeight: 44,
+        },
+      },
+    },
+    MuiRadio: {
+      styleOverrides: {
+        root: {
+          minWidth: 44,
+          minHeight: 44,
+        },
+      },
+    },
+    MuiSwitch: {
+      styleOverrides: {
+        root: {
+          minWidth: 44,
+          minHeight: 44,
+        },
+      },
+    },
+    MuiToggleButton: {
+      styleOverrides: {
+        root: {
+          minWidth: 44,
+          minHeight: 44,
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          minHeight: 44,
+        },
+      },
+    },
+    MuiRating: {
+      styleOverrides: {
+        root: {
+          "&:not(.MuiRating-readOnly) .MuiRating-label": {
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minWidth: 44,
+            minHeight: 44,
+          },
+        },
       },
     },
     MuiTypography: {
@@ -381,6 +439,7 @@ theme = createTheme(theme, {
           textTransform: "none",
           fontWeight: 600,
           fontSize: "0.875rem",
+          minHeight: 44,
           "&.Mui-focusVisible": {
             outline: `3px solid ${alpha(theme.palette.primary.main, 0.45)}`,
             outlineOffset: -3,

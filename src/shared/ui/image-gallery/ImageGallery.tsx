@@ -10,7 +10,11 @@ import {
   alpha,
   useTheme,
 } from "@mui/material";
-import { ChevronLeft, ChevronRight } from "@mui/icons-material";
+import {
+  ChevronLeft,
+  ChevronRight,
+  FullscreenRounded,
+} from "@mui/icons-material";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
@@ -69,6 +73,7 @@ const imageGallerySwiperStyles = (theme: Theme) => ({
     textAlign: "center",
     transition: "opacity 0.3s",
     transform: "translate3d(0, 0, 0)",
+    pointerEvents: "none",
   },
   ".product-image-swiper .swiper-pagination-bullet": {
     display: "inline-block",
@@ -79,7 +84,7 @@ const imageGallerySwiperStyles = (theme: Theme) => ({
     borderRadius: "50%",
     backgroundColor: "rgba(255, 255, 255, 0.6)",
     opacity: 1,
-    cursor: "pointer",
+    cursor: "default",
     boxShadow: "0 1px 3px rgba(15, 23, 42, 0.2)",
   },
   ".product-image-swiper .swiper-pagination-bullet-active": {
@@ -110,32 +115,6 @@ export function ImageGallery({
     setIsFullscreenOpen(false);
   }, []);
 
-  const handleImageClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const target = e.target as HTMLElement;
-
-      if (
-        target.closest(".gallery-nav-button") ||
-        target.closest(".swiper-pagination")
-      ) {
-        return;
-      }
-
-      handleOpenFullscreen();
-    },
-    [handleOpenFullscreen],
-  );
-
-  const handleImageKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLElement>) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        handleOpenFullscreen();
-      }
-    },
-    [handleOpenFullscreen],
-  );
-
   const handlePrev = useCallback(() => {
     swiperInstance?.slidePrev();
   }, [swiperInstance]);
@@ -154,10 +133,7 @@ export function ImageGallery({
 
       <Box
         component="section"
-        role="button"
-        tabIndex={0}
         aria-label="Галерея изображений товара"
-        onKeyDown={handleImageKeyDown}
       >
         <Paper
           elevation={0}
@@ -173,17 +149,43 @@ export function ImageGallery({
                 md: "3/2",
               },
             },
-            cursor: "pointer",
             transition: "all 0.3s ease",
             "&:hover": {
               boxShadow: theme.shadows[4],
-              "& .gallery-nav-button": {
+              "& .gallery-nav-button, & .gallery-open-button": {
                 opacity: 1,
               },
             },
           }}
-          onClick={handleImageClick}
         >
+          <IconButton
+            className="gallery-open-button"
+            onClick={handleOpenFullscreen}
+            aria-label="Открыть полноэкранную галерею"
+            sx={{
+              position: "absolute",
+              bottom: { xs: 8, sm: 12, md: 16 },
+              right: { xs: 8, sm: 12, md: 16 },
+              zIndex: 3,
+              width: 44,
+              height: 44,
+              bgcolor: alpha(theme.palette.common.white, 0.85),
+              backdropFilter: "blur(8px)",
+              color: theme.palette.text.primary,
+              opacity: { xs: 1, md: 0 },
+              transition: "opacity 0.2s ease, background-color 0.2s ease",
+              boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.15)}`,
+              "&:hover": {
+                bgcolor: theme.palette.common.white,
+              },
+              "&.Mui-focusVisible": {
+                opacity: 1,
+              },
+            }}
+          >
+            <FullscreenRounded />
+          </IconButton>
+
           {showNavigation ? (
             <>
               <IconButton
@@ -198,18 +200,21 @@ export function ImageGallery({
                   top: "50%",
                   transform: "translateY(-50%)",
                   zIndex: 2,
-                  width: { xs: 36, sm: 40, md: 44 },
-                  height: { xs: 36, sm: 40, md: 44 },
+                  width: 44,
+                  height: 44,
                   bgcolor: alpha(theme.palette.common.white, 0.85),
                   backdropFilter: "blur(8px)",
                   color: theme.palette.text.primary,
-                  opacity: 0,
+                  opacity: { xs: 1, md: 0 },
                   transition: "all 0.3s ease",
                   boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.15)}`,
                   "&:hover": {
                     bgcolor: theme.palette.common.white,
                     transform: "translateY(-50%) scale(1.08)",
                     boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.2)}`,
+                  },
+                  "&.Mui-focusVisible": {
+                    opacity: 1,
                   },
                 }}
                 aria-label="Предыдущее изображение"
@@ -229,18 +234,21 @@ export function ImageGallery({
                   top: "50%",
                   transform: "translateY(-50%)",
                   zIndex: 2,
-                  width: { xs: 36, sm: 40, md: 44 },
-                  height: { xs: 36, sm: 40, md: 44 },
+                  width: 44,
+                  height: 44,
                   bgcolor: alpha(theme.palette.common.white, 0.85),
                   backdropFilter: "blur(8px)",
                   color: theme.palette.text.primary,
-                  opacity: 0,
+                  opacity: { xs: 1, md: 0 },
                   transition: "all 0.3s ease",
                   boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.15)}`,
                   "&:hover": {
                     bgcolor: theme.palette.common.white,
                     transform: "translateY(-50%) scale(1.08)",
                     boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.2)}`,
+                  },
+                  "&.Mui-focusVisible": {
+                    opacity: 1,
                   },
                 }}
                 aria-label="Следующее изображение"
@@ -255,7 +263,7 @@ export function ImageGallery({
             modules={[Pagination]}
             onSlideChange={(swiper) => setCurrentIndex(swiper.activeIndex)}
             onSwiper={setSwiperInstance}
-            pagination={{ clickable: true }}
+            pagination={{ clickable: false }}
             spaceBetween={10}
             slidesPerView={1}
             style={{

@@ -9,7 +9,6 @@ import {
   Typography,
   InputAdornment,
   IconButton,
-  FormHelperText,
   CircularProgress,
   useTheme,
 } from "@mui/material";
@@ -215,134 +214,123 @@ const AuthForm: React.FC<IAuthForm> = ({
         }}
       >
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Box>
-            <TextField
-              fullWidth
-              placeholder="Email"
-              type="email"
-              name="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setEmailError("");
-              }}
-              error={!!emailError}
-              InputProps={{
-                sx: {
-                  borderRadius: theme.shape.borderRadius,
-                  fontSize: { xs: "0.875rem", sm: "1rem" },
-                },
-              }}
-            />
-            {emailError && (
-              <FormHelperText
-                error
-                sx={{
-                  ml: 1.5,
-                  mt: 0.5,
-                  fontSize: "0.75rem",
-                }}
-              >
-                {emailError}
-              </FormHelperText>
-            )}
-          </Box>
+          <TextField
+            id="auth-email"
+            fullWidth
+            label="Email"
+            type="email"
+            name="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailError("");
+            }}
+            error={!!emailError}
+            helperText={emailError || undefined}
+            FormHelperTextProps={{
+              sx: {
+                ml: 1.5,
+                mt: 0.5,
+                fontSize: "0.75rem",
+              },
+            }}
+            InputProps={{
+              sx: {
+                borderRadius: theme.shape.borderRadius,
+                fontSize: { xs: "0.875rem", sm: "1rem" },
+              },
+            }}
+          />
 
-          <Box>
-            <TextField
-              fullWidth
-              placeholder="Пароль"
-              type={showPassword ? "text" : "password"}
-              name="password"
-              autoComplete={passwordAutoComplete}
-              required
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setPasswordError("");
-              }}
-              error={!!passwordError}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={handleTogglePassword}
-                      edge="end"
-                      size="medium"
-                      aria-label="toggle password visibility"
-                      sx={{ p: { xs: 0.625, sm: 1 } }}
-                    >
-                      {showPassword ? (
-                        <VisibilityOffIcon />
-                      ) : (
-                        <VisibilityIcon />
-                      )}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-                sx: {
-                  borderRadius: theme.shape.borderRadius,
-                  fontSize: { xs: "0.875rem", sm: "1rem" },
-                },
-              }}
-            />
-            {passwordError && (
-              <FormHelperText
-                error
-                sx={{
-                  ml: 1.5,
-                  mt: 0.5,
-                  fontSize: "0.75rem",
-                }}
-              >
-                {passwordError}
-              </FormHelperText>
-            )}
-          </Box>
+          <TextField
+            id="auth-password"
+            fullWidth
+            label="Пароль"
+            type={showPassword ? "text" : "password"}
+            name="password"
+            autoComplete={passwordAutoComplete}
+            required
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setPasswordError("");
+            }}
+            error={!!passwordError}
+            helperText={passwordError || undefined}
+            FormHelperTextProps={{
+              sx: {
+                ml: 1.5,
+                mt: 0.5,
+                fontSize: "0.75rem",
+              },
+            }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    type="button"
+                    onClick={handleTogglePassword}
+                    edge="end"
+                    size="medium"
+                    aria-label={
+                      showPassword ? "Скрыть пароль" : "Показать пароль"
+                    }
+                    aria-pressed={showPassword}
+                    sx={{ p: { xs: 0.625, sm: 1 } }}
+                  >
+                    {showPassword ? (
+                      <VisibilityOffIcon />
+                    ) : (
+                      <VisibilityIcon />
+                    )}
+                  </IconButton>
+                </InputAdornment>
+              ),
+              sx: {
+                borderRadius: theme.shape.borderRadius,
+                fontSize: { xs: "0.875rem", sm: "1rem" },
+              },
+            }}
+          />
 
           {showAgeField && (
-            <Box>
-              <TextField
-                fullWidth
-                placeholder="Возраст"
-                type="number"
-                name="age"
-                autoComplete="off"
-                required
-                value={age}
-                onChange={(e) => {
-                  setAge(e.target.value);
-                  setAgeError("");
-                }}
-                error={!!ageError}
-                inputProps={{
-                  min: MIN_AGE,
-                  max: MAX_AGE,
-                  step: 1,
-                  inputMode: "numeric",
-                }}
-                InputProps={{
-                  sx: {
-                    borderRadius: theme.shape.borderRadius,
-                    fontSize: { xs: "0.875rem", sm: "1rem" },
-                  },
-                }}
-              />
-              {ageError && (
-                <FormHelperText
-                  error
-                  sx={{
-                    ml: 1.5,
-                    mt: 0.5,
-                    fontSize: "0.75rem",
-                  }}
-                >
-                  {ageError}
-                </FormHelperText>
-              )}
-            </Box>
+            <TextField
+              id="auth-age"
+              fullWidth
+              label="Возраст"
+              type="number"
+              name="age"
+              autoComplete="off"
+              required
+              value={age}
+              onChange={(e) => {
+                setAge(e.target.value);
+                setAgeError("");
+              }}
+              error={!!ageError}
+              helperText={ageError || undefined}
+              FormHelperTextProps={{
+                sx: {
+                  ml: 1.5,
+                  mt: 0.5,
+                  fontSize: "0.75rem",
+                },
+              }}
+              inputProps={{
+                min: MIN_AGE,
+                max: MAX_AGE,
+                step: 1,
+                inputMode: "numeric",
+              }}
+              InputProps={{
+                sx: {
+                  borderRadius: theme.shape.borderRadius,
+                  fontSize: { xs: "0.875rem", sm: "1rem" },
+                },
+              }}
+            />
           )}
 
           {requirePersonalDataConsent && (
@@ -368,7 +356,10 @@ const AuthForm: React.FC<IAuthForm> = ({
                 sx={{
                   background: "none",
                   border: "none",
-                  padding: 0,
+                  minHeight: 44,
+                  padding: "0 4px",
+                  display: "inline-flex",
+                  alignItems: "center",
                   fontSize: { xs: "0.8rem", sm: "0.875rem" },
                   fontWeight: 500,
                   color: "primary.main",

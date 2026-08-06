@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +33,7 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
   onSubmit,
 }) => {
   const theme = useTheme();
+  const titleId = useId();
 
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -85,6 +86,7 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
     <Dialog
       open={open}
       onClose={handleClose}
+      aria-labelledby={titleId}
       maxWidth="sm"
       fullWidth
       PaperProps={{
@@ -98,6 +100,7 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
       }}
     >
       <IconButton
+        aria-label="Закрыть окно восстановления пароля"
         onClick={handleClose}
         sx={{
           position: "absolute",
@@ -164,6 +167,7 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
 
         {/* Title */}
         <Typography
+          id={titleId}
           variant="h5"
           sx={{
             fontWeight: 700,

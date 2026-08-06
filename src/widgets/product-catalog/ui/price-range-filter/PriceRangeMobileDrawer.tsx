@@ -101,7 +101,7 @@ export const PriceRangeMobileDrawer = ({
           fullWidth
           onClick={onApply}
           sx={{
-            minHeight: 42,
+            minHeight: 44,
             borderRadius: 2.5,
             color: "common.white",
             fontSize: 15,

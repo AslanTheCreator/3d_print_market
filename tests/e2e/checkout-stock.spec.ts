@@ -297,7 +297,7 @@ const openReadyCheckout = async (page: Page) => {
 const getIncrementButton = (page: Page, productId: number) =>
   page
     .getByTestId(`checkout-cart-item-${productId}`)
-    .locator('button:has(svg[data-testid="AddIcon"])');
+    .getByRole("button", { name: /^Увеличить количество / });
 
 const getQuantityCounter = (page: Page, productId: number) =>
   getIncrementButton(page, productId).locator("..");
@@ -388,7 +388,9 @@ test("keeps checkout pending until PUT and the control refetch succeed", async (
   await expect(submitButton).toBeEnabled();
   const initialFindRequests = controller.basketFindRequests;
 
-  await getIncrementButton(page, 1).click();
+  const incrementButton = getIncrementButton(page, 1);
+  await incrementButton.focus();
+  await page.keyboard.press("Enter");
 
   await expect(getQuantityCounter(page, 1).getByText("2", { exact: true })).toBeVisible();
   await expect(page.getByTestId("checkout-submit-blocker")).toHaveText(
@@ -445,10 +447,11 @@ test("keeps an optimistic catalog quantity when navigating to checkout", async (
   await expect(productCard).toBeVisible({ timeout: 15_000 });
   await expect(productCard.getByText("1", { exact: true })).toBeVisible();
 
-  await productCard
-    .locator('svg[data-testid="AddIcon"]')
-    .locator("..")
-    .click();
+  const catalogIncrement = productCard.getByRole("button", {
+    name: "Увеличить количество Мгновенно синхронизируемый товар",
+  });
+  await catalogIncrement.focus();
+  await page.keyboard.press("Space");
   await expect(productCard.getByText("2", { exact: true })).toBeVisible();
 
   await page.locator('a[aria-label="Корзина"]').click();

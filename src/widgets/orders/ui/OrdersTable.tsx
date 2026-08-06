@@ -289,7 +289,7 @@ const OrderCard = ({
         <Box
           sx={{
             "& .MuiButton-root": {
-              minHeight: 38,
+              minHeight: 44,
               borderRadius: 1.5,
               textTransform: "none",
               fontWeight: 600,

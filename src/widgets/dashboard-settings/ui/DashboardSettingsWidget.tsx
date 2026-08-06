@@ -169,7 +169,9 @@ function SettingsContent() {
             borderRadius: "3px 3px 0 0",
           },
           "& .MuiTabs-scrollButtons": {
-            width: 28,
+            width: 44,
+            minWidth: 44,
+            minHeight: 44,
             display: { xs: "inline-flex", sm: "none" },
             "&.Mui-disabled": {
               opacity: 0.2,
@@ -201,7 +203,7 @@ function SettingsContent() {
             id={`settings-tab-${index}`}
             aria-controls={`settings-tabpanel-${index}`}
             sx={{
-              minHeight: { xs: 42, sm: 64 },
+              minHeight: { xs: 44, sm: 64 },
               minWidth: { xs: "auto", sm: 160 },
               flexShrink: 0,
               px: { xs: 1.5, sm: 2 },

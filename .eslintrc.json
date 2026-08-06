@@ -1,3 +1,13 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "jsx-a11y/control-has-associated-label": [
+      "error",
+      {
+        "controlComponents": ["IconButton"],
+        "ignoreElements": ["button", "input"],
+        "depth": 0
+      }
+    ]
+  }
 }

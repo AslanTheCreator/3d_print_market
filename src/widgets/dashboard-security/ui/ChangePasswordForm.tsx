@@ -144,9 +144,16 @@ export const ChangePasswordForm: React.FC = () => {
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
+                        type="button"
                         onClick={() => setShowOldPassword(!showOldPassword)}
                         edge="end"
                         size="small"
+                        aria-label={
+                          showOldPassword
+                            ? "Скрыть текущий пароль"
+                            : "Показать текущий пароль"
+                        }
+                        aria-pressed={showOldPassword}
                       >
                         {showOldPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -184,9 +191,16 @@ export const ChangePasswordForm: React.FC = () => {
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
+                        type="button"
                         onClick={() => setShowNewPassword(!showNewPassword)}
                         edge="end"
                         size="small"
+                        aria-label={
+                          showNewPassword
+                            ? "Скрыть новый пароль"
+                            : "Показать новый пароль"
+                        }
+                        aria-pressed={showNewPassword}
                       >
                         {showNewPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -251,11 +265,18 @@ export const ChangePasswordForm: React.FC = () => {
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
+                        type="button"
                         onClick={() =>
                           setShowConfirmPassword(!showConfirmPassword)
                         }
                         edge="end"
                         size="small"
+                        aria-label={
+                          showConfirmPassword
+                            ? "Скрыть подтверждение нового пароля"
+                            : "Показать подтверждение нового пароля"
+                        }
+                        aria-pressed={showConfirmPassword}
                       >
                         {showConfirmPassword ? (
                           <VisibilityOff />

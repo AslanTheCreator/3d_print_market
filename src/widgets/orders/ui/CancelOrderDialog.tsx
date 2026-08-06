@@ -101,7 +101,11 @@ export const CancelOrderDialog = ({
             <Cancel color="error" />
             <Typography variant="h6">Отмена заказа</Typography>
           </Stack>
-          <IconButton onClick={handleClose} size="small">
+          <IconButton
+            onClick={handleClose}
+            size="small"
+            aria-label="Закрыть окно отмены заказа"
+          >
             <Close />
           </IconButton>
         </Stack>

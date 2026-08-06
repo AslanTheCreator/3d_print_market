@@ -16,8 +16,8 @@ const getNavigationButtonSx = (side: "left" | "right") => ({
   color: "white",
   bgcolor: "rgba(255,255,255,0.1)",
   backdropFilter: "blur(10px)",
-  width: { xs: 40, sm: 48, md: 56 },
-  height: { xs: 40, sm: 48, md: 56 },
+  width: { xs: 44, sm: 48, md: 56 },
+  height: { xs: 44, sm: 48, md: 56 },
   "&:hover": {
     bgcolor: "rgba(255,255,255,0.2)",
     transform: "translateY(-50%) scale(1.1)",
@@ -37,10 +37,18 @@ export const FullscreenViewerNavigation = ({
 
   return (
     <>
-      <IconButton onClick={onPrevious} sx={getNavigationButtonSx("left")}>
+      <IconButton
+        onClick={onPrevious}
+        aria-label="Предыдущее изображение"
+        sx={getNavigationButtonSx("left")}
+      >
         <ChevronLeft sx={{ fontSize: { xs: 28, sm: 32, md: 36 } }} />
       </IconButton>
-      <IconButton onClick={onNext} sx={getNavigationButtonSx("right")}>
+      <IconButton
+        onClick={onNext}
+        aria-label="Следующее изображение"
+        sx={getNavigationButtonSx("right")}
+      >
         <ChevronRight sx={{ fontSize: { xs: 28, sm: 32, md: 36 } }} />
       </IconButton>
     </>

@@ -222,6 +222,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
               disabled={isPending || isRemoving}
               isAtMax={isAtMaxQuantity}
               size="large"
+              itemName={productName}
             />
           </Box>
 
@@ -289,6 +290,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
           onDecrement={handleDecrementWithRemove}
           disabled={isPending || isRemoving}
           isAtMax={isAtMaxQuantity}
+          itemName={productName}
         />
       </Box>
     );

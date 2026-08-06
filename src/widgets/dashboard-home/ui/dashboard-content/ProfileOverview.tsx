@@ -90,8 +90,8 @@ export const ProfileOverview = ({
                   position: "absolute",
                   right: { xs: -4, sm: -6 },
                   bottom: { xs: -4, sm: -6 },
-                  width: { xs: 32, sm: 42 },
-                  height: { xs: 32, sm: 42 },
+                  width: 44,
+                  height: 44,
                   bgcolor: "background.paper",
                   boxShadow: "0 6px 18px rgba(15, 23, 42, 0.18)",
                   "&:hover": {
@@ -177,7 +177,7 @@ export const ProfileOverview = ({
               variant="contained"
               onClick={onEditProfile}
               sx={{
-                minHeight: { xs: 40, sm: 46 },
+                minHeight: { xs: 44, sm: 46 },
                 borderRadius: 1.5,
                 textTransform: "none",
                 fontWeight: 600,
