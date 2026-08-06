@@ -1,7 +1,7 @@
 export {
   CurrencyField,
   ProductCard,
-  ProductCardSkeleton,
+  ProductGridSkeleton,
   ProductGrid,
   ProductGridItem,
   ProductFormFields,

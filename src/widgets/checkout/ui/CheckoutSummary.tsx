@@ -7,7 +7,6 @@ import {
   Typography,
   Button,
   Divider,
-  Skeleton,
   alpha,
   useTheme,
   CircularProgress,
@@ -28,7 +27,6 @@ interface CheckoutSummaryProps {
   onSubmit: () => void;
   showStockValidationRetry: boolean;
   onRetryStockValidation: () => void;
-  isLoading?: boolean;
 }
 
 export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
@@ -40,7 +38,6 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
   onSubmit,
   showStockValidationRetry,
   onRetryStockValidation,
-  isLoading = false,
 }) => {
   const theme = useTheme();
   const deliveryTransfers = React.useMemo(
@@ -90,28 +87,6 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
 
     return "товаров";
   };
-
-  if (isLoading) {
-    return (
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 2, sm: 3 },
-          borderRadius: 2,
-          border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-        }}
-      >
-        <Skeleton variant="text" width="50%" height={32} />
-        <Skeleton variant="text" width="100%" height={24} sx={{ mt: 2 }} />
-        <Skeleton variant="text" width="100%" height={24} />
-        <Skeleton
-          variant="rectangular"
-          height={48}
-          sx={{ mt: 3, borderRadius: 2 }}
-        />
-      </Paper>
-    );
-  }
 
   return (
     <Paper

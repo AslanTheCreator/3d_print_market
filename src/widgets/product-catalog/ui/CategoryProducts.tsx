@@ -14,7 +14,12 @@ import {
 import { ApiError } from "@/shared/lib/errorHandler";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { ErrorState, UnauthorizedState } from "@/shared/ui/states";
-import type { PriceRange, Product, ProductFilter } from "@/entities/product";
+import {
+  ProductGridSkeleton,
+  type PriceRange,
+  type Product,
+  type ProductFilter,
+} from "@/entities/product";
 import { CategoryPageHeader } from "./CategoryPageHeader";
 import { ProductCatalog } from "./ProductCatalog";
 
@@ -151,6 +156,7 @@ export const CategoryProducts = ({
           isLoading
           isError={false}
           onRetry={handleRetry}
+          skeletonCount={pageSize}
         />
       );
     }
@@ -175,12 +181,14 @@ export const CategoryProducts = ({
         onLoadMore={fetchNextPage}
         hasNextPage={!!hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
+        loadingContent={<ProductGridSkeleton count={pageSize} />}
       >
         <ProductCatalog
           products={products}
           isLoading={isCatalogLoading}
           isError={hasError}
           onRetry={handleRetry}
+          skeletonCount={pageSize}
         />
       </InfiniteScroll>
     );

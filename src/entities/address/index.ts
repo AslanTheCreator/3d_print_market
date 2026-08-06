@@ -16,6 +16,7 @@ export {
 
 // UI
 export { AddressSelector } from "./ui/AddressSelector";
+export { AddressSelectorSkeleton } from "./ui/AddressSelectorSkeleton";
 export { AddressForm } from "./ui/AddressForm";
 
 // Types

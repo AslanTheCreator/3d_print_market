@@ -10,6 +10,7 @@ import {
   Radio,
   RadioGroup,
   Skeleton,
+  Stack,
   Typography,
   alpha,
   useTheme,
@@ -45,15 +46,29 @@ export const SellerDeliverySelector = ({
 
   if (group.isLoading) {
     return (
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-        {[1, 2].map((item) => (
-          <Skeleton
-            key={item}
-            variant="rectangular"
-            height={56}
-            sx={{ borderRadius: 2 }}
-          />
-        ))}
+      <Box aria-busy="true">
+        <Skeleton variant="text" width={190} height={28} sx={{ mb: 1.5 }} />
+        <Stack spacing={1}>
+          {[1, 2].map((item) => (
+            <Paper
+              key={item}
+              variant="outlined"
+              sx={{ p: 1.5, borderRadius: 2, borderWidth: 2 }}
+            >
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <Skeleton variant="circular" width={24} height={24} />
+                <Skeleton variant="circular" width={24} height={24} />
+                <Skeleton variant="text" width="45%" height={24} />
+                <Skeleton
+                  variant="text"
+                  width={72}
+                  height={24}
+                  sx={{ ml: "auto !important" }}
+                />
+              </Stack>
+            </Paper>
+          ))}
+        </Stack>
       </Box>
     );
   }

@@ -5,8 +5,8 @@ import { Box } from "@mui/material";
 import { motion } from "framer-motion";
 import { useCurrentUser } from "@/entities/user";
 import { ErrorState } from "@/shared/ui/states";
-import { DashboardSkeleton } from "@/shared/ui/skeletons";
 import { DashboardContent } from "./DashboardContent";
+import { DashboardHomeSkeleton } from "./DashboardHomeSkeleton";
 import { ProfileForm } from "./ProfileForm";
 
 export const DashboardHomeWidget = () => {
@@ -14,7 +14,7 @@ export const DashboardHomeWidget = () => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   if (isLoading) {
-    return <DashboardSkeleton />;
+    return <DashboardHomeSkeleton />;
   }
 
   if (error || !userData) {

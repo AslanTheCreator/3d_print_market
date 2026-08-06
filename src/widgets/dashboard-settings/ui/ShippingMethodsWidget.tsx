@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Alert, Box, CircularProgress } from "@mui/material";
+import { Alert } from "@mui/material";
 import { useDictionary } from "@/entities/dictionary";
 import { useTransfers } from "@/entities/transfer";
 import { ShippingMethodsForm } from "./shipping-methods/ShippingMethodsForm";
+import { SettingsPanelSkeleton } from "./SettingsPanelSkeleton";
 
 export const ShippingMethodsWidget: React.FC = () => {
   const { data: shippingMethods, isLoading: methodsLoading } =
@@ -21,16 +22,7 @@ export const ShippingMethodsWidget: React.FC = () => {
   );
 
   if (isLoading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight={200}
-      >
-        <CircularProgress />
-      </Box>
-    );
+    return <SettingsPanelSkeleton />;
   }
 
   if (!availableMethods.length) {

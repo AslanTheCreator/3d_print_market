@@ -1,6 +1,9 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { SearchProducts } from "@/widgets/product-catalog";
+import {
+  SearchProducts,
+  SearchProductsSkeleton,
+} from "@/widgets/product-catalog";
 
 export const metadata: Metadata = {
   title: "Поиск",
@@ -15,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div>Загрузка...</div>}>
+    <Suspense fallback={<SearchProductsSkeleton />}>
       <SearchProducts />
     </Suspense>
   );

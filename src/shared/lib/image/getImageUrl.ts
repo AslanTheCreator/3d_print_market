@@ -7,7 +7,7 @@ export interface ImageUrlSource {
   url?: string;
 }
 
-const PRODUCTION_STORAGE_HOST = "77.37.166.117:9000";
+const PRODUCTION_STORAGE_HOST = "109.173.73.69:9000";
 
 const normalizeImageUrl = (url: string | undefined): string | undefined => {
   if (url?.startsWith(`${PRODUCTION_STORAGE_HOST}/`)) {

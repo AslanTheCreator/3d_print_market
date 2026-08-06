@@ -373,6 +373,7 @@ export const SellerProfileHeaderSkeleton = () => (
       border: "1px solid",
       borderColor: "divider",
       bgcolor: "background.paper",
+      boxShadow: "0 6px 22px rgba(15, 23, 42, 0.05)",
     }}
   >
     <Stack
@@ -380,7 +381,13 @@ export const SellerProfileHeaderSkeleton = () => (
       spacing={{ xs: 2.5, md: 4 }}
       alignItems={{ xs: "stretch", md: "center" }}
     >
-      <Stack direction="row" spacing={2.5} alignItems="center" flex={1}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={{ xs: 1.75, sm: 2.5 }}
+        alignItems={{ xs: "flex-start", sm: "center" }}
+        flex={1}
+        minWidth={0}
+      >
         <Skeleton
           variant="circular"
           width={136}
@@ -391,24 +398,62 @@ export const SellerProfileHeaderSkeleton = () => (
             flexShrink: 0,
           }}
         />
-        <Box flex={1}>
+        <Box
+          flex={1}
+          minWidth={0}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <Skeleton variant="text" width="45%" height={42} />
           <Skeleton variant="text" width="70%" height={28} />
           <Skeleton variant="text" width="85%" height={24} />
         </Box>
       </Stack>
+
+      <Divider
+        flexItem
+        orientation="vertical"
+        sx={{ display: { xs: "none", md: "block" } }}
+      />
+
       <Box
         sx={{
           width: { xs: "100%", md: 360 },
           display: "grid",
           gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
           gap: 1.25,
+          flexShrink: 0,
         }}
       >
         {Array.from({ length: 4 }).map((_, index) => (
           <Skeleton key={index} variant="rounded" height={76} />
         ))}
       </Box>
+    </Stack>
+
+    <Divider sx={{ my: 2.25 }} />
+
+    <Stack
+      direction={{ xs: "column", sm: "row" }}
+      spacing={{ xs: 1, sm: 2 }}
+      flexWrap="wrap"
+      useFlexGap
+    >
+      {Array.from({ length: 2 }).map((_, index) => (
+        <Stack
+          key={index}
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          minWidth={0}
+        >
+          <Skeleton variant="circular" width={20} height={20} />
+          <Skeleton
+            variant="text"
+            width={index === 0 ? 150 : 110}
+            height={20}
+          />
+        </Stack>
+      ))}
     </Stack>
   </Paper>
 );

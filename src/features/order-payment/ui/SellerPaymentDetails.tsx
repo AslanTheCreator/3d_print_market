@@ -52,11 +52,11 @@ const PAYMENT_METHOD_CONFIG: Record<
 // Skeleton
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PaymentDetailsSkeleton = () => (
+const PaymentDetailsSkeleton = ({ count }: { count: number }) => (
   <Box sx={{ mb: 3 }}>
     <Skeleton variant="text" width={200} height={24} sx={{ mb: 1.5 }} />
     <Stack spacing={1.5}>
-      {[1, 2].map((i) => (
+      {Array.from({ length: Math.max(1, count) }).map((_, i) => (
         <Skeleton key={i} variant="rounded" height={56} />
       ))}
     </Stack>
@@ -241,7 +241,7 @@ export const SellerPaymentDetails: React.FC<SellerPaymentDetailsProps> = ({
   onRetry,
 }) => {
   if (isLoading) {
-    return <PaymentDetailsSkeleton />;
+    return <PaymentDetailsSkeleton count={accounts?.length ?? 1} />;
   }
 
   if (isError) {

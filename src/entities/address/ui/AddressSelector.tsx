@@ -3,7 +3,6 @@ import {
   FormLabel,
   Button,
   Box,
-  Skeleton,
   Card,
   CardContent,
   Typography,
@@ -22,6 +21,7 @@ import {
   Add,
 } from "@mui/icons-material";
 import { Address } from "../model/types";
+import { AddressSelectorSkeleton } from "./AddressSelectorSkeleton";
 
 interface AddressSelectorProps {
   addresses: Address[];
@@ -54,16 +54,12 @@ export const AddressSelector = ({
 
   if (isLoading) {
     return (
-      <Box>
-        {[1, 2, 3].map((i) => (
-          <Skeleton
-            key={i}
-            height={100}
-            sx={{ mb: 2, borderRadius: 2 }}
-            variant="rectangular"
-          />
-        ))}
-      </Box>
+      <AddressSelectorSkeleton
+        showRadio={showRadio}
+        showEditButton={showEditButton}
+        showDeleteButton={showDeleteButton}
+        showAddButton={showAddButton}
+      />
     );
   }
 

@@ -2,19 +2,14 @@
 
 import React, { useEffect } from "react";
 import { useIntersectionObserver } from "usehooks-ts";
-import {
-  Box,
-  CircularProgress,
-  Fade,
-  Skeleton,
-} from "@mui/material";
+import { Box, CircularProgress, Fade } from "@mui/material";
 
 interface InfiniteScrollProps {
   onLoadMore: () => void;
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   children: React.ReactNode;
-  showSkeletons?: boolean;
+  loadingContent?: React.ReactNode;
 }
 
 export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
@@ -22,7 +17,7 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
   hasNextPage,
   isFetchingNextPage,
   children,
-  showSkeletons = true,
+  loadingContent,
 }) => {
   const { ref, entry } = useIntersectionObserver({
     threshold: 0.1,
@@ -35,40 +30,13 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
   }, [entry, hasNextPage, isFetchingNextPage, onLoadMore]);
 
   return (
-    <div>
+    <div aria-busy={isFetchingNextPage}>
       {children}
 
       {isFetchingNextPage && (
         <Fade in timeout={300}>
           <Box sx={{ mt: 3 }}>
-            {showSkeletons ? (
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: {
-                    xs: "repeat(2, minmax(0, 1fr))",
-                    sm: "repeat(auto-fill, minmax(156px, 1fr))",
-                    md: "repeat(auto-fill, minmax(190px, 1fr))",
-                  },
-                  gap: { xs: 1, sm: 1.5, md: 2.5 },
-                }}
-              >
-                {Array.from({ length: 6 }).map((_, index) => (
-                  <Skeleton
-                    key={`loading-skeleton-${index}`}
-                    variant="rounded"
-                    animation="wave"
-                    sx={{
-                      width: "100%",
-                      borderRadius: 2,
-                      aspectRatio: { xs: "0.72", sm: "0.7" },
-                      display:
-                        index >= 4 ? { xs: "none", sm: "block" } : "block",
-                    }}
-                  />
-                ))}
-              </Box>
-            ) : (
+            {loadingContent ?? (
               <Box
                 sx={{
                   display: "flex",

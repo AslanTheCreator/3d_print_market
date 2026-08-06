@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { productApi } from "@/entities/product/server";
 import { SITE_INFO } from "@/shared/config";
 import type { Product } from "@/entities/product";
-import { HomeProducts } from "@/widgets/product-catalog";
+import {
+  HOME_PRODUCTS_PAGE_SIZE,
+  HomeProducts,
+} from "@/widgets/product-catalog";
 
 export const dynamic = "force-dynamic";
 
-const HOME_PRODUCTS_PAGE_SIZE = 18;
 const HOME_TITLE = `${SITE_INFO.name} - маркетплейс коллекционных фигурок и 3D-печати`;
 const HOME_DESCRIPTION = SITE_INFO.description;
 

@@ -1,0 +1,3 @@
+export const HOME_PRODUCTS_PAGE_SIZE = 18;
+export const CATEGORY_PRODUCTS_PAGE_SIZE = 20;
+export const SEARCH_PRODUCTS_PAGE_SIZE = 10;

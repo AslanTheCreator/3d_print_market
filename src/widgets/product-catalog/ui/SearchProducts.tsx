@@ -4,10 +4,15 @@ import { useMemo, useState } from "react";
 import { Box, Container, Typography } from "@mui/material";
 import { useSearchParams } from "next/navigation";
 import { useProductsInfinite } from "@/entities/product";
-import type { PriceRange, ProductFilter } from "@/entities/product";
+import {
+  ProductGridSkeleton,
+  type PriceRange,
+  type ProductFilter,
+} from "@/entities/product";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { PriceRangeFilter } from "./PriceRangeFilter";
 import { ProductCatalog } from "./ProductCatalog";
+import { SEARCH_PRODUCTS_PAGE_SIZE } from "../model/pageSizes";
 
 export const SearchProducts = () => {
   const searchParams = useSearchParams();
@@ -30,7 +35,7 @@ export const SearchProducts = () => {
     isFetchingNextPage,
     isLoading,
     refetch,
-  } = useProductsInfinite(10, filters);
+  } = useProductsInfinite(SEARCH_PRODUCTS_PAGE_SIZE, filters);
 
   const products = useMemo(() => data?.pages.flat() ?? [], [data?.pages]);
 
@@ -84,11 +89,15 @@ export const SearchProducts = () => {
           onLoadMore={fetchNextPage}
           hasNextPage={!!hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
+          loadingContent={
+            <ProductGridSkeleton count={SEARCH_PRODUCTS_PAGE_SIZE} />
+          }
         >
           <ProductCatalog
             products={products}
             isError={isError}
             isLoading={isLoading}
+            skeletonCount={SEARCH_PRODUCTS_PAGE_SIZE}
             onRetry={() => {
               void refetch();
             }}

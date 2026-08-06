@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
-import { Alert, Box, CircularProgress } from "@mui/material";
+import { Alert } from "@mui/material";
 import { useDictionary } from "@/entities/dictionary";
 import { useSocialNetworks } from "@/entities/social-network";
 import { SocialNetworksForm } from "./social-networks/SocialNetworksForm";
+import { SettingsPanelSkeleton } from "./SettingsPanelSkeleton";
 
 export const SocialNetworksFormWidget: React.FC = () => {
   const { data: socialNetworkTypes, isLoading: typesLoading } =
@@ -15,11 +16,7 @@ export const SocialNetworksFormWidget: React.FC = () => {
   const isLoading = typesLoading || networksLoading;
 
   if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
-        <CircularProgress />
-      </Box>
-    );
+    return <SettingsPanelSkeleton />;
   }
 
   if (!socialNetworkTypes?.length) {

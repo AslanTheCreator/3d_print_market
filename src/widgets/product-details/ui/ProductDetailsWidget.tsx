@@ -10,7 +10,6 @@ import { useProductDetails } from "@/entities/product";
 import type { ProductDetail } from "@/entities/product";
 import { ErrorState } from "@/shared/ui/states";
 import { ProductDetailsContent } from "./ProductDetailsContent";
-import { ProductDetailsSkeleton } from "./ProductDetailsSkeleton";
 
 interface ProductDetailsWidgetProps {
   productId?: string;
@@ -27,16 +26,12 @@ export function ProductDetailsWidget({
 }: ProductDetailsWidgetProps) {
   const router = useRouter();
 
-  const { productCard, allImages, isLoading, isError } = useProductDetails({
+  const { productCard, allImages, isError } = useProductDetails({
     productId,
     initialProduct,
     initialDataUpdatedAt,
     initialError,
   });
-
-  if (isLoading) {
-    return <ProductDetailsSkeleton />;
-  }
 
   if (isError || !productCard) {
     return (

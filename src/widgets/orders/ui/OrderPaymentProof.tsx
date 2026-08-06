@@ -108,8 +108,50 @@ export const OrderPaymentProof = ({
 
     if (isLoading) {
       return (
-        <Stack spacing={1.5} aria-label="Загрузка подтверждения оплаты">
-          <Skeleton variant="rounded" height={240} />
+        <Stack
+          spacing={1.5}
+          aria-label="Загрузка подтверждения оплаты"
+          aria-busy="true"
+        >
+          <Skeleton
+            variant="rounded"
+            sx={{
+              width: "100%",
+              aspectRatio: { xs: "4/3", sm: "16/10", md: "3/2" },
+              borderRadius: { xs: 2, sm: 2.5, md: 3 },
+            }}
+          />
+          {validImageIds.length > 1 && (
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: { xs: 2, sm: 2.5, md: 3 },
+                p: { xs: 2, sm: 2.5, md: 3 },
+              }}
+            >
+              <Stack
+                direction="row"
+                spacing={{ xs: 1, sm: 1.5, md: 2 }}
+                sx={{
+                  overflowX: "auto",
+                  pb: { xs: 1, sm: 1.5 },
+                }}
+              >
+                {validImageIds.map((imageId) => (
+                  <Skeleton
+                    key={imageId}
+                    variant="rounded"
+                    sx={{
+                      flexShrink: 0,
+                      width: { xs: 60, sm: 80, md: 100 },
+                      height: { xs: 60, sm: 80, md: 100 },
+                      borderRadius: { xs: 1, sm: 1.25, md: 1.5 },
+                    }}
+                  />
+                ))}
+              </Stack>
+            </Paper>
+          )}
           <Stack direction="row" spacing={1} alignItems="center">
             <CircularProgress size={18} />
             <Typography variant="body2" color="text.secondary">

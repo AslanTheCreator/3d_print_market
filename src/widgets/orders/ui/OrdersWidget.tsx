@@ -5,7 +5,6 @@ import { Alert, Box, Stack } from "@mui/material";
 import { Receipt, Storefront } from "@mui/icons-material";
 import { UseQueryResult } from "@tanstack/react-query";
 import { ListOrdersModel, OrdersEmptyState } from "@/entities/order";
-import { LoadingOrderState } from "@/shared/ui/states";
 import { PageHeader } from "@/shared/ui/page-header";
 import {
   filterOrdersByStatus,
@@ -21,6 +20,7 @@ import {
 } from "../model/dashboardOrders";
 import { OrdersAttentionSection } from "./OrdersAttentionSection";
 import { OrdersControls } from "./OrdersControls";
+import { OrdersLoadingSkeleton } from "./OrdersLoadingSkeleton";
 import { OrdersSummaryCards } from "./OrdersSummaryCards";
 import { OrdersTable } from "./OrdersTable";
 import { OrderDetailsDialog } from "./OrderDetailsDialog";
@@ -90,7 +90,7 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
   );
 
   if (isLoading) {
-    return <LoadingOrderState title={title} itemsCount={3} />;
+    return <OrdersLoadingSkeleton title={title} icon={<Icon />} />;
   }
 
   if (error) {

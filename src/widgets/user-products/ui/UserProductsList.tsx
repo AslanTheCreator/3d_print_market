@@ -15,13 +15,13 @@ import {
 import { Refresh } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import {
-  ProductCardSkeleton,
   useDeleteProduct,
   useUserProductsInfinite,
 } from "@/entities/product";
 import { useNotification } from "@/shared/ui/notification";
 import { EmptyCatalogState } from "@/shared/ui/states";
 import { UserProductCard } from "./UserProductCard";
+import { UserProductCardSkeleton } from "./UserProductCardSkeleton";
 import { SortBy } from "@/entities/product";
 
 interface ProductToDelete {
@@ -97,7 +97,7 @@ export const UserProductsList: React.FC = () => {
     return (
       <Box sx={productsGridSx}>
         {Array.from({ length: 12 }).map((_, index) => (
-          <ProductCardSkeleton key={index} />
+          <UserProductCardSkeleton key={index} />
         ))}
       </Box>
     );

@@ -15,7 +15,6 @@ interface UseProductDetailsOptions {
 interface UseProductDetailsReturn {
   productCard: ProductDetail | undefined;
   allImages: ImageGalleryImage[];
-  isLoading: boolean;
   isError: boolean;
   error: Error | null;
 }
@@ -31,7 +30,6 @@ export const useProductDetails = ({
 
   const {
     data: productCard,
-    isLoading,
     error,
     isError,
   } = useProductById(id, {
@@ -73,7 +71,6 @@ export const useProductDetails = ({
   return {
     productCard,
     allImages,
-    isLoading,
     error,
     isError: initialError || isError,
   };

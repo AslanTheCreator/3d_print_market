@@ -5,6 +5,7 @@ export { SellerDeliverySelector } from "./ui/SellerDeliverySelector";
 export { CheckoutSummary } from "./ui/CheckoutSummary";
 export { CheckoutResultDialog } from "./ui/CheckoutResultDialog";
 export { CheckoutContent } from "./ui/CheckoutContent";
+export { CheckoutSkeleton } from "./ui/CheckoutSkeleton";
 
 export { useCheckoutState } from "./model/useCheckoutState";
 export { useCheckoutSubmit } from "./model/useCheckoutSubmit";

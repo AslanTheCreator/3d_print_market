@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  Skeleton,
-  Box,
-} from "@mui/material";
+import { Box, Card, CardContent, Skeleton, Stack } from "@mui/material";
 import React from "react";
 
 export const ProductCardSkeleton: React.FC = () => {
@@ -25,6 +20,7 @@ export const ProductCardSkeleton: React.FC = () => {
     >
       <Box
         sx={{
+          position: "relative",
           width: "100%",
           aspectRatio: { xs: "1/1.2", sm: "1/1.33" },
         }}
@@ -35,22 +31,47 @@ export const ProductCardSkeleton: React.FC = () => {
           height="100%"
           animation="wave"
         />
+        <Skeleton
+          variant="circular"
+          width={44}
+          height={44}
+          sx={{
+            position: "absolute",
+            top: { xs: 4, sm: 10 },
+            right: { xs: 4, sm: 10 },
+          }}
+        />
       </Box>
 
       <CardContent
         sx={{
           p: { xs: 1.25, sm: 1.5 },
+          "&:last-child": { pb: { xs: 1.5, sm: 1.75 } },
+          flexGrow: 1,
           display: "flex",
           flexDirection: "column",
-          gap: { xs: 1, sm: 1.25 },
+          justifyContent: "space-between",
         }}
       >
-        <Skeleton variant="text" width="52%" height={12} />
-        <Skeleton variant="text" width="100%" height={18} />
-        <Skeleton variant="text" width="82%" height={18} />
-        <Skeleton variant="text" width="44%" height={20} />
-        <Skeleton variant="rectangular" height={36} sx={{ borderRadius: 1 }} />
+        <Stack spacing={0.75}>
+          <Skeleton variant="text" width="52%" height={12} />
+          <Skeleton variant="text" width="82%" height={18} />
+        </Stack>
+
+        <Stack spacing={0.5} sx={{ mt: 0.75 }}>
+          <Skeleton variant="text" width="48%" height={24} />
+          <Skeleton variant="text" width="58%" height={16} />
+          <Skeleton variant="text" width="66%" height={18} />
+        </Stack>
       </CardContent>
+
+      <Box sx={{ px: { xs: 1.25, sm: 1.5 }, pb: { xs: 1.5, sm: 1.75 } }}>
+        <Skeleton
+          variant="rounded"
+          height={44}
+          sx={{ borderRadius: { xs: 1, sm: 1.5 } }}
+        />
+      </Box>
     </Card>
   );
 };

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Box, Container, Typography } from "@mui/material";
 import { useProductsInfinite } from "@/entities/product";
-import type { Product } from "@/entities/product";
+import { ProductGridSkeleton, type Product } from "@/entities/product";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { ProductCatalog } from "./ProductCatalog";
 import { ProductGridItem } from "@/entities/product";
@@ -67,6 +67,7 @@ export const HomeProducts = ({
           onLoadMore={fetchNextPage}
           hasNextPage={!!hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
+          loadingContent={<ProductGridSkeleton count={pageSize} />}
         >
           <ProductCatalog
             products={products}
@@ -78,6 +79,7 @@ export const HomeProducts = ({
             isLoading={isCatalogLoading}
             isError={hasError}
             onRetry={handleRetry}
+            skeletonCount={pageSize}
           />
         </InfiniteScroll>
       </Box>

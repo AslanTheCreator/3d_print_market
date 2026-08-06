@@ -3,6 +3,7 @@
 import {
   Box,
   Container,
+  Divider,
   Paper,
   Skeleton,
   Stack,
@@ -90,42 +91,42 @@ export function ProductDetailsSkeleton() {
               minWidth: 0,
             }}
           >
-            <Skeleton
-              variant="rectangular"
-              width="100%"
-              sx={{
-                height: { xs: 280, sm: 400 },
-                borderRadius: { xs: 0, sm: 3 },
-              }}
-            />
             <Paper
               elevation={0}
               sx={{
-                mt: { xs: 1.5, sm: 2 },
-                p: { xs: 2, sm: 2.5, md: 3 },
-                borderRadius: { xs: 0, sm: 2.5, md: 3 },
+                position: "relative",
+                borderRadius: { xs: 2, sm: 2.5, md: 3 },
+                overflow: "hidden",
+                mb: { xs: 1.5, sm: 2, md: 2.5 },
               }}
             >
-              <Stack
-                direction="row"
-                spacing={{ xs: 1, sm: 1.5, md: 2 }}
-                sx={{ overflow: "hidden" }}
-              >
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <Skeleton
-                    key={index}
-                    variant="rectangular"
-                    sx={{
-                      width: { xs: 60, sm: 80, md: 100 },
-                      height: { xs: 60, sm: 80, md: 100 },
-                      borderRadius: 1.5,
-                      flexShrink: 0,
-                    }}
-                  />
-                ))}
-              </Stack>
+              <Skeleton
+                variant="rectangular"
+                width="100%"
+                sx={{
+                  aspectRatio: {
+                    xs: "4/3",
+                    sm: "16/10",
+                    md: "3/2",
+                  },
+                }}
+              />
             </Paper>
           </Box>
+
+          <Skeleton
+            variant="rounded"
+            width={44}
+            height={44}
+            sx={{
+              display: { xs: "block", sm: "none" },
+              position: "absolute",
+              top: 16,
+              left: 0,
+              zIndex: 2,
+              borderRadius: 2.5,
+            }}
+          />
 
           <Stack
             direction="row"
@@ -153,25 +154,32 @@ export function ProductDetailsSkeleton() {
               borderColor: "divider",
             }}
           >
-            <Skeleton variant="text" width="35%" height={18} />
-            <Skeleton
-              variant="text"
-              width="58%"
-              height={46}
-              sx={{ mt: 0.5 }}
-            />
-            <Skeleton
-              variant="text"
-              width="42%"
-              height={18}
-              sx={{ mt: 1 }}
-            />
-            <Skeleton
-              variant="rectangular"
-              width="46%"
-              height={22}
-              sx={{ mt: 1.25, borderRadius: 1 }}
-            />
+            <Stack spacing={{ xs: 1.25, sm: 2 }}>
+              <Box>
+                <Skeleton variant="text" width="35%" height={18} />
+                <Skeleton
+                  variant="text"
+                  width="58%"
+                  sx={{
+                    height: { xs: 28, sm: 34 },
+                    mt: { xs: 0, sm: 0.5 },
+                  }}
+                />
+              </Box>
+
+              <Divider sx={{ display: { xs: "none", sm: "block" } }} />
+
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Skeleton
+                  variant="circular"
+                  sx={{
+                    width: { xs: 16, sm: 20 },
+                    height: { xs: 16, sm: 20 },
+                  }}
+                />
+                <Skeleton variant="text" width="42%" height={20} />
+              </Stack>
+            </Stack>
           </Paper>
 
           <Paper
@@ -216,7 +224,7 @@ export function ProductDetailsSkeleton() {
               gridArea: { xs: "unset", sm: "purchase" },
               position: { xs: "fixed", sm: "static" },
               inset: { xs: "auto 0 0", sm: "auto" },
-              zIndex: { xs: 10, sm: "auto" },
+              zIndex: { xs: 1000, sm: "auto" },
               borderRadius: { xs: "20px 20px 0 0", sm: 0 },
               p: { xs: "12px 16px", sm: 0 },
               boxShadow: {
@@ -224,6 +232,8 @@ export function ProductDetailsSkeleton() {
                 sm: "none",
               },
               bgcolor: { xs: "background.paper", sm: "transparent" },
+              borderTop: { xs: "1px solid", sm: 0 },
+              borderColor: "divider",
             }}
           >
             <Skeleton
@@ -269,58 +279,6 @@ export function ProductDetailsSkeleton() {
             <Skeleton variant="text" width="75%" />
           </Paper>
 
-          <Paper
-            elevation={0}
-            sx={{
-              gridArea: "reviews",
-              borderRadius: 2.5,
-              p: { xs: 2, sm: 3 },
-              mt: { xs: 0.5, sm: 2.5 },
-            }}
-          >
-            <Skeleton variant="text" width="28%" height={36} />
-            <Skeleton
-              variant="rectangular"
-              width="100%"
-              height={180}
-              sx={{ borderRadius: 2.5, mt: 2 }}
-            />
-          </Paper>
-
-          <Paper
-            elevation={0}
-            sx={{
-              gridArea: "related",
-              borderRadius: 2.5,
-              p: { xs: 2, sm: 3 },
-              mt: { xs: 1, sm: 2.5 },
-              mb: { xs: 10, sm: 0 },
-            }}
-          >
-            <Skeleton variant="text" width="32%" height={36} sx={{ mb: 2 }} />
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "repeat(2, minmax(0, 1fr))",
-                  sm: "repeat(4, minmax(0, 1fr))",
-                },
-                gap: { xs: 1, sm: 2 },
-              }}
-            >
-              {Array.from({ length: 4 }).map((_, index) => (
-                <Box key={index}>
-                  <Skeleton
-                    variant="rectangular"
-                    height={160}
-                    sx={{ borderRadius: 1 }}
-                  />
-                  <Skeleton variant="text" width="90%" sx={{ mt: 1 }} />
-                  <Skeleton variant="text" width="70%" />
-                </Box>
-              ))}
-            </Box>
-          </Paper>
         </Box>
       </Container>
     </Box>

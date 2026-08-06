@@ -5,8 +5,8 @@ import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { useIntersectionObserver } from "usehooks-ts";
 import {
   ProductCard,
-  ProductCardSkeleton,
   ProductGrid,
+  ProductGridSkeleton,
   ProductGridItem,
   useProductsInfinite,
 } from "@/entities/product";
@@ -54,22 +54,7 @@ const RelatedProductsGrid = ({
 
   if (isLoading) {
     return (
-      <ProductGrid>
-        {Array.from({ length: 8 }).map((_, index) => (
-          <ProductGridItem
-            key={index}
-            sx={{
-              display: {
-                xs: index < 4 ? "block" : "none",
-                sm: index < 6 ? "block" : "none",
-                md: "block",
-              },
-            }}
-          >
-            <ProductCardSkeleton />
-          </ProductGridItem>
-        ))}
-      </ProductGrid>
+      <ProductGridSkeleton count={9} />
     );
   }
 
@@ -186,6 +171,7 @@ export function RelatedProducts({
             onLoadMore={fetchNextPage}
             hasNextPage={!!hasNextPage}
             isFetchingNextPage={isFetchingNextPage}
+            loadingContent={<ProductGridSkeleton count={10} />}
           >
             <RelatedProductsGrid
               products={filteredProducts}

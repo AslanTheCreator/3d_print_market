@@ -8,7 +8,6 @@ import {
   Box,
   useTheme,
   Skeleton,
-  Stack,
 } from "@mui/material";
 import {
   LocationOn,
@@ -23,6 +22,7 @@ import { AddressManagerWidget } from "./AddressManagerWidget";
 import { ShippingMethodsWidget } from "./ShippingMethodsWidget";
 import { PaymentAccountsWidget } from "./PaymentAccountsWidget";
 import { SocialNetworksFormWidget } from "./SocialNetworksFormWidget";
+import { SettingsPanelSkeleton } from "./SettingsPanelSkeleton";
 
 const TAB_KEYS = ["address", "shipping", "payment", "contacts"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
@@ -252,6 +252,7 @@ function SettingsContent() {
 function SettingsLoadingSkeleton() {
   return (
     <Paper
+      aria-busy="true"
       elevation={0}
       sx={{
         borderRadius: 2,
@@ -260,22 +261,51 @@ function SettingsLoadingSkeleton() {
         borderColor: "divider",
       }}
     >
-      <Stack
-        direction="row"
-        spacing={2}
-        sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}
+      <Tabs
+        value={false}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+        sx={{
+          borderBottom: 1,
+          borderColor: "divider",
+          minHeight: { xs: 60, sm: 64 },
+          px: { xs: 1, sm: 2 },
+          py: { xs: 1, sm: 0 },
+          "& .MuiTabs-flexContainer": {
+            gap: { xs: 1, sm: 0 },
+          },
+          "& .MuiTabs-scrollButtons": {
+            width: 44,
+            minWidth: 44,
+            minHeight: 44,
+            display: { xs: "inline-flex", sm: "none" },
+          },
+        }}
       >
-        {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} variant="rounded" width={120} height={40} />
+        {SETTINGS_TABS.map((tab) => (
+          <Tab
+            key={tab.key}
+            disabled
+            icon={<Skeleton variant="circular" width={22} height={22} />}
+            iconPosition="start"
+            label={<Skeleton variant="text" width={72} height={20} />}
+            sx={{
+              minHeight: { xs: 44, sm: 64 },
+              minWidth: { xs: 112, sm: 160 },
+              flexShrink: 0,
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.75, sm: 1.5 },
+              opacity: 1,
+            }}
+          />
         ))}
-      </Stack>
+      </Tabs>
 
-      <Box sx={{ p: 3 }}>
-        <Stack spacing={2}>
-          <Skeleton variant="rounded" height={56} />
-          <Skeleton variant="rounded" height={56} />
-          <Skeleton variant="rounded" height={56} />
-        </Stack>
+      <Box sx={{ p: { xs: 1.5, sm: 3 } }}>
+        <Box sx={{ pt: { xs: 2, sm: 3 } }}>
+          <SettingsPanelSkeleton />
+        </Box>
       </Box>
     </Paper>
   );

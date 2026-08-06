@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
-import { useProductsInfinite } from "@/entities/product";
+import { ProductGridSkeleton, useProductsInfinite } from "@/entities/product";
 import { useUserById } from "@/entities/user";
 import type { PriceRange, ProductFilter, SortBy } from "@/entities/product";
 import { EmptyCatalogState, ErrorState } from "@/shared/ui/states";
@@ -183,6 +183,16 @@ export const SellerPageClient = ({ sellerId }: SellerPageClientProps) => {
   }
 
   const renderProducts = () => {
+    if (isSellerLoading || !seller) {
+      return (
+        <ProductCatalog
+          products={[]}
+          isLoading
+          skeletonCount={PAGE_SIZE}
+        />
+      );
+    }
+
     if (!isProductsLoading && !isProductsError && products.length === 0) {
       return (
         <EmptyCatalogState
@@ -200,6 +210,7 @@ export const SellerPageClient = ({ sellerId }: SellerPageClientProps) => {
         onLoadMore={fetchNextPage}
         hasNextPage={!!hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
+        loadingContent={<ProductGridSkeleton count={PAGE_SIZE} />}
       >
         <ProductCatalog
           products={products}

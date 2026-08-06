@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Typography, Box, CircularProgress } from "@mui/material";
+import { Typography, Box } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useRouter } from "next/navigation";
 import {
@@ -19,6 +19,7 @@ import { useProfileUser } from "@/entities/user";
 import { useCheckoutState } from "../model/useCheckoutState";
 import { CheckoutResultDialog } from "./CheckoutResultDialog";
 import { CheckoutContent } from "./CheckoutContent";
+import { CheckoutSkeleton } from "./CheckoutSkeleton";
 import { OrderSuccessState } from "@/shared/ui/states";
 import { EmptyPageState } from "@/shared/ui/states";
 import { ErrorState } from "@/shared/ui/states";
@@ -164,20 +165,7 @@ const Checkout = () => {
   }
 
   if (isCartLoading || cartItems === undefined) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: 400,
-          gap: 2,
-        }}
-      >
-        <CircularProgress size={48} />
-      </Box>
-    );
+    return <CheckoutSkeleton />;
   }
 
   // После успешного оформления — показываем OrderSuccessState вместо пустой корзины

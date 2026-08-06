@@ -4,8 +4,8 @@ import React from "react";
 import { Box } from "@mui/material";
 import {
   ProductCard,
-  ProductCardSkeleton,
   ProductGrid,
+  ProductGridSkeleton,
   ProductGridItem,
 } from "@/entities/product";
 import { useFavoritesChecks } from "@/entities/favorite";
@@ -24,6 +24,7 @@ interface ProductCatalogProps {
   isLoading?: boolean;
   isError?: boolean;
   onRetry?: () => void;
+  skeletonCount?: number;
 }
 
 export const ProductCatalog: React.FC<ProductCatalogProps> = ({
@@ -32,6 +33,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   isLoading,
   isError,
   onRetry,
+  skeletonCount = 12,
 }) => {
   const { isAuthenticated } = useAuth();
   const hasExternalProducts = products.some(
@@ -58,23 +60,10 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   if (isLoading) {
     return (
       <Box>
-        <ProductGrid>
-          {leadingContent}
-          {Array.from({ length: 12 }).map((_, index) => (
-            <ProductGridItem
-              key={index}
-              sx={{
-                display: {
-                  xs: index < 6 ? "block" : "none",
-                  sm: index < 8 ? "block" : "none",
-                  md: "block",
-                },
-              }}
-            >
-              <ProductCardSkeleton />
-            </ProductGridItem>
-          ))}
-        </ProductGrid>
+        <ProductGridSkeleton
+          count={skeletonCount}
+          leadingContent={leadingContent}
+        />
       </Box>
     );
   }

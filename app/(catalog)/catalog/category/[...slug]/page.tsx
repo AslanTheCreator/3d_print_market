@@ -9,7 +9,10 @@ import { productApi } from "@/entities/product/server";
 import { isAdultCategoryPath } from "@/features/age-verification/server";
 import { SITE_INFO } from "@/shared/config";
 import type { Product } from "@/entities/product";
-import { CategoryProducts } from "@/widgets/product-catalog";
+import {
+  CATEGORY_PRODUCTS_PAGE_SIZE,
+  CategoryProducts,
+} from "@/widgets/product-catalog";
 
 interface CategoryPageProps {
   params: Promise<{
@@ -19,7 +22,6 @@ interface CategoryPageProps {
 
 export const dynamic = "force-dynamic";
 
-const CATEGORY_PRODUCTS_PAGE_SIZE = 20;
 
 const getSlugKey = (slugs: string[]): string => slugs.join("/");
 
