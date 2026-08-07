@@ -16,7 +16,8 @@ interface FullscreenViewerImageStageProps {
   onMouseDown: (event: React.MouseEvent) => void;
   onMouseMove: (event: React.MouseEvent) => void;
   onMouseUp: () => void;
-  onTouchEnd: () => void;
+  onTouchCancel: () => void;
+  onTouchEnd: (event: React.TouchEvent) => void;
   onTouchMove: (event: React.TouchEvent) => void;
   onTouchStart: (event: React.TouchEvent) => void;
 }
@@ -34,12 +35,14 @@ export const FullscreenViewerImageStage = ({
   onMouseDown,
   onMouseMove,
   onMouseUp,
+  onTouchCancel,
   onTouchEnd,
   onTouchMove,
   onTouchStart,
 }: FullscreenViewerImageStageProps): React.ReactElement => {
   return (
     <Box
+      data-testid="fullscreen-image-stage"
       sx={{
         position: "relative",
         width: "100%",
@@ -49,6 +52,7 @@ export const FullscreenViewerImageStage = ({
         justifyContent: "center",
         overflow: "hidden",
         cursor: zoom > 1 ? (isDragging ? "grabbing" : "grab") : "default",
+        touchAction: zoom > 1 ? "none" : "pan-y",
       }}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
@@ -57,6 +61,7 @@ export const FullscreenViewerImageStage = ({
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchCancel}
     >
       <Zoom in={open} timeout={300}>
         <Box

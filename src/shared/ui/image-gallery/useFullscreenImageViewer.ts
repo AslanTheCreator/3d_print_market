@@ -1,8 +1,10 @@
 "use client";
 
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ImageGalleryImage } from "./types";
+
+const SWIPE_THRESHOLD_PX = 48;
 
 interface UseFullscreenImageViewerOptions {
   images: ImageGalleryImage[];
@@ -25,6 +27,7 @@ export const useFullscreenImageViewer = ({
   const [failedImageSources, setFailedImageSources] = useState<Set<string>>(
     () => new Set(),
   );
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const currentImage = images[currentIndex];
   const currentImageSrc =
@@ -100,13 +103,25 @@ export const useFullscreenImageViewer = ({
 
   const handleTouchStart = useCallback(
     (event: React.TouchEvent) => {
-      if (zoom > 1 && event.touches.length === 1) {
+      if (event.touches.length !== 1) {
+        swipeStartRef.current = null;
+        setIsDragging(false);
+        return;
+      }
+
+      const touch = event.touches[0];
+
+      if (zoom > 1) {
+        swipeStartRef.current = null;
         setIsDragging(true);
         setDragStart({
-          x: event.touches[0].clientX - position.x,
-          y: event.touches[0].clientY - position.y,
+          x: touch.clientX - position.x,
+          y: touch.clientY - position.y,
         });
+        return;
       }
+
+      swipeStartRef.current = { x: touch.clientX, y: touch.clientY };
     },
     [position, zoom],
   );
@@ -123,7 +138,40 @@ export const useFullscreenImageViewer = ({
     [dragStart, isDragging, zoom],
   );
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback(
+    (event: React.TouchEvent) => {
+      setIsDragging(false);
+
+      const swipeStart = swipeStartRef.current;
+      swipeStartRef.current = null;
+
+      if (zoom > 1 || !swipeStart || event.changedTouches.length !== 1) {
+        return;
+      }
+
+      const touch = event.changedTouches[0];
+      const deltaX = touch.clientX - swipeStart.x;
+      const deltaY = touch.clientY - swipeStart.y;
+
+      if (
+        Math.abs(deltaX) < SWIPE_THRESHOLD_PX ||
+        Math.abs(deltaX) <= Math.abs(deltaY)
+      ) {
+        return;
+      }
+
+      if (deltaX < 0) {
+        handleNext();
+        return;
+      }
+
+      handlePrevious();
+    },
+    [handleNext, handlePrevious, zoom],
+  );
+
+  const handleTouchCancel = useCallback(() => {
+    swipeStartRef.current = null;
     setIsDragging(false);
   }, []);
 
@@ -176,6 +224,7 @@ export const useFullscreenImageViewer = ({
     handleMouseUp,
     handleNext,
     handlePrevious,
+    handleTouchCancel,
     handleTouchEnd,
     handleTouchMove,
     handleTouchStart,

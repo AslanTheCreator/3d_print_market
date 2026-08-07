@@ -9,6 +9,7 @@ interface FullscreenViewerNavigationProps {
 }
 
 const getNavigationButtonSx = (side: "left" | "right") => ({
+  display: { xs: "none", sm: "inline-flex" },
   position: "absolute",
   [side]: { xs: 8, sm: 16, md: 24 },
   top: "50%",

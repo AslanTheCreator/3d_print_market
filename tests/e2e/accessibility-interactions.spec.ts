@@ -20,11 +20,15 @@ test("product gallery exposes named native controls with single keyboard actions
   await page.waitForTimeout(1000);
 
   const gallery = page.getByTestId("product-gallery");
-  const openFullscreen = gallery.getByRole("button", {
-    name: "Открыть полноэкранную галерею",
-  });
+  const openFullscreen = gallery.getByTestId("gallery-image-trigger");
 
   await expect(openFullscreen).toBeVisible({ timeout: 15_000 });
+  await expect(openFullscreen).toHaveAttribute(
+    "aria-label",
+    "Открыть полноэкранную галерею",
+  );
+  await expect(openFullscreen).toHaveCSS("cursor", "pointer");
+  await expect(gallery.locator(".gallery-open-button")).toHaveCount(0);
   await expectNoNestedButtons(page);
 
   await openFullscreen.focus();

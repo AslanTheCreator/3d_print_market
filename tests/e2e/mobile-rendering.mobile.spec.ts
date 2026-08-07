@@ -801,6 +801,16 @@ test("mobile overlays stay accessible and close without losing the page", async 
   await waitForStableFrame(page);
   await expect(categoriesDrawer).toBeVisible();
   await expect(categoriesDrawer.getByText("Аниме", { exact: true })).toBeVisible();
+  const headerBox = await page.getByTestId("site-header").boundingBox();
+  const drawerBox = await categoriesDrawer.boundingBox();
+
+  if (!headerBox || !drawerBox) {
+    throw new Error("Header and categories drawer must have layout boxes");
+  }
+
+  expect(Math.abs(drawerBox.y - (headerBox.y + headerBox.height))).toBeLessThan(
+    1,
+  );
   await page.setViewportSize({ width: 899, height: 800 });
   await page.keyboard.press("Escape");
   await expect(

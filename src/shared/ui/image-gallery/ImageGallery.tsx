@@ -4,17 +4,14 @@ import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
   Box,
+  ButtonBase,
   GlobalStyles,
   Paper,
   IconButton,
   alpha,
   useTheme,
 } from "@mui/material";
-import {
-  ChevronLeft,
-  ChevronRight,
-  FullscreenRounded,
-} from "@mui/icons-material";
+import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
@@ -142,50 +139,15 @@ export function ImageGallery({
             borderRadius: { xs: 2, sm: 2.5, md: 3 },
             overflow: "hidden",
             mb: { xs: 1.5, sm: 2, md: 2.5 },
-            "& > div": {
-              aspectRatio: {
-                xs: "4/3",
-                sm: "16/10",
-                md: "3/2",
-              },
-            },
             transition: "all 0.3s ease",
             "&:hover": {
               boxShadow: theme.shadows[4],
-              "& .gallery-nav-button, & .gallery-open-button": {
+              "& .gallery-nav-button": {
                 opacity: 1,
               },
             },
           }}
         >
-          <IconButton
-            className="gallery-open-button"
-            onClick={handleOpenFullscreen}
-            aria-label="Открыть полноэкранную галерею"
-            sx={{
-              position: "absolute",
-              bottom: { xs: 8, sm: 12, md: 16 },
-              right: { xs: 8, sm: 12, md: 16 },
-              zIndex: 3,
-              width: 44,
-              height: 44,
-              bgcolor: alpha(theme.palette.common.white, 0.85),
-              backdropFilter: "blur(8px)",
-              color: theme.palette.text.primary,
-              opacity: { xs: 1, md: 0 },
-              transition: "opacity 0.2s ease, background-color 0.2s ease",
-              boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.15)}`,
-              "&:hover": {
-                bgcolor: theme.palette.common.white,
-              },
-              "&.Mui-focusVisible": {
-                opacity: 1,
-              },
-            }}
-          >
-            <FullscreenRounded />
-          </IconButton>
-
           {showNavigation ? (
             <>
               <IconButton
@@ -195,6 +157,7 @@ export function ImageGallery({
                   handlePrev();
                 }}
                 sx={{
+                  display: { xs: "none", sm: "inline-flex" },
                   position: "absolute",
                   left: { xs: 8, sm: 12, md: 16 },
                   top: "50%",
@@ -229,6 +192,7 @@ export function ImageGallery({
                   handleNext();
                 }}
                 sx={{
+                  display: { xs: "none", sm: "inline-flex" },
                   position: "absolute",
                   right: { xs: 8, sm: 12, md: 16 },
                   top: "50%",
@@ -258,31 +222,54 @@ export function ImageGallery({
             </>
           ) : null}
 
-          <Swiper
-            className="product-image-swiper"
-            modules={[Pagination]}
-            onSlideChange={(swiper) => setCurrentIndex(swiper.activeIndex)}
-            onSwiper={setSwiperInstance}
-            pagination={{ clickable: false }}
-            spaceBetween={10}
-            slidesPerView={1}
-            style={{
-              borderRadius: "12px",
+          <ButtonBase
+            className="gallery-image-trigger"
+            data-testid="gallery-image-trigger"
+            aria-label="Открыть полноэкранную галерею"
+            onClick={handleOpenFullscreen}
+            disableRipple
+            sx={{
+              display: "block",
+              width: "100%",
+              aspectRatio: {
+                xs: "4/3",
+                sm: "16/10",
+                md: "3/2",
+              },
+              borderRadius: "inherit",
               overflow: "hidden",
-              marginBottom: "16px",
+              "&.Mui-focusVisible": {
+                outline: `3px solid ${theme.palette.primary.main}`,
+                outlineOffset: -3,
+              },
             }}
           >
-            {images.map((image, index) => (
-              <SwiperSlide key={index}>
-                <MainImage
-                  src={image.previewSrc}
-                  alt={`${alt} ${index + 1}`}
-                  priority={index === 0}
-                  sizes={imageSizes}
-                />
-              </SwiperSlide>
-            ))}
-          </Swiper>
+            <Swiper
+              className="product-image-swiper"
+              modules={[Pagination]}
+              onSlideChange={(swiper) => setCurrentIndex(swiper.activeIndex)}
+              onSwiper={setSwiperInstance}
+              pagination={{ clickable: false }}
+              spaceBetween={10}
+              slidesPerView={1}
+              style={{
+                borderRadius: "12px",
+                overflow: "hidden",
+                marginBottom: "16px",
+              }}
+            >
+              {images.map((image, index) => (
+                <SwiperSlide key={index}>
+                  <MainImage
+                    src={image.previewSrc}
+                    alt={`${alt} ${index + 1}`}
+                    priority={index === 0}
+                    sizes={imageSizes}
+                  />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </ButtonBase>
         </Paper>
 
         {images.length > 1 ? (

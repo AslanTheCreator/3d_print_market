@@ -14,7 +14,7 @@ export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
   open,
   onClose,
 }) => {
-  const topOffset = `${LAYOUT.HEADER_HEIGHT + 3}px`;
+  const topOffset = LAYOUT.HEADER_HEIGHT_PX;
 
   return (
     <Drawer
@@ -36,7 +36,7 @@ export const CategoriesDrawer: React.FC<CategoriesDrawerProps> = ({
           maxWidth: { xs: "100vw", md: "340px" },
           height: {
             xs: "100%",
-            md: `calc(100vh - ${LAYOUT.HEADER_HEIGHT + 3}px)`,
+            md: `calc(100vh - ${LAYOUT.HEADER_HEIGHT_PX})`,
           },
           boxSizing: "border-box",
           backgroundColor: "background.paper",

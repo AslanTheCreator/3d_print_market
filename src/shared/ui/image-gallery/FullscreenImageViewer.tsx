@@ -70,6 +70,7 @@ export function FullscreenImageViewer({
         onMouseDown={viewer.handleMouseDown}
         onMouseMove={viewer.handleMouseMove}
         onMouseUp={viewer.handleMouseUp}
+        onTouchCancel={viewer.handleTouchCancel}
         onTouchEnd={viewer.handleTouchEnd}
         onTouchMove={viewer.handleTouchMove}
         onTouchStart={viewer.handleTouchStart}
