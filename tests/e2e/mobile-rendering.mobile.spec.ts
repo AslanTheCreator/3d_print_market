@@ -272,7 +272,7 @@ const expectCleanDiagnostics = (
   expect(diagnostics.failedResources).toEqual([]);
 };
 
-test("mobile SSR is compact before JavaScript runs", async ({
+test("mobile streamed SSR fallback is compact without JavaScript", async ({
   browser,
   baseURL,
 }) => {
@@ -316,33 +316,22 @@ test("mobile SSR is compact before JavaScript runs", async ({
       { waitUntil: "domcontentloaded" },
     );
     expect(productResponse?.ok()).toBe(true);
-    await expect(page.getByTestId("product-details")).toBeVisible();
-    await expect(
-      page.getByRole("heading", {
-        level: 1,
-        name: fixtureProduct.name,
-      }),
-    ).toHaveCount(1);
-    await expect(page.getByTestId("product-gallery")).toHaveCount(1);
-    await expect(page.getByTestId("product-purchase-action")).toHaveCount(1);
-    await expect(page.getByTestId("product-favorite-action")).toHaveCount(1);
-    await expect(
-      page.getByRole("navigation", { name: "breadcrumb" }),
-    ).toBeHidden();
+    await expect(page.getByTestId("product-details-skeleton")).toBeVisible();
+    await expect(page.getByTestId("product-details")).toBeHidden();
 
     const [galleryBox, titleBox, purchaseGeometry] = await Promise.all([
-      page.getByTestId("product-gallery").boundingBox(),
+      page.getByTestId("product-details-skeleton-gallery").boundingBox(),
+      page.getByTestId("product-details-skeleton-title").boundingBox(),
       page
-        .getByRole("heading", { level: 1, name: fixtureProduct.name })
-        .boundingBox(),
-      page.getByTestId("product-purchase-action").evaluate((element) => {
-        const rect = element.getBoundingClientRect();
-        return {
-          bottom: rect.bottom,
-          position: getComputedStyle(element).position,
-          viewportHeight: window.innerHeight,
-        };
-      }),
+        .getByTestId("product-details-skeleton-purchase-action")
+        .evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            bottom: rect.bottom,
+            position: getComputedStyle(element).position,
+            viewportHeight: window.innerHeight,
+          };
+        }),
     ]);
     expect(galleryBox).not.toBeNull();
     expect(titleBox).not.toBeNull();

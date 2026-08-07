@@ -11,7 +11,10 @@ import {
 
 export function ProductDetailsSkeleton() {
   return (
-    <Box sx={{ pb: { xs: 24, sm: 0 } }}>
+    <Box
+      data-testid="product-details-skeleton"
+      sx={{ pb: { xs: 24, sm: 0 } }}
+    >
       <Container
         maxWidth="lg"
         disableGutters
@@ -74,6 +77,7 @@ export function ProductDetailsSkeleton() {
           />
 
           <Skeleton
+            data-testid="product-details-skeleton-title"
             variant="text"
             width="70%"
             height={60}
@@ -85,6 +89,7 @@ export function ProductDetailsSkeleton() {
           />
 
           <Box
+            data-testid="product-details-skeleton-gallery"
             sx={{
               gridArea: "gallery",
               mx: { xs: -2, sm: 0 },
@@ -219,6 +224,7 @@ export function ProductDetailsSkeleton() {
           </Paper>
 
           <Paper
+            data-testid="product-details-skeleton-purchase-action"
             elevation={2}
             sx={{
               gridArea: { xs: "unset", sm: "purchase" },
