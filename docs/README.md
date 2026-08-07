@@ -19,5 +19,6 @@
 
 - [production-readiness-audit-2026-06-17.md](./production-readiness-audit-2026-06-17.md) — актуальная на 2026-07-23 оценка MVP/public production и release gates.
 - [performance-audit.md](./performance-audit.md) — исторический замер и актуальный список открытых пунктов.
+- [ux-ui-audit.md](./ux-ui-audit.md) — поэтапный UX/UI-аудит страниц и пользовательских сценариев.
 
 Для текущего поведения источником истины остаются код, конфигурация и `package.json`.
