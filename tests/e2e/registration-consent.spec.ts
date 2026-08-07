@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("registration personal data consent", () => {
-  test("shows consent only during registration", async ({ page }) => {
+test.describe("registration legal consent notice", () => {
+  test("shows the legal notice only during registration", async ({ page }) => {
     await page.goto("/auth/login");
 
     const loginForm = page.locator("form");
@@ -29,7 +29,12 @@ test.describe("registration personal data consent", () => {
     await expect(loginForm.getByRole("checkbox")).toHaveCount(0);
     await expect(
       loginForm.getByRole("link", {
-        name: "Политикой обработки персональных данных",
+        name: "пользовательское соглашение",
+      }),
+    ).toHaveCount(0);
+    await expect(
+      loginForm.getByRole("link", {
+        name: "политикой конфиденциальности",
       }),
     ).toHaveCount(0);
 
@@ -45,19 +50,52 @@ test.describe("registration personal data consent", () => {
     await expect(
       registerForm.getByLabel(/^Возраст/),
     ).toBeVisible();
-    await expect(
-      registerForm.getByRole("checkbox", {
-        name: /Я даю согласие на обработку персональных данных/,
-      }),
-    ).toBeVisible();
-    await expect(
-      registerForm.getByRole("link", {
-        name: "Политикой обработки персональных данных",
-      }),
-    ).toBeVisible();
+    await expect(registerForm.getByRole("checkbox")).toHaveCount(0);
+    const agreementLink = registerForm.getByRole("link", {
+      name: "пользовательское соглашение",
+    });
+    const privacyLink = registerForm.getByRole("link", {
+      name: "политикой конфиденциальности",
+    });
+    const loginLink = page.getByRole("link", { name: "Авторизуйтесь" });
+    const loginLinkText = loginLink.locator("span");
+    const agreementLinkText = agreementLink.locator("span");
+    const privacyLinkText = privacyLink.locator("span");
+    await expect(agreementLink).toBeVisible();
+    await expect(agreementLink).toHaveAttribute("href", "/user-agreement");
+    await expect(agreementLinkText).toHaveCSS(
+      "text-decoration-line",
+      "underline",
+    );
+    await expect(privacyLink).toBeVisible();
+    await expect(privacyLink).toHaveAttribute("href", "/privacy");
+    await expect(privacyLinkText).toHaveCSS(
+      "text-decoration-line",
+      "underline",
+    );
+    await page.mouse.move(0, 0);
+    const loginLinkColor = await loginLinkText.evaluate(
+      (element) => getComputedStyle(element).color,
+    );
+    await expect(agreementLinkText).toHaveCSS("color", loginLinkColor);
+    await expect(privacyLinkText).toHaveCSS("color", loginLinkColor);
+    const legalNotice = registerForm.getByText(
+      "Регистрируясь на сайте, я принимаю пользовательское соглашение, а также даю Правообладателю согласие на обработку моих персональных данных в соответствии с политикой конфиденциальности.",
+    );
+    await expect(legalNotice).toBeVisible();
+    const [noticeFontSize, agreementFontSize, privacyFontSize] =
+      await Promise.all(
+        [legalNotice, agreementLinkText, privacyLinkText].map((element) =>
+          element.evaluate((node) => getComputedStyle(node).fontSize),
+        ),
+      );
+    expect(agreementFontSize).toBe(noticeFontSize);
+    expect(privacyFontSize).toBe(noticeFontSize);
   });
 
-  test("blocks registration until consent is given", async ({ page }) => {
+  test("submits registration without a separate consent checkbox", async ({
+    page,
+  }) => {
     let registrationRequestCount = 0;
 
     await page.route("**/participant", async (route) => {
@@ -79,10 +117,6 @@ test.describe("registration personal data consent", () => {
     await page.goto("/auth/register");
 
     const registerForm = page.locator("form");
-    const consentCheckbox = registerForm.getByRole("checkbox", {
-      name: /Я даю согласие на обработку персональных данных/,
-    });
-
     await registerForm
       .getByLabel(/^Email/)
       .fill("user@example.com");
@@ -90,25 +124,6 @@ test.describe("registration personal data consent", () => {
       .getByLabel(/^Пароль/)
       .fill("password");
     await registerForm.getByLabel(/^Возраст/).fill("25");
-    await registerForm
-      .getByRole("button", { name: "Зарегистрироваться" })
-      .click();
-
-    await expect(
-      registerForm.getByText(
-        "Необходимо дать согласие на обработку персональных данных",
-      ),
-    ).toBeVisible();
-    expect(registrationRequestCount).toBe(0);
-
-    await consentCheckbox.check();
-
-    await expect(
-      registerForm.getByText(
-        "Необходимо дать согласие на обработку персональных данных",
-      ),
-    ).toHaveCount(0);
-
     await registerForm
       .getByRole("button", { name: "Зарегистрироваться" })
       .click();
@@ -147,18 +162,30 @@ test.describe("registration personal data consent", () => {
     }
   });
 
-  test("opens the privacy policy in a new tab", async ({ page }) => {
+  test("opens legal documents in new tabs", async ({ page }) => {
     await page.goto("/auth/register");
 
-    const privacyLink = page.locator("form").getByRole("link", {
-      name: "Политикой обработки персональных данных",
-    });
-    const popupPromise = page.waitForEvent("popup");
+    for (const legalDocument of [
+      {
+        linkName: "пользовательское соглашение",
+        url: /\/user-agreement$/,
+      },
+      {
+        linkName: "политикой конфиденциальности",
+        url: /\/privacy$/,
+      },
+    ]) {
+      const legalLink = page.locator("form").getByRole("link", {
+        name: legalDocument.linkName,
+      });
+      const popupPromise = page.waitForEvent("popup");
 
-    await privacyLink.click();
+      await legalLink.click();
 
-    const privacyPage = await popupPromise;
-    await privacyPage.waitForLoadState("domcontentloaded");
-    await expect(privacyPage).toHaveURL(/\/privacy$/);
+      const legalPage = await popupPromise;
+      await legalPage.waitForLoadState("domcontentloaded");
+      await expect(legalPage).toHaveURL(legalDocument.url);
+      await legalPage.close();
+    }
   });
 });

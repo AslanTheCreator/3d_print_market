@@ -30,7 +30,7 @@ API-зависимые страницы должны показывать loadin
 Routes: `/auth/login`, `/auth/register`, `/dashboard/*`.
 
 - login, register, verification и password reset используют общий auth flow;
-- register не отправляется без согласия на обработку персональных данных, но backend payload пока не сохраняет факт согласия;
+- register показывает юридическое уведомление со ссылками на пользовательское соглашение и политику конфиденциальности, но не требует отдельного checkbox и не передаёт факт согласия в backend payload;
 - redirect после auth проверяет начальный `/` и исключает `/auth`, но текущая проверка не отклоняет backslash-вариант внешнего URL; origin-based sanitizer ещё не реализован;
 - `middleware.ts`, dashboard layout и `RequireAuth` защищают личный кабинет;
 - `/favorites` и `/checkout` доступны как routes, но показывают unauthorized state анониму.

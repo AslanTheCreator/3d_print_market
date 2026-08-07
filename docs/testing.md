@@ -163,7 +163,7 @@ regressions, но не является production acceptance.
 
 Перед публичным MVP один release candidate должен пройти на staging с совместимым backend и изолированными тестовыми данными:
 
-1. register, consent, verify, login, refresh, logout и password reset;
+1. register с юридическим уведомлением и ссылками, verify, login, refresh, logout и password reset;
 2. seller settings с success, empty и каждой ошибкой загрузки;
 3. create/edit обычного, preorder и external товара без потери contract fields;
 4. image upload и приватный доступ к payment proof;

@@ -15,7 +15,7 @@ import {
 import Link from "next/link";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import { PersonalDataConsentField } from "./PersonalDataConsentField";
+import { LegalConsentNotice } from "./LegalConsentNotice";
 
 interface AuthFormSubmitValues {
   email: string;
@@ -34,15 +34,12 @@ interface IAuthForm {
   onForgotPassword?: () => void;
   passwordAutoComplete?: "current-password" | "new-password";
   showAgeField?: boolean;
-  requirePersonalDataConsent?: boolean;
+  showLegalConsentNotice?: boolean;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_AGE = 0;
 const MAX_AGE = 150;
-const PERSONAL_DATA_CONSENT_ERROR =
-  "Необходимо дать согласие на обработку персональных данных";
-
 const getAgeError = (ageValue: string): string => {
   const normalizedAge = ageValue.trim();
 
@@ -74,7 +71,7 @@ const AuthForm: React.FC<IAuthForm> = ({
   onForgotPassword,
   passwordAutoComplete = "current-password",
   showAgeField = false,
-  requirePersonalDataConsent = false,
+  showLegalConsentNotice = false,
 }) => {
   const theme = useTheme();
 
@@ -85,8 +82,6 @@ const AuthForm: React.FC<IAuthForm> = ({
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [ageError, setAgeError] = useState("");
-  const [hasPersonalDataConsent, setHasPersonalDataConsent] = useState(false);
-  const [personalDataConsentError, setPersonalDataConsentError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleTogglePassword = () => {
@@ -103,22 +98,11 @@ const AuthForm: React.FC<IAuthForm> = ({
         : "Введите корректный email";
     const nextPasswordError = password ? "" : "Введите пароль";
     const nextAgeError = showAgeField ? getAgeError(age) : "";
-    const nextPersonalDataConsentError =
-      requirePersonalDataConsent && !hasPersonalDataConsent
-        ? PERSONAL_DATA_CONSENT_ERROR
-        : "";
-
     setEmailError(nextEmailError);
     setPasswordError(nextPasswordError);
     setAgeError(nextAgeError);
-    setPersonalDataConsentError(nextPersonalDataConsentError);
 
-    if (
-      nextEmailError ||
-      nextPasswordError ||
-      nextAgeError ||
-      nextPersonalDataConsentError
-    ) {
+    if (nextEmailError || nextPasswordError || nextAgeError) {
       return;
     }
 
@@ -333,18 +317,7 @@ const AuthForm: React.FC<IAuthForm> = ({
             />
           )}
 
-          {requirePersonalDataConsent && (
-            <PersonalDataConsentField
-              checked={hasPersonalDataConsent}
-              error={personalDataConsentError}
-              onChange={(checked) => {
-                setHasPersonalDataConsent(checked);
-                if (checked) {
-                  setPersonalDataConsentError("");
-                }
-              }}
-            />
-          )}
+          {showLegalConsentNotice && <LegalConsentNotice />}
 
           {/* Кнопка "Забыли пароль?" */}
           {onForgotPassword && (

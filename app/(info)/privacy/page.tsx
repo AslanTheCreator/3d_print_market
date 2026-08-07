@@ -15,7 +15,10 @@ export default function PrivacyPage() {
       title="Конфиденциальность"
       subtitle={`Политика обработки персональных данных пользователей ${SITE_INFO.name}.`}
     >
-      <LegalDocument publishedAt="7 мая 2026 г." sections={privacyPolicySections} />
+      <LegalDocument
+        publishedAt="25 июля 2026 года"
+        sections={privacyPolicySections}
+      />
     </InfoPage>
   );
 }

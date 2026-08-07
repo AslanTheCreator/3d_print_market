@@ -15,7 +15,10 @@ export default function UserAgreementPage() {
       title="Пользовательское соглашение"
       subtitle={`Правила использования сайта ${SITE_INFO.name} для покупателей и продавцов.`}
     >
-      <LegalDocument publishedAt="7 мая 2026 г." sections={userAgreementSections} />
+      <LegalDocument
+        publishedAt="25 июля 2026 г."
+        sections={userAgreementSections}
+      />
     </InfoPage>
   );
 }
