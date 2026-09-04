@@ -36,6 +36,7 @@ export const useCheckoutState = ({
     isLoadingAddresses,
     isAddressesError,
     refetchAddresses,
+    addressCreation,
   } = useCheckoutAddress();
   const {
     selectedProductIds,
@@ -82,6 +83,7 @@ export const useCheckoutState = ({
       addressesCount: addresses.length,
       isLoadingAddresses,
       isAddressesError,
+      isAddressCreationOpen: addressCreation.isOpen,
       selectedItemsCount: selectedItems.length,
       isLoadingCurrentUser,
       isCurrentUserError: isCurrentUserUnavailable,
@@ -108,6 +110,7 @@ export const useCheckoutState = ({
     isLoadingAddresses,
     isAddressesError,
     refetchAddresses,
+    addressCreation,
     comment,
     setComment,
     selectedProductIds,

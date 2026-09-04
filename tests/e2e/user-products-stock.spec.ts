@@ -144,7 +144,21 @@ test("внешний товар недоступен для управления
       name: "Действия с товаром Внешний товар",
     }),
   ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", {
+      name: "Редактировать товар Внешний товар",
+    }),
+  ).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Продлить" })).toHaveCount(0);
+
+  const editProductLink = page.getByRole("link", {
+    name: "Редактировать товар Товар с остатком",
+  });
+  await expect(editProductLink).toBeVisible();
+  await expect(editProductLink).toHaveAttribute(
+    "href",
+    "/dashboard/products/102/edit",
+  );
 
   const internalProductActions = page.getByRole("button", {
     name: "Действия с товаром Товар с остатком",
@@ -153,7 +167,7 @@ test("внешний товар недоступен для управления
   await internalProductActions.click();
   await expect(
     page.getByRole("menuitem", { name: "Редактировать" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(page.getByRole("menuitem", { name: "Удалить" })).toBeVisible();
 });
 

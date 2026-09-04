@@ -39,6 +39,18 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   const theme = useTheme();
   const { isAuthenticated } = useAuth();
   const { toggleFavorite, isLoading } = useToggleFavorite(isAuthenticated);
+  const isCardVariant = variant === "default";
+  const cardIconFilter = isCardVariant
+    ? "drop-shadow(0 1px 1px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 1px rgba(0, 0, 0, 0.75))"
+    : "none";
+  const iconFontSize =
+    variant === "fab"
+      ? "1.5rem"
+      : isCardVariant
+        ? "1.75rem"
+        : variant === "bar" || variant === "overlay"
+          ? "1.25rem"
+          : { xs: "1rem", sm: "1.25rem" };
   const {
     isOpen,
     productName: dialogProductName,
@@ -60,52 +72,52 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 
   const icon = isLoading ? (
     <CircularProgress
-      size={
-        variant === "fab"
-          ? 24
-          : variant === "bar" || variant === "overlay"
-            ? 20
-            : 20
-      }
+      size={variant === "fab" ? 24 : isCardVariant ? 28 : 20}
       thickness={4}
       sx={{
         color:
-          variant === "fab"
-            ? "white"
+          variant === "fab" || isCardVariant
+            ? "common.white"
             : variant === "bar" || variant === "overlay"
               ? isFavorite
                 ? "error.main"
                 : "text.secondary"
               : theme.palette.text.secondary,
+        filter: cardIconFilter,
       }}
     />
   ) : isFavorite ? (
     <FavoriteIcon
       sx={{
-        color: variant === "fab" ? "white" : theme.palette.error.main,
-        fontSize:
-          variant === "fab"
-            ? "1.5rem"
-            : variant === "bar" || variant === "overlay"
-              ? "1.25rem"
-              : { xs: "1rem", sm: "1.25rem" },
+        color:
+          variant === "fab" ? "common.white" : theme.palette.error.main,
+        fontSize: iconFontSize,
+        filter: cardIconFilter,
+        stroke: isCardVariant
+          ? alpha(theme.palette.common.black, 0.8)
+          : "none",
+        strokeWidth: isCardVariant ? 1.25 : 0,
+        paintOrder: isCardVariant ? "stroke fill" : "normal",
+      }}
+    />
+  ) : isCardVariant ? (
+    <FavoriteIcon
+      sx={{
+        color: "common.white",
+        fontSize: iconFontSize,
+        filter: cardIconFilter,
+        stroke: alpha(theme.palette.common.black, 0.8),
+        strokeWidth: 1.25,
+        paintOrder: "stroke fill",
       }}
     />
   ) : (
     <FavoriteBorderIcon
       sx={{
         color:
-          variant === "fab"
-            ? "white"
-            : variant === "bar" || variant === "overlay"
-              ? theme.palette.text.secondary
-              : theme.palette.text.secondary,
-        fontSize:
-          variant === "fab"
-            ? "1.5rem"
-            : variant === "bar" || variant === "overlay"
-              ? "1.25rem"
-              : { xs: "1rem", sm: "1.25rem" },
+          variant === "fab" ? "common.white" : theme.palette.text.secondary,
+        fontSize: iconFontSize,
+        filter: cardIconFilter,
       }}
     />
   );
@@ -290,16 +302,30 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
             top: { xs: 4, sm: 10 },
             right: { xs: 4, sm: 10 },
             zIndex: 2,
-            bgcolor: alpha(theme.palette.background.paper, 0.7),
-            backdropFilter: "blur(4px)",
+            bgcolor: "transparent",
+            backdropFilter: "none",
+            boxShadow: "none",
             width: 44,
             height: 44,
             padding: { xs: "8px", sm: "10px" },
             "&:hover": {
-              bgcolor: alpha(theme.palette.background.paper, 0.9),
+              bgcolor: "transparent",
+              "& .MuiSvgIcon-root": {
+                transform: "scale(1.08)",
+              },
             },
             "&:disabled": {
-              bgcolor: alpha(theme.palette.background.paper, 0.5),
+              bgcolor: "transparent",
+            },
+            "&.Mui-focusVisible": {
+              outline: `2px solid ${theme.palette.common.white}`,
+              outlineOffset: 2,
+              boxShadow: `0 0 0 4px ${alpha(theme.palette.common.black, 0.72)}`,
+            },
+            "& .MuiSvgIcon-root": {
+              transition: theme.transitions.create("transform", {
+                duration: theme.transitions.duration.shortest,
+              }),
             },
           }}
           onClick={handleClick}

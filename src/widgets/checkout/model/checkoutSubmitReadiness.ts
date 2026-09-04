@@ -6,6 +6,7 @@ interface GetCheckoutSubmitReadinessParams {
   addressesCount: number;
   isLoadingAddresses: boolean;
   isAddressesError: boolean;
+  isAddressCreationOpen?: boolean;
   selectedItemsCount: number;
   isLoadingCurrentUser: boolean;
   isCurrentUserError: boolean;
@@ -28,6 +29,7 @@ export function getCheckoutSubmitReadiness({
   addressesCount,
   isLoadingAddresses,
   isAddressesError,
+  isAddressCreationOpen,
   selectedItemsCount,
   isLoadingCurrentUser,
   isCurrentUserError,
@@ -44,6 +46,7 @@ export function getCheckoutSubmitReadiness({
     addressesCount,
     isLoadingAddresses,
     isAddressesError,
+    isAddressCreationOpen,
     selectedItemsCount,
     isLoadingCurrentUser,
     isCurrentUserError,
@@ -67,6 +70,7 @@ function getSubmitBlockerMessage({
   addressesCount,
   isLoadingAddresses,
   isAddressesError,
+  isAddressCreationOpen = false,
   selectedItemsCount,
   isLoadingCurrentUser,
   isCurrentUserError,
@@ -98,6 +102,10 @@ function getSubmitBlockerMessage({
     return "Недостаточно товара для оформления заказа. Измените количество или снимите товар с выбора";
   }
 
+  if (isAddressCreationOpen) {
+    return "Сохраните новый адрес или отмените его добавление";
+  }
+
   if (selectedAddress === null) {
     if (isLoadingAddresses) {
       return "Загружаем адреса доставки";
@@ -108,7 +116,7 @@ function getSubmitBlockerMessage({
     }
 
     if (addressesCount === 0) {
-      return "Добавьте адрес доставки в настройках профиля";
+      return "Добавьте адрес доставки";
     }
 
     return "Выберите адрес доставки";

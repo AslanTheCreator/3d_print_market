@@ -44,6 +44,8 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
             selectedAddressId={checkoutState.selectedAddress?.id}
             onAddressSelect={checkoutState.setSelectedAddress}
             onRetry={() => void checkoutState.refetchAddresses()}
+            addressCreation={checkoutState.addressCreation}
+            isSubmitting={isSubmitting}
           />
 
           {/* Товары сгруппированы по продавцам вместе с их доставкой */}

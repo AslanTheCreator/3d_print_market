@@ -13,6 +13,7 @@ interface UseCheckoutSubmitReadinessProps {
   addressesCount: number;
   isLoadingAddresses: boolean;
   isAddressesError: boolean;
+  isAddressCreationOpen: boolean;
   selectedItemsCount: number;
   isLoadingCurrentUser: boolean;
   isCurrentUserError: boolean;
@@ -30,6 +31,7 @@ export const useCheckoutSubmitReadiness = ({
   addressesCount,
   isLoadingAddresses,
   isAddressesError,
+  isAddressCreationOpen,
   selectedItemsCount,
   isLoadingCurrentUser,
   isCurrentUserError,
@@ -48,6 +50,7 @@ export const useCheckoutSubmitReadiness = ({
         addressesCount,
         isLoadingAddresses,
         isAddressesError,
+        isAddressCreationOpen,
         selectedItemsCount,
         isLoadingCurrentUser,
         isCurrentUserError,
@@ -63,6 +66,7 @@ export const useCheckoutSubmitReadiness = ({
       activeSellerGroups,
       addressesCount,
       isAddressesError,
+      isAddressCreationOpen,
       isLoadingAddresses,
       isLoadingCurrentUser,
       isCurrentUserError,

@@ -173,7 +173,7 @@ test.describe("checkout delivery model", () => {
         ...commonParams,
         addressesCount: 0,
       }).submitBlockerMessage,
-    ).toBe("Добавьте адрес доставки в настройках профиля");
+    ).toBe("Добавьте адрес доставки");
     expect(
       getCheckoutSubmitReadiness({
         ...commonParams,
@@ -224,6 +224,24 @@ test.describe("checkout delivery model", () => {
         activeSellerGroups: [sellerGroup({ isError: true })],
       }).submitBlockerMessage,
     ).toBe("Не удалось загрузить доставку продавца «seller-a»");
+  });
+
+  test("blocks checkout while adding an address even with an existing selection", () => {
+    expect(
+      getCheckoutSubmitReadiness({
+        ...verifiedUserState,
+        selectedAddress,
+        addressesCount: 1,
+        isLoadingAddresses: false,
+        isAddressesError: false,
+        isAddressCreationOpen: true,
+        selectedItemsCount: 1,
+        activeSellerGroups: [sellerGroup()],
+      }),
+    ).toEqual({
+      isReadyToSubmit: false,
+      submitBlockerMessage: "Сохраните новый адрес или отмените его добавление",
+    });
   });
 
   test("allows checkout only when address, items and delivery are ready", () => {

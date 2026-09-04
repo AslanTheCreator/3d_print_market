@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
   Box,
+  Button,
   Typography,
   Stack,
   Skeleton,
@@ -66,7 +66,6 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
   const [hasImageError, setHasImageError] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const theme = useTheme();
-  const router = useRouter();
 
   const expirationStatus = getExpirationStatus(expirationDate);
   const isExternallyManaged = !isEditableAvailability(availability);
@@ -87,11 +86,6 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-  };
-
-  const handleEditClick = () => {
-    handleMenuClose();
-    router.push(`/dashboard/products/${id}/edit`);
   };
 
   const handleDeleteClick = () => {
@@ -334,6 +328,28 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
 
       {!isExternallyManaged && (
         <>
+          <Box sx={{ px: { xs: 1, sm: 1.5 }, pb: { xs: 1.5, sm: 2 } }}>
+            <Button
+              component={Link}
+              href={`/dashboard/products/${id}/edit`}
+              variant="outlined"
+              size="small"
+              fullWidth
+              startIcon={<Edit fontSize="small" />}
+              aria-label={`Редактировать товар ${name}`}
+              sx={{
+                minHeight: 44,
+                px: { xs: 0.75, sm: 1.5 },
+                fontSize: { xs: "0.6875rem", sm: "0.8125rem" },
+                fontWeight: 600,
+                textTransform: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Редактировать
+            </Button>
+          </Box>
+
           <IconButton
             size="small"
             aria-label={`Действия с товаром ${name}`}
@@ -359,12 +375,6 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
             transformOrigin={{ horizontal: "right", vertical: "top" }}
             anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
           >
-            <MenuItem onClick={handleEditClick}>
-              <ListItemIcon>
-                <Edit fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Редактировать</ListItemText>
-            </MenuItem>
             <MenuItem onClick={handleDeleteClick} sx={{ color: "error.main" }}>
               <ListItemIcon>
                 <Delete fontSize="small" color="error" />

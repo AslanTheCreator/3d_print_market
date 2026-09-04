@@ -1,26 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAddresses } from "@/entities/address";
-import { Address } from "@/entities/address";
+import { useCallback, useState } from "react";
+import { useAddresses, type Address } from "@/entities/address";
+import { useCheckoutAddressCreation } from "./useCheckoutAddressCreation";
+
+const EMPTY_ADDRESSES: Address[] = [];
 
 export const useCheckoutAddress = () => {
-  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const {
-    data: addresses = [],
+    data: addresses = EMPTY_ADDRESSES,
     isLoading: isLoadingAddresses,
     isError: isAddressesError,
     refetch: refetchAddresses,
   } = useAddresses();
 
-  useEffect(() => {
-    if (
-      selectedAddress &&
-      !addresses.some((address) => address.id === selectedAddress.id)
-    ) {
-      setSelectedAddress(null);
-    }
-  }, [addresses, selectedAddress]);
+  const selectedAddress =
+    addresses.find(
+      (address) =>
+        address.id === selectedAddressId && address.status === "ACTIVE",
+    ) ?? null;
+  const setSelectedAddress = useCallback((address: Address | null) => {
+    setSelectedAddressId(address?.id ?? null);
+  }, []);
+  const reloadAddresses = useCallback(async () => {
+    const result = await refetchAddresses({ throwOnError: true });
+    return result.data ?? EMPTY_ADDRESSES;
+  }, [refetchAddresses]);
+  const addressCreation = useCheckoutAddressCreation({
+    addresses,
+    canStart: !isLoadingAddresses && !isAddressesError,
+    reloadAddresses,
+    onAddressSelect: setSelectedAddress,
+  });
 
   return {
     selectedAddress,
@@ -29,5 +41,6 @@ export const useCheckoutAddress = () => {
     isLoadingAddresses,
     isAddressesError,
     refetchAddresses,
+    addressCreation,
   };
 };
