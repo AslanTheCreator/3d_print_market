@@ -165,7 +165,10 @@ const waitForStableFrame = async (page: Page) => {
     });
   });
 
-  const headerBrandImage = page.getByTestId("header-brand").locator("img");
+  const headerBrandImage = page
+    .getByTestId("site-header")
+    .locator("img:visible")
+    .first();
   if ((await headerBrandImage.count()) > 0) {
     await headerBrandImage.evaluate(async (element) => {
       const image = element as HTMLImageElement;
@@ -272,7 +275,7 @@ const expectCleanDiagnostics = (
   expect(diagnostics.failedResources).toEqual([]);
 };
 
-test("mobile streamed SSR fallback is compact without JavaScript", async ({
+test("mobile streamed SSR fallback exposes progressive navigation without JavaScript", async ({
   browser,
   baseURL,
 }) => {
@@ -285,30 +288,31 @@ test("mobile streamed SSR fallback is compact without JavaScript", async ({
   const page = await context.newPage();
 
   try {
-    const aboutResponse = await page.goto(`${baseURL}/about`, {
+    const favoritesResponse = await page.goto(`${baseURL}/favorites`, {
       waitUntil: "domcontentloaded",
     });
-    expect(aboutResponse?.ok()).toBe(true);
+    expect(favoritesResponse?.ok()).toBe(true);
     await expect(page.getByTestId("site-header")).toBeVisible();
-    await expect(page.getByTestId("site-header").locator("input")).toHaveCount(
-      1,
-    );
-    const mobileBrand = page.getByTestId("header-brand").locator("img");
-    const search = page.getByRole("textbox", { name: "поиск по сайту" });
-    const topRowBrand = page.getByRole("link", {
-      name: "Главная страница",
+    await expect(page.getByTestId("site-header").locator("input")).toHaveCount(0);
+    const mobileBrandLink = page.getByRole("link", {
+      name: "Figurzilla — главная страница",
     });
-    const [mobileBrandSource, searchBox, topRowBrandBox] = await Promise.all([
-      mobileBrand.evaluate((image) => (image as HTMLImageElement).currentSrc),
-      search.boundingBox(),
-      topRowBrand.boundingBox(),
-    ]);
-    expect(decodeURIComponent(mobileBrandSource)).toMatch(
-      /\/logo\.[^/]*\.svg(?:\?|$)/i,
-    );
-    expect(searchBox).not.toBeNull();
-    expect(topRowBrandBox).not.toBeNull();
-    expect(searchBox!.y).toBeGreaterThan(topRowBrandBox!.y);
+    const mobileBrandSource = await mobileBrandLink
+      .locator("img")
+      .getAttribute("src");
+    expect(mobileBrandSource).not.toBeNull();
+    expect(decodeURIComponent(mobileBrandSource ?? "")).toContain("site");
+
+    const mobileNavigation = page.getByRole("navigation", {
+      name: "Основная навигация",
+    });
+    await expect(mobileNavigation).toBeVisible();
+    await expect(
+      mobileNavigation.getByRole("link", { name: "Категории" }),
+    ).toHaveAttribute("href", "/catalog/search");
+    await expect(
+      mobileNavigation.getByRole("link", { name: "Избранное" }),
+    ).toHaveAttribute("aria-current", "page");
     await expectNoHorizontalOverflow(page);
 
     const productResponse = await page.goto(
@@ -346,7 +350,7 @@ test("mobile streamed SSR fallback is compact without JavaScript", async ({
   }
 });
 
-test("cold mobile hydration stays stable and loads the compact logo", async ({
+test("cold mobile hydration stays stable and loads one compact brand", async ({
   page,
 }, testInfo) => {
   const diagnostics = await installDiagnostics(page);
@@ -363,9 +367,12 @@ test("cold mobile hydration stays stable and loads the compact logo", async ({
   });
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
 
-  await page.goto("/about", { waitUntil: "domcontentloaded" });
+  await page.goto("/favorites", { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("site-header")).toBeVisible();
-  await expect(page.getByTestId("site-header").locator("input")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Открыть поиск" })).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Основная навигация" }),
+  ).toBeVisible();
   await page.waitForLoadState("load");
   await page.waitForTimeout(250);
   await waitForStableFrame(page);
@@ -379,21 +386,24 @@ test("cold mobile hydration stays stable and loads the compact logo", async ({
 
   const decodedRequests = requestedUrls.map((url) => decodeURIComponent(url));
   const currentLogoSource = decodeURIComponent(
-    await page.getByTestId("header-brand").locator("img").evaluate(
+    await page
+      .getByRole("link", { name: "Figurzilla — главная страница" })
+      .locator("img")
+      .evaluate(
       (image) => (image as HTMLImageElement).currentSrc,
     ),
   );
 
   expect(metrics.cls).toBeLessThanOrEqual(0.1);
-  expect(currentLogoSource).toMatch(/\/logo\.[^/]*\.svg(?:\?|$)/i);
+  expect(currentLogoSource).toContain("site.");
   expect(decodedRequests.some((url) => url.includes("logo-desktop"))).toBe(
     false,
   );
   expect(
     decodedRequests.some((url) => /\/logo\.[^/]*\.svg(?:\?|$)/i.test(url)),
-  ).toBe(true);
+  ).toBe(false);
   expect(
-    decodedRequests.some((url) => /\/site\.[^/]*\.png(?:\?|$)/i.test(url)),
+    decodedRequests.some((url) => url.includes("site.") && url.includes(".png")),
   ).toBe(true);
   expectCleanDiagnostics(diagnostics);
 });
@@ -444,51 +454,309 @@ test("cold desktop art direction does not load compact-only assets", async ({
   }
 });
 
-test("search keeps its node, value and focus across the md boundary", async ({
+test("public routes render the expected mobile chrome", async ({ page }) => {
+  const cases = [
+    {
+      path: "/favorites",
+      mode: "browse",
+      label: null,
+      showBottomNavigation: true,
+      showFooter: true,
+    },
+    {
+      path: "/sellers/77",
+      mode: "context",
+      label: "Категории",
+      showBottomNavigation: true,
+      showFooter: true,
+    },
+    {
+      path: "/catalog/901/detail",
+      mode: "context",
+      label: "Категории",
+      showBottomNavigation: false,
+      showFooter: false,
+    },
+    {
+      path: "/checkout",
+      mode: "focused",
+      label: "Корзина",
+      showBottomNavigation: false,
+      showFooter: false,
+    },
+    {
+      path: "/auth/login",
+      mode: "auth",
+      label: "Figurzilla",
+      showBottomNavigation: false,
+      showFooter: false,
+    },
+    {
+      path: "/about",
+      mode: "context",
+      label: "Figurzilla",
+      showBottomNavigation: false,
+      showFooter: true,
+    },
+    {
+      path: "/missing-mobile-shell-route",
+      mode: "browse",
+      label: null,
+      showBottomNavigation: true,
+      showFooter: true,
+    },
+  ] as const;
+
+  await page.setViewportSize({ width: 393, height: 727 });
+
+  for (const routeCase of cases) {
+    await page.goto(routeCase.path, { waitUntil: "domcontentloaded" });
+
+    const chrome = page.getByTestId("app-chrome");
+    const mobileHeader = page.getByTestId("mobile-site-header");
+    const bottomNavigation = page.locator(
+      'nav[aria-label="Основная навигация"]',
+    );
+
+    await expect(chrome).toHaveAttribute(
+      "data-mobile-chrome-mode",
+      routeCase.mode,
+    );
+    await expect(mobileHeader).toBeVisible();
+
+    if (routeCase.mode === "browse") {
+      await expect(
+        mobileHeader.getByRole("button", { name: "Открыть поиск" }),
+      ).toBeVisible();
+    } else {
+      await expect(
+        mobileHeader.getByRole("button", {
+          name: `Назад: ${routeCase.label}`,
+        }),
+      ).toBeVisible();
+
+      if (routeCase.mode !== "auth") {
+        await expect(
+          mobileHeader.getByText(routeCase.label!, { exact: true }),
+        ).toBeVisible();
+      }
+    }
+
+    if (routeCase.showBottomNavigation) {
+      await expect(bottomNavigation).toBeVisible();
+    } else {
+      await expect(bottomNavigation).toBeHidden();
+    }
+
+    if (routeCase.showFooter) {
+      await expect(page.locator("footer")).toBeVisible();
+    } else {
+      await expect(page.locator("footer")).toBeHidden();
+    }
+
+    await expectNoHorizontalOverflow(page);
+  }
+});
+
+test("dashboard moves mobile sections into the contextual account menu", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  if (!baseURL) throw new Error("Playwright baseURL is required");
+
+  await context.addCookies([
+    {
+      name: "access_token",
+      value: "mobile-account-menu-token",
+      url: baseURL,
+    },
+  ]);
+  await page.route("**/auth/profile", (route) =>
+    void fulfillJson(route, {
+      id: 1,
+      fullName: "Mobile User",
+      login: "mobile-user",
+      role: "USER",
+      email: "mobile@example.com",
+      imageId: null,
+      image: [],
+      exp: 0,
+      type: "access",
+    }),
+  );
+  await page.route("**/participant", (route) =>
+    void fulfillJson(route, {
+      id: 1,
+      login: "mobile-user",
+      mail: "mobile@example.com",
+      fullName: "Mobile User",
+      phoneNumber: "",
+      status: "ACTIVE",
+      sellerStatus: "DEFAULT",
+      averageRating: 0,
+      totalReviews: 0,
+      imageId: null,
+      image: [],
+      addresses: [],
+      accounts: [],
+      transfers: [],
+      socialNetworks: [],
+    }),
+  );
+  for (const url of [
+    "**/basket/find",
+    "**/favorites/find",
+    "**/products/my",
+    "**/order/customer",
+    "**/order/seller",
+  ]) {
+    await page.route(url, (route) => void fulfillJson(route, []));
+  }
+
+  await page.setViewportSize({ width: 393, height: 727 });
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+
+  const mobileHeader = page.getByTestId("mobile-site-header");
+  const menuTrigger = mobileHeader.getByRole("button", {
+    name: "Открыть меню разделов профиля",
+  });
+  const bottomNavigation = page.locator(
+    'nav[aria-label="Основная навигация"]',
+  );
+
+  await expect(page.getByTestId("app-chrome")).toHaveAttribute(
+    "data-mobile-chrome-mode",
+    "account",
+  );
+  await expect(mobileHeader.getByText("Профиль", { exact: true })).toBeVisible();
+  await expect(menuTrigger).toBeVisible();
+  await expect(bottomNavigation).toBeVisible();
+  await expect(
+    bottomNavigation.getByRole("link", { name: "Профиль", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  await expect(page.locator("footer")).toBeHidden();
+  await expect(
+    page.getByRole("navigation", { name: "Навигация личного кабинета" }),
+  ).toHaveCount(0);
+
+  await menuTrigger.click();
+  const accountDialog = page
+    .locator("#mobile-account-menu")
+    .getByRole("dialog");
+  await expect(accountDialog).toBeVisible();
+  const accountDialogBox = await accountDialog.boundingBox();
+  expect(accountDialogBox).not.toBeNull();
+  expect(Math.abs(accountDialogBox!.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(accountDialogBox!.width - 393)).toBeLessThanOrEqual(1);
+  expect(Math.abs(accountDialogBox!.height - 727)).toBeLessThanOrEqual(1);
+  for (const label of [
+    "Обзор",
+    "Мои товары",
+    "Покупки",
+    "Продажи",
+    "Создать товар",
+    "Настройки",
+    "Безопасность",
+    "Выйти",
+  ]) {
+    await expect(accountDialog.getByText(label, { exact: true })).toBeVisible();
+  }
+
+  await accountDialog
+    .getByRole("button", { name: "Закрыть меню профиля" })
+    .click();
+  await expect(accountDialog).toBeHidden();
+  await expect(menuTrigger).toBeFocused();
+
+  await page.route("**/auth/login", async (route) => {
+    if (route.request().isNavigationRequest()) return route.continue();
+    await fulfillJson(route, {
+      access_token: "mobile-account-relogin-token",
+      refresh_token: "mobile-account-refresh-token",
+    });
+  });
+  await menuTrigger.click();
+  await accountDialog.getByRole("button", { name: "Выйти", exact: true }).click();
+  await expect(page).toHaveURL(/\/auth\/login(?:\?|$)/);
+  await page.getByLabel(/^Email/).fill("mobile@example.com");
+  await page.getByLabel(/^Пароль/).fill("password");
+  await page.getByRole("button", { name: "Войти", exact: true }).click();
+  await expect(page).toHaveURL((url) =>
+    url.pathname === "/" || url.pathname === "/dashboard",
+  );
+  if (new URL(page.url()).pathname === "/") {
+    await bottomNavigation.getByRole("link", { name: "Профиль", exact: true }).click();
+  }
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await menuTrigger.click();
+  await expect(
+    accountDialog.getByRole("button", { name: "Выйти", exact: true }),
+  ).toBeEnabled();
+});
+
+test("mobile search uses a fullscreen dialog and desktop keeps inline search", async ({
   page,
 }) => {
   const diagnostics = await installDiagnostics(page);
 
   await page.setViewportSize({ width: 899, height: 800 });
-  await page.goto("/about", { waitUntil: "domcontentloaded" });
-
-  const search = page.getByTestId("site-header").locator("input");
-  await expect(search).toHaveCount(1);
-  await search.fill("x");
-  await search.focus();
-  await search.evaluate((element) => {
-    (
-      window as typeof window & {
-        __responsiveSearchNode?: Element;
-      }
-    ).__responsiveSearchNode = element;
+  await page.goto("/catalog/search?query=fixture", {
+    waitUntil: "domcontentloaded",
   });
 
-  for (const width of [900, 899]) {
-    await page.setViewportSize({ width, height: 800 });
-    await waitForStableFrame(page);
-    await expect(search).toHaveValue("x");
-    await expect(search).toBeFocused();
-    expect(
-      await search.evaluate(
-        (element) =>
-          (
-            window as typeof window & {
-              __responsiveSearchNode?: Element;
-            }
-          ).__responsiveSearchNode === element,
-      ),
-    ).toBe(true);
-  }
+  const mobileSearchTrigger = page.getByRole("button", {
+    name: "Открыть поиск",
+  });
+  await expect(mobileSearchTrigger).toBeVisible();
+  await mobileSearchTrigger.click();
+
+  const mobileSearchDialog = page.getByRole("dialog", { name: "Поиск" });
+  const mobileSearch = mobileSearchDialog.getByRole("combobox", {
+    name: "поиск по сайту",
+  });
+  await expect(mobileSearchDialog).toBeVisible();
+  const mobileSearchDialogBox = await mobileSearchDialog.boundingBox();
+  expect(mobileSearchDialogBox).not.toBeNull();
+  expect(Math.abs(mobileSearchDialogBox!.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(mobileSearchDialogBox!.width - 899)).toBeLessThanOrEqual(1);
+  expect(Math.abs(mobileSearchDialogBox!.height - 800)).toBeLessThanOrEqual(1);
+  await expect(mobileSearch).toHaveValue("fixture");
+  await expect(mobileSearch).toHaveAttribute("type", "search");
+  await expect(mobileSearch).toHaveAttribute("enterkeyhint", "search");
+  await mobileSearchDialog.getByRole("button", { name: "Закрыть поиск" }).click();
+  await expect(mobileSearchDialog).toBeHidden();
+  await expect(mobileSearchTrigger).toBeFocused();
+
+  await page.setViewportSize({ width: 900, height: 800 });
+  await waitForStableFrame(page);
+  await expect(mobileSearchTrigger).toBeHidden();
+  await expect(
+    page.getByTestId("header-search-surface").getByRole("combobox", {
+      name: "поиск по сайту",
+    }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Открыть категории", exact: true }).click();
+  const desktopCategories = page.getByTestId("categories-drawer-content");
+  await expect(desktopCategories).toBeVisible();
+
+  await page.setViewportSize({ width: 899, height: 800 });
+  await waitForStableFrame(page);
+  await expect(desktopCategories).toBeHidden();
+  await expect(mobileSearchTrigger).toBeVisible();
 
   expectCleanDiagnostics(diagnostics);
 });
 
-test("pending actions popover keeps its node across the md boundary", async ({
+test("pending actions stay desktop-only while mobile profile remains lightweight", async ({
   page,
   baseURL,
 }) => {
   const diagnostics = await installDiagnostics(page);
+  let sellerOrderRequests = 0;
+  let customerOrderRequests = 0;
+  let userProductRequests = 0;
 
   await page.context().addCookies([
     {
@@ -497,24 +765,46 @@ test("pending actions popover keeps its node across the md boundary", async ({
       url: baseURL!,
     },
   ]);
-  await page.route("**/order/seller", (route) =>
-    void fulfillJson(route, [
+  await page.route("**/order/seller", (route) => {
+    sellerOrderRequests += 1;
+    return void fulfillJson(route, [
       {
         actualStatus: "BOOKED",
         product: { imageId: 0 },
       },
-    ]),
-  );
-  await page.route("**/order/customer", (route) =>
-    void fulfillJson(route, []),
-  );
-  await page.route("**/products/my", (route) => void fulfillJson(route, []));
+    ]);
+  });
+  await page.route("**/order/customer", (route) => {
+    customerOrderRequests += 1;
+    return void fulfillJson(route, []);
+  });
+  await page.route("**/products/my", (route) => {
+    userProductRequests += 1;
+    return void fulfillJson(route, []);
+  });
+  await page.route("**/favorites/find", (route) => void fulfillJson(route, []));
+  await page.route("**/basket/find", (route) => void fulfillJson(route, []));
   await page.route("**/images/metadata?ids=*", (route) =>
     void fulfillJson(route, []),
   );
 
+  await page.setViewportSize({ width: 899, height: 800 });
+  await page.goto("/favorites", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(250);
+
+  const mobileNavigation = page.locator(
+    'nav[aria-label="Основная навигация"]',
+  );
+  await expect(mobileNavigation).toBeVisible();
+  await expect(
+    mobileNavigation.getByRole("link", { name: "Профиль" }),
+  ).toHaveAttribute("href", "/dashboard");
+  expect(sellerOrderRequests).toBe(0);
+  expect(customerOrderRequests).toBe(0);
+  expect(userProductRequests).toBe(0);
+
   await page.setViewportSize({ width: 900, height: 800 });
-  await page.goto("/about", { waitUntil: "domcontentloaded" });
+  await waitForStableFrame(page);
 
   const header = page.getByTestId("site-header");
   const profileLink = header.getByRole("link", { name: "Профиль" });
@@ -540,30 +830,13 @@ test("pending actions popover keeps its node across the md boundary", async ({
   const popover = page.getByTestId("pending-actions-popover");
   await expect(popover).toBeVisible();
   await expect(popover.getByText("Подтвердить заказ")).toBeVisible();
-  await popover.evaluate((element) => {
-    (
-      window as typeof window & {
-        __responsivePendingPopoverNode?: Element;
-      }
-    ).__responsivePendingPopoverNode = element;
-  });
+  expect(sellerOrderRequests).toBeGreaterThan(0);
+  expect(customerOrderRequests).toBeGreaterThan(0);
+  expect(userProductRequests).toBeGreaterThan(0);
 
-  for (const width of [899, 900]) {
-    await page.setViewportSize({ width, height: 800 });
-    await waitForStableFrame(page);
-    await expect(profileLink).toBeFocused();
-    await expect(popover).toBeVisible();
-    expect(
-      await popover.evaluate(
-        (element) =>
-          (
-            window as typeof window & {
-              __responsivePendingPopoverNode?: Element;
-            }
-          ).__responsivePendingPopoverNode === element,
-      ),
-    ).toBe(true);
-  }
+  await page.setViewportSize({ width: 899, height: 800 });
+  await expect(popover).toBeHidden();
+  await expect(mobileNavigation).toBeVisible();
 
   expectCleanDiagnostics(diagnostics);
 });
@@ -720,18 +993,86 @@ test("responsive boundaries and the catalog grid do not overflow", async ({
 }) => {
   const diagnostics = await installDiagnostics(page);
 
-  await page.goto("/about", { waitUntil: "domcontentloaded" });
+  await page.goto("/favorites", { waitUntil: "domcontentloaded" });
 
-  for (const width of [320, 599, 600, 899, 900, 1375, 1376, 1535, 1536]) {
+  const header = page.getByTestId("site-header");
+  const mobileHeader = page.getByTestId("mobile-site-header");
+  const mobileSearchTrigger = page.getByRole("button", {
+    name: "Открыть поиск",
+  });
+  const desktopSearch = page
+    .getByTestId("header-search-surface")
+    .getByRole("combobox", { name: "поиск по сайту" });
+  const mobileNavigation = page.getByRole("navigation", {
+    name: "Основная навигация",
+  });
+
+  for (const width of [
+    320,
+    393,
+    599,
+    600,
+    768,
+    899,
+    900,
+    1375,
+    1376,
+    1535,
+    1536,
+  ]) {
     await page.setViewportSize({ width, height: 900 });
     await waitForStableFrame(page);
-    await expect(page.getByTestId("site-header").locator("input")).toHaveCount(
-      1,
-    );
+
+    if (width < 900) {
+      await expect(mobileHeader).toBeVisible();
+      await expect(mobileSearchTrigger).toBeVisible();
+      await expect(desktopSearch).toBeHidden();
+      await expect(mobileNavigation).toBeVisible();
+
+      const mobileHeaderBox = await mobileHeader.boundingBox();
+      expect(mobileHeaderBox).not.toBeNull();
+      expect(mobileHeaderBox!.height).toBe(width < 600 ? 56 : 64);
+    } else {
+      await expect(mobileHeader).toBeHidden();
+      await expect(mobileSearchTrigger).toBeHidden();
+      await expect(desktopSearch).toBeVisible();
+      await expect(mobileNavigation).toBeHidden();
+
+      const desktopHeaderBox = await header.boundingBox();
+      expect(desktopHeaderBox).not.toBeNull();
+      expect(desktopHeaderBox!.height).toBe(119);
+    }
+
     await expectNoHorizontalOverflow(page);
   }
 
-  const header = page.getByTestId("site-header");
+  const safeAreaSession = await page.context().newCDPSession(page);
+  try {
+    await page.setViewportSize({ width: 393, height: 800 });
+    await safeAreaSession.send("Emulation.setSafeAreaInsetsOverride", {
+      insets: { top: 24, right: 0, bottom: 20, left: 0 },
+    });
+    await waitForStableFrame(page);
+
+    const [safeHeaderBox, safeNavigationBox] = await Promise.all([
+      header.boundingBox(),
+      mobileNavigation.boundingBox(),
+    ]);
+    expect(safeHeaderBox).not.toBeNull();
+    expect(safeNavigationBox).not.toBeNull();
+    expect(Math.abs(safeHeaderBox!.height - 80)).toBeLessThanOrEqual(1);
+    expect(Math.abs(safeNavigationBox!.height - 84)).toBeLessThanOrEqual(1);
+    expect(safeNavigationBox!.y + safeNavigationBox!.height).toBeCloseTo(
+      800,
+      0,
+    );
+  } finally {
+    await safeAreaSession.send("Emulation.setSafeAreaInsetsOverride", {
+      insets: {},
+    });
+    await safeAreaSession.detach();
+  }
+
   await page.evaluate(() => {
     document.body.style.minHeight = "2000px";
     window.scrollTo(0, 0);
@@ -741,14 +1082,14 @@ test("responsive boundaries and the catalog grid do not overflow", async ({
   await page.evaluate(() => window.scrollTo(0, 300));
   await page.waitForTimeout(100);
   await expect(header).not.toHaveAttribute("data-hidden", "true");
+  expect((await header.boundingBox())?.y).toBe(0);
 
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.setViewportSize({ width: 599, height: 800 });
   await waitForStableFrame(page);
   await page.evaluate(() => window.scrollTo(0, 300));
-  await expect(header).toHaveAttribute("data-hidden", "true");
-  await page.evaluate(() => window.scrollTo(0, 0));
   await expect(header).not.toHaveAttribute("data-hidden", "true");
+  expect((await header.boundingBox())?.y).toBe(0);
 
   await mockCatalogApi(page);
   await page.goto("/catalog/search?query=fixture", {
@@ -780,38 +1121,94 @@ test("mobile overlays stay accessible and close without losing the page", async 
       },
     ]),
   );
-  await page.goto("/about", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Открыть категории" }).click();
-  const categoriesDrawer = page.getByTestId("categories-drawer-content");
-  await expect(categoriesDrawer).toBeVisible();
-  await categoriesDrawer.getByRole("button", { name: "Фигурки" }).click();
-  await expect(categoriesDrawer.getByText("Аниме", { exact: true })).toBeVisible();
-  await page.setViewportSize({ width: 900, height: 800 });
-  await waitForStableFrame(page);
-  await expect(categoriesDrawer).toBeVisible();
-  await expect(categoriesDrawer.getByText("Аниме", { exact: true })).toBeVisible();
-  const headerBox = await page.getByTestId("site-header").boundingBox();
-  const drawerBox = await categoriesDrawer.boundingBox();
-
-  if (!headerBox || !drawerBox) {
-    throw new Error("Header and categories drawer must have layout boxes");
-  }
-
-  expect(Math.abs(drawerBox.y - (headerBox.y + headerBox.height))).toBeLessThan(
-    1,
+  await page.route("**/products/names/find?*", (route) =>
+    void fulfillJson(route, ["fixture"]),
   );
+  await page.setViewportSize({ width: 393, height: 727 });
+  await page.goto("/favorites", { waitUntil: "domcontentloaded" });
+
+  const mobileNavigation = page.locator(
+    'nav[aria-label="Основная навигация"]',
+  );
+  const categoriesTrigger = mobileNavigation
+    .locator('a[href="/catalog/search"]')
+    .filter({ hasText: "Категории" });
+  await expect(categoriesTrigger).toHaveAttribute("href", "/catalog/search");
+  await expect(categoriesTrigger).toHaveAttribute("aria-haspopup", "dialog");
+  await categoriesTrigger.click();
+
+  const categoriesDialog = page
+    .locator("#mobile-categories-dialog")
+    .getByRole("dialog");
+  const categorySearch = categoriesDialog.getByRole("combobox", {
+    name: "Поиск товаров",
+  });
+  await expect(categoriesDialog).toBeVisible();
+  await expect(categoriesDialog).toHaveAccessibleName("Категории");
+  const categoriesDialogBox = await categoriesDialog.boundingBox();
+  expect(categoriesDialogBox).not.toBeNull();
+  expect(Math.abs(categoriesDialogBox!.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(categoriesDialogBox!.width - 393)).toBeLessThanOrEqual(1);
+  expect(Math.abs(categoriesDialogBox!.height - 727)).toBeLessThanOrEqual(1);
+  await expect(categoriesTrigger).toHaveAttribute("aria-expanded", "true");
+  await expect(categorySearch).toBeVisible();
+  await expect(categorySearch).toHaveAttribute("enterkeyhint", "search");
+
+  const searchBox = await categorySearch.boundingBox();
+  const categoryTitleBox = await categoriesDialog
+    .getByRole("heading", { name: "Категории" })
+    .boundingBox();
+  expect(searchBox).not.toBeNull();
+  expect(categoryTitleBox).not.toBeNull();
+  expect(searchBox!.y).toBeLessThan(categoryTitleBox!.y);
+
+  await categoriesDialog.getByRole("button", { name: "Фигурки" }).click();
+  await expect(
+    categoriesDialog.getByRole("heading", { name: "Фигурки" }),
+  ).toBeVisible();
+  await expect(categoriesDialog.getByText("Аниме", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 600, height: 800 });
+  await waitForStableFrame(page);
+  await expect(categoriesDialog).toBeVisible();
+  await expect(categoriesDialog.getByText("Аниме", { exact: true })).toBeVisible();
+  await categoriesDialog
+    .getByRole("button", { name: "Назад к предыдущему уровню" })
+    .click();
+  await expect(
+    categoriesDialog.getByRole("heading", { name: "Категории" }),
+  ).toBeVisible();
+
+  await page.evaluate(() => window.history.forward());
+  await expect(
+    categoriesDialog.getByRole("heading", { name: "Фигурки" }),
+  ).toBeVisible();
+  await page.evaluate(() => window.history.back());
+  await expect(
+    categoriesDialog.getByRole("heading", { name: "Категории" }),
+  ).toBeVisible();
+
   await page.setViewportSize({ width: 899, height: 800 });
   await page.keyboard.press("Escape");
-  await expect(
-    page.getByRole("button", { name: "Открыть категории" }),
-  ).toBeFocused();
+  await expect(categoriesDialog).toBeHidden();
+  await expect(categoriesTrigger).toBeFocused();
 
   await page.setViewportSize({ width: 393, height: 727 });
+  await categoriesTrigger.click();
+  await page.evaluate(() => window.history.back());
+  await expect(categoriesDialog).toBeHidden();
+  await expect(categoriesTrigger).toBeFocused();
+
   await mockCatalogApi(page);
-  await page.goto("/catalog/search?query=fixture", {
-    waitUntil: "domcontentloaded",
-  });
+  await categoriesTrigger.click();
+  await categorySearch.fill("temporary");
+  await categoriesDialog.getByRole("button", { name: "Очистить поиск" }).click();
+  await expect(categorySearch).toHaveValue("");
+  await categorySearch.fill("fixture");
+  await categoriesDialog.getByRole("button", { name: "Найти товары" }).click();
+  await expect(page).toHaveURL(/\/catalog\/search\?query=fixture$/);
+  await expect(categoriesDialog).toBeHidden();
   await expect(page.locator('a[href="/catalog/901/detail"]')).toBeVisible();
+  await expect(categoriesTrigger).toHaveAttribute("aria-current", "page");
   await page.waitForLoadState("load");
   await page.waitForTimeout(250);
   await waitForStableFrame(page);
@@ -854,6 +1251,10 @@ test("mobile overlays stay accessible and close without losing the page", async 
   await page.waitForLoadState("load");
   await page.waitForTimeout(250);
   await waitForStableFrame(page);
+  await expect(
+    page.getByRole("navigation", { name: "Основная навигация" }),
+  ).toBeHidden();
+  await expect(page.getByRole("button", { name: "Назад: Категории" })).toBeVisible();
   await page
     .getByTestId("product-purchase-action")
     .getByRole("button")

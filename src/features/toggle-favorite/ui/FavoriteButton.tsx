@@ -130,7 +130,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
           color="primary"
           sx={{
             position: "fixed",
-            bottom: 80,
+            bottom: "calc(var(--shell-bottom-offset, 0px) + 16px)",
             right: 16,
             zIndex: 1001,
             boxShadow: "0 4px 16px rgba(247, 110, 160, 0.3)",

@@ -31,6 +31,7 @@ export const CreateProductForm = ({
         }
         icon={<SellOutlined />}
         backLabel="К товарам"
+        hideBackBelowMd
         onBack={formState.isEditMode ? formState.handleBack : undefined}
         actions={
           <CreateProductFormHeaderActions

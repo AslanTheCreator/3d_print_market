@@ -18,31 +18,39 @@ import {
 } from "./constants";
 
 // Отдельный запрос для товаров пользователя (только для подсчёта продлений)
-const useUserProductsForRenewal = () => {
+interface UseUserPendingActionsOptions {
+  enabled?: boolean;
+}
+
+const useUserProductsForRenewal = (enabled: boolean) => {
   const { isAuthenticated } = useAuth();
 
   return useQuery({
     queryKey: productKeys.renewalCheck(),
     queryFn: () => productApi.getUserProducts({ size: 100 }),
-    enabled: isAuthenticated,
+    enabled: enabled && isAuthenticated,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
 };
 
-export const useUserPendingActions = () => {
+export const useUserPendingActions = (
+  options: UseUserPendingActionsOptions = {},
+) => {
   const { isAuthenticated } = useAuth();
+  const enabled = options.enabled ?? true;
 
   const { data: sellerOrders, isLoading: isLoadingSeller } = useSellerOrders({
-    enabled: isAuthenticated,
+    enabled: enabled && isAuthenticated,
   });
   const { data: customerOrders, isLoading: isLoadingCustomer } =
-    useCustomerOrders({ enabled: isAuthenticated });
+    useCustomerOrders({ enabled: enabled && isAuthenticated });
   const { data: userProducts, isLoading: isLoadingProducts } =
-    useUserProductsForRenewal();
+    useUserProductsForRenewal(enabled);
 
-  const isLoading = isLoadingSeller || isLoadingCustomer || isLoadingProducts;
+  const isLoading =
+    enabled && (isLoadingSeller || isLoadingCustomer || isLoadingProducts);
 
   // Группировка действий продавца по типу
   const sellerActionGroups = useMemo((): PendingActionGroup[] => {

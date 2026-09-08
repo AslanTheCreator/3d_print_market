@@ -2,11 +2,15 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import type { KeyboardEvent } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useProductNameSuggestions } from "@/entities/product";
 
 const SEARCH_SUGGESTION_MIN_LENGTH = 2;
 const SEARCH_SUGGESTION_DEBOUNCE_MS = 300;
+
+interface UseSearchOptions {
+  onNavigate?: () => void;
+}
 
 interface UseSearchReturn {
   searchQuery: string;
@@ -25,11 +29,19 @@ interface UseSearchReturn {
   handleSuggestionSelect: (suggestion: string) => void;
 }
 
-export const useSearch = (): UseSearchReturn => {
+export const useSearch = (
+  options: UseSearchOptions = {},
+): UseSearchReturn => {
+  const { onNavigate } = options;
   const router = useRouter();
   const pathname = usePathname();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const searchParams = useSearchParams();
+  const urlSearchQuery =
+    pathname === "/catalog/search" ? (searchParams.get("query") ?? "") : null;
+  const [searchQuery, setSearchQuery] = useState(urlSearchQuery ?? "");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(
+    urlSearchQuery?.trim() ?? "",
+  );
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] =
     useState(-1);
@@ -53,17 +65,16 @@ export const useSearch = (): UseSearchReturn => {
   const isSuggestionsOpen =
     isSearchFocused &&
     normalizedSearchQuery.length >= SEARCH_SUGGESTION_MIN_LENGTH &&
-    isCurrentSuggestionQuery &&
-    (isSuggestionsLoading ||
-      isSuggestionsError ||
-      productNameSuggestions.length > 0);
+    isCurrentSuggestionQuery;
 
   useEffect(() => {
-    setSearchQuery("");
-    setDebouncedSearchQuery("");
+    if (urlSearchQuery === null) return;
+
+    setSearchQuery(urlSearchQuery);
+    setDebouncedSearchQuery(urlSearchQuery.trim());
     setIsSearchFocused(false);
     setHighlightedSuggestionIndex(-1);
-  }, [pathname]);
+  }, [urlSearchQuery]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -87,12 +98,13 @@ export const useSearch = (): UseSearchReturn => {
 
       const encodedQuery = encodeURIComponent(trimmedQuery);
       router.push(`/catalog/search?query=${encodedQuery}`);
-      setSearchQuery("");
-      setDebouncedSearchQuery("");
+      setSearchQuery(trimmedQuery);
+      setDebouncedSearchQuery(trimmedQuery);
       setIsSearchFocused(false);
       setHighlightedSuggestionIndex(-1);
+      onNavigate?.();
     },
-    [router],
+    [onNavigate, router],
   );
 
   const handleSearchChange = useCallback((value: string) => {

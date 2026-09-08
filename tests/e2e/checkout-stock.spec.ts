@@ -454,7 +454,9 @@ test("keeps an optimistic catalog quantity when navigating to checkout", async (
   await page.keyboard.press("Space");
   await expect(productCard.getByText("2", { exact: true })).toBeVisible();
 
-  await page.locator('a[aria-label="Корзина"]').click();
+  await page.getByTestId("site-header").getByRole("link", {
+    name: "Корзина", exact: true,
+  }).click();
   await expect(
     page.getByRole("heading", { name: "Оформление заказа" }),
   ).toBeVisible({ timeout: 15_000 });

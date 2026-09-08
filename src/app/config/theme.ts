@@ -5,7 +5,6 @@ import {
   responsiveFontSizes,
   Theme,
 } from "@mui/material/styles";
-import { LAYOUT } from "@/shared/config";
 
 const appFontFamily =
   'var(--font-montserrat), "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif';
@@ -186,9 +185,6 @@ theme = createTheme(theme, {
         body: {
           backgroundColor: theme.palette.background.default,
           color: theme.palette.text.primary,
-        },
-        main: {
-          paddingTop: LAYOUT.HEADER_HEIGHT_PX, // Равняется высоте хедера
         },
         // Глобальные стили для скроллбара
         "*::-webkit-scrollbar": {

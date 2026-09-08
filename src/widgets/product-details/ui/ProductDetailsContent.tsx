@@ -1,14 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { ArrowBackIosNew, Schedule } from "@mui/icons-material";
+import { Schedule } from "@mui/icons-material";
 import {
-  alpha,
   Box,
   Chip,
   Container,
   Divider,
-  IconButton,
   Paper,
   Stack,
   Typography,
@@ -320,15 +318,6 @@ export function ProductDetailsContent({
     productCard.sellerRating,
   );
 
-  const handleBackClick = () => {
-    if (window.history.length > 1) {
-      router.back();
-      return;
-    }
-
-    router.push("/");
-  };
-
   return (
     <Box data-testid="product-details" sx={{ pb: { xs: 24, sm: 0 } }}>
       <Container
@@ -425,32 +414,6 @@ export function ProductDetailsContent({
               />
             </Box>
           </Box>
-
-          <IconButton
-            onClick={handleBackClick}
-            aria-label="Назад"
-            sx={{
-              display: { xs: "inline-flex", sm: "none" },
-              position: "absolute",
-              top: 16,
-              left: 0,
-              zIndex: 2,
-              width: 44,
-              height: 44,
-              borderRadius: 2.5,
-              bgcolor: (theme) => alpha(theme.palette.background.paper, 0.92),
-              backdropFilter: "blur(10px)",
-              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)",
-              border: "1px solid",
-              borderColor: (theme) => alpha(theme.palette.common.black, 0.08),
-              color: "text.primary",
-              "&:hover": {
-                bgcolor: (theme) => alpha(theme.palette.background.paper, 0.98),
-              },
-            }}
-          >
-            <ArrowBackIosNew sx={{ fontSize: 18 }} />
-          </IconButton>
 
           <Stack
             direction="row"

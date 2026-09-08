@@ -146,7 +146,14 @@ export const CheckoutSkeleton = () => (
       </Grid>
 
       <Grid item xs={12} lg={4}>
-        <Paper elevation={0} sx={{ ...panelSx, position: "sticky", top: 24 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            ...panelSx,
+            position: "sticky",
+            top: "calc(var(--shell-sticky-top) + 24px)",
+          }}
+        >
           <Skeleton variant="text" width={140} height={32} />
           <Stack spacing={1} sx={{ mt: 2 }}>
             <Skeleton variant="text" height={24} />

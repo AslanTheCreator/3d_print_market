@@ -31,6 +31,12 @@ const swipeHorizontally = async (
   locator: Locator,
   deltaX: number,
 ) => {
+  await locator.scrollIntoViewIfNeeded();
+  await expect.poll(() => locator.evaluate((element) =>
+    element.getAnimations({ subtree: true }).every((animation) =>
+      animation.playState !== "running",
+    ),
+  )).toBe(true);
   const box = await locator.boundingBox();
 
   if (!box) {
@@ -62,36 +68,40 @@ const swipeHorizontally = async (
   }
 };
 
-test("mobile header preserves its visual geometry while exposing 44px hit areas", async ({
+test("mobile shell exposes compact bars with 44px hit areas", async ({
   page,
 }) => {
-  await page.goto("/about", { waitUntil: "domcontentloaded" });
+  await page.goto("/favorites", { waitUntil: "domcontentloaded" });
 
   const header = page.getByTestId("site-header");
-  const searchForm = header.locator("form").first();
-  const search = header.getByRole("textbox", { name: "поиск по сайту" });
-  const categoryButton = header.getByRole("button", {
-    name: "Открыть категории",
+  const searchTrigger = header.getByRole("button", {
+    name: "Открыть поиск",
   });
-  const categoryVisual = categoryButton.locator(
-    ".HeaderCategoryButton-visual",
-  );
+  const brand = header.getByRole("link", {
+    name: "Figurzilla — главная страница",
+  });
+  const mobileNavigation = page.getByRole("navigation", {
+    name: "Основная навигация",
+  });
 
-  await expectSizeCloseTo(header, undefined, 119);
-  await expectSizeCloseTo(searchForm, undefined, 35);
-  await expectSizeCloseTo(categoryVisual, 33, 33);
+  await expectSizeCloseTo(header, undefined, 56);
+  await expectSizeCloseTo(searchTrigger, undefined, 48);
+  await expectSizeCloseTo(brand, 44, 44);
+  await expectSizeCloseTo(mobileNavigation, undefined, 64);
 
-  await expectMinimumTouchTarget(categoryButton);
-  await expectMinimumTouchTarget(search);
-  await expectMinimumTouchTarget(
-    header.getByRole("link", { name: "Избранное" }),
-  );
-  await expectMinimumTouchTarget(
-    header.getByRole("link", { name: "Профиль" }),
-  );
-  await expectMinimumTouchTarget(
-    header.getByRole("link", { name: "Корзина" }),
-  );
+  await expectMinimumTouchTarget(searchTrigger);
+  await expectMinimumTouchTarget(brand);
+  for (const label of [
+    "Главная",
+    "Категории",
+    "Избранное",
+    "Корзина",
+    "Профиль",
+  ]) {
+    await expectMinimumTouchTarget(
+      mobileNavigation.getByRole("link", { name: label, exact: true }),
+    );
+  }
 });
 
 test("mobile gallery hides arrow controls and keeps fullscreen targets accessible", async ({

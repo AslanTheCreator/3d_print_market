@@ -78,11 +78,53 @@ Playwright-регрессия для accessibility проверяет:
 - отсутствие вложенных `button` в изменённых составных controls и нативные
   disabled-состояния;
 - mobile touch targets самостоятельных controls не меньше `44×44 px`;
-- неизменные mobile-размеры шапки: `119 px` по высоте, `35 px` у видимой
-  search surface и `33×33 px` у видимой кнопки категорий.
+- размеры application shell: compact top bar `56 px`, medium top bar `64 px`,
+  desktop header `119 px`; safe-area inset добавляется поверх этих значений;
+- нижнюю навигацию `64 px` плюс `safe-area-inset-bottom` и отсутствие
+  перекрытия последнего доступного элемента страницы.
 
 ESLint требует явное accessible name у `IconButton`. Общего automated
 accessibility scan (например, axe по матрице routes/states) пока нет.
+
+## Mobile application shell
+
+`mobile-chrome-model.spec.ts` table-driven тестом проверяет pathname resolver:
+
+| Маршруты | Mobile chrome | Bottom nav | Mobile footer |
+| --- | --- | --- | --- |
+| `/`, `/catalog/search`, `/catalog/category/**`, `/favorites`, неизвестный | browse | да | да |
+| `/sellers/**` | context | да | да |
+| `/catalog/:id/detail` | context | нет | нет |
+| `/dashboard/**` | account | да | нет |
+| create/edit product, `/checkout` | focused | нет | нет |
+| `/auth/login`, `/auth/register` | auth | нет | нет |
+| about, contacts и legal routes | context | нет | да |
+
+Model-тест также фиксирует приоритет create/edit перед общим dashboard matcher,
+category перед динамическим product detail, fallback для Back и нормализацию
+trailing slash.
+
+Browser-регрессия mobile shell должна выполняться на `320`, `393`, `599`,
+`600`, `768`, `899` и `900 px` и проверять:
+
+- top bar, footer, нижнюю навигацию и active state по route-матрице;
+- размеры `56/64/119 px`, CSS offsets и safe areas;
+- отсутствие horizontal overflow и перекрытия контента;
+- fullscreen search без категорий, сохранение query и keyboard navigation;
+- categories dialog с поиском сверху, drill-down, Back/Escape, retry и возврат
+  фокуса;
+- отсутствие hydration mismatch и desktop-регрессию header, inline search и
+  categories drawer.
+
+Safe-area сценарии используют `Emulation.setSafeAreaInsetsOverride`. Нижняя
+навигация не должна запускать order/product запросы только ради profile badge.
+
+`mobile-categories.mobile.spec.ts` проверяет загрузку taxonomy, error/Retry,
+empty state с доступным поиском, переход в leaf-category и progressive link
+при modified click, а также отступы age gate и прокрутку на коротком экране.
+Сценарии shell также покрывают Back/Forward внутри меню,
+закрытие desktop overlays при переходе ниже `900 px` и повторный вход после
+выхода через мобильное меню профиля.
 
 ## Новый адрес в checkout
 
@@ -142,16 +184,18 @@ npm run test:e2e
 
 ## Границы текущего набора
 
-Состояние на 2026-07-30:
+Состояние на 2026-09-08:
 
-- набор: `15` smoke и `115` Playwright tests — `105` desktop и `10` mobile;
+- набор включает HTTP smoke, desktop Playwright, model/contract tests и
+  curated mobile Chromium scenarios;
 - browser projects: Desktop Chrome и `mobile-chromium` на профиле Pixel 5
   (`393×727`, mobile UA, touch);
 - `*.mobile.spec.ts` запускаются только в mobile project; desktop suite в нём
   не дублируется;
 - mobile rendering покрывает SSR без JavaScript, hydration diagnostics,
-  сохранение DOM/state на `599/600`, `899/900`, `1375/1376`, смену ориентации,
-  horizontal overflow и overlay interactions;
+  route-aware shell, сохранение DOM/state на `599/600`, `899/900`,
+  `1375/1376`, смену ориентации, safe areas, horizontal overflow и overlay
+  interactions;
 - Lab CLS вычисляется через `PerformanceObserver` по session-window алгоритму;
   CI gate — `≤0.1`. LCP и transfer size сохраняются как диагностика, но пока
   не имеют hard budget;

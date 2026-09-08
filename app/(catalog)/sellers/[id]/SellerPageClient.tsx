@@ -224,7 +224,10 @@ export const SellerPageClient = ({ sellerId }: SellerPageClientProps) => {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3 } }}>
-      <Breadcrumbs aria-label="Навигация" sx={{ mb: 2 }}>
+      <Breadcrumbs
+        aria-label="Навигация"
+        sx={{ mb: 2, display: { xs: "none", md: "flex" } }}
+      >
         <MuiLink
           component={NextLink}
           href="/"

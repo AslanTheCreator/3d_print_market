@@ -129,6 +129,35 @@ SSR-visible UI строится CSS-first: сервер и первый клие
 разных overlay surfaces. Responsive изображения с разными файлами оформляются
 через art direction (`picture`/`source`), чтобы браузер не загружал оба варианта.
 
+### Route-aware application shell
+
+`AppLayout` получает pathname и через чистый resolver выбирает mobile chrome:
+`browse`, `context`, `account`, `focused` или `auth`. Конфигурация определяет
+родительский заголовок и fallback для Back, наличие нижней навигации, mobile
+footer и меню кабинета; маршрутизация App Router при этом не дублируется и не
+перестраивается.
+
+На ширине `<900` верхняя панель занимает `56 px` в compact и `64 px` в medium
+плюс `safe-area-inset-top`. На wide сохраняется desktop header `119 px`.
+Нижняя навигация высотой `64 px` плюс `safe-area-inset-bottom` содержит
+«Главная», «Категории», «Избранное», «Корзина» и «Профиль» и показывается только
+на разрешённых resolver'ом маршрутах. Browse-экраны и продавец сохраняют
+нижнюю навигацию; product detail, checkout, auth и редактор товара используют
+focused/context chrome без неё. Dashboard использует account chrome, а
+информационные страницы — context chrome с footer.
+
+Mobile search открывается отдельным fullscreen dialog без категорий. Пункт
+«Категории» открывает другой fullscreen dialog, где поиск товаров расположен
+над иерархией категорий. Overlay surfaces используют `100dvh`, safe areas,
+focus trap и возврат фокуса; desktop search и categories drawer сохраняются.
+
+Геометрия shell задаётся CSS-переменными `--shell-top-offset`,
+`--shell-bottom-offset` и `--shell-sticky-top`. Контент, sticky/fixed controls,
+уведомления и overlay gates должны использовать эти offsets вместо локальных
+чисел. Route-dependent bottom offset задаётся на корневом элементе через
+`GlobalStyles`, чтобы его наследовали и MUI portals. Корневой viewport включает
+`viewport-fit=cover`.
+
 ## Статус прежних отклонений
 
 Ранее зафиксированные отклонения устранены:

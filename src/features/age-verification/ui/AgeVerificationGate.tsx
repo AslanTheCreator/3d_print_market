@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import { Box, Button, IconButton, Modal, Stack, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { LAYOUT } from "@/shared/config";
 
 interface AgeVerificationGateProps {
   children: ReactNode;
@@ -44,19 +43,21 @@ export const AgeVerificationGate = ({
         slotProps={{
           backdrop: {
             sx: {
-              top: LAYOUT.HEADER_HEIGHT_PX,
+              top: "var(--shell-top-offset)",
+              bottom: "var(--shell-bottom-offset)",
               backgroundColor: (theme) => alpha(theme.palette.common.black, 0.18),
               backdropFilter: "blur(4px)",
             },
           },
         }}
         sx={{
-          top: LAYOUT.HEADER_HEIGHT_PX,
+          top: "var(--shell-top-offset)",
+          bottom: "var(--shell-bottom-offset)",
         }}
       >
         <Box
           sx={{
-            minHeight: `calc(100vh - ${LAYOUT.HEADER_HEIGHT_PX})`,
+            height: "100%",
             display: "flex",
             alignItems: { xs: "flex-start", sm: "center" },
             justifyContent: "center",

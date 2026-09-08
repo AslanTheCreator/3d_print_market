@@ -2,7 +2,6 @@
 
 import React, { ReactNode } from "react";
 import { Box, Container } from "@mui/material";
-import { LAYOUT } from "@/shared/config";
 import { DashboardNavigation } from "./DashboardNavigation";
 
 interface DashboardShellProps {
@@ -31,11 +30,11 @@ export const DashboardShell = ({ children }: DashboardShellProps) => {
           alignItems: "start",
         }}
       >
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ minWidth: 0, display: { xs: "none", md: "block" } }}>
           <Box
             sx={{
               position: { md: "sticky" },
-              top: { md: `calc(${LAYOUT.HEADER_HEIGHT_PX} + 16px)` },
+              top: { md: "calc(var(--shell-sticky-top) + 16px)" },
             }}
           >
             <DashboardNavigation />

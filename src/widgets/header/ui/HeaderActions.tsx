@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useCartChecks } from "@/entities/cart";
 import { useFavoritesChecks } from "@/entities/favorite";
 import { useAuth } from "@/entities/session";
 import {
   Stack,
-  IconButton,
   useTheme,
   Typography,
   Box,
@@ -48,19 +47,39 @@ interface HeaderIconConfig {
 }
 
 export const HeaderActions = () => {
+  const theme = useTheme();
   const { isAuthenticated } = useAuth();
+  const [areDesktopQueriesEnabled, setAreDesktopQueriesEnabled] =
+    useState(false);
+  const desktopMediaQuery = theme.breakpoints.up("md").replace("@media ", "");
 
-  const { getCartItemsCount } = useCartChecks(isAuthenticated);
-  const { getFavoritesItemsCount } = useFavoritesChecks(isAuthenticated);
+  useEffect(() => {
+    const mediaQueryList = window.matchMedia(desktopMediaQuery);
+    const updateDesktopQueries = () => {
+      setAreDesktopQueriesEnabled(mediaQueryList.matches);
+    };
+
+    updateDesktopQueries();
+    mediaQueryList.addEventListener("change", updateDesktopQueries);
+
+    return () => {
+      mediaQueryList.removeEventListener("change", updateDesktopQueries);
+    };
+  }, [desktopMediaQuery]);
+
+  const canLoadDesktopBadges = isAuthenticated && areDesktopQueriesEnabled;
+  const { getCartItemsCount } = useCartChecks(canLoadDesktopBadges);
+  const { getFavoritesItemsCount } = useFavoritesChecks(canLoadDesktopBadges);
   const {
     totalCount: pendingActionsCount,
     sellerActionGroups,
     customerActionGroups,
     renewalGroup,
     isLoading: isPendingLoading,
-  } = useUserPendingActions();
+  } = useUserPendingActions({ enabled: areDesktopQueriesEnabled });
 
-  const canShowProfilePopover = isAuthenticated && pendingActionsCount > 0;
+  const canShowProfilePopover =
+    areDesktopQueriesEnabled && isAuthenticated && pendingActionsCount > 0;
   const profileUrl = isAuthenticated ? "/dashboard" : "/auth/login";
   const profileBadge =
     pendingActionsCount > 0 ? pendingActionsCount : undefined;
@@ -171,6 +190,10 @@ export const HeaderActions = () => {
     setIsTriggerFocused(false);
     setIsPopoverFocused(false);
   }, []);
+
+  useEffect(() => {
+    if (!areDesktopQueriesEnabled) handlePopoverClose();
+  }, [areDesktopQueriesEnabled, handlePopoverClose]);
 
   const headerIcons: HeaderIconConfig[] = [
     {
@@ -303,10 +326,13 @@ const HeaderActionItem = ({
             minWidth: { xs: 40, sm: 64 },
           }}
         >
-          <IconButton
-            component="div"
+          <Box
+            component="span"
             aria-hidden
             sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
               padding: { xs: 1, sm: 0.5 },
               borderRadius: theme.shape.borderRadius,
               transition: theme.transitions.create(
@@ -350,7 +376,7 @@ const HeaderActionItem = ({
             ) : (
               icon
             )}
-          </IconButton>
+          </Box>
 
           <Typography
             variant="caption"

@@ -17,6 +17,7 @@ interface PageHeaderProps {
   backHref?: string;
   backLabel?: string;
   icon?: ReactNode;
+  hideBackBelowMd?: boolean;
   meta?: ReactNode;
   onBack?: () => void;
   title: string;
@@ -27,6 +28,7 @@ export const PageHeader = ({
   backHref,
   backLabel = "Назад",
   icon,
+  hideBackBelowMd = false,
   meta,
   onBack,
   title,
@@ -41,6 +43,7 @@ export const PageHeader = ({
       onClick={onBack}
       startIcon={<ArrowBackRounded />}
       sx={{
+        display: hideBackBelowMd ? { xs: "none", md: "inline-flex" } : undefined,
         alignSelf: "flex-start",
         minWidth: "auto",
         px: 0,

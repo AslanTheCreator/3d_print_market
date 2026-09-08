@@ -119,20 +119,6 @@ export function ProductDetailsSkeleton() {
             </Paper>
           </Box>
 
-          <Skeleton
-            variant="rounded"
-            width={44}
-            height={44}
-            sx={{
-              display: { xs: "block", sm: "none" },
-              position: "absolute",
-              top: 16,
-              left: 0,
-              zIndex: 2,
-              borderRadius: 2.5,
-            }}
-          />
-
           <Stack
             direction="row"
             spacing={1}
@@ -232,7 +218,12 @@ export function ProductDetailsSkeleton() {
               inset: { xs: "auto 0 0", sm: "auto" },
               zIndex: { xs: 1000, sm: "auto" },
               borderRadius: { xs: "20px 20px 0 0", sm: 0 },
-              p: { xs: "12px 16px", sm: 0 },
+              px: { xs: 2, sm: 0 },
+              pt: { xs: 1.5, sm: 0 },
+              pb: {
+                xs: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+                sm: 0,
+              },
               boxShadow: {
                 xs: "0 -8px 24px rgba(15, 23, 42, 0.10)",
                 sm: "none",

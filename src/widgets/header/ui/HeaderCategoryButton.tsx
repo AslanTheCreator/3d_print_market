@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { Box, IconButton, useTheme } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -19,6 +19,21 @@ export const HeaderCategoryButton = () => {
   const theme = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [shouldMountDrawer, setShouldMountDrawer] = useState(false);
+  const desktopMediaQuery = theme.breakpoints.up("md").replace("@media ", "");
+
+  useEffect(() => {
+    const mediaQueryList = window.matchMedia(desktopMediaQuery);
+    const closeDrawerOnMobile = () => {
+      if (!mediaQueryList.matches) setIsOpen(false);
+    };
+
+    closeDrawerOnMobile();
+    mediaQueryList.addEventListener("change", closeDrawerOnMobile);
+
+    return () => {
+      mediaQueryList.removeEventListener("change", closeDrawerOnMobile);
+    };
+  }, [desktopMediaQuery]);
 
   const handleOpen = () => {
     setShouldMountDrawer(true);

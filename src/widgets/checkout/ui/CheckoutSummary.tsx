@@ -97,7 +97,7 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
         border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
         backgroundColor: theme.palette.background.paper,
         position: "sticky",
-        top: 24,
+        top: "calc(var(--shell-sticky-top) + 24px)",
       }}
     >
       <Typography variant="h6" fontWeight={600} gutterBottom>

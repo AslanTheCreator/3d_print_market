@@ -138,7 +138,7 @@ export const CreateProductFormContent = ({
           spacing={2}
           sx={{
             position: { lg: "sticky" },
-            top: { lg: 96 },
+            top: { lg: "calc(var(--shell-sticky-top) + 16px)" },
           }}
         >
           <CreateProductFormActions

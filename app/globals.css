@@ -1,5 +1,28 @@
+:root {
+  --shell-top-offset: calc(56px + env(safe-area-inset-top, 0px));
+  --shell-sticky-top: var(--shell-top-offset);
+}
+
+@media (min-width: 600px) {
+  :root {
+    --shell-top-offset: calc(64px + env(safe-area-inset-top, 0px));
+  }
+}
+
+@media (min-width: 900px) {
+  :root {
+    --shell-top-offset: 119px;
+    --shell-sticky-top: 119px;
+  }
+}
+
 .main {
-  min-height: 100vh;
+  min-height: calc(
+    100vh - var(--shell-top-offset) - var(--shell-bottom-offset)
+  );
+  min-height: calc(
+    100dvh - var(--shell-top-offset) - var(--shell-bottom-offset)
+  );
   position: relative;
 }
 
