@@ -20,7 +20,8 @@ export const CreateProductForm = ({
   const formState = useProductForm({ mode, productId });
 
   return (
-    <Box sx={{ width: "100%", py: { xs: 2, sm: 3 } }}>
+    <Box sx={{ width: "100%", py: mode === "create" ? { xs: 1, md: 3 } : { xs: 2, sm: 3 } }}>
+      <Box sx={{ display: mode === "create" ? { xs: "none", md: "block" } : "block" }}>
       <PageHeader
         title={
           formState.isProductReadOnly
@@ -41,6 +42,7 @@ export const CreateProductForm = ({
           />
         }
       />
+      </Box>
 
       <CreateProductFormContent mode={mode} formState={formState} />
     </Box>

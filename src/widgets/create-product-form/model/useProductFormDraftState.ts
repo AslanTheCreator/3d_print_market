@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { UseFormReset } from "react-hook-form";
 import type {
   InitialImageUploadState,
@@ -14,6 +14,7 @@ import {
   loadProductFormDraftImages,
   readProductFormDraft,
   writeProductFormDraft,
+  type ProductFormDraftStatus,
 } from "./productFormDraft";
 
 export const normalizeProductFormValues = (
@@ -40,7 +41,9 @@ export const useProductFormDraftState = ({
   imageUploadState,
   reset,
 }: UseProductFormDraftStateOptions) => {
-  const draftRestoreStartedRef = useRef(false);
+  const [draftStatus, setDraftStatus] = useState<ProductFormDraftStatus>("empty");
+  const [draftImageError, setDraftImageError] = useState(false);
+  const [restoreAttempt, setRestoreAttempt] = useState(0);
   const [preservedDraftImageIds, setPreservedDraftImageIds] = useState<
     number[]
   >([]);
@@ -75,12 +78,6 @@ export const useProductFormDraftState = ({
       return;
     }
 
-    if (draftRestoreStartedRef.current) {
-      return;
-    }
-
-    draftRestoreStartedRef.current = true;
-
     let isActive = true;
 
     const restoreDraft = async () => {
@@ -96,14 +93,23 @@ export const useProductFormDraftState = ({
       reset(draft.values);
 
       if (draft.imageIds.length > 0) {
-        const draftImages =
-          draft.images.length > 0
-            ? draft.images
-            : await loadProductFormDraftImages(draft.imageIds);
+        try {
+          const draftImages =
+            draft.images.length === draft.imageIds.length
+              ? draft.images
+              : await loadProductFormDraftImages(draft.imageIds);
 
-        if (isActive) {
-          setPreservedDraftImageIds(draftImages.map((image) => image.id));
-          setUploadInitialImages(draftImages);
+          if (draftImages.length !== draft.imageIds.length) throw new Error("Incomplete draft images");
+          if (isActive) {
+            setPreservedDraftImageIds([]);
+            setUploadInitialImages(draftImages);
+            setDraftImageError(false);
+          }
+        } catch {
+          if (isActive) {
+            setPreservedDraftImageIds(draft.imageIds);
+            setDraftImageError(true);
+          }
         }
       }
 
@@ -117,7 +123,7 @@ export const useProductFormDraftState = ({
     return () => {
       isActive = false;
     };
-  }, [isEditMode, reset, setUploadInitialImages]);
+  }, [isEditMode, reset, setUploadInitialImages, restoreAttempt]);
 
   useEffect(() => {
     if (isEditMode || !isDraftReady) {
@@ -126,13 +132,14 @@ export const useProductFormDraftState = ({
 
     if (imageUploadState.imageIds.length > 0 && preservedDraftImageIds.length > 0) {
       setPreservedDraftImageIds([]);
+      setDraftImageError(false);
     }
 
-    writeProductFormDraft({
+    setDraftStatus(writeProductFormDraft({
       values: formValues,
       imageIds: effectiveImageIds,
       images: currentDraftImages,
-    });
+    }));
   }, [
     currentDraftImages,
     effectiveImageIds,
@@ -145,7 +152,16 @@ export const useProductFormDraftState = ({
 
   return {
     effectiveImageIds,
+    draftStatus,
+    draftImageError,
     isDraftReady,
-    resetDraftImageIds: () => setPreservedDraftImageIds([]),
+    retryDraftImages: () => {
+      setIsDraftReady(false);
+      setRestoreAttempt((previous) => previous + 1);
+    },
+    resetDraftImageIds: () => {
+      setPreservedDraftImageIds([]);
+      setDraftImageError(false);
+    },
   };
 };

@@ -22,6 +22,7 @@ import { AddressManagerWidget } from "./AddressManagerWidget";
 import { ShippingMethodsWidget } from "./ShippingMethodsWidget";
 import { PaymentAccountsWidget } from "./PaymentAccountsWidget";
 import { SocialNetworksFormWidget } from "./SocialNetworksFormWidget";
+import { SettingsPanelContext } from "../model/SettingsPanelContext";
 import { SettingsPanelSkeleton } from "./SettingsPanelSkeleton";
 
 const TAB_KEYS = ["address", "shipping", "payment", "contacts"] as const;
@@ -52,7 +53,7 @@ const SETTINGS_TABS: Array<{
   {
     key: "address",
     label: "Адрес доставки",
-    mobileLabel: "Адрес",
+    mobileLabel: "Адреса",
     icon: <LocationOn />,
   },
   {
@@ -79,9 +80,10 @@ interface TabPanelProps {
   children: React.ReactNode;
   index: number;
   value: number;
+  onDirtyChange: (index: number, dirty: boolean) => void;
 }
 
-const TabPanel = ({ children, value, index }: TabPanelProps) => {
+const TabPanel = ({ children, value, index, onDirtyChange }: TabPanelProps) => {
   const isActive = value === index;
   const [hasBeenActive, setHasBeenActive] = React.useState(isActive);
 
@@ -90,6 +92,9 @@ const TabPanel = ({ children, value, index }: TabPanelProps) => {
       setHasBeenActive(true);
     }
   }, [isActive, hasBeenActive]);
+
+  const reportDirty = React.useCallback((dirty: boolean) => onDirtyChange(index, dirty), [index, onDirtyChange]);
+  const panelState = React.useMemo(() => ({ active: isActive, reportDirty }), [isActive, reportDirty]);
 
   if (!hasBeenActive) {
     return null;
@@ -103,7 +108,9 @@ const TabPanel = ({ children, value, index }: TabPanelProps) => {
       aria-labelledby={`settings-tab-${index}`}
       style={{ display: isActive ? "block" : "none" }}
     >
-      <Box sx={{ pt: { xs: 2, sm: 3 } }}>{children}</Box>
+      <SettingsPanelContext.Provider value={panelState}>
+        <Box sx={{ pt: { xs: 0, md: 3 } }}>{children}</Box>
+      </SettingsPanelContext.Provider>
     </div>
   );
 };
@@ -118,6 +125,17 @@ function SettingsContent() {
       ? TAB_TO_INDEX[tabParam]
       : TAB_TO_INDEX[DEFAULT_TAB];
   const [activeTab, setActiveTab] = React.useState(initialTab);
+  const [dirtyTabs, setDirtyTabs] = React.useState<Record<number, boolean>>({});
+  const onDirtyChange = React.useCallback((index: number, dirty: boolean) => {
+    setDirtyTabs((previous) => previous[index] === dirty ? previous : { ...previous, [index]: dirty });
+  }, []);
+  const hasDraft = Object.values(dirtyTabs).some(Boolean);
+  React.useEffect(() => {
+    if (!hasDraft) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [hasDraft]);
 
   React.useEffect(() => {
     const urlTab = searchParams.get("tab") as TabKey | null;
@@ -143,7 +161,7 @@ function SettingsContent() {
       sx={{
         borderRadius: 2,
         overflow: "hidden",
-        border: `1px solid ${theme.palette.divider}`,
+        border: { xs: "none", md: `1px solid ${theme.palette.divider}` },
       }}
     >
       <Tabs
@@ -156,15 +174,15 @@ function SettingsContent() {
           borderBottom: 1,
           borderColor: "divider",
           bgcolor: "background.paper",
-          minHeight: { xs: 60, sm: 64 },
-          px: { xs: 1, sm: 2 },
-          py: { xs: 1, sm: 0 },
+          minHeight: { xs: 48, md: 64 },
+          px: { xs: 0, md: 2 },
+          py: 0,
           "& .MuiTabs-flexContainer": {
-            gap: { xs: 1, sm: 0 },
+            gap: 0,
             justifyContent: "flex-start",
           },
           "& .MuiTabs-indicator": {
-            display: { xs: "none", sm: "block" },
+            display: { xs: "none", md: "block" },
             height: 3,
             borderRadius: "3px 3px 0 0",
           },
@@ -172,7 +190,7 @@ function SettingsContent() {
             width: 44,
             minWidth: 44,
             minHeight: 44,
-            display: { xs: "inline-flex", sm: "none" },
+            display: "none",
             "&.Mui-disabled": {
               opacity: 0.2,
             },
@@ -188,42 +206,45 @@ function SettingsContent() {
               <Box component="span">
                 <Box
                   component="span"
-                  sx={{ display: { xs: "inline", sm: "none" } }}
+                  sx={{ display: { xs: "inline", md: "none" } }}
                 >
-                  {tab.mobileLabel}
+                  {tab.mobileLabel}{dirtyTabs[index] && <Box component="span" aria-label="Есть несохранённые изменения"> •</Box>}
                 </Box>
                 <Box
                   component="span"
-                  sx={{ display: { xs: "none", sm: "inline" } }}
+                  sx={{ display: { xs: "none", md: "inline" } }}
                 >
-                  {tab.label}
+                  {tab.label}{dirtyTabs[index] && <Box component="span" aria-label="Есть несохранённые изменения"> •</Box>}
                 </Box>
               </Box>
             }
             id={`settings-tab-${index}`}
             aria-controls={`settings-tabpanel-${index}`}
             sx={{
-              minHeight: { xs: 44, sm: 64 },
-              minWidth: { xs: "auto", sm: 160 },
+              minHeight: { xs: 44, md: 64 },
+              minWidth: { xs: 0, md: 160 },
+              flex: { xs: 1, md: "0 0 auto" },
+              maxWidth: "none",
               flexShrink: 0,
-              px: { xs: 1.5, sm: 2 },
-              py: { xs: 0.75, sm: 1.5 },
-              borderRadius: { xs: 1.5, sm: 0 },
-              fontSize: { xs: "0.813rem", sm: "0.875rem" },
+              px: { xs: 0.5, md: 2 },
+              py: { xs: 0.75, md: 1.5 },
+              borderRadius: { xs: 1.5, md: 0 },
+              fontSize: "0.875rem",
               fontWeight: 500,
               textTransform: "none",
               color: "text.secondary",
               "& .MuiTab-iconWrapper": {
+                display: { xs: "none", md: "inline-flex" },
                 mr: 0.75,
-                fontSize: { xs: 19, sm: 22 },
+                fontSize: { xs: 19, md: 22 },
               },
               "&.Mui-selected": {
                 fontWeight: 700,
-                color: { xs: "primary.contrastText", sm: "primary.main" },
-                bgcolor: { xs: "primary.main", sm: "transparent" },
+                color: { xs: "primary.contrastText", md: "primary.main" },
+                bgcolor: { xs: "primary.main", md: "transparent" },
                 boxShadow: {
-                  xs: "0 6px 14px rgba(239, 66, 132, 0.22)",
-                  sm: "none",
+                  xs: "none",
+                  md: "none",
                 },
               },
             }}
@@ -231,17 +252,17 @@ function SettingsContent() {
         ))}
       </Tabs>
 
-      <Box sx={{ p: { xs: 1.5, sm: 3 } }}>
-        <TabPanel value={activeTab} index={0}>
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <TabPanel onDirtyChange={onDirtyChange} value={activeTab} index={0}>
           <AddressManagerWidget />
         </TabPanel>
-        <TabPanel value={activeTab} index={1}>
+        <TabPanel onDirtyChange={onDirtyChange} value={activeTab} index={1}>
           <ShippingMethodsWidget />
         </TabPanel>
-        <TabPanel value={activeTab} index={2}>
+        <TabPanel onDirtyChange={onDirtyChange} value={activeTab} index={2}>
           <PaymentAccountsWidget />
         </TabPanel>
-        <TabPanel value={activeTab} index={3}>
+        <TabPanel onDirtyChange={onDirtyChange} value={activeTab} index={3}>
           <SocialNetworksFormWidget />
         </TabPanel>
       </Box>
@@ -269,17 +290,17 @@ function SettingsLoadingSkeleton() {
         sx={{
           borderBottom: 1,
           borderColor: "divider",
-          minHeight: { xs: 60, sm: 64 },
-          px: { xs: 1, sm: 2 },
-          py: { xs: 1, sm: 0 },
+          minHeight: { xs: 48, md: 64 },
+          px: { xs: 0, md: 2 },
+          py: 0,
           "& .MuiTabs-flexContainer": {
-            gap: { xs: 1, sm: 0 },
+            gap: 0,
           },
           "& .MuiTabs-scrollButtons": {
             width: 44,
             minWidth: 44,
             minHeight: 44,
-            display: { xs: "inline-flex", sm: "none" },
+            display: "none",
           },
         }}
       >
@@ -287,23 +308,24 @@ function SettingsLoadingSkeleton() {
           <Tab
             key={tab.key}
             disabled
-            icon={<Skeleton variant="circular" width={22} height={22} />}
+            icon={<Box sx={{ display: { xs: "none", md: "block" } }}><Skeleton variant="circular" width={22} height={22} /></Box>}
             iconPosition="start"
-            label={<Skeleton variant="text" width={72} height={20} />}
+            label={<Skeleton variant="text" sx={{ width: { xs: 48, md: 72 } }} height={20} />}
             sx={{
-              minHeight: { xs: 44, sm: 64 },
-              minWidth: { xs: 112, sm: 160 },
+              minHeight: { xs: 44, md: 64 },
+              minWidth: { xs: 0, md: 160 },
+              flex: { xs: 1, md: "0 0 auto" },
               flexShrink: 0,
-              px: { xs: 1.5, sm: 2 },
-              py: { xs: 0.75, sm: 1.5 },
+              px: { xs: 0.5, md: 2 },
+              py: { xs: 0.75, md: 1.5 },
               opacity: 1,
             }}
           />
         ))}
       </Tabs>
 
-      <Box sx={{ p: { xs: 1.5, sm: 3 } }}>
-        <Box sx={{ pt: { xs: 2, sm: 3 } }}>
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <Box sx={{ pt: { xs: 0, md: 3 } }}>
           <SettingsPanelSkeleton />
         </Box>
       </Box>
@@ -316,13 +338,13 @@ export const DashboardSettingsWidget = () => {
     <Box
       sx={{
         width: "100%",
-        py: { xs: 2, sm: 3 },
+        py: { xs: 0, md: 3 },
       }}
     >
-      <PageHeader
+      <Box sx={{ display: { xs: "none", md: "block" } }}><PageHeader
         title="Доставка и оплата"
         icon={<SettingsRounded />}
-      />
+      /></Box>
 
       <Suspense fallback={<SettingsLoadingSkeleton />}>
         <SettingsContent />

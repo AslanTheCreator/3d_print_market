@@ -6,6 +6,8 @@ import { PaymentAccountCard } from "./PaymentAccountCard";
 import type { AccountFormData, AccountFormItem } from "./model";
 
 interface PaymentAccountsListProps {
+  disabled: boolean;
+  existingKeys: Set<string>;
   control: Control<AccountFormData>;
   errors: FieldErrors<AccountFormData>;
   expandedItems: Set<string>;
@@ -16,6 +18,8 @@ interface PaymentAccountsListProps {
 }
 
 export const PaymentAccountsList = ({
+  disabled,
+  existingKeys,
   control,
   errors,
   expandedItems,
@@ -25,10 +29,12 @@ export const PaymentAccountsList = ({
   onToggleExpand,
 }: PaymentAccountsListProps): React.ReactElement => {
   return (
-    <Stack spacing={2}>
+    <Stack spacing={{ xs: 1.5, md: 2 }}>
       {methods.map((method) => (
         <PaymentAccountCard
           key={method.value}
+          disabled={disabled}
+          willDelete={existingKeys.has(method.value) && !itemsData?.[method.value]?.enabled}
           control={control}
           errors={errors}
           isExpanded={expandedItems.has(method.value)}

@@ -8,6 +8,8 @@ import { SocialNetworkBadge } from "./SocialNetworkBadge";
 import { trimValue, type SocialFormData, type SocialFormItem } from "./model";
 
 interface SocialNetworkCardProps {
+  disabled: boolean;
+  willDelete: boolean;
   control: Control<SocialFormData>;
   errors: FieldErrors<SocialFormData>;
   isExpanded: boolean;
@@ -53,6 +55,8 @@ const SOCIAL_LABELS: Record<string, string> = {
 const DEFAULT_LABEL = "Имя пользователя";
 
 export const SocialNetworkCard = ({
+  disabled,
+  willDelete,
   control,
   errors,
   isExpanded,
@@ -70,8 +74,11 @@ export const SocialNetworkCard = ({
       control={control}
       render={({ field }) => (
         <CollapsibleFormCard
+          disabled={disabled}
+          notice={willDelete ? "Будет удалено после сохранения" : undefined}
           value={key}
           label={network.description}
+          mobileLabel={{ TELEGRAM: "Telegram", VK: "ВКонтакте", FACEBOOK: "Facebook", WHATSAPP: "WhatsApp" }[key]}
           badge={<SocialNetworkBadge item={item} />}
           icon={SOCIAL_ICONS[key] ?? <Telegram />}
           isEnabled={field.value ?? false}
@@ -104,13 +111,15 @@ export const SocialNetworkCard = ({
                       onMarkUnsaved();
                       loginField.onChange(event);
                     }}
+                    disabled={disabled}
                     fullWidth
+                    inputProps={{ inputMode: key === "WHATSAPP" ? "tel" : "text", autoCapitalize: "none", spellCheck: false }}
+                    autoComplete="off"
                     label={SOCIAL_LABELS[key] ?? DEFAULT_LABEL}
                     placeholder={SOCIAL_PLACEHOLDERS[key] ?? "Имя пользователя"}
                     error={!!errors.items?.[key]?.login}
                     helperText={
-                      errors.items?.[key]?.login?.message ??
-                      "Эти данные будут видны покупателям"
+                      errors.items?.[key]?.login?.message
                     }
                   />
                 )}

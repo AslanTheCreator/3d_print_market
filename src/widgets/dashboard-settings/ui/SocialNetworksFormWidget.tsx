@@ -1,36 +1,33 @@
 "use client";
 
-import React from "react";
-import { Alert } from "@mui/material";
+import { useCallback } from "react";
 import { useDictionary } from "@/entities/dictionary";
-import { useSocialNetworks } from "@/entities/social-network";
+import { useSocialNetworks, type SocialNetwork } from "@/entities/social-network";
 import { SocialNetworksForm } from "./social-networks/SocialNetworksForm";
-import { SettingsPanelSkeleton } from "./SettingsPanelSkeleton";
+import { SettingsDataBoundary } from "./SettingsDataBoundary";
 
-export const SocialNetworksFormWidget: React.FC = () => {
-  const { data: socialNetworkTypes, isLoading: typesLoading } =
-    useDictionary("SOCIAL_NETWORK");
-  const { data: socialNetworks = [], isLoading: networksLoading } =
-    useSocialNetworks();
+const EMPTY: SocialNetwork[] = [];
 
-  const isLoading = typesLoading || networksLoading;
-
-  if (isLoading) {
-    return <SettingsPanelSkeleton />;
-  }
-
-  if (!socialNetworkTypes?.length) {
-    return (
-      <Alert severity="error" sx={{ borderRadius: 2 }}>
-        Не удалось загрузить социальные сети. Попробуйте обновить страницу.
-      </Alert>
-    );
-  }
-
+export const SocialNetworksFormWidget = () => {
+  const dictionary = useDictionary("SOCIAL_NETWORK");
+  const records = useSocialNetworks();
+  const { refetch: reloadDictionary } = dictionary;
+  const { refetch: reloadRecords } = records;
+  const refresh = useCallback(async () => {
+    const [typesResult, recordsResult] = await Promise.all([reloadDictionary(), reloadRecords()]);
+    if (typesResult.isError || !typesResult.data?.length || recordsResult.isError || !recordsResult.data) {
+      throw new Error("Не удалось загрузить настройки");
+    }
+    return recordsResult.data;
+  }, [reloadDictionary, reloadRecords]);
+  const ready = Boolean(dictionary.data?.length && records.data);
+  const loading = dictionary.isLoading || records.isLoading;
+  const failed = dictionary.isError || records.isError || (!loading && !ready);
   return (
-    <SocialNetworksForm
-      types={socialNetworkTypes}
-      existing={socialNetworks}
-    />
+    <SettingsDataBoundary loading={loading} ready={ready} failed={failed}
+      refreshing={dictionary.isFetching || records.isFetching}
+      onRetry={() => { void refresh().catch(() => undefined); }}>
+      <SocialNetworksForm unavailable={failed} types={dictionary.data ?? []} existing={records.data ?? EMPTY} refresh={refresh} />
+    </SettingsDataBoundary>
   );
 };

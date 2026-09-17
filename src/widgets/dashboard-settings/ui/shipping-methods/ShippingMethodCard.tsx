@@ -1,5 +1,5 @@
 import type React from "react";
-import { Grid, MenuItem, TextField } from "@mui/material";
+import { Box, Grid, MenuItem, TextField } from "@mui/material";
 import { Controller, type Control, type FieldErrors } from "react-hook-form";
 import { SHIPPING_ICONS } from "@/entities/transfer";
 import type { DictionaryItem } from "@/entities/dictionary";
@@ -15,6 +15,8 @@ import {
 } from "./model";
 
 interface ShippingMethodCardProps {
+  disabled: boolean;
+  willDelete: boolean;
   control: Control<TransferFormData>;
   currencies: DictionaryItem[];
   currencyLabels: Record<string, string>;
@@ -32,6 +34,8 @@ interface ShippingMethodCardProps {
 }
 
 export const ShippingMethodCard = ({
+  disabled,
+  willDelete,
   control,
   currencies,
   currencyLabels,
@@ -55,6 +59,8 @@ export const ShippingMethodCard = ({
       control={control}
       render={({ field }) => (
         <CollapsibleFormCard
+          disabled={disabled}
+          notice={willDelete ? "Будет удалено после сохранения" : undefined}
           value={key}
           label={method.description}
           description={
@@ -114,15 +120,14 @@ export const ShippingMethodCard = ({
                       }}
                       type="text"
                       inputMode="numeric"
+                      disabled={disabled}
                       fullWidth
                       label="Стоимость доставки"
                       placeholder="0"
                       error={!!errors.items?.[key]?.price}
                       helperText={
                         errors.items?.[key]?.price?.message ??
-                        (isRequiredPrice
-                          ? "Обязательное поле для этого способа доставки"
-                          : "")
+                        (isRequiredPrice ? <Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>Обязательное поле для этого способа доставки</Box> : "")
                       }
                     />
                   )}
@@ -145,12 +150,13 @@ export const ShippingMethodCard = ({
                         currencyField.onChange(event);
                       }}
                       select
+                      disabled={disabled}
                       fullWidth
                       label="Валюта"
                       error={!!errors.items?.[key]?.currency}
                       helperText={
                         errors.items?.[key]?.currency?.message ??
-                        "Валюта применяется к стоимости доставки"
+                        <Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>Валюта применяется к стоимости доставки</Box>
                       }
                     >
                       {currencies.map((currency) => (

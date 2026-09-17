@@ -81,7 +81,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         spacing={1}
         sx={{
           position: "fixed",
-          bottom: "calc(var(--shell-bottom-offset, 0px) + 16px)",
+          bottom: "calc(max(var(--shell-bottom-offset, 0px), var(--shell-fixed-action-offset, 0px)) + 16px)",
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 9999,

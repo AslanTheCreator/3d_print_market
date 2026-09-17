@@ -17,6 +17,7 @@ export const ProfileProgress = ({
   return (
     <Box
       sx={{
+        display: { xs: "none", md: "block" },
         flex: "1 1 32%",
         minWidth: 0,
         p: { xs: 1.25, sm: 0 },

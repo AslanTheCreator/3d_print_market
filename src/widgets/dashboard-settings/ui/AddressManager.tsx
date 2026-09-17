@@ -22,6 +22,7 @@ import {
   AddressForm,
 } from "@/entities/address";
 import { useNotification } from "@/shared/ui/notification";
+import { useSettingsPanel } from "../model/SettingsPanelContext";
 import { Address } from "@/entities/address";
 
 type ViewMode = "list" | "add" | "edit";
@@ -42,6 +43,8 @@ export const AddressManager: React.FC = () => {
   } = useAddresses();
   const { showNotification } = useNotification();
 
+  const [dirty, setDirty] = useState(false);
+  useSettingsPanel(dirty);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [addressToEdit, setAddressToEdit] = useState<Address | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -111,9 +114,11 @@ export const AddressManager: React.FC = () => {
 
   return (
     <Box>
+      {viewMode === "list" && <Typography variant="body2" color="text.secondary" sx={{ display: { xs: "block", md: "none" }, mb: 2 }}>Адреса для получения покупок</Typography>}
       <Typography
         variant="h6"
         sx={{
+          display: { xs: viewMode === "list" ? "none" : "block", md: "block" },
           fontWeight: 700,
           mb: { xs: 1.5, sm: 2 },
           fontSize: { xs: "1rem", sm: "1.25rem" },
@@ -126,7 +131,7 @@ export const AddressManager: React.FC = () => {
             : "Мои адреса"}
       </Typography>
 
-      <Divider sx={{ mb: { xs: 2, sm: 3 } }} />
+      <Divider sx={{ display: { xs: "none", md: "block" }, mb: 3 }} />
 
       {/* Режим списка */}
       <Collapse in={viewMode === "list"} unmountOnExit>
@@ -151,6 +156,7 @@ export const AddressManager: React.FC = () => {
           </Alert>
         ) : (
           <AddressSelector
+            compact
             addresses={addresses}
             isLoading={isLoading}
             onAddressSelect={() => {}}
@@ -169,6 +175,8 @@ export const AddressManager: React.FC = () => {
       <Collapse in={viewMode !== "list"} unmountOnExit>
         {viewMode === "add" && (
           <AddressForm
+            compact
+            onDirtyChange={setDirty}
             key="add-address"
             onSubmit={handleCreate}
             onCancel={handleCancel}
@@ -194,7 +202,7 @@ export const AddressManager: React.FC = () => {
       {/* Диалог подтверждения удаления */}
       <Dialog
         open={deleteDialogOpen}
-        onClose={closeDeleteDialog}
+        onClose={isDeleting ? undefined : closeDeleteDialog}
         maxWidth="xs"
         fullWidth
       >

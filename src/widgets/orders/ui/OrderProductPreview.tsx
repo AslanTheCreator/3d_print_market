@@ -18,6 +18,8 @@ interface OrderProductPreviewProps {
   userRole: OrdersUserRole;
   imageSize?: number;
   showCategory?: boolean;
+  showOrderId?: boolean;
+  nameLines?: 2 | "all";
 }
 
 export const OrderProductPreview = ({
@@ -25,6 +27,8 @@ export const OrderProductPreview = ({
   userRole,
   imageSize = 64,
   showCategory = true,
+  showOrderId = true,
+  nameLines,
 }: OrderProductPreviewProps) => {
   const [hasImageError, setHasImageError] = useState(false);
   const image = order.product.image?.[0] ?? null;
@@ -71,7 +75,7 @@ export const OrderProductPreview = ({
       </Box>
 
       <Box minWidth={0}>
-        <Typography
+        {showOrderId && <Typography
           variant="subtitle2"
           fontWeight={600}
           sx={{
@@ -83,7 +87,7 @@ export const OrderProductPreview = ({
           }}
         >
           Заказ #{order.orderId}
-        </Typography>
+        </Typography>}
 
         <Typography
           variant="body2"
@@ -91,7 +95,17 @@ export const OrderProductPreview = ({
           sx={{
             overflow: "hidden",
             textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
+            whiteSpace: nameLines ? "normal" : "nowrap",
+            ...(nameLines && {
+              overflowWrap: "anywhere",
+              fontWeight: 600,
+              fontSize: 16,
+              ...(nameLines === 2 && {
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+              }),
+            }),
           }}
         >
           {order.product.name}

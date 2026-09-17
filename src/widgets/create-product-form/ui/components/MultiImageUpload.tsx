@@ -21,11 +21,13 @@ import { UseMultipleImageUploadReturn } from "@/features/image-upload";
 interface MultiImageUploadProps {
   uploadState: UseMultipleImageUploadReturn;
   maxImages: number;
+  compactMobile?: boolean;
 }
 
 export const MultiImageUpload = ({
   uploadState,
   maxImages,
+  compactMobile = false,
 }: MultiImageUploadProps) => {
   const theme = useTheme();
   const [isDragOver, setIsDragOver] = useState(false);
@@ -60,13 +62,6 @@ export const MultiImageUpload = ({
   const handleUploadClick = () => {
     if (canAddImage) {
       fileInputRef.current?.click();
-    }
-  };
-
-  const handleUploadKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      handleUploadClick();
     }
   };
 
@@ -121,7 +116,7 @@ export const MultiImageUpload = ({
         alignItems={{ xs: "flex-start", sm: "center" }}
         justifyContent="space-between"
         spacing={1}
-        sx={{ mb: 2 }}
+        sx={{ mb: compactMobile ? { xs: 1.25, md: 2 } : 2 }}
       >
         <Box>
           <Typography variant="subtitle1" fontWeight={600}>
@@ -154,7 +149,7 @@ export const MultiImageUpload = ({
                 elevation={0}
                 sx={{
                   position: "relative",
-                  height: { xs: index === 0 ? 220 : 156, sm: 150, md: 172 },
+                  height: { xs: compactMobile ? 120 : index === 0 ? 220 : 156, sm: compactMobile ? 120 : 150, md: 172 },
                   borderRadius: 2,
                   overflow: "hidden",
                   border: `1px solid ${
@@ -225,6 +220,7 @@ export const MultiImageUpload = ({
                   disabled={image.isUploading}
                   aria-label={`Удалить изображение ${index + 1}`}
                   sx={{
+                    ...(compactMobile && { width: { xs: 44, md: 30 }, height: { xs: 44, md: 30 } }),
                     position: "absolute",
                     top: 8,
                     right: 8,
@@ -262,21 +258,25 @@ export const MultiImageUpload = ({
         })}
 
         {canAddImage && (
-          <Grid item xs={images.length === 0 ? 12 : 6} sm={4} md={3}>
+          <Grid item xs={images.length === 0 ? 12 : 6} sm={compactMobile && images.length === 0 ? 12 : 4} md={3}>
             <Paper
+              component="button"
+              type="button"
+              id="product-images"
+              aria-label="Добавить фото"
               elevation={0}
-              role="button"
-              tabIndex={0}
               onClick={handleUploadClick}
-              onKeyDown={handleUploadKeyDown}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               sx={{
+                width: "100%",
+                p: 0,
+                font: "inherit",
                 position: "relative",
                 height: {
-                  xs: images.length === 0 ? 180 : 156,
-                  sm: 150,
+                  xs: compactMobile ? 112 : images.length === 0 ? 180 : 156,
+                  sm: compactMobile ? 112 : 150,
                   md: 172,
                 },
                 borderRadius: 2,
@@ -313,8 +313,8 @@ export const MultiImageUpload = ({
                 <Box
                   sx={{
                     position: "relative",
-                    width: 58,
-                    height: 58,
+                    width: compactMobile ? { xs: 36, md: 58 } : 58,
+                    height: compactMobile ? { xs: 36, md: 58 } : 58,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -322,7 +322,7 @@ export const MultiImageUpload = ({
                 >
                   <ImageOutlined
                     sx={{
-                      fontSize: 52,
+                      fontSize: compactMobile ? { xs: 32, md: 52 } : 52,
                       color: alpha(theme.palette.text.primary, 0.16),
                     }}
                   />
@@ -349,7 +349,7 @@ export const MultiImageUpload = ({
                 </Typography>
                 <Typography
                   variant="caption"
-                  sx={{ display: { xs: "none", sm: "block" } }}
+                  sx={{ display: compactMobile ? { xs: "none", md: "block" } : { xs: "none", sm: "block" } }}
                 >
                   Перетащите или выберите файл
                 </Typography>

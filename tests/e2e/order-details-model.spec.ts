@@ -15,6 +15,7 @@ import {
   sortOrderHistories,
 } from "@/widgets/orders/model/orderDetails";
 import { parseOrderDateTimestamp } from "@/widgets/orders/model/orderDate";
+import { filterMobileOrders, sortMobileOrders } from "@/widgets/orders/model/mobileOrders";
 
 type OrderHistory = ListOrdersModel["histories"][number];
 
@@ -28,6 +29,19 @@ const history = (
 });
 
 test.describe("order details model", () => {
+  test("mobile priority keeps action first, then active, then completed without mutating input", () => {
+    const orders = [
+      { orderId: 1, actualStatus: "COMPLETED", createdAt: "2026-07-25T10:00:00Z" },
+      { orderId: 2, actualStatus: "BOOKED", createdAt: "24.07.2026 12:00:00" },
+      { orderId: 3, actualStatus: "ON_THE_WAY", createdAt: "2026-07-20T10:00:00Z" },
+      { orderId: 4, actualStatus: "AWAITING_PREPAYMENT_APPROVAL", createdAt: "2026-07-21T10:00:00Z" },
+    ] as ListOrdersModel[];
+    expect(sortMobileOrders(orders, "attention", "customer").map((order) => order.orderId)).toEqual([3, 2, 4, 1]);
+    expect(sortMobileOrders(orders, "newest", "customer").map((order) => order.orderId)).toEqual([1, 2, 4, 3]);
+    expect(filterMobileOrders(orders, "confirmation", "seller").map((order) => order.orderId)).toEqual([2, 4]);
+    expect(filterMobileOrders(orders, "active", "customer")).toHaveLength(3);
+    expect(orders.map((order) => order.orderId)).toEqual([1, 2, 3, 4]);
+  });
   test("allows only absolute HTTP tracking links", () => {
     expect(getSafeTrackingUrl(" https://tracking.example/order/42 ")).toBe(
       "https://tracking.example/order/42",

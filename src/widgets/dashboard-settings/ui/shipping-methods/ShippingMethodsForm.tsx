@@ -16,14 +16,18 @@ interface ShippingMethodsFormProps {
   methods: DictionaryItem[];
   currencies: DictionaryItem[];
   existing: Transfer[];
+  unavailable: boolean;
+  refresh: () => Promise<Transfer[]>;
 }
 
 export const ShippingMethodsForm = ({
   methods,
   currencies,
   existing,
+  refresh,
+  unavailable,
 }: ShippingMethodsFormProps): React.ReactElement => {
-  const form = useShippingMethodsForm({ methods, currencies, existing });
+  const form = useShippingMethodsForm({ methods, currencies, existing, refresh });
 
   return (
     <Box>
@@ -31,6 +35,7 @@ export const ShippingMethodsForm = ({
         severity="info"
         icon={<InfoOutlined />}
         sx={{
+          display: { xs: "none", md: "flex" },
           mb: 3,
           borderRadius: 2,
           "& .MuiAlert-message": {
@@ -41,11 +46,13 @@ export const ShippingMethodsForm = ({
         Выберите способы отправки товара и укажите стоимость доставки.
       </Alert>
 
-      <Box component="form" onSubmit={form.handleSubmit(form.onSubmit)}>
-        <FormControl component="fieldset" fullWidth>
+      <Typography color="text.secondary" variant="body2" sx={{ display: { xs: "block", md: "none" }, mb: 2 }}>Как вы отправляете проданные товары. Выберите способы и стоимость доставки.</Typography>
+      <Box component="form" onSubmit={unavailable ? (event) => event.preventDefault() : form.handleSubmit(form.onSubmit)}>
+        <FormControl component="fieldset" fullWidth disabled={form.isPending || form.needsRefresh || unavailable}>
           <Typography
             component="legend"
             sx={{
+              display: { xs: "none", md: "block" },
               mb: 2,
               fontSize: { xs: "1rem", sm: "1.125rem" },
               fontWeight: 600,
@@ -56,6 +63,8 @@ export const ShippingMethodsForm = ({
           </Typography>
 
           <ShippingMethodsList
+            disabled={form.isPending || form.needsRefresh || unavailable}
+            existingKeys={form.existingKeys}
             control={form.control}
             currencies={currencies}
             currencyLabels={form.currencyLabels}
@@ -70,11 +79,14 @@ export const ShippingMethodsForm = ({
         </FormControl>
 
         <ShippingMethodsFormFooter
-          canSubmit={form.canSubmit}
+          canSubmit={form.canSubmit && !unavailable}
           hasBlockingValidationErrors={form.hasBlockingValidationErrors}
           hasChanges={form.hasChanges}
           isPending={form.isPending}
           statusText={form.statusText}
+          saveError={form.saveError}
+          needsRefresh={form.needsRefresh}
+          onRetry={() => { void form.retryRefresh(); }}
         />
       </Box>
     </Box>

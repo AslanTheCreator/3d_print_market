@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Alert, Box, Stack } from "@mui/material";
+import { Alert, Box, Button, Stack } from "@mui/material";
 import { Receipt, Storefront } from "@mui/icons-material";
 import { UseQueryResult } from "@tanstack/react-query";
 import { ListOrdersModel, OrdersEmptyState } from "@/entities/order";
@@ -24,6 +24,7 @@ import { OrdersLoadingSkeleton } from "./OrdersLoadingSkeleton";
 import { OrdersSummaryCards } from "./OrdersSummaryCards";
 import { OrdersTable } from "./OrdersTable";
 import { OrderDetailsDialog } from "./OrderDetailsDialog";
+import { MobileOrders } from "./MobileOrders";
 
 interface OrdersWidgetProps {
   query: UseQueryResult<ListOrdersModel[]>;
@@ -34,7 +35,7 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
   const [activeFilter, setActiveFilter] = useState<OrdersFilterId>("all");
   const [sort, setSort] = useState<OrdersSortId>("attention");
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
-  const { data: orders, isLoading, error } = query;
+  const { data: orders, isLoading, error, refetch, isFetching } = query;
 
   const title = getOrdersTitle(userRole);
   const Icon = userRole === "seller" ? Storefront : Receipt;
@@ -90,15 +91,15 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
   );
 
   if (isLoading) {
-    return <OrdersLoadingSkeleton title={title} icon={<Icon />} />;
+    return <OrdersLoadingSkeleton title={title} icon={<Icon />} userRole={userRole} />;
   }
 
   if (error) {
     return (
       <Box sx={{ width: "100%", py: { xs: 2, sm: 3 } }}>
-        <PageHeader title={title} icon={<Icon />} />
-        <Alert severity="error" sx={{ borderRadius: 2 }}>
-          Не удалось загрузить заказы. Попробуйте обновить страницу.
+        <Box sx={{ display: { xs: "none", md: "block" } }}><PageHeader title={title} icon={<Icon />} /></Box>
+        <Alert severity="error" sx={{ borderRadius: 2 }} action={<Button color="inherit" disabled={isFetching} onClick={() => void refetch()}>Повторить</Button>}>
+          Не удалось загрузить заказы.
         </Alert>
       </Box>
     );
@@ -107,16 +108,21 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
   if (ordersList.length === 0) {
     return (
       <Box sx={{ width: "100%", py: { xs: 2, sm: 3 } }}>
-        <PageHeader title={title} icon={<Icon />} />
-        <OrdersEmptyState userRole={userRole} />
+        <Box sx={{ display: { xs: "none", md: "block" } }}>
+          <PageHeader title={title} icon={<Icon />} />
+          <OrdersEmptyState userRole={userRole} />
+        </Box>
+        <Box sx={{ display: { xs: "block", md: "none" } }}>
+          <MobileOrders orders={ordersList} userRole={userRole} onOpenDetails={(order) => setSelectedOrderId(order.orderId)} />
+        </Box>
       </Box>
     );
   }
 
   return (
     <Box sx={{ width: "100%", py: { xs: 2, sm: 3 } }}>
-      <PageHeader title={title} icon={<Icon />} />
-      <Stack spacing={{ xs: 2, sm: 3 }}>
+      <Box sx={{ display: { xs: "none", md: "block" } }}><PageHeader title={title} icon={<Icon />} /></Box>
+      <Stack data-testid="desktop-orders" spacing={{ xs: 2, sm: 3 }} sx={{ display: { xs: "none", md: "flex" } }}>
         <OrdersSummaryCards stats={stats} userRole={userRole} />
 
         <OrdersControls
@@ -141,6 +147,10 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
           onOpenDetails={(order) => setSelectedOrderId(order.orderId)}
         />
       </Stack>
+
+      <Box sx={{ display: { xs: "block", md: "none" } }}>
+        <MobileOrders orders={ordersList} userRole={userRole} onOpenDetails={(order) => setSelectedOrderId(order.orderId)} />
+      </Box>
 
       {selectedOrder && (
         <OrderDetailsDialog

@@ -36,21 +36,27 @@ export const ProfileOverview = ({
   const rating = Number.isFinite(user.averageRating)
     ? user.averageRating.toFixed(1)
     : "0.0";
+  const hasMobileRating =
+    Number.isInteger(user.totalReviews) &&
+    user.totalReviews > 0 &&
+    Number.isFinite(user.averageRating) &&
+    user.averageRating >= 0;
 
   return (
     <Card
+      data-testid="profile-overview"
       sx={{
-        mb: { xs: 1.25, sm: 2 },
+        mb: { xs: 1.5, md: 2 },
         borderRadius: 2,
         backgroundColor: theme.palette.common.white,
         border: `1px solid ${alpha(theme.palette.common.black, 0.08)}`,
-        boxShadow: "0 6px 18px rgba(15, 23, 42, 0.04)",
+        boxShadow: { xs: "none", md: "0 6px 18px rgba(15, 23, 42, 0.04)" },
       }}
     >
-      <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+      <CardContent sx={{ p: { xs: 2, md: 3 } }}>
         <Stack
           direction={{ xs: "column", lg: "row" }}
-          spacing={{ xs: 1.5, sm: 3, lg: 4 }}
+          spacing={{ xs: 1.5, md: 3, lg: 4 }}
           divider={
             <Divider
               orientation="vertical"
@@ -61,7 +67,7 @@ export const ProfileOverview = ({
         >
           <Stack
             direction="row"
-            spacing={{ xs: 1.25, sm: 2.5 }}
+            spacing={{ xs: 1.25, md: 2.5 }}
             alignItems="center"
             sx={{ flex: "1 1 42%", minWidth: 0 }}
           >
@@ -70,16 +76,16 @@ export const ProfileOverview = ({
                 src={userImageSrc}
                 alt={userName}
                 sx={{
-                  width: { xs: 60, sm: 118 },
-                  height: { xs: 60, sm: 118 },
-                  border: { xs: "2px solid", sm: "3px solid" },
+                  width: { xs: 60, md: 118 },
+                  height: { xs: 60, md: 118 },
+                  border: { xs: "2px solid", md: "3px solid" },
                   borderColor: "background.paper",
                   boxShadow: "0 0 0 1px rgba(15, 23, 42, 0.12)",
                   bgcolor: "primary.light",
                 }}
               >
                 {!userImageSrc && (
-                  <PersonRounded sx={{ fontSize: { xs: 30, sm: 48 } }} />
+                  <PersonRounded sx={{ fontSize: { xs: 30, md: 48 } }} />
                 )}
               </Avatar>
 
@@ -87,6 +93,7 @@ export const ProfileOverview = ({
                 aria-label="Редактировать профиль"
                 onClick={onEditProfile}
                 sx={{
+                  display: { xs: "none", md: "inline-flex" },
                   position: "absolute",
                   right: { xs: -4, sm: -6 },
                   bottom: { xs: -4, sm: -6 },
@@ -110,8 +117,8 @@ export const ProfileOverview = ({
                 sx={{
                   fontWeight: 700,
                   lineHeight: 1.15,
-                  mb: { xs: 0.5, sm: 1 },
-                  fontSize: { xs: "1.15rem", sm: "2rem" },
+                  mb: { xs: 0.5, md: 1 },
+                  fontSize: { xs: "1.125rem", md: "2rem" },
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   wordBreak: "break-word",
@@ -125,7 +132,7 @@ export const ProfileOverview = ({
                 color="text.secondary"
                 sx={{
                   mb: 1.5,
-                  display: { xs: "none", sm: "block" },
+                  display: { xs: "none", md: "block" },
                 }}
               >
                 Профиль Figurzilla
@@ -135,7 +142,7 @@ export const ProfileOverview = ({
                 direction="row"
                 spacing={{ xs: 0.75, sm: 1.25 }}
                 alignItems="center"
-                sx={{ minWidth: 0 }}
+                sx={{ minWidth: 0, display: { xs: "none", md: "flex" } }}
               >
                 <StarRounded
                   sx={{ color: "#FFB300", fontSize: { xs: 18, sm: 22 } }}
@@ -160,6 +167,30 @@ export const ProfileOverview = ({
                   {user.totalReviews} отзывов
                 </Typography>
               </Stack>
+
+              {(user.totalReviews === 0 || hasMobileRating) && (
+                <Stack
+                  data-testid="mobile-profile-rating"
+                  direction="row"
+                  spacing={0.75}
+                  alignItems="center"
+                  sx={{ display: { xs: "flex", md: "none" }, minWidth: 0 }}
+                >
+                  {user.totalReviews === 0 ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Пока нет отзывов
+                    </Typography>
+                  ) : (
+                    <>
+                      <StarRounded sx={{ color: "#FFB300", fontSize: 18 }} />
+                      <Typography variant="body2" fontWeight={800}>{rating}</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: "anywhere" }}>
+                        {user.totalReviews} отзывов
+                      </Typography>
+                    </>
+                  )}
+                </Stack>
+              )}
             </Box>
           </Stack>
 
@@ -174,14 +205,21 @@ export const ProfileOverview = ({
             }}
           >
             <Button
-              variant="contained"
+              variant="outlined"
               onClick={onEditProfile}
               sx={{
-                minHeight: { xs: 44, sm: 46 },
+                minHeight: { xs: 44, md: 46 },
                 borderRadius: 1.5,
                 textTransform: "none",
                 fontWeight: 600,
                 width: "100%",
+                borderColor: { xs: "primary.main", md: "transparent" },
+                bgcolor: { xs: "transparent", md: "primary.main" },
+                color: { xs: "primary.main", md: "primary.contrastText" },
+                "&:hover": {
+                  borderColor: { xs: "primary.main", md: "transparent" },
+                  bgcolor: { xs: alpha(theme.palette.primary.main, 0.04), md: "primary.dark" },
+                },
               }}
             >
               Редактировать профиль

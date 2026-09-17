@@ -23,17 +23,17 @@ export const DashboardHomeSkeleton = () => (
 
     <Card
       sx={{
-        mb: { xs: 1.25, sm: 2 },
+        mb: { xs: 1.5, md: 2 },
         borderRadius: 2,
         border: "1px solid",
         borderColor: "divider",
-        boxShadow: "0 6px 18px rgba(15, 23, 42, 0.04)",
+        boxShadow: { xs: "none", md: "0 6px 18px rgba(15, 23, 42, 0.04)" },
       }}
     >
-      <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+      <CardContent sx={{ p: { xs: 2, md: 3 } }}>
         <Stack
           direction={{ xs: "column", lg: "row" }}
-          spacing={{ xs: 1.5, sm: 3, lg: 4 }}
+          spacing={{ xs: 1.5, md: 3, lg: 4 }}
           divider={
             <Divider
               orientation="vertical"
@@ -44,25 +44,25 @@ export const DashboardHomeSkeleton = () => (
         >
           <Stack
             direction="row"
-            spacing={{ xs: 1.25, sm: 2.5 }}
+            spacing={{ xs: 1.25, md: 2.5 }}
             alignItems="center"
             sx={{ flex: "1 1 42%", minWidth: 0 }}
           >
             <Skeleton
               variant="circular"
               sx={{
-                width: { xs: 60, sm: 118 },
-                height: { xs: 60, sm: 118 },
+                width: { xs: 60, md: 118 },
+                height: { xs: 60, md: 118 },
                 flexShrink: 0,
               }}
             />
-            <Stack spacing={{ xs: 0.5, sm: 1 }} sx={{ flex: 1, minWidth: 0 }}>
-              <Skeleton variant="text" width="72%" height={36} />
+            <Stack spacing={{ xs: 0.5, md: 1 }} sx={{ flex: 1, minWidth: 0 }}>
+              <Skeleton variant="text" width="72%" sx={{ height: { xs: 24, md: 36 } }} />
               <Skeleton
                 variant="text"
                 width="48%"
                 height={22}
-                sx={{ display: { xs: "none", sm: "block" } }}
+                sx={{ display: { xs: "none", md: "block" } }}
               />
               <Skeleton variant="text" width="38%" height={24} />
             </Stack>
@@ -70,6 +70,7 @@ export const DashboardHomeSkeleton = () => (
 
           <Box
             sx={{
+              display: { xs: "none", md: "block" },
               flex: "1 1 32%",
               minWidth: 0,
               p: { xs: 1.25, sm: 0 },
@@ -108,8 +109,8 @@ export const DashboardHomeSkeleton = () => (
 
           <Skeleton
             variant="rounded"
-            height={46}
             sx={{
+              height: { xs: 44, md: 46 },
               width: { xs: "100%", lg: 260 },
               alignSelf: { lg: "center" },
               flexShrink: 0,
@@ -121,7 +122,7 @@ export const DashboardHomeSkeleton = () => (
 
     <Box
       sx={{
-        display: "grid",
+        display: { xs: "none", md: "grid" },
         gridTemplateColumns: {
           xs: "repeat(2, minmax(0, 1fr))",
           sm: "repeat(3, minmax(0, 1fr))",

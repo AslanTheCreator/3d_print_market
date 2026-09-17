@@ -11,6 +11,9 @@ import {
 const PRODUCT_FORM_DRAFT_KEY = "create-product-form-draft";
 const PRODUCT_FORM_CURRENCIES = ["RUB", "USD", "EUR", "GBP", "JPY", "CNY"];
 let memoryProductFormDraft: ProductFormDraft | null = null;
+let hasUnsavedMemoryDraft = false;
+
+export type ProductFormDraftStatus = "empty" | "saved" | "memory" | "error";
 
 interface ProductFormDraft {
   imageIds: number[];
@@ -57,7 +60,7 @@ const readImageIds = (value: unknown): number[] => {
   );
 };
 
-const isProductFormDraftEmpty = (draft: ProductFormDraft): boolean =>
+export const isProductFormDraftEmpty = (draft: ProductFormDraft): boolean =>
   draft.imageIds.length === 0 &&
   draft.values.categoryIds.length === 0 &&
   draft.values.name === defaultProductFormValues.name &&
@@ -133,6 +136,7 @@ const getDraftStorage = (): Storage | null => {
 };
 
 export const readProductFormDraft = (): ProductFormDraft | null => {
+  if (hasUnsavedMemoryDraft) return memoryProductFormDraft;
   const storage = getDraftStorage();
 
   if (!storage) {
@@ -150,28 +154,26 @@ export const readProductFormDraft = (): ProductFormDraft | null => {
   }
 };
 
-export const writeProductFormDraft = (draft: ProductFormDraft): void => {
+export const writeProductFormDraft = (draft: ProductFormDraft): ProductFormDraftStatus => {
   const storage = getDraftStorage();
 
   if (isProductFormDraftEmpty(draft)) {
-    memoryProductFormDraft = null;
-
-    try {
-      storage?.removeItem(PRODUCT_FORM_DRAFT_KEY);
-    } catch {
-      memoryProductFormDraft = null;
-    }
-    return;
+    return clearProductFormDraft();
   }
 
+  memoryProductFormDraft = draft;
+  hasUnsavedMemoryDraft = true;
+  if (!storage) return "memory";
+
   try {
-    memoryProductFormDraft = draft;
-    storage?.setItem(
+    storage.setItem(
       PRODUCT_FORM_DRAFT_KEY,
       JSON.stringify(serializeProductFormDraft(draft)),
     );
+    hasUnsavedMemoryDraft = false;
+    return "saved";
   } catch {
-    memoryProductFormDraft = draft;
+    return "memory";
   }
 };
 
@@ -207,14 +209,19 @@ const loadProductFormDraftImagesFromContent = async (
   return images.filter((image): image is InitialImageUploadState => !!image);
 };
 
-export const clearProductFormDraft = (): void => {
+export const clearProductFormDraft = (): ProductFormDraftStatus => {
   const storage = getDraftStorage();
   memoryProductFormDraft = null;
+  hasUnsavedMemoryDraft = true;
+
+  if (!storage) return "error";
 
   try {
-    storage?.removeItem(PRODUCT_FORM_DRAFT_KEY);
+    storage.removeItem(PRODUCT_FORM_DRAFT_KEY);
+    hasUnsavedMemoryDraft = false;
+    return "empty";
   } catch {
-    memoryProductFormDraft = null;
+    return "error";
   }
 };
 

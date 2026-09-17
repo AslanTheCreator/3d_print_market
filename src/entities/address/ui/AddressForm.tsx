@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
+  Alert,
   TextField,
   Button,
   Grid,
@@ -18,6 +19,8 @@ import {
 interface AddressFormProps {
   onSubmit: (data: AddressInput) => void | Promise<void>;
   onCancel: () => void;
+  compact?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
   isLoading?: boolean;
   initialData?: Partial<AddressInput>;
   submitButtonText?: string;
@@ -27,6 +30,8 @@ interface AddressFormProps {
 export const AddressForm: React.FC<AddressFormProps> = ({
   onSubmit,
   onCancel,
+  compact = false,
+  onDirtyChange,
   isLoading = false,
   initialData,
   submitButtonText = "Сохранить адрес",
@@ -49,12 +54,19 @@ export const AddressForm: React.FC<AddressFormProps> = ({
     },
   });
 
+  const [submitError, setSubmitError] = useState(false);
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+    return () => onDirtyChange?.(false);
+  }, [isDirty, onDirtyChange]);
+
   const handleFormSubmit = async (data: AddressInput) => {
+    setSubmitError(false);
     try {
       await onSubmit(data);
       reset();
-    } catch (error) {
-      console.error("Ошибка при сохранении адреса:", error);
+    } catch {
+      setSubmitError(true);
     }
   };
 
@@ -71,6 +83,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
         </Typography>
       )}
 
+      {submitError && <Alert severity="error" sx={{ mb: 2 }}>Не удалось сохранить адрес. Проверьте соединение и повторите попытку.</Alert>}
       <Grid container spacing={2}>
         {/* Страна */}
         <Grid item xs={12} sm={6}>
@@ -88,6 +101,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
               <TextField
                 {...field}
                 fullWidth
+                autoComplete="country-name"
                 label="Страна"
                 error={!!errors.country}
                 helperText={errors.country?.message}
@@ -114,6 +128,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
               <TextField
                 {...field}
                 fullWidth
+                autoComplete="address-level2"
                 label="Город"
                 error={!!errors.city}
                 helperText={errors.city?.message}
@@ -140,6 +155,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
               <TextField
                 {...field}
                 fullWidth
+                autoComplete="address-line1"
                 label="Улица"
                 placeholder="Например: ул. Ленина"
                 error={!!errors.street}
@@ -152,7 +168,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
         </Grid>
 
         {/* Номер дома */}
-        <Grid item xs={12} sm={4}>
+        <Grid item xs={compact ? 6 : 12} sm={compact ? 6 : 4} md={4}>
           <Controller
             name="houseNumber"
             control={control}
@@ -167,7 +183,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
               <TextField
                 {...field}
                 fullWidth
-                label="Номер дома"
+                label={compact ? "Дом" : "Номер дома"}
                 placeholder="12А"
                 error={!!errors.houseNumber}
                 helperText={errors.houseNumber?.message}
@@ -179,7 +195,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
         </Grid>
 
         {/* Номер квартиры */}
-        <Grid item xs={12} sm={4}>
+        <Grid item xs={compact ? 6 : 12} sm={compact ? 6 : 4} md={4}>
           <Controller
             name="apartmentNumber"
             control={control}
@@ -193,7 +209,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
               <TextField
                 {...field}
                 fullWidth
-                label="Номер квартиры"
+                label={compact ? "Квартира" : "Номер квартиры"}
                 placeholder="45 (необязательно)"
                 error={!!errors.apartmentNumber}
                 helperText={errors.apartmentNumber?.message}
@@ -205,7 +221,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
         </Grid>
 
         {/* Почтовый индекс */}
-        <Grid item xs={12} sm={4}>
+        <Grid item xs={12} sm={compact ? 12 : 4} md={4}>
           <Controller
             name="index"
             control={control}
@@ -231,6 +247,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
                   }
                 }}
                 fullWidth
+                autoComplete="postal-code"
                 label="Почтовый индекс"
                 placeholder="123456"
                 error={!!errors.index}

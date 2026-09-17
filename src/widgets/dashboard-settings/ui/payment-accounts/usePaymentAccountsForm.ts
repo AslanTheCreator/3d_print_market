@@ -1,16 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useCallback, useMemo } from "react";
+import { useWatch } from "react-hook-form";
 import type { DictionaryItem } from "@/entities/dictionary";
 import {
   useCreateAccount,
   useDeleteAccount,
   useUpdateAccount,
 } from "@/entities/account";
-import { useNotification } from "@/shared/ui/notification";
 import type { AccountsBaseModel, TransferMoney } from "@/entities/account";
 import { useInvalidateSellerSettings } from "../../model/useInvalidateSellerSettings";
+import { useSettingsExpansion } from "../../model/useSettingsExpansion";
+import { useSettingsDraft, type SettingsOperation } from "../../model/useSettingsDraft";
 import {
   buildDefaultValues,
   buildExistingByMethod,
@@ -25,66 +26,29 @@ import {
 interface UsePaymentAccountsFormOptions {
   methods: DictionaryItem[];
   existing: AccountsBaseModel[];
+  refresh: () => Promise<AccountsBaseModel[]>;
 }
 
 export const usePaymentAccountsForm = ({
   methods,
   existing,
+  refresh,
 }: UsePaymentAccountsFormOptions) => {
-  const { showNotification } = useNotification();
   const createMutation = useCreateAccount();
   const updateMutation = useUpdateAccount();
   const deleteMutation = useDeleteAccount();
   const invalidateSellerSettings = useInvalidateSellerSettings();
 
-  const isPending =
-    createMutation.isPending ||
-    updateMutation.isPending ||
-    deleteMutation.isPending;
-
-  const existingByMethod = useMemo(
-    () => buildExistingByMethod(existing),
-    [existing],
-  );
-
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<AccountFormData>({
-    mode: "onBlur",
-    reValidateMode: "onChange",
-    defaultValues: buildDefaultValues(methods, existing),
-  });
-
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(() =>
-    buildInitialExpanded(methods, existing),
-  );
-  const [wasSaved, setWasSaved] = useState(false);
+  const buildValues = useCallback((records: AccountsBaseModel[]) => buildDefaultValues(methods, records), [methods]);
+  const draft = useSettingsDraft<AccountsBaseModel, AccountFormData>({ existing, buildValues, refresh });
+  const { control, handleSubmit, formState: { errors }, baseline, isPending, wasSaved, markUnsaved, runSave, needsRefresh } = draft;
+  const existingByMethod = useMemo(() => buildExistingByMethod(baseline), [baseline]);
+  const { expandedItems, toggleExpanded } = useSettingsExpansion(buildInitialExpanded(methods, existing));
 
   const itemsData = useWatch({
     control,
     name: "items",
   });
-
-  useEffect(() => {
-    reset(buildDefaultValues(methods, existing));
-    setWasSaved(false);
-  }, [existing, methods, reset]);
-
-  const toggleExpanded = useCallback((key: string) => {
-    setExpandedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }, []);
-
-  const markUnsaved = useCallback(() => {
-    setWasSaved(false);
-  }, []);
 
   const hasChanges = useMemo(
     () => hasAccountChanges(itemsData, existingByMethod),
@@ -94,7 +58,7 @@ export const usePaymentAccountsForm = ({
     () => hasAccountBlockingValidationErrors(itemsData),
     [itemsData],
   );
-  const canSubmit = hasChanges && !hasBlockingValidationErrors && !isPending;
+  const canSubmit = hasChanges && !hasBlockingValidationErrors && !isPending && !needsRefresh;
   const statusText = useMemo(
     () =>
       getPaymentStatusText({
@@ -108,7 +72,7 @@ export const usePaymentAccountsForm = ({
 
   const onSubmit = useCallback(
     async (data: AccountFormData) => {
-      const operations: Promise<unknown>[] = [];
+      const operations: SettingsOperation[] = [];
 
       for (const [method, formItem] of Object.entries(data.items)) {
         const prev = existingByMethod[method];
@@ -127,51 +91,38 @@ export const usePaymentAccountsForm = ({
               trimValue(prev.comment ?? "") !== input.comment;
 
             if (changed) {
-              operations.push(
-                updateMutation.mutateAsync({
+              operations.push({ key: method, label: methods.find((entry) => entry.value === method)?.description ?? method, run: () => updateMutation.mutateAsync({
                   id: prev.id,
                   input,
-                }),
-              );
+                }) });
             }
           } else {
-            operations.push(createMutation.mutateAsync(input));
+            operations.push({ key: method, label: methods.find((entry) => entry.value === method)?.description ?? method, run: () => createMutation.mutateAsync(input) });
           }
         } else if (prev) {
-          operations.push(deleteMutation.mutateAsync(prev.id));
+          operations.push({ key: method, label: methods.find((entry) => entry.value === method)?.description ?? method, run: () => deleteMutation.mutateAsync(prev.id) });
         }
       }
 
-      if (operations.length === 0) {
-        showNotification("Нет изменений для сохранения", "info");
-        return;
-      }
-
-      try {
-        await Promise.all(operations);
-        await invalidateSellerSettings();
-        setExpandedItems(new Set());
-        setWasSaved(true);
-        showNotification("Способы оплаты сохранены", "success");
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Не удалось сохранить изменения";
-        showNotification(message, "error");
-      }
+      await runSave(data, operations);
+      await invalidateSellerSettings();
     },
     [
       createMutation,
       deleteMutation,
       existingByMethod,
       invalidateSellerSettings,
-      showNotification,
+      runSave,
+      methods,
       updateMutation,
     ],
   );
 
   return {
+    saveError: draft.saveError,
+    needsRefresh,
+    retryRefresh: draft.retryRefresh,
+    existingKeys: new Set(Object.keys(existingByMethod)),
     canSubmit,
     control,
     errors,

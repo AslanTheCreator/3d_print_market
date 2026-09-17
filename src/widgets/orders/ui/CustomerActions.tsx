@@ -32,9 +32,10 @@ import { LeaveReviewDialog } from "./LeaveReviewDialog";
 
 interface CustomerActionsProps {
   order: ListOrdersModel;
+  secondaryAction?: React.ReactNode;
 }
 
-export const CustomerActions = ({ order }: CustomerActionsProps) => {
+export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps) => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
@@ -133,9 +134,9 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
       <Stack spacing={0.75}>
         {primaryAction}
 
-        {(canCancel || (canLeaveReview && !primaryAction)) && (
+        {(secondaryAction || canCancel || (canLeaveReview && !primaryAction)) && (
           <Box>
-            <Stack direction="row" spacing={0.5} flexWrap="wrap">
+            <Stack direction="row" spacing={0.5} flexWrap="wrap" justifyContent="space-between">
               {canCancel && (
                 <Button
                   variant="text"
@@ -143,7 +144,7 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
                   startIcon={<Cancel />}
                   onClick={() => setCancelDialogOpen(true)}
                   size="small"
-                  sx={{ px: 0.5 }}
+                  sx={{ px: 0.5, ...(secondaryAction && { color: "text.secondary" }) }}
                 >
                   Отменить
                 </Button>
@@ -161,6 +162,7 @@ export const CustomerActions = ({ order }: CustomerActionsProps) => {
                   Оставить отзыв
                 </Button>
               )}
+              {secondaryAction}
             </Stack>
           </Box>
         )}

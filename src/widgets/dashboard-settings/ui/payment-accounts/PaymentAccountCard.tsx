@@ -12,6 +12,8 @@ import {
 } from "./model";
 
 interface PaymentAccountCardProps {
+  disabled: boolean;
+  willDelete: boolean;
   control: Control<AccountFormData>;
   errors: FieldErrors<AccountFormData>;
   isExpanded: boolean;
@@ -61,6 +63,8 @@ const getEntityPlaceholder = (value: string): string => {
 };
 
 export const PaymentAccountCard = ({
+  disabled,
+  willDelete,
   control,
   errors,
   isExpanded,
@@ -78,9 +82,12 @@ export const PaymentAccountCard = ({
       control={control}
       render={({ field }) => (
         <CollapsibleFormCard
+          disabled={disabled}
+          notice={willDelete ? "Будет удалено после сохранения" : undefined}
           value={key}
           label={method.description}
-          badge={<PaymentAccountBadge item={item} />}
+          mobileLabel={{ BANK_CARD: "Банковская карта", BANK_SBP: "СБП", CASH: "Наличные" }[key]}
+          badge={<PaymentAccountBadge item={item} method={key} />}
           icon={getPaymentIcon(key)}
           isEnabled={field.value ?? false}
           isExpanded={isExpanded}
@@ -111,6 +118,7 @@ export const PaymentAccountCard = ({
                       onMarkUnsaved();
                       textField.onChange(event);
                     }}
+                    disabled={disabled}
                     fullWidth
                     label="Имя получателя"
                     placeholder="Иван Иванов"
@@ -144,7 +152,10 @@ export const PaymentAccountCard = ({
                       onMarkUnsaved();
                       textField.onChange(event);
                     }}
+                    disabled={disabled}
                     fullWidth
+                    inputProps={{ inputMode: key === "BANK_CARD" ? "numeric" : key === "BANK_SBP" ? "tel" : "text" }}
+                    autoComplete="off"
                     label={getEntityLabel(key)}
                     placeholder={getEntityPlaceholder(key)}
                     error={!!errors.items?.[key]?.entityValue}
@@ -168,6 +179,7 @@ export const PaymentAccountCard = ({
                       onMarkUnsaved();
                       textField.onChange(event);
                     }}
+                    disabled={disabled}
                     fullWidth
                     label="Комментарий"
                     placeholder="Дополнительная информация"

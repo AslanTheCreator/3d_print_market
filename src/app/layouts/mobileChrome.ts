@@ -8,6 +8,7 @@ export type MobileChromeMode =
 export interface MobileChromeConfig {
   mode: MobileChromeMode;
   parentLabel?: string;
+  title?: string;
   backFallback?: string;
   showBottomNavigation: boolean;
   showMobileFooter: boolean;
@@ -49,6 +50,7 @@ export const getMobileChromeConfig = (
     return {
       mode: "focused",
       parentLabel: "Мои товары",
+      ...(normalizedPathname === "/dashboard/products/new" ? { title: "Создать товар" } : {}),
       backFallback: "/dashboard/products",
       showBottomNavigation: false,
       showMobileFooter: false,
@@ -108,7 +110,7 @@ export const getMobileChromeConfig = (
       parentLabel: "Профиль",
       showBottomNavigation: true,
       showMobileFooter: false,
-      showAccountMenu: true,
+      showAccountMenu: false,
     };
   }
 
@@ -116,6 +118,15 @@ export const getMobileChromeConfig = (
     return {
       mode: "account",
       parentLabel: "Профиль",
+      ...(normalizedPathname === "/dashboard/purchase"
+        ? { title: "Покупки" }
+        : normalizedPathname === "/dashboard/sales"
+          ? { title: "Продажи" }
+          : normalizedPathname === "/dashboard/settings"
+            ? { title: "Настройки" }
+            : normalizedPathname === "/dashboard/security"
+              ? { title: "Безопасность" }
+              : {}),
       backFallback: "/dashboard",
       showBottomNavigation: true,
       showMobileFooter: false,

@@ -1,14 +1,6 @@
 import type React from "react";
 import {
   Box,
-  Checkbox,
-  Chip,
-  FormControl,
-  FormHelperText,
-  InputLabel,
-  MenuItem,
-  OutlinedInput,
-  Select,
   TextField,
 } from "@mui/material";
 import { Controller, type Control, type FieldErrors } from "react-hook-form";
@@ -19,20 +11,21 @@ import {
   type ProductFormData,
 } from "@/entities/product";
 import type { CategoryModel } from "@/entities/category";
-import { flattenCategories } from "./productFormHelpers";
+import { ProductCategoryPicker } from "./ProductCategoryPicker";
 
 interface ProductMainInfoFieldsProps {
   categories: CategoryModel[];
   control: Control<ProductFormData>;
   errors: FieldErrors<ProductFormData>;
+  compactMobile?: boolean;
 }
 
 export const ProductMainInfoFields = ({
   categories,
   control,
   errors,
+  compactMobile = false,
 }: ProductMainInfoFieldsProps): React.ReactElement => {
-  const flatCategories = flattenCategories(categories);
 
   return (
     <Box
@@ -71,51 +64,14 @@ export const ProductMainInfoFields = ({
           control={control}
           rules={productCategoryRules}
           render={({ field }) => (
-            <FormControl fullWidth required error={!!errors.categoryIds}>
-              <InputLabel id="category-label">Категория</InputLabel>
-              <Select
-                labelId="category-label"
-                id="categoryIds"
-                multiple
-                label="Категория"
-                value={field.value}
-                onChange={field.onChange}
-                input={<OutlinedInput label="Категория" />}
-                renderValue={(selected) => (
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                    {selected.map((categoryId) => {
-                      const category = flatCategories.find(
-                        (item) => item.id === categoryId,
-                      );
-
-                      return (
-                        <Chip
-                          key={categoryId}
-                          label={category?.name ?? categoryId}
-                          size="small"
-                        />
-                      );
-                    })}
-                  </Box>
-                )}
-              >
-                {flatCategories.map((category) => (
-                  <MenuItem key={category.id} value={category.id}>
-                    <Checkbox checked={field.value.includes(category.id)} />
-                    <Box
-                      component="span"
-                      sx={{ pl: category.depth * 2, whiteSpace: "normal" }}
-                    >
-                      {category.name}
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-              <FormHelperText>
-                {errors.categoryIds?.message ??
-                  "Можно выбрать основную или вложенную категорию."}
-              </FormHelperText>
-            </FormControl>
+            <ProductCategoryPicker
+              categories={categories}
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.categoryIds?.message}
+              compactMobile={compactMobile}
+            />
           )}
         />
       </Box>

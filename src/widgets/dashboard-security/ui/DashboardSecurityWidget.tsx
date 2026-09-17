@@ -11,13 +11,13 @@ export const DashboardSecurityWidget = () => {
     <Box
       sx={{
         width: "100%",
-        py: { xs: 2, sm: 3 },
+        py: { xs: 0, md: 3 },
       }}
     >
-      <PageHeader
+      <Box sx={{ display: { xs: "none", md: "block" } }}><PageHeader
         title="Безопасность"
         icon={<Shield />}
-      />
+      /></Box>
 
       <ChangePasswordForm />
     </Box>

@@ -62,7 +62,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
 
       <ProfileOverview user={user} onEditProfile={onEditProfile} />
 
-      <Grid container spacing={{ xs: 1, sm: 2 }}>
+      <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ display: { xs: "none", md: "flex" } }}>
         {cards.map((card) => (
           <Grid item key={card.title} xs={6} sm={4} md={4}>
             <DashboardShortcutCard {...card} />

@@ -25,6 +25,7 @@ import { AddressSelectorSkeleton } from "./AddressSelectorSkeleton";
 
 interface AddressSelectorProps {
   addresses: Address[];
+  compact?: boolean;
   isLoading: boolean;
   selectedAddressId?: number;
   onAddressSelect: (address: Address) => void;
@@ -39,6 +40,7 @@ interface AddressSelectorProps {
 
 export const AddressSelector = ({
   addresses,
+  compact = false,
   selectedAddressId,
   onAddressSelect,
   onAddNewAddress,
@@ -125,7 +127,7 @@ export const AddressSelector = ({
               key={address.id}
               sx={{
                 position: "relative",
-                cursor: "pointer",
+                cursor: showRadio ? "pointer" : "default",
                 transition: "all 0.2s ease-in-out",
                 border: `2px solid ${
                   isSelected
@@ -151,7 +153,7 @@ export const AddressSelector = ({
                   transform: "translateY(-2px)",
                 },
               }}
-              onClick={() => onAddressSelect(address)}
+              onClick={showRadio ? () => onAddressSelect(address) : undefined}
             >
               <CardContent
                 sx={{
@@ -164,9 +166,10 @@ export const AddressSelector = ({
                   alignItems="flex-start"
                   justifyContent="space-between"
                   gap={2}
+                  sx={{ flexDirection: { xs: compact ? "column" : "row", md: "row" } }}
                 >
                   {/* Левая часть: иконка/радио + информация */}
-                  <Box display="flex" alignItems="flex-start" gap={2} flex={1}>
+                  <Box display="flex" alignItems="flex-start" gap={2} flex={1} minWidth={0}>
                     {showRadio ? (
                       <Box
                         sx={{
@@ -189,14 +192,14 @@ export const AddressSelector = ({
                           borderRadius: 2,
                           bgcolor: alpha(theme.palette.primary.main, 0.08),
                           color: "primary.main",
-                          display: { xs: "none", sm: "flex" },
+                          display: { xs: "none", sm: compact ? "none" : "flex", md: "flex" },
                         }}
                       >
                         <Home />
                       </Box>
                     )}
 
-                    <Box flex={1}>
+                    <Box flex={1} minWidth={0} sx={{ overflowWrap: "anywhere" }}>
                       <Typography
                         variant="body1"
                         fontWeight={isSelected ? 600 : 500}
@@ -218,10 +221,12 @@ export const AddressSelector = ({
                         {address.city}, {address.country}
                       </Typography>
 
+                      {compact && <Typography variant="body2" color="text.secondary" sx={{ display: { xs: "block", md: "none" } }}>Индекс: {address.index}</Typography>}
                       <Chip
                         label={`Индекс: ${address.index}`}
                         size="small"
                         sx={{
+                          display: { xs: compact ? "none" : "inline-flex", md: "inline-flex" },
                           height: 24,
                           fontSize: "0.75rem",
                           bgcolor: alpha(theme.palette.secondary.main, 0.08),
@@ -233,7 +238,7 @@ export const AddressSelector = ({
                   </Box>
 
                   {(showEditButton || showDeleteButton) && (
-                    <Stack direction="row" spacing={0.5}>
+                    <Stack direction="row" spacing={0.5} sx={{ alignSelf: "flex-end" }}>
                       {showEditButton && onEditAddress && (
                         <IconButton
                           size="small"

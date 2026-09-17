@@ -64,7 +64,7 @@ const cases: MobileChromeTestCase[] = [
       parentLabel: "Профиль",
       showBottomNavigation: true,
       showMobileFooter: false,
-      showAccountMenu: true,
+      showAccountMenu: false,
     },
   },
   {
@@ -73,6 +73,7 @@ const cases: MobileChromeTestCase[] = [
     expected: {
       mode: "account",
       parentLabel: "Профиль",
+      title: "Покупки",
       backFallback: "/dashboard",
       showBottomNavigation: true,
       showMobileFooter: false,
@@ -85,9 +86,31 @@ const cases: MobileChromeTestCase[] = [
     expected: {
       mode: "focused",
       parentLabel: "Мои товары",
+      title: "Создать товар",
       backFallback: "/dashboard/products",
       showBottomNavigation: false,
       showMobileFooter: false,
+    },
+  },
+  {
+    name: "sales use their own title",
+    pathname: "/dashboard/sales",
+    expected: {
+      mode: "account", parentLabel: "Профиль", title: "Продажи", backFallback: "/dashboard",
+      showBottomNavigation: true, showMobileFooter: false, showAccountMenu: true,
+    },
+  },
+  {
+    name: "security uses its own title",
+    pathname: "/dashboard/security",
+    expected: { mode: "account", parentLabel: "Профиль", title: "Безопасность", backFallback: "/dashboard", showBottomNavigation: true, showMobileFooter: false, showAccountMenu: true },
+  },
+  {
+    name: "my products keep their existing chrome",
+    pathname: "/dashboard/products",
+    expected: {
+      mode: "account", parentLabel: "Профиль", backFallback: "/dashboard",
+      showBottomNavigation: true, showMobileFooter: false, showAccountMenu: true,
     },
   },
   {
@@ -156,6 +179,7 @@ const cases: MobileChromeTestCase[] = [
     expected: {
       mode: "account",
       parentLabel: "Профиль",
+      title: "Настройки",
       backFallback: "/dashboard",
       showBottomNavigation: true,
       showMobileFooter: false,

@@ -1,51 +1,36 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { Alert } from "@mui/material";
+import { useCallback, useMemo } from "react";
 import { useDictionary } from "@/entities/dictionary";
-import { useTransfers } from "@/entities/transfer";
+import { useTransfers, type Transfer } from "@/entities/transfer";
 import { ShippingMethodsForm } from "./shipping-methods/ShippingMethodsForm";
-import { SettingsPanelSkeleton } from "./SettingsPanelSkeleton";
+import { SettingsDataBoundary } from "./SettingsDataBoundary";
 
-export const ShippingMethodsWidget: React.FC = () => {
-  const { data: shippingMethods, isLoading: methodsLoading } =
-    useDictionary("SHOPPING_METHODS");
-  const { data: currencies, isLoading: currenciesLoading } =
-    useDictionary("CURRENCY");
-  const { data: transfers = [], isLoading: transfersLoading } = useTransfers();
+const EMPTY: Transfer[] = [];
 
-  const isLoading = methodsLoading || currenciesLoading || transfersLoading;
-
-  const availableMethods = useMemo(
-    () => shippingMethods?.filter((method) => method.value !== "FREE_POST") ?? [],
-    [shippingMethods],
-  );
-
-  if (isLoading) {
-    return <SettingsPanelSkeleton />;
-  }
-
-  if (!availableMethods.length) {
-    return (
-      <Alert severity="error" sx={{ borderRadius: 2 }}>
-        Не удалось загрузить способы доставки. Попробуйте обновить страницу.
-      </Alert>
-    );
-  }
-
-  if (!currencies?.length) {
-    return (
-      <Alert severity="error" sx={{ borderRadius: 2 }}>
-        Не удалось загрузить валюты. Попробуйте обновить страницу.
-      </Alert>
-    );
-  }
-
+export const ShippingMethodsWidget = () => {
+  const dictionary = useDictionary("SHOPPING_METHODS");
+  const records = useTransfers();
+  const currencies = useDictionary("CURRENCY");
+  const methods = useMemo(() => dictionary.data?.filter((item) => item.value !== "FREE_POST") ?? [], [dictionary.data]);
+  const { refetch: reloadDictionary } = dictionary;
+  const { refetch: reloadRecords } = records;
+  const { refetch: reloadCurrencies } = currencies;
+  const refresh = useCallback(async () => {
+    const [typesResult, recordsResult, currenciesResult] = await Promise.all([reloadDictionary(), reloadRecords(), reloadCurrencies()]);
+    if (typesResult.isError || !typesResult.data?.length || recordsResult.isError || !recordsResult.data || currenciesResult.isError || !currenciesResult.data?.length) {
+      throw new Error("Не удалось загрузить настройки");
+    }
+    return recordsResult.data;
+  }, [reloadDictionary, reloadRecords, reloadCurrencies]);
+  const ready = Boolean(dictionary.data?.length && records.data && currencies.data?.length && methods.length);
+  const loading = dictionary.isLoading || records.isLoading || currencies.isLoading;
+  const failed = dictionary.isError || records.isError || currencies.isError || (!loading && !ready);
   return (
-    <ShippingMethodsForm
-      methods={availableMethods}
-      currencies={currencies}
-      existing={transfers}
-    />
+    <SettingsDataBoundary loading={loading} ready={ready} failed={failed}
+      refreshing={dictionary.isFetching || records.isFetching || currencies.isFetching}
+      onRetry={() => { void refresh().catch(() => undefined); }}>
+      <ShippingMethodsForm unavailable={failed} methods={methods} currencies={currencies.data ?? []} existing={records.data ?? EMPTY} refresh={refresh} />
+    </SettingsDataBoundary>
   );
 };

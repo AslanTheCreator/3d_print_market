@@ -6,6 +6,8 @@ import { SocialNetworkCard } from "./SocialNetworkCard";
 import type { SocialFormData, SocialFormItem } from "./model";
 
 interface SocialNetworksListProps {
+  disabled: boolean;
+  existingKeys: Set<string>;
   control: Control<SocialFormData>;
   errors: FieldErrors<SocialFormData>;
   expandedItems: Set<string>;
@@ -16,6 +18,8 @@ interface SocialNetworksListProps {
 }
 
 export const SocialNetworksList = ({
+  disabled,
+  existingKeys,
   control,
   errors,
   expandedItems,
@@ -25,10 +29,12 @@ export const SocialNetworksList = ({
   onToggleExpand,
 }: SocialNetworksListProps): React.ReactElement => {
   return (
-    <Stack spacing={2}>
+    <Stack spacing={{ xs: 1.5, md: 2 }}>
       {types.map((network) => (
         <SocialNetworkCard
           key={network.value}
+          disabled={disabled}
+          willDelete={existingKeys.has(network.value) && !itemsData?.[network.value]?.enabled}
           control={control}
           errors={errors}
           isExpanded={expandedItems.has(network.value)}

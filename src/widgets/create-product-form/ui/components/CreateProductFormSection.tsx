@@ -11,11 +11,13 @@ import {
 interface CreateProductFormSectionProps {
   icon: ReactNode;
   title: string;
+  compactMobile?: boolean;
 }
 
 export const CreateProductFormSection = ({
   icon,
   title,
+  compactMobile = false,
 }: CreateProductFormSectionProps) => {
   const theme = useTheme();
 
@@ -30,6 +32,12 @@ export const CreateProductFormSection = ({
         display: "flex",
         alignItems: "center",
         gap: { xs: 0.875, sm: 1.25 },
+        ...(compactMobile && {
+          px: { xs: 0, md: 2 },
+          py: { xs: 0, md: 1.25 },
+          bgcolor: { xs: "transparent", md: alpha(theme.palette.primary.main, 0.04) },
+          borderWidth: { xs: 0, md: 1 },
+        }),
       }}
     >
       <Box

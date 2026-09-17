@@ -6,6 +6,8 @@ import { ShippingMethodCard } from "./ShippingMethodCard";
 import type { TransferFormData, TransferFormItem } from "./model";
 
 interface ShippingMethodsListProps {
+  disabled: boolean;
+  existingKeys: Set<string>;
   control: Control<TransferFormData>;
   currencies: DictionaryItem[];
   currencyLabels: Record<string, string>;
@@ -23,6 +25,8 @@ interface ShippingMethodsListProps {
 }
 
 export const ShippingMethodsList = ({
+  disabled,
+  existingKeys,
   control,
   currencies,
   currencyLabels,
@@ -35,10 +39,12 @@ export const ShippingMethodsList = ({
   onToggleExpand,
 }: ShippingMethodsListProps): React.ReactElement => {
   return (
-    <Stack spacing={2}>
+    <Stack spacing={{ xs: 1.5, md: 2 }}>
       {methods.map((method) => (
         <ShippingMethodCard
           key={method.value}
+          disabled={disabled}
+          willDelete={existingKeys.has(method.value) && !itemsData?.[method.value]?.enabled}
           control={control}
           currencies={currencies}
           currencyLabels={currencyLabels}

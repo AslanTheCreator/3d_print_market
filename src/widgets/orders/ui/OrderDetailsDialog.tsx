@@ -77,12 +77,14 @@ export const OrderDetailsDialog = ({
       aria-labelledby="order-details-title"
       PaperProps={{
         sx: {
-          m: { xs: 0, sm: 4 },
-          width: { xs: "100%", sm: "calc(100% - 64px)" },
-          maxWidth: { xs: "none", sm: 900 },
-          height: { xs: "100%", sm: "auto" },
-          maxHeight: { xs: "100%", sm: "calc(100% - 64px)" },
-          borderRadius: { xs: 0, sm: 2.5 },
+          m: { xs: 0, md: 4 },
+          width: { xs: "100%", md: "calc(100% - 64px)" },
+          maxWidth: { xs: "none", md: 900 },
+          height: { xs: "100dvh", md: "auto" },
+          maxHeight: { xs: "100dvh", md: "calc(100% - 64px)" },
+          borderRadius: { xs: 0, md: 2.5 },
+          pt: { xs: "env(safe-area-inset-top, 0px)", md: 0 },
+          pb: { xs: "env(safe-area-inset-bottom, 0px)", md: 0 },
         },
       }}
     >
@@ -114,6 +116,7 @@ export const OrderDetailsDialog = ({
               order={order}
               userRole={userRole}
               imageSize={84}
+              nameLines="all"
             />
             <Divider sx={{ my: 1.5 }} />
             <Stack

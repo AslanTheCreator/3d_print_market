@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useCallback, useMemo } from "react";
+import { useWatch } from "react-hook-form";
 import type { DictionaryItem } from "@/entities/dictionary";
 import {
   useCreateSocial,
@@ -9,9 +9,10 @@ import {
   useUpdateSocial,
   type SocialNetworkInput,
 } from "@/entities/social-network";
-import { useNotification } from "@/shared/ui/notification";
 import type { SocialNetwork, SocialNetworkType } from "@/entities/social-network";
 import { useInvalidateSellerSettings } from "../../model/useInvalidateSellerSettings";
+import { useSettingsExpansion } from "../../model/useSettingsExpansion";
+import { useSettingsDraft, type SettingsOperation } from "../../model/useSettingsDraft";
 import {
   buildDefaultValues,
   buildExistingByType,
@@ -26,66 +27,29 @@ import {
 interface UseSocialNetworksFormOptions {
   types: DictionaryItem[];
   existing: SocialNetwork[];
+  refresh: () => Promise<SocialNetwork[]>;
 }
 
 export const useSocialNetworksForm = ({
   types,
   existing,
+  refresh,
 }: UseSocialNetworksFormOptions) => {
-  const { showNotification } = useNotification();
   const createMutation = useCreateSocial();
   const updateMutation = useUpdateSocial();
   const deleteMutation = useDeleteSocial();
   const invalidateSellerSettings = useInvalidateSellerSettings();
 
-  const isPending =
-    createMutation.isPending ||
-    updateMutation.isPending ||
-    deleteMutation.isPending;
-
-  const existingByType = useMemo(
-    () => buildExistingByType(existing),
-    [existing],
-  );
-
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<SocialFormData>({
-    mode: "onBlur",
-    reValidateMode: "onChange",
-    defaultValues: buildDefaultValues(types, existing),
-  });
-
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(() =>
-    buildInitialExpanded(types, existing),
-  );
-  const [wasSaved, setWasSaved] = useState(false);
+  const buildValues = useCallback((records: SocialNetwork[]) => buildDefaultValues(types, records), [types]);
+  const draft = useSettingsDraft<SocialNetwork, SocialFormData>({ existing, buildValues, refresh });
+  const { control, handleSubmit, formState: { errors }, baseline, isPending, wasSaved, markUnsaved, runSave, needsRefresh } = draft;
+  const existingByType = useMemo(() => buildExistingByType(baseline), [baseline]);
+  const { expandedItems, toggleExpanded } = useSettingsExpansion(buildInitialExpanded(types, existing));
 
   const itemsData = useWatch({
     control,
     name: "items",
   });
-
-  useEffect(() => {
-    reset(buildDefaultValues(types, existing));
-    setWasSaved(false);
-  }, [existing, reset, types]);
-
-  const toggleExpanded = useCallback((key: string) => {
-    setExpandedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }, []);
-
-  const markUnsaved = useCallback(() => {
-    setWasSaved(false);
-  }, []);
 
   const hasChanges = useMemo(
     () => hasSocialChanges(itemsData, existingByType),
@@ -95,7 +59,7 @@ export const useSocialNetworksForm = ({
     () => hasSocialBlockingValidationErrors(itemsData),
     [itemsData],
   );
-  const canSubmit = hasChanges && !hasBlockingValidationErrors && !isPending;
+  const canSubmit = hasChanges && !hasBlockingValidationErrors && !isPending && !needsRefresh;
   const statusText = useMemo(
     () =>
       getSocialStatusText({
@@ -109,7 +73,7 @@ export const useSocialNetworksForm = ({
 
   const onSubmit = useCallback(
     async (data: SocialFormData) => {
-      const operations: Promise<unknown>[] = [];
+      const operations: SettingsOperation[] = [];
 
       for (const [type, formItem] of Object.entries(data.items)) {
         const prev = existingByType[type];
@@ -121,46 +85,35 @@ export const useSocialNetworksForm = ({
         if (formItem.enabled) {
           if (prev) {
             if (trimValue(prev.login) !== input.login) {
-              operations.push(updateMutation.mutateAsync({ id: prev.id, input }));
+              operations.push({ key: type, label: types.find((entry) => entry.value === type)?.description ?? type, run: () => updateMutation.mutateAsync({ id: prev.id, input }) });
             }
           } else {
-            operations.push(createMutation.mutateAsync(input));
+            operations.push({ key: type, label: types.find((entry) => entry.value === type)?.description ?? type, run: () => createMutation.mutateAsync(input) });
           }
         } else if (prev) {
-          operations.push(deleteMutation.mutateAsync(prev.id));
+          operations.push({ key: type, label: types.find((entry) => entry.value === type)?.description ?? type, run: () => deleteMutation.mutateAsync(prev.id) });
         }
       }
 
-      if (operations.length === 0) {
-        showNotification("Нет изменений для сохранения", "info");
-        return;
-      }
-
-      try {
-        await Promise.all(operations);
-        await invalidateSellerSettings();
-        setExpandedItems(new Set());
-        setWasSaved(true);
-        showNotification("Социальные сети сохранены", "success");
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Не удалось сохранить изменения";
-        showNotification(message, "error");
-      }
+      await runSave(data, operations);
+      await invalidateSellerSettings();
     },
     [
       createMutation,
       deleteMutation,
       existingByType,
       invalidateSellerSettings,
-      showNotification,
+      runSave,
+      types,
       updateMutation,
     ],
   );
 
   return {
+    saveError: draft.saveError,
+    needsRefresh,
+    retryRefresh: draft.retryRefresh,
+    existingKeys: new Set(Object.keys(existingByType)),
     canSubmit,
     control,
     errors,

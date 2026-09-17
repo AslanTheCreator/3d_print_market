@@ -26,7 +26,7 @@ export const ShippingMethodBadge = ({
     return (
       <Chip
         size="small"
-        label={`${item.price} ${currencyLabels[item.currency] ?? item.currency}`}
+        label={`${item.price} ${({ RUB: "₽", USD: "$", EUR: "€" } as Record<string, string>)[item.currency] ?? currencyLabels[item.currency] ?? item.currency}`}
         color="primary"
         variant="outlined"
       />

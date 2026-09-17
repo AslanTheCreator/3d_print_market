@@ -21,7 +21,7 @@ import {
 import { useNotification } from "@/shared/ui/notification";
 import type { ImageMetadata } from "@/entities/image";
 import { getImageUrl } from "@/shared/lib";
-import { clearProductFormDraft } from "./productFormDraft";
+import { clearProductFormDraft, isProductFormDraftEmpty } from "./productFormDraft";
 import { PRODUCT_IMAGE_LIMIT } from "./constants";
 import {
   buildProductPublishRequirements,
@@ -122,7 +122,7 @@ export const useProductForm = ({
     () => normalizeProductFormValues(watchedFormValues),
     [watchedFormValues],
   );
-  const { effectiveImageIds, isDraftReady, resetDraftImageIds } =
+  const { effectiveImageIds, isDraftReady, resetDraftImageIds, draftStatus, draftImageError, retryDraftImages } =
     useProductFormDraftState({
       isEditMode,
       formValues,
@@ -285,6 +285,7 @@ export const useProductForm = ({
   const isFormValid =
     !isProductReadOnly &&
     isDraftReady &&
+    !draftImageError &&
     !imageUploadState.isUploading &&
     hasChanges &&
     isReadyForProductPrimaryAction(publishRequirements);
@@ -295,6 +296,14 @@ export const useProductForm = ({
     categories,
     control,
     currentCurrency,
+    hasPrepayment: formValues.prepaymentAmount.trim().length > 0,
+    draftStatus,
+    draftImageError,
+    retryDraftImages,
+    isDraftReady,
+    hasFormData: imageUploadState.images.length > 0 || !isProductFormDraftEmpty({
+      values: formValues, imageIds: effectiveImageIds, images: [],
+    }),
     errors,
     handleBack,
     handleFormSubmit: handleSubmit(onSubmit),

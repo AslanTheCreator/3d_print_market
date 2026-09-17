@@ -17,6 +17,9 @@ import { ExpandMore, ExpandLess } from "@mui/icons-material";
 interface CollapsibleFormCardProps {
   value: string;
   label: string;
+  mobileLabel?: string;
+  disabled?: boolean;
+  notice?: string;
   description?: string;
   icon?: ReactNode;
   isEnabled: boolean;
@@ -31,6 +34,9 @@ interface CollapsibleFormCardProps {
 export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
   value,
   label,
+  mobileLabel,
+  disabled = false,
+  notice,
   description,
   icon,
   isEnabled,
@@ -68,7 +74,7 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
       sx={{
         display: "flex",
         alignItems: "flex-start",
-        gap: { xs: 1.25, sm: 2 },
+        gap: { xs: 1, md: 2 },
         flex: 1,
         minWidth: 0,
       }}
@@ -77,19 +83,17 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
         <Box
           aria-hidden="true"
           sx={{
-            width: { xs: 34, sm: 40 },
-            height: { xs: 34, sm: 40 },
+            width: { xs: 24, md: 40 },
+            height: { xs: 44, md: 40 },
             borderRadius: 1.5,
-            bgcolor: isEnabled
-              ? alpha(theme.palette.primary.main, 0.1)
-              : alpha(theme.palette.text.primary, 0.06),
+            bgcolor: { xs: "transparent", md: isEnabled ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.text.primary, 0.06) },
             color: isEnabled ? "primary.main" : "action.active",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
             "& .MuiSvgIcon-root": {
-              fontSize: { xs: 20, sm: 22 },
+              fontSize: { xs: 20, md: 22 },
             },
           }}
         >
@@ -102,18 +106,21 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
           variant="body1"
           fontWeight={isEnabled ? 600 : 500}
           sx={{
-            fontSize: { xs: "0.938rem", sm: "1rem" },
+            fontSize: "1rem",
             lineHeight: 1.25,
             overflowWrap: "anywhere",
           }}
         >
-          {label}
+          {mobileLabel ? <>
+            <Box component="span" sx={{ display: { xs: "inline", md: "none" } }}>{mobileLabel}</Box>
+            <Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>{label}</Box>
+          </> : label}
         </Typography>
         {description && (
           <Typography
             variant="body2"
             color="text.secondary"
-            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, mt: 0.5 }}
+            sx={{ display: { xs: "none", md: "block" }, fontSize: "0.875rem", mt: 0.5 }}
           >
             {description}
           </Typography>
@@ -129,9 +136,7 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
         border: `1px solid ${
           isEnabled ? theme.palette.primary.main : theme.palette.divider
         }`,
-        boxShadow: isEnabled
-          ? `0 0 0 1px ${alpha(theme.palette.primary.main, 0.18)}`
-          : "none",
+        boxShadow: { xs: "none", md: isEnabled ? `0 0 0 1px ${alpha(theme.palette.primary.main, 0.18)}` : "none" },
         borderRadius: 2,
         "@media (hover: hover)": {
           "&:hover": {
@@ -143,8 +148,8 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
     >
       <CardContent
         sx={{
-          p: { xs: 2, sm: 2.5 },
-          "&:last-child": { pb: { xs: 2, sm: 2.5 } },
+          p: { xs: 1.5, md: 2.5 },
+          "&:last-child": { pb: { xs: 1.5, md: 2.5 } },
         }}
       >
         <Box
@@ -152,14 +157,14 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "space-between",
-            gap: { xs: 1.25, sm: 2 },
+            gap: { xs: 1.25, md: 2 },
           }}
         >
           {hasChildren ? (
             <ButtonBase
               type="button"
               onClick={handleCardClick}
-              disabled={!isEnabled}
+              disabled={disabled || !isEnabled}
               aria-expanded={isPanelExpanded}
               aria-controls={panelId}
               aria-label={`${
@@ -169,7 +174,7 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
                 display: "flex",
                 alignItems: "flex-start",
                 justifyContent: "space-between",
-                gap: { xs: 0.5, sm: 1 },
+                gap: { xs: 0.5, md: 1 },
                 flex: 1,
                 minWidth: 0,
                 minHeight: 44,
@@ -190,7 +195,7 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
                 <Box
                   aria-hidden="true"
                   sx={{
-                    minWidth: 44,
+                    minWidth: { xs: 24, md: 44 },
                     minHeight: 44,
                     color: isEnabled ? "text.secondary" : "action.disabled",
                     display: "flex",
@@ -211,14 +216,14 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
             sx={{
               display: "flex",
               alignItems: "center",
-              gap: { xs: 0.25, sm: 1 },
+              gap: { xs: 0.25, md: 1 },
               flexShrink: 0,
             }}
           >
             {badge && (
               <Box
                 sx={{
-                  display: { xs: "none", sm: "flex" },
+                  display: { xs: "none", md: "flex" },
                   maxWidth: 190,
                   "& .MuiChip-root": {
                     maxWidth: "100%",
@@ -234,10 +239,24 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
             )}
 
             <Switch
+              disabled={disabled}
               checked={isEnabled}
               onChange={handleEnabledChange}
               onClick={(e) => e.stopPropagation()}
               size="small"
+              sx={{
+                width: 58,
+                height: 44,
+                p: "12px",
+                "& .MuiSwitch-switchBase": {
+                  width: 44,
+                  height: 44,
+                  p: "14px",
+                  "&.Mui-checked": { transform: "translateX(14px)" },
+                },
+                "& .MuiSwitch-input": { left: 0, width: "100%", height: "100%" },
+                "& .MuiSwitch-track": { borderRadius: 10 },
+              }}
               inputProps={{
                 "aria-label": `${
                   isEnabled ? "Выключить" : "Включить"
@@ -250,7 +269,7 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
         {badge && (
           <Box
             sx={{
-              display: { xs: "flex", sm: "none" },
+              display: { xs: "flex", md: "none" },
               mt: 0.9,
               maxWidth: "100%",
               "& .MuiChip-root": {
@@ -266,13 +285,15 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
           </Box>
         )}
 
+        {notice && <Typography color="warning.main" variant="body2" sx={{ mt: 1 }}>{notice}</Typography>}
+
         {hasChildren && (
           <Collapse
             id={panelId}
             in={isPanelExpanded}
             timeout="auto"
           >
-            <Box sx={{ mt: { xs: 2, sm: 3 }, pl: { xs: 0, sm: 7 } }}>
+            <Box sx={{ mt: { xs: 2, md: 3 }, pl: { xs: 0, md: 7 } }}>
               {children}
             </Box>
           </Collapse>

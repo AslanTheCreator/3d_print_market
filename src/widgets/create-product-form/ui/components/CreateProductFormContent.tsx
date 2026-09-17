@@ -1,5 +1,5 @@
 import type React from "react";
-import { Box, Paper, Stack, useTheme } from "@mui/material";
+import { Alert, Box, Button, Paper, Stack, useTheme } from "@mui/material";
 import { CategoryOutlined, SellOutlined } from "@mui/icons-material";
 import type { useProductForm } from "../../model";
 import { PRODUCT_IMAGE_LIMIT } from "../../model";
@@ -26,6 +26,7 @@ export const CreateProductFormContent = ({
   formState,
 }: CreateProductFormContentProps): React.ReactElement => {
   const theme = useTheme();
+  const compactMobile = mode === "create";
 
   if (formState.isProductLoading) {
     return (
@@ -66,7 +67,23 @@ export const CreateProductFormContent = ({
   }
 
   return (
-    <Box component="form" onSubmit={formState.handleFormSubmit} noValidate>
+    <Box component="form" onSubmit={formState.handleFormSubmit} noValidate aria-label="Форма товара"
+      sx={compactMobile ? {
+        pb: { xs: "calc(var(--product-publish-height, 132px) + var(--product-keyboard-offset, 0px) + 16px)", md: 0 },
+        "& input, & textarea, & button, & [role=combobox]": {
+          scrollMarginTop: "calc(var(--shell-sticky-top, 64px) + 16px)",
+          scrollMarginBottom: { xs: "calc(var(--product-publish-height, 132px) + 16px)", md: 16 },
+        },
+        "& input, & textarea": { fontSize: { xs: "1rem", md: "inherit" } },
+      } : undefined}
+    >
+      {compactMobile && formState.draftImageError && (
+        <Alert severity="error" sx={{ mb: 2 }} action={
+          <Button disabled={!formState.isDraftReady} onClick={formState.retryDraftImages} sx={{ minHeight: 44 }}>Повторить</Button>
+        }>
+          Не удалось восстановить фото черновика. Данные сохранены; повторите загрузку фото.
+        </Alert>
+      )}
       <Box
         sx={{
           display: "grid",
@@ -75,11 +92,11 @@ export const CreateProductFormContent = ({
           alignItems: "start",
         }}
       >
-        <Stack spacing={2}>
+        <Stack spacing={compactMobile ? { xs: 1.5, md: 2 } : 2} sx={{ minWidth: 0 }}>
           <Paper
             elevation={0}
             sx={{
-              p: { xs: 2, sm: 2.5 },
+              p: compactMobile ? { xs: 1.5, md: 2.5 } : { xs: 2, sm: 2.5 },
               borderRadius: 2,
               border: `1px solid ${theme.palette.divider}`,
             }}
@@ -87,13 +104,14 @@ export const CreateProductFormContent = ({
             <MultiImageUpload
               uploadState={formState.imageUploadState}
               maxImages={PRODUCT_IMAGE_LIMIT}
+              compactMobile={compactMobile}
             />
           </Paper>
 
           <Paper
             elevation={0}
             sx={{
-              p: { xs: 2, sm: 2.5 },
+              p: compactMobile ? { xs: 1.5, md: 2.5 } : { xs: 2, sm: 2.5 },
               borderRadius: 2,
               border: `1px solid ${theme.palette.divider}`,
             }}
@@ -102,11 +120,13 @@ export const CreateProductFormContent = ({
               <CreateProductFormSection
                 icon={<CategoryOutlined />}
                 title="Основная информация"
+                compactMobile={compactMobile}
               />
               <ProductMainInfoFields
                 control={formState.control}
                 errors={formState.errors}
                 categories={formState.categories}
+                compactMobile={compactMobile}
               />
             </Stack>
           </Paper>
@@ -114,7 +134,7 @@ export const CreateProductFormContent = ({
           <Paper
             elevation={0}
             sx={{
-              p: { xs: 2, sm: 2.5 },
+              p: compactMobile ? { xs: 1.5, md: 2.5 } : { xs: 2, sm: 2.5 },
               borderRadius: 2,
               border: `1px solid ${theme.palette.divider}`,
             }}
@@ -123,12 +143,14 @@ export const CreateProductFormContent = ({
               <CreateProductFormSection
                 icon={<SellOutlined />}
                 title="Продажа"
+                compactMobile={compactMobile}
               />
               <ProductSaleFields
                 control={formState.control}
                 errors={formState.errors}
                 availability={formState.availability}
                 currentCurrency={formState.currentCurrency}
+                compactMobile={compactMobile}
               />
             </Stack>
           </Paper>
@@ -149,6 +171,13 @@ export const CreateProductFormContent = ({
             isUploadingImages={formState.imageUploadState.isUploading}
             publishRequirements={formState.publishRequirements}
             onReset={formState.resetForm}
+            hasFormData={formState.hasFormData}
+            draftStatus={formState.draftStatus}
+            isDraftReady={formState.isDraftReady}
+            draftImageError={formState.draftImageError}
+            fieldErrors={formState.errors}
+            availability={formState.availability}
+            hasPrepayment={formState.hasPrepayment}
           />
         </Stack>
       </Box>

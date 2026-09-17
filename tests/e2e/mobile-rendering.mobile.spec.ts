@@ -558,7 +558,7 @@ test("public routes render the expected mobile chrome", async ({ page }) => {
   }
 });
 
-test("dashboard moves mobile sections into the contextual account menu", async ({
+test("dashboard subroutes keep the contextual account menu", async ({
   context,
   page,
   baseURL,
@@ -615,7 +615,7 @@ test("dashboard moves mobile sections into the contextual account menu", async (
   }
 
   await page.setViewportSize({ width: 393, height: 727 });
-  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  await page.goto("/dashboard/purchase", { waitUntil: "domcontentloaded" });
 
   const mobileHeader = page.getByTestId("mobile-site-header");
   const menuTrigger = mobileHeader.getByRole("button", {
@@ -629,7 +629,7 @@ test("dashboard moves mobile sections into the contextual account menu", async (
     "data-mobile-chrome-mode",
     "account",
   );
-  await expect(mobileHeader.getByText("Профиль", { exact: true })).toBeVisible();
+  await expect(mobileHeader.getByRole("heading", { name: "Покупки", exact: true })).toBeVisible();
   await expect(menuTrigger).toBeVisible();
   await expect(bottomNavigation).toBeVisible();
   await expect(
@@ -683,12 +683,18 @@ test("dashboard moves mobile sections into the contextual account menu", async (
   await page.getByLabel(/^Пароль/).fill("password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL((url) =>
-    url.pathname === "/" || url.pathname === "/dashboard",
+    ["/", "/dashboard", "/dashboard/purchase"].includes(url.pathname),
   );
-  if (new URL(page.url()).pathname === "/") {
+  if (new URL(page.url()).pathname !== "/dashboard") {
     await bottomNavigation.getByRole("link", { name: "Профиль", exact: true }).click();
   }
   await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(menuTrigger).toBeHidden();
+  await page
+    .getByRole("navigation", { name: "Разделы личного кабинета" })
+    .getByRole("link", { name: "Покупки", exact: true })
+    .click();
+  await expect(page.getByRole("heading", { name: "У вас пока нет покупок" })).toBeVisible();
   await menuTrigger.click();
   await expect(
     accountDialog.getByRole("button", { name: "Выйти", exact: true }),

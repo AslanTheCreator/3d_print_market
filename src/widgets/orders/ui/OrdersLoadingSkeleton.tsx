@@ -5,6 +5,7 @@ import { PageHeader } from "@/shared/ui/page-header";
 interface OrdersLoadingSkeletonProps {
   icon: ReactNode;
   title: string;
+  userRole: "seller" | "customer";
 }
 
 const FILTER_WIDTHS = [132, 104, 118, 96] as const;
@@ -95,15 +96,37 @@ const OrderCardSkeleton = () => (
 export const OrdersLoadingSkeleton = ({
   icon,
   title,
+  userRole,
 }: OrdersLoadingSkeletonProps) => (
   <Box
     role="status"
     aria-label={`Загрузка раздела «${title}»`}
     sx={{ width: "100%", py: { xs: 2, sm: 3 } }}
   >
-    <PageHeader title={title} icon={icon} />
+    <Box sx={{ display: { xs: "none", md: "block" } }}><PageHeader title={title} icon={icon} /></Box>
 
-    <Stack spacing={{ xs: 2, sm: 3 }}>
+    <Stack spacing={1.5} sx={{ display: { xs: "flex", md: "none" } }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: userRole === "seller" ? "repeat(2, minmax(0, 1fr))" : "repeat(2, minmax(0, 1fr)) 44px", gap: 1 }}>
+        {Array.from({ length: userRole === "seller" ? 4 : 3 }, (_, index) => <Skeleton key={index} variant="rounded" height={44} />)}
+      </Box>
+      <Skeleton variant="text" width="70%" height={24} />
+      {[0, 1].map((item) => (
+        <Paper key={item} variant="outlined" sx={{ p: 1.5, borderRadius: 2, boxShadow: "none" }}>
+          <Stack spacing={1.25}>
+            <Skeleton variant="rounded" width={140} height={24} />
+            <Stack direction="row" spacing={1.5}>
+              <Skeleton variant="rounded" width={72} height={72} sx={{ flexShrink: 0 }} />
+              <Box sx={{ flex: 1 }}><Skeleton width="90%" /><Skeleton width="70%" /><Skeleton width="45%" /></Box>
+            </Stack>
+            <Skeleton height={24} width="55%" />
+            <Skeleton height={40} />
+            <Skeleton variant="rounded" height={44} />
+          </Stack>
+        </Paper>
+      ))}
+    </Stack>
+
+    <Stack spacing={{ xs: 2, sm: 3 }} sx={{ display: { xs: "none", md: "flex" } }}>
       <Box
         sx={{
           display: "grid",

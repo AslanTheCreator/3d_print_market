@@ -70,7 +70,7 @@ export const OrderHistory = ({ order }: { order: ListOrdersModel }) => {
                       {formatOrderDate(history.changedAt)}
                     </Typography>
                   </Stack>
-                  {history.comment.trim() && (
+                  {typeof history.comment === "string" && history.comment.trim() && (
                     <Typography
                       variant="body2"
                       color="text.secondary"

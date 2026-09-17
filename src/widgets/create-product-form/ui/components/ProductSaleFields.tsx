@@ -30,6 +30,7 @@ interface ProductSaleFieldsProps {
   currentCurrency: Currency;
   errors: FieldErrors<ProductFormData>;
   availability: EditableAvailability;
+  compactMobile?: boolean;
 }
 
 export const ProductSaleFields = ({
@@ -37,6 +38,7 @@ export const ProductSaleFields = ({
   currentCurrency,
   errors,
   availability,
+  compactMobile = false,
 }: ProductSaleFieldsProps): React.ReactElement => {
   const currentSymbol = getReadableCurrencySymbol(currentCurrency);
 
@@ -45,7 +47,7 @@ export const ProductSaleFields = ({
       sx={{
         display: "grid",
         gridTemplateColumns: {
-          xs: "minmax(0, 1fr)",
+          xs: compactMobile ? "minmax(0, 1fr) 112px" : "minmax(0, 1fr)",
           md: "repeat(3, minmax(0, 1fr))",
         },
         gap: 2,
@@ -72,7 +74,7 @@ export const ProductSaleFields = ({
                 }}
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
+                  gridTemplateColumns: { xs: compactMobile ? "repeat(2, minmax(0, 1fr))" : "1fr", sm: "repeat(2, 1fr)" },
                   gap: 1,
                   "& .MuiToggleButton-root": {
                     border: "1px solid",
@@ -81,6 +83,11 @@ export const ProductSaleFields = ({
                     py: 1,
                     fontWeight: 600,
                     textTransform: "none",
+                    ...(compactMobile && {
+                      minHeight: { xs: 44, md: "auto" },
+                      px: { xs: 0.5, md: 1.375 },
+                      whiteSpace: "nowrap",
+                    }),
                     "&.Mui-selected": {
                       fontWeight: 700,
                       borderColor: "primary.main",
@@ -156,7 +163,7 @@ export const ProductSaleFields = ({
         />
       </Box>
 
-      <Box sx={{ minWidth: 0 }}>
+      <Box sx={{ minWidth: 0, gridColumn: compactMobile ? { xs: "1 / -1", md: "auto" } : undefined }}>
         <Controller
           name="count"
           control={control}
@@ -180,7 +187,7 @@ export const ProductSaleFields = ({
       </Box>
 
       {availability === "PREORDER" && (
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ minWidth: 0, gridColumn: compactMobile ? { xs: "1 / -1", md: "auto" } : undefined }}>
           <Controller
             name="prepaymentAmount"
             control={control}

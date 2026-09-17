@@ -14,9 +14,10 @@ import ShippingDialog from "./ShippingDialog";
 
 interface SellerActionsProps {
   order: ListOrdersModel;
+  secondaryAction?: React.ReactNode;
 }
 
-export const SellerActions = ({ order }: SellerActionsProps) => {
+export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) => {
   const [shippingDialogOpen, setShippingDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
@@ -80,18 +81,19 @@ export const SellerActions = ({ order }: SellerActionsProps) => {
       <Stack spacing={0.75}>
         {primaryAction}
 
-        {canCancel && (
-          <Box>
-            <Button
+        {(secondaryAction || canCancel) && (
+          <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap" }}>
+            {canCancel && <Button
               variant="text"
               color="error"
               startIcon={<Cancel />}
               onClick={() => setCancelDialogOpen(true)}
               size="small"
-              sx={{ px: 0.5 }}
+              sx={{ px: 0.5, ...(secondaryAction && { color: "text.secondary" }) }}
             >
               Отменить
-            </Button>
+            </Button>}
+            {secondaryAction}
           </Box>
         )}
       </Stack>

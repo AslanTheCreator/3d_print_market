@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useWatch } from "react-hook-form";
 import {
   useCreateTransfer,
   useDeleteTransfer,
@@ -9,9 +9,10 @@ import {
   type TransferInput,
 } from "@/entities/transfer";
 import type { DictionaryItem } from "@/entities/dictionary";
-import { useNotification } from "@/shared/ui/notification";
 import type { ShippingMethod, Transfer } from "@/entities/transfer";
 import { useInvalidateSellerSettings } from "../../model/useInvalidateSellerSettings";
+import { useSettingsExpansion } from "../../model/useSettingsExpansion";
+import { useSettingsDraft, type SettingsOperation } from "../../model/useSettingsDraft";
 import {
   DEFAULT_CURRENCY,
   FREE_METHODS,
@@ -31,49 +32,26 @@ interface UseShippingMethodsFormOptions {
   methods: DictionaryItem[];
   currencies: DictionaryItem[];
   existing: Transfer[];
+  refresh: () => Promise<Transfer[]>;
 }
 
 export const useShippingMethodsForm = ({
   methods,
   currencies,
   existing,
+  refresh,
 }: UseShippingMethodsFormOptions) => {
-  const { showNotification } = useNotification();
   const createMutation = useCreateTransfer();
   const updateMutation = useUpdateTransfer();
   const deleteMutation = useDeleteTransfer();
   const invalidateSellerSettings = useInvalidateSellerSettings();
 
-  const isPending =
-    createMutation.isPending ||
-    updateMutation.isPending ||
-    deleteMutation.isPending;
-
-  const existingByMethod = useMemo(
-    () => buildExistingByMethod(existing),
-    [existing],
-  );
-  const currencyLabels = useMemo(
-    () => buildCurrencyLabels(currencies),
-    [currencies],
-  );
-
-  const {
-    control,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors },
-  } = useForm<TransferFormData>({
-    mode: "onBlur",
-    reValidateMode: "onChange",
-    defaultValues: buildDefaultValues(methods, existing),
-  });
-
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(() =>
-    buildInitialExpanded(methods, existing),
-  );
-  const [wasSaved, setWasSaved] = useState(false);
+  const buildValues = useCallback((records: Transfer[]) => buildDefaultValues(methods, records), [methods]);
+  const draft = useSettingsDraft<Transfer, TransferFormData>({ existing, buildValues, refresh });
+  const { control, handleSubmit, setValue, formState: { errors }, baseline, isPending, wasSaved, markUnsaved, runSave, needsRefresh } = draft;
+  const existingByMethod = useMemo(() => buildExistingByMethod(baseline), [baseline]);
+  const currencyLabels = useMemo(() => buildCurrencyLabels(currencies), [currencies]);
+  const { expandedItems, toggleExpanded } = useSettingsExpansion(buildInitialExpanded(methods, existing));
 
   const draftValuesRef = useRef<
     Record<string, Pick<TransferFormItem, "price" | "currency">>
@@ -82,11 +60,6 @@ export const useShippingMethodsForm = ({
     control,
     name: "items",
   });
-
-  useEffect(() => {
-    reset(buildDefaultValues(methods, existing));
-    setWasSaved(false);
-  }, [existing, methods, reset]);
 
   useEffect(() => {
     if (!itemsData) return;
@@ -99,19 +72,6 @@ export const useShippingMethodsForm = ({
     }
   }, [itemsData]);
 
-  const toggleExpanded = useCallback((key: string) => {
-    setExpandedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }, []);
-
-  const markUnsaved = useCallback(() => {
-    setWasSaved(false);
-  }, []);
-
   const handleEnabledChange = useCallback(
     (
       key: string,
@@ -122,7 +82,7 @@ export const useShippingMethodsForm = ({
       const isFree = FREE_METHODS.has(method);
       const shouldClearPrice = REQUIRED_PRICE_METHODS.has(method);
 
-      setWasSaved(false);
+      markUnsaved();
       onChange(checked);
 
       if (!checked) {
@@ -159,7 +119,7 @@ export const useShippingMethodsForm = ({
         });
       }
     },
-    [itemsData, setValue],
+    [itemsData, setValue, markUnsaved],
   );
 
   const hasChanges = useMemo(
@@ -170,7 +130,7 @@ export const useShippingMethodsForm = ({
     () => hasTransferBlockingValidationErrors(itemsData),
     [itemsData],
   );
-  const canSubmit = hasChanges && !hasBlockingValidationErrors && !isPending;
+  const canSubmit = hasChanges && !hasBlockingValidationErrors && !isPending && !needsRefresh;
   const statusText = useMemo(
     () =>
       getShippingStatusText({
@@ -184,7 +144,7 @@ export const useShippingMethodsForm = ({
 
   const onSubmit = useCallback(
     async (data: TransferFormData) => {
-      const operations: Promise<unknown>[] = [];
+      const operations: SettingsOperation[] = [];
 
       for (const [method, formItem] of Object.entries(data.items)) {
         const previous = existingByMethod[method];
@@ -202,48 +162,35 @@ export const useShippingMethodsForm = ({
               previous.currency !== input.currency;
 
             if (changed) {
-              operations.push(
-                updateMutation.mutateAsync({ id: previous.id, input }),
-              );
+              operations.push({ key: method, label: methods.find((entry) => entry.value === method)?.description ?? method, run: () => updateMutation.mutateAsync({ id: previous.id, input }) });
             }
           } else {
-            operations.push(createMutation.mutateAsync(input));
+            operations.push({ key: method, label: methods.find((entry) => entry.value === method)?.description ?? method, run: () => createMutation.mutateAsync(input) });
           }
         } else if (previous) {
-          operations.push(deleteMutation.mutateAsync(previous.id));
+          operations.push({ key: method, label: methods.find((entry) => entry.value === method)?.description ?? method, run: () => deleteMutation.mutateAsync(previous.id) });
         }
       }
 
-      if (operations.length === 0) {
-        showNotification("Нет изменений для сохранения", "info");
-        return;
-      }
-
-      try {
-        await Promise.all(operations);
-        await invalidateSellerSettings();
-        setExpandedItems(new Set());
-        setWasSaved(true);
-        showNotification("Способы доставки сохранены", "success");
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Не удалось сохранить изменения";
-        showNotification(message, "error");
-      }
+      await runSave(data, operations);
+      await invalidateSellerSettings();
     },
     [
       createMutation,
       deleteMutation,
       existingByMethod,
       invalidateSellerSettings,
-      showNotification,
+      runSave,
+      methods,
       updateMutation,
     ],
   );
 
   return {
+    saveError: draft.saveError,
+    needsRefresh,
+    retryRefresh: draft.retryRefresh,
+    existingKeys: new Set(Object.keys(existingByMethod)),
     canSubmit,
     control,
     currencyLabels,

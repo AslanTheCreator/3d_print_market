@@ -15,13 +15,17 @@ import { useSocialNetworksForm } from "./useSocialNetworksForm";
 interface SocialNetworksFormProps {
   types: DictionaryItem[];
   existing: SocialNetwork[];
+  unavailable: boolean;
+  refresh: () => Promise<SocialNetwork[]>;
 }
 
 export const SocialNetworksForm = ({
   types,
   existing,
+  refresh,
+  unavailable,
 }: SocialNetworksFormProps): React.ReactElement => {
-  const form = useSocialNetworksForm({ types, existing });
+  const form = useSocialNetworksForm({ types, existing, refresh });
 
   return (
     <Box>
@@ -29,6 +33,7 @@ export const SocialNetworksForm = ({
         severity="info"
         icon={<InfoOutlined />}
         sx={{
+          display: { xs: "none", md: "flex" },
           mb: 3,
           borderRadius: 2,
           "& .MuiAlert-message": {
@@ -39,11 +44,13 @@ export const SocialNetworksForm = ({
         Выберите социальные сети и укажите ваши данные для связи. Эта информация будет видна покупателям.
       </Alert>
 
-      <Box component="form" onSubmit={form.handleSubmit(form.onSubmit)}>
-        <FormControl component="fieldset" fullWidth>
+      <Typography color="text.secondary" variant="body2" sx={{ display: { xs: "block", md: "none" }, mb: 2 }}>Как покупатели могут связаться с вами. Контакты будут видны покупателям.</Typography>
+      <Box component="form" onSubmit={unavailable ? (event) => event.preventDefault() : form.handleSubmit(form.onSubmit)}>
+        <FormControl component="fieldset" fullWidth disabled={form.isPending || form.needsRefresh || unavailable}>
           <Typography
             component="legend"
             sx={{
+              display: { xs: "none", md: "block" },
               mb: 2,
               fontSize: { xs: "1rem", sm: "1.125rem" },
               fontWeight: 600,
@@ -54,6 +61,8 @@ export const SocialNetworksForm = ({
           </Typography>
 
           <SocialNetworksList
+            disabled={form.isPending || form.needsRefresh || unavailable}
+            existingKeys={form.existingKeys}
             control={form.control}
             errors={form.errors}
             expandedItems={form.expandedItems}
@@ -65,11 +74,14 @@ export const SocialNetworksForm = ({
         </FormControl>
 
         <SocialNetworksFormFooter
-          canSubmit={form.canSubmit}
+          canSubmit={form.canSubmit && !unavailable}
           hasBlockingValidationErrors={form.hasBlockingValidationErrors}
           hasChanges={form.hasChanges}
           isPending={form.isPending}
           statusText={form.statusText}
+          saveError={form.saveError}
+          needsRefresh={form.needsRefresh}
+          onRetry={() => { void form.retryRefresh(); }}
         />
       </Box>
     </Box>

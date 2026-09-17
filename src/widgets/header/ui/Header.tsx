@@ -33,6 +33,7 @@ export type MobileHeaderMode =
 export interface MobileHeaderConfig {
   mode: MobileHeaderMode;
   parentLabel?: string;
+  title?: string;
   backFallback?: string;
   showAccountMenu?: boolean;
 }
@@ -203,7 +204,7 @@ export const Header = ({
                 </ButtonBase>
               ) : (
                 <Typography
-                  component="span"
+                  component={mobileConfig.title ? "h1" : "span"}
                   noWrap
                   sx={{
                     color: "common.white",
@@ -211,7 +212,7 @@ export const Header = ({
                     textAlign: showBack ? "left" : "center",
                   }}
                 >
-                  {mobileLabel}
+                  {mobileConfig.title ?? mobileLabel}
                 </Typography>
               )}
 

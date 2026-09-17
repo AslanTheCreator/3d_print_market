@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   Box,
+  Alert,
   Typography,
   TextField,
   Button,
@@ -54,8 +55,11 @@ export const ChangePasswordForm: React.FC = () => {
   });
 
   const newPassword = watch("newPassword");
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const onSubmit = (data: PasswordFormData) => {
+    if (isPending) return;
+    setSubmitError(null);
     changePassword(
       {
         oldPassword: data.oldPassword,
@@ -64,6 +68,9 @@ export const ChangePasswordForm: React.FC = () => {
       {
         onSuccess: () => {
           reset();
+          setShowOldPassword(false);
+          setShowNewPassword(false);
+          setShowConfirmPassword(false);
           showNotification("Пароль успешно изменён", "success");
         },
         onError: (error) => {
@@ -71,7 +78,7 @@ export const ChangePasswordForm: React.FC = () => {
             error instanceof Error
               ? error.message
               : "Не удалось изменить пароль";
-          showNotification(msg, "error");
+          setSubmitError(msg);
         },
       },
     );
@@ -96,12 +103,12 @@ export const ChangePasswordForm: React.FC = () => {
       {/* Header */}
       <Box
         sx={{
-          p: { xs: 2, sm: 3 },
-          background: `linear-gradient(135deg, ${alpha(
+          p: { xs: 2, md: 3 },
+          background: { xs: "none", md: `linear-gradient(135deg, ${alpha(
             theme.palette.primary.main,
             0.05,
-          )}, ${alpha(theme.palette.secondary.main, 0.05)})`,
-          borderBottom: `1px solid ${theme.palette.divider}`,
+          )}, ${alpha(theme.palette.secondary.main, 0.05)})` },
+          borderBottom: { xs: "none", md: `1px solid ${theme.palette.divider}` },
         }}
       >
         <Stack direction="row" spacing={1.5} alignItems="center">
@@ -110,7 +117,7 @@ export const ChangePasswordForm: React.FC = () => {
             <Typography variant="h6" fontWeight={700}>
               Смена пароля
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ display: { xs: "none", md: "block" } }}>
               Введите текущий пароль и задайте новый
             </Typography>
           </Box>
@@ -121,9 +128,10 @@ export const ChangePasswordForm: React.FC = () => {
       <Box
         component="form"
         onSubmit={handleSubmit(onSubmit)}
-        sx={{ p: { xs: 2, sm: 3 } }}
+        sx={{ p: { xs: 2, md: 3 } }}
       >
-        <Stack spacing={3}>
+        <Stack spacing={{ xs: 2, md: 3 }}>
+          {submitError && <Alert severity="error">{submitError}</Alert>}
           {/* Старый пароль */}
           <Controller
             name="oldPassword"
@@ -134,6 +142,7 @@ export const ChangePasswordForm: React.FC = () => {
             render={({ field }) => (
               <TextField
                 {...field}
+                autoComplete="current-password"
                 label="Текущий пароль"
                 type={showOldPassword ? "text" : "password"}
                 error={!!errors.oldPassword}
@@ -144,6 +153,7 @@ export const ChangePasswordForm: React.FC = () => {
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
+                        disabled={isPending}
                         type="button"
                         onClick={() => setShowOldPassword(!showOldPassword)}
                         edge="end"
@@ -181,6 +191,7 @@ export const ChangePasswordForm: React.FC = () => {
             render={({ field }) => (
               <TextField
                 {...field}
+                autoComplete="new-password"
                 label="Новый пароль"
                 type={showNewPassword ? "text" : "password"}
                 error={!!errors.newPassword}
@@ -191,6 +202,7 @@ export const ChangePasswordForm: React.FC = () => {
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
+                        disabled={isPending}
                         type="button"
                         onClick={() => setShowNewPassword(!showNewPassword)}
                         edge="end"
@@ -212,7 +224,7 @@ export const ChangePasswordForm: React.FC = () => {
           />
 
           {/* Индикаторы требований к паролю */}
-          {newPassword && (
+          {(
             <Stack spacing={0.5}>
               {passwordRules.map((rule, index) => {
                 const passed = rule.test(newPassword);
@@ -255,7 +267,8 @@ export const ChangePasswordForm: React.FC = () => {
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Подтвердите новый пароль"
+                autoComplete="new-password"
+                label="Повторите пароль"
                 type={showConfirmPassword ? "text" : "password"}
                 error={!!errors.confirmPassword}
                 helperText={errors.confirmPassword?.message}
@@ -265,6 +278,7 @@ export const ChangePasswordForm: React.FC = () => {
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
+                        disabled={isPending}
                         type="button"
                         onClick={() =>
                           setShowConfirmPassword(!showConfirmPassword)
@@ -298,7 +312,7 @@ export const ChangePasswordForm: React.FC = () => {
               variant="contained"
               size="large"
               disabled={isPending || !isDirty}
-              sx={{ minWidth: { xs: "100%", sm: 180 } }}
+              sx={{ minWidth: { xs: "100%", md: 180 }, minHeight: 44 }}
               startIcon={isPending ? <CircularProgress size={16} /> : undefined}
             >
               {isPending ? "Сохранение..." : "Изменить пароль"}
