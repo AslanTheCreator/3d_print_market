@@ -2,6 +2,7 @@
 
 ## Команды
 
+- **`npm audit --omit=dev --audit-level=high`** — проверка runtime-зависимостей, обязательная в Frontend CI после `npm ci`.
 - **`npm run lint`** — ESLint для `app` и `src`.
 - **`npm run typecheck`** — `next typegen` и TypeScript.
 - **`npm run architecture:check`** — FSD-проверка Steiger для `src`.
@@ -18,6 +19,10 @@ layer находится в корневом `app/`. Этот каталог н�
 проверку, поэтому его импорты и route-композиция проверяются вручную.
 
 ## Выбор проверок
+
+После обновления зависимостей проверять установку через `npm ci`, runtime audit
+и production build. Закреплённые версии в `overrides` обновляются вместе с
+`package-lock.json`: `npm audit fix` не снимает такие ограничения автоматически.
 
 Для большинства code changes:
 
