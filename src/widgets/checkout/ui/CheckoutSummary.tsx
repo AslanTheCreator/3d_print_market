@@ -21,6 +21,7 @@ import type { SelectedSellerDelivery } from "../model/types";
 interface CheckoutSummaryProps {
   cartItems: ProductBasket[];
   sellerDeliveries: SelectedSellerDelivery[];
+  hasIncompleteDelivery: boolean;
   isReadyToSubmit: boolean;
   submitBlockerMessage: string | null;
   isSubmitting: boolean;
@@ -32,6 +33,7 @@ interface CheckoutSummaryProps {
 export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
   cartItems,
   sellerDeliveries,
+  hasIncompleteDelivery,
   isReadyToSubmit,
   submitBlockerMessage,
   isSubmitting,
@@ -136,10 +138,16 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
           <Typography variant="body1" color="text.secondary">
             Доставка
           </Typography>
-          <Typography variant="body1" fontWeight={500}>
-            {formattedDeliveryTotal}
+          <Typography data-testid="checkout-summary-delivery-total" variant="body1" fontWeight={500} sx={{ textAlign: "right" }}>
+            {hasIncompleteDelivery ? "Не рассчитана" : formattedDeliveryTotal}
           </Typography>
         </Box>
+
+        {hasIncompleteDelivery && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+            Итог уточнится после выбора доставки у каждого продавца.
+          </Typography>
+        )}
 
         {sellerDeliveries.map((delivery) => (
           <Box

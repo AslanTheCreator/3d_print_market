@@ -90,7 +90,7 @@ export const MobileSearchDialog = ({
         </Typography>
       </DialogTitle>
 
-      <DialogContent sx={{ overflowY: "auto", px: 2, pt: 2 }}>
+      <DialogContent sx={{ overflowY: "auto", px: 2, "&&": { pt: 2 } }}>
         <Suspense fallback={<SearchFallback />}>
           <SearchForm
             variant="dialog"

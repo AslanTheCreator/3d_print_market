@@ -1,13 +1,38 @@
+import axios, { type AxiosRequestConfig } from "axios";
 import { AccountsBaseModel } from "../model/types";
 import { AccountsCreateModel } from "../model/types";
 import { authClient } from "@/shared/api";
+import {
+  ErrorCodes,
+  transformToApiError,
+  type BackendErrorResponse,
+} from "@/shared/lib/errorHandler";
 
 const API_URL = `/accounts`;
 
+type AccountsRequestConfig = AxiosRequestConfig & {
+  _skipErrorTransform?: boolean;
+};
+
 export const accountsApi = {
   getAll: async (): Promise<AccountsBaseModel[]> => {
-    const { data } = await authClient.get<AccountsBaseModel[]>(API_URL);
-    return data;
+    try {
+      const { data } = await authClient.get<AccountsBaseModel[]>(
+        API_URL,
+        { _skipErrorTransform: true } as AccountsRequestConfig,
+      );
+      return data;
+    } catch (error) {
+      if (
+        axios.isAxiosError<BackendErrorResponse>(error) &&
+        error.response?.status === 404 &&
+        error.response.data?.code === ErrorCodes.ACCOUNT_NOT_FOUND
+      ) {
+        return [];
+      }
+
+      throw transformToApiError(error);
+    }
   },
 
   getUser: async (id: number): Promise<AccountsBaseModel[]> => {

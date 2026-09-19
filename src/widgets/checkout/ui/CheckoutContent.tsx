@@ -103,6 +103,9 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
         <CheckoutSummary
           cartItems={checkoutState.orderableSelectedItems}
           sellerDeliveries={checkoutState.selectedSellerDeliveries}
+          hasIncompleteDelivery={checkoutState.sellerGroups.some(
+            (group) => group.isActive && (group.isLoading || group.isError || !group.selectedTransfer),
+          )}
           isReadyToSubmit={checkoutState.isReadyToSubmit}
           submitBlockerMessage={checkoutState.submitBlockerMessage}
           isSubmitting={isSubmitting}

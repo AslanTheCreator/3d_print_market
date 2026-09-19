@@ -95,7 +95,7 @@ const CheckoutQuantityCartItem = ({
       "error",
     );
   }, [showNotification]);
-  const { quantity, handleIncrement, handleDecrement, maxQuantity } =
+  const { quantity, handleIncrement, handleDecrement, handleSetQuantity, maxQuantity } =
     useCartQuantity(item.product.id, isAuthenticated, {
       maxQuantity: item.availableCount,
       onSyncError: handleSyncError,
@@ -109,6 +109,7 @@ const CheckoutQuantityCartItem = ({
       quantity={quantity}
       onQuantityIncrement={handleIncrement}
       onQuantityDecrement={handleDecrement}
+      onQuantitySet={handleSetQuantity}
       onRemove={onRemove}
       isRemoving={isRemoving}
       maxQuantity={maxQuantity ?? undefined}
@@ -147,13 +148,14 @@ export const CheckoutSellerGroupCard = ({
         direction="row"
         alignItems="center"
         justifyContent="space-between"
-        gap={2}
+        gap={1}
+        flexWrap="wrap"
         sx={{ pb: 1.5 }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
           <StorefrontOutlined color="primary" />
-          <Box>
-            <Typography variant="subtitle1" fontWeight={600}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="subtitle1" fontWeight={600} sx={{ overflowWrap: "anywhere" }}>
               {group.sellerLogin}
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -161,7 +163,7 @@ export const CheckoutSellerGroupCard = ({
             </Typography>
           </Box>
         </Box>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
           Выбрано {selectedItemsCount} из {group.items.length}
         </Typography>
       </Stack>

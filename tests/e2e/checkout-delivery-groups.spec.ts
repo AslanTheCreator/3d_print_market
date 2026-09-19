@@ -240,14 +240,19 @@ test("selects delivery independently for each seller", async ({
   await expect(sellerWithoutDelivery).toContainText(
     "У продавца нет доступных способов доставки",
   );
-  await expect(sellerOne.getByRole("radio")).toHaveCount(2);
-  await expect(sellerOne.locator('input[type="radio"]:checked')).toHaveCount(0);
-  await expect(sellerTwo.getByRole("radio")).toBeChecked();
+  await expect(sellerOne.getByTestId("checkout-delivery-trigger-10")).toContainText("Выберите способ");
+  await expect(sellerTwo.getByTestId("checkout-delivery-summary-20")).toContainText("Самовывоз");
+  await expect(sellerTwo.getByRole("radio")).toHaveCount(0);
   await expect(submitButton).toBeDisabled();
   await expect(submitBlocker).toHaveText("Выберите адрес доставки");
 
   await page.getByText("Тестовая 1", { exact: true }).click();
-  await sellerOne.getByTestId("checkout-delivery-10-101").click();
+  await sellerOne.getByTestId("checkout-delivery-trigger-10").click();
+  const deliveryDialog = page.getByRole("dialog", { name: "Способ доставки" });
+  await expect(deliveryDialog.getByRole("radio")).toHaveCount(2);
+  await expect(deliveryDialog.locator('input[type="radio"]:checked')).toHaveCount(0);
+  await deliveryDialog.getByTestId("checkout-delivery-10-101").click();
+  await deliveryDialog.getByRole("button", { name: "Применить" }).click();
 
   await expect(submitButton).toBeDisabled();
   await expect(submitBlocker).toHaveText(
@@ -283,9 +288,7 @@ test("selects delivery independently for each seller", async ({
   await page
     .getByRole("checkbox", { name: "Выбрать товар Товар 2" })
     .check();
-  await expect(sellerOne.locator('input[type="radio"]:checked')).toHaveValue(
-    "101",
-  );
+  await expect(sellerOne.getByTestId("checkout-delivery-trigger-10")).toContainText("Почта России");
   await expect(submitButton).toBeEnabled();
 
   await submitButton.click();

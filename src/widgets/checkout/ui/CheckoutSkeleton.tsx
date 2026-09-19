@@ -12,22 +12,19 @@ const panelSx = {
 const CheckoutCartItemSkeleton = () => (
   <Box
     sx={{
-      display: "flex",
-      alignItems: "flex-start",
-      gap: { xs: 1.5, sm: 2 },
-      py: { xs: 2, sm: 2.5 },
-      px: { xs: 1, sm: 1.5 },
-      mx: { xs: -1, sm: -1.5 },
+      display: "grid",
+      gridTemplateColumns: { xs: "80px minmax(0, 1fr)", sm: "100px minmax(0, 1fr)" },
+      gap: 1.5,
+      pt: 1,
+      pb: 2.5,
       borderBottom: "1px solid",
       borderColor: "divider",
     }}
   >
-    <Skeleton
-      variant="rounded"
-      width={24}
-      height={24}
-      sx={{ mt: 0.5, flexShrink: 0 }}
-    />
+    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ gridColumn: "1 / -1", height: 44 }}>
+      <Skeleton variant="rounded" width={100} height={24} />
+      <Skeleton variant="circular" width={24} height={24} />
+    </Stack>
     <Skeleton
       variant="rounded"
       sx={{
@@ -44,20 +41,12 @@ const CheckoutCartItemSkeleton = () => (
           <Skeleton variant="text" width="84%" height={22} />
           <Skeleton variant="text" width="48%" height={18} />
         </Stack>
-        <Skeleton variant="circular" width={34} height={34} />
-      </Stack>
-
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", sm: "center" }}
-        spacing={1.5}
-        sx={{ mt: { xs: 1.5, sm: 2 } }}
-      >
-        <Skeleton variant="text" width={104} height={30} />
-        <Skeleton variant="rounded" width={120} height={40} />
       </Stack>
     </Box>
+    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ gridColumn: "1 / -1" }}>
+      <Skeleton variant="text" width={104} height={44} />
+      <Skeleton variant="rounded" width={128} height={44} />
+    </Stack>
   </Box>
 );
 
@@ -78,14 +67,14 @@ export const CheckoutSkeleton = () => (
             <AddressSelectorSkeleton showRadio />
           </Paper>
 
-          <Paper elevation={0} sx={panelSx}>
+          <Paper elevation={0} sx={{ ...panelSx, p: { xs: 0, md: 3 }, border: { xs: "none", md: "1px solid" }, borderColor: "divider", bgcolor: { xs: "transparent", md: "background.paper" } }}>
             <Stack
               direction="row"
               spacing={1.5}
               alignItems="center"
-              sx={{ pb: 2, mb: 2, borderBottom: "1px solid", borderColor: "divider" }}
+              sx={{ pb: 1, mb: 2 }}
             >
-              <Skeleton variant="rounded" width={24} height={24} />
+              <Skeleton variant="rounded" width={44} height={44} />
               <Stack sx={{ flex: 1 }}>
                 <Skeleton variant="text" width={190} height={28} />
                 <Skeleton variant="text" width={120} height={20} />
@@ -100,7 +89,8 @@ export const CheckoutSkeleton = () => (
                 direction="row"
                 alignItems="center"
                 justifyContent="space-between"
-                spacing={2}
+                gap={1}
+                flexWrap="wrap"
                 sx={{ pb: 1.5 }}
               >
                 <Stack direction="row" spacing={1} alignItems="center">
@@ -118,22 +108,7 @@ export const CheckoutSkeleton = () => (
               <CheckoutCartItemSkeleton />
 
               <Box sx={{ pt: 2 }}>
-                <Skeleton
-                  variant="text"
-                  width={190}
-                  height={28}
-                  sx={{ mb: 1.5 }}
-                />
-                <Stack spacing={1}>
-                  {[1, 2].map((item) => (
-                    <Skeleton
-                      key={item}
-                      variant="rounded"
-                      height={64}
-                      sx={{ borderRadius: 2 }}
-                    />
-                  ))}
-                </Stack>
+                <Skeleton variant="rounded" height={72} sx={{ borderRadius: 2 }} />
               </Box>
             </Paper>
           </Paper>

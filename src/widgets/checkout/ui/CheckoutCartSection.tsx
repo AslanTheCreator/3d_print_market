@@ -46,20 +46,20 @@ export const CheckoutCartSection = ({
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 2, sm: 3 },
+        p: { xs: 0, md: 3 },
         borderRadius: 2,
-        border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-        backgroundColor: theme.palette.background.paper,
+        border: { xs: "none", md: `1px solid ${alpha(theme.palette.divider, 0.8)}` },
+        backgroundColor: { xs: "transparent", md: theme.palette.background.paper },
       }}
     >
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: 1.5,
-          pb: 2,
+          gap: 1,
+          pb: 1,
           mb: 2,
-          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+          borderBottom: { xs: "none", md: `1px solid ${alpha(theme.palette.divider, 0.8)}` },
         }}
       >
         <Checkbox
@@ -70,6 +70,10 @@ export const CheckoutCartSection = ({
           sx={{
             p: 0,
             color: theme.palette.grey[400],
+            "&.Mui-focusVisible": {
+              outline: "2px solid",
+              outlineColor: "primary.main",
+            },
             "&.Mui-checked, &.MuiCheckbox-indeterminate": {
               color: theme.palette.success.main,
             },

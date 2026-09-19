@@ -1,25 +1,15 @@
 "use client";
 
+import { useEffect, useId, useState } from "react";
 import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  FormControlLabel,
-  Paper,
-  Radio,
-  RadioGroup,
-  Skeleton,
-  Stack,
-  Typography,
-  alpha,
-  useTheme,
+  Alert, Box, Button, ButtonBase, Dialog, DialogActions, DialogContent,
+  DialogTitle, FormControlLabel, IconButton, Radio, RadioGroup,
+  Skeleton, Stack, Typography, alpha,
 } from "@mui/material";
-import { CheckCircle, InfoOutlined } from "@mui/icons-material";
+import { ChevronRight, Close, LocalShippingOutlined } from "@mui/icons-material";
 import { useDictionary } from "@/entities/dictionary";
-import { getDeliveryIcon } from "@/entities/transfer";
+import { getDeliveryIcon, type Transfer } from "@/entities/transfer";
 import { formatPrice } from "@/shared/lib";
-import type { Transfer } from "@/entities/transfer";
 import type { SellerCheckoutGroup } from "../model/types";
 
 interface SellerDeliverySelectorProps {
@@ -28,66 +18,49 @@ interface SellerDeliverySelectorProps {
   onRetry: (sellerId: number) => void;
 }
 
-export const SellerDeliverySelector = ({
-  group,
-  onSelect,
-  onRetry,
-}: SellerDeliverySelectorProps) => {
-  const theme = useTheme();
+const transferPrice = (transfer: Transfer) =>
+  transfer.price === 0 ? "Бесплатно" : formatPrice(transfer.price, transfer.currency);
+
+export const SellerDeliverySelector = ({ group, onSelect, onRetry }: SellerDeliverySelectorProps) => {
   const { data: shoppingMethods } = useDictionary("SHOPPING_METHODS");
+  const [isOpen, setIsOpen] = useState(false);
+  const [draftId, setDraftId] = useState<number | null>(null);
+  const titleId = useId();
+  const descriptionId = useId();
+  const canChoose = group.isActive && !group.isLoading && !group.isError && group.transfers.length > 1;
+  const draftTransfer = group.transfers.find((transfer) => transfer.id === draftId);
+  const methodLabel = (transfer: Transfer) =>
+    shoppingMethods?.find((method) => method.value === transfer.sending)?.description || transfer.sending;
+
+  useEffect(() => {
+    if (!canChoose) setIsOpen(false);
+  }, [canChoose]);
 
   if (!group.isActive) {
     return (
-      <Alert severity="info" icon={<InfoOutlined />}>
+      <Typography variant="body2" color="text.secondary">
         Выберите хотя бы один товар продавца, чтобы настроить доставку.
-      </Alert>
+      </Typography>
     );
   }
 
   if (group.isLoading) {
     return (
-      <Box aria-busy="true">
-        <Skeleton variant="text" width={190} height={28} sx={{ mb: 1.5 }} />
-        <Stack spacing={1}>
-          {[1, 2].map((item) => (
-            <Paper
-              key={item}
-              variant="outlined"
-              sx={{ p: 1.5, borderRadius: 2, borderWidth: 2 }}
-            >
-              <Stack direction="row" spacing={1.5} alignItems="center">
-                <Skeleton variant="circular" width={24} height={24} />
-                <Skeleton variant="circular" width={24} height={24} />
-                <Skeleton variant="text" width="45%" height={24} />
-                <Skeleton
-                  variant="text"
-                  width={72}
-                  height={24}
-                  sx={{ ml: "auto !important" }}
-                />
-              </Stack>
-            </Paper>
-          ))}
-        </Stack>
+      <Box aria-busy="true" aria-label="Загрузка доставки">
+        <Skeleton variant="rounded" height={72} sx={{ borderRadius: 2 }} />
       </Box>
     );
   }
 
   if (group.isError) {
     return (
-      <Alert
-        severity="error"
-        action={
-          <Button
-            color="inherit"
-            size="small"
-            onClick={() => onRetry(group.sellerId)}
-          >
-            Повторить
-          </Button>
-        }
-      >
-        {group.errorMessage || "Не удалось загрузить способы доставки"}
+      <Alert severity="error" sx={{ "& .MuiAlert-message": { minWidth: 0 } }}>
+        <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>
+          {group.errorMessage || "Не удалось загрузить способы доставки"}
+        </Typography>
+        <Button color="inherit" size="small" onClick={() => onRetry(group.sellerId)} sx={{ mt: 0.5 }}>
+          Повторить
+        </Button>
       </Alert>
     );
   }
@@ -101,107 +74,131 @@ export const SellerDeliverySelector = ({
     );
   }
 
-  return (
-    <Box>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 1,
-          mb: 1.5,
-        }}
-      >
-        <Typography variant="subtitle1" fontWeight={600}>
-          Доставка от продавца
-        </Typography>
-        {group.selectedTransfer && (
-          <Chip
-            icon={<CheckCircle sx={{ fontSize: 16 }} />}
-            label="Выбрано"
-            size="small"
-            color="success"
-            variant="outlined"
-          />
-        )}
+  const selectedTransfer = group.selectedTransfer;
+  const rowContent = (
+    <>
+      <Box component="span" sx={{ display: "flex", color: "text.secondary", flexShrink: 0 }}>
+        {selectedTransfer ? getDeliveryIcon(selectedTransfer.sending) : <LocalShippingOutlined />}
       </Box>
+      <Box component="span" sx={{ flex: 1, minWidth: 0 }}>
+        <Typography component="span" variant="caption" color="text.secondary" sx={{ display: "block" }}>
+          Доставка
+        </Typography>
+        <Typography component="span" variant="body2" fontWeight={600} sx={{ display: "block", overflowWrap: "anywhere" }}>
+          {selectedTransfer ? methodLabel(selectedTransfer) : "Выберите способ"}
+        </Typography>
+      </Box>
+      {selectedTransfer && (
+        <Typography component="span" variant="body2" fontWeight={600} sx={{ maxWidth: "40%", overflowWrap: "anywhere", textAlign: "right" }}>
+          {transferPrice(selectedTransfer)}
+        </Typography>
+      )}
+      {canChoose && <ChevronRight sx={{ flexShrink: 0, color: "text.secondary" }} />}
+    </>
+  );
+  const rowSx = {
+    display: "flex", alignItems: "center", gap: 1.5, width: "100%",
+    minHeight: 72, p: 1.5, borderRadius: 2, textAlign: "left",
+    bgcolor: "action.hover",
+  } as const;
 
-      <RadioGroup
-        value={group.selectedTransfer ? String(group.selectedTransfer.id) : ""}
-        onChange={(event) => {
-          const transfer = group.transfers.find(
-            (item) => item.id === Number(event.target.value),
-          );
+  return (
+    <>
+      {canChoose ? (
+        <ButtonBase
+          data-testid={`checkout-delivery-trigger-${group.sellerId}`}
+          aria-label={`Доставка от ${group.sellerLogin}: ${selectedTransfer ? `${methodLabel(selectedTransfer)}, ${transferPrice(selectedTransfer)}` : "выберите способ"}`}
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
+          onClick={() => {
+            setDraftId(group.selectedTransfer?.id ?? null);
+            setIsOpen(true);
+          }}
+          sx={{
+            ...rowSx,
+            "&:hover": { bgcolor: "action.selected" },
+            "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
+          }}
+        >
+          {rowContent}
+        </ButtonBase>
+      ) : (
+        <Box data-testid={`checkout-delivery-summary-${group.sellerId}`} sx={rowSx}>
+          {rowContent}
+        </Box>
+      )}
 
-          if (transfer) {
-            onSelect(group.sellerId, transfer);
-          }
+      <Dialog
+        open={isOpen && canChoose}
+        onClose={() => setIsOpen(false)}
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+        maxWidth={false}
+        sx={{ "& .MuiDialog-container": { alignItems: { xs: "flex-end", md: "center" } } }}
+        PaperProps={{
+          sx: {
+            m: { xs: 0, md: 4 }, width: { xs: "100%", md: 480 },
+            maxWidth: { xs: "100%", md: 480 }, maxHeight: "calc(100dvh - 24px)",
+            borderRadius: { xs: "16px 16px 0 0", md: "16px" },
+          },
         }}
       >
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          {group.transfers.map((transfer) => {
-            const isSelected = group.selectedTransfer?.id === transfer.id;
-            const method = shoppingMethods?.find(
-              (item) => item.value === transfer.sending,
-            );
-            const priceLabel =
-              transfer.price === 0
-                ? "Бесплатно"
-                : formatPrice(transfer.price, transfer.currency);
-
-            return (
-              <Paper
-                key={transfer.id}
-                data-testid={`checkout-delivery-${group.sellerId}-${transfer.id}`}
-                variant="outlined"
-                sx={{
-                  p: 1.5,
-                  borderRadius: 2,
-                  borderWidth: 2,
-                  borderColor: isSelected
-                    ? "primary.main"
-                    : alpha(theme.palette.divider, 0.8),
-                  bgcolor: isSelected
-                    ? alpha(theme.palette.primary.main, 0.04)
-                    : "transparent",
-                  cursor: "pointer",
-                  transition: "border-color 0.2s, background-color 0.2s",
-                }}
-                onClick={() => onSelect(group.sellerId, transfer)}
-              >
+        <DialogTitle id={`${titleId}-container`} component="div" sx={{ px: 2, py: 1.5, display: "flex", alignItems: "flex-start", gap: 1 }}>
+          <Box sx={{ flex: 1, minWidth: 0, pt: 0.5 }}>
+            <Typography id={titleId} component="h2" variant="h6" fontWeight={600}>Способ доставки</Typography>
+            <Typography id={descriptionId} variant="body2" color="text.secondary" sx={{ overflowWrap: "anywhere" }}>
+              От продавца {group.sellerLogin}
+            </Typography>
+          </Box>
+          <IconButton aria-label="Отменить выбор доставки" onClick={() => setIsOpen(false)}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ px: 2, pb: 2, "&&": { pt: 1 } }}>
+          <RadioGroup aria-labelledby={titleId} value={draftId === null ? "" : String(draftId)} onChange={(event) => setDraftId(Number(event.target.value))}>
+            <Stack spacing={1}>
+              {group.transfers.map((transfer) => (
                 <FormControlLabel
+                  key={transfer.id}
+                  data-testid={`checkout-delivery-${group.sellerId}-${transfer.id}`}
                   value={String(transfer.id)}
-                  control={<Radio sx={{ mr: 1 }} />}
+                  control={<Radio sx={{ "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main" } }} />}
                   label={
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 2,
-                        width: "100%",
-                      }}
-                    >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Box sx={{ color: "primary.main", display: "flex" }}>
-                          {getDeliveryIcon(transfer.sending)}
-                        </Box>
-                        <Typography fontWeight={isSelected ? 600 : 500}>
-                          {method?.description || transfer.sending}
-                        </Typography>
-                      </Box>
-                      <Typography fontWeight={600} color="text.secondary">
-                        {priceLabel}
+                    <Box component="span" sx={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 0.5 }}>
+                      <Typography component="span" variant="body2" fontWeight={600} sx={{ flex: "1 1 150px", overflowWrap: "anywhere" }}>
+                        {methodLabel(transfer)}
+                      </Typography>
+                      <Typography component="span" variant="body2" color="text.secondary">
+                        {transferPrice(transfer)}
                       </Typography>
                     </Box>
                   }
-                  sx={{ m: 0, width: "100%" }}
+                  sx={{
+                    m: 0, pr: 1.5, py: 1, minHeight: 72, border: "1px solid", borderRadius: 2,
+                    borderColor: draftId === transfer.id ? "primary.main" : "divider",
+                    bgcolor: (theme) => draftId === transfer.id ? alpha(theme.palette.primary.main, 0.04) : "transparent",
+                    "& .MuiFormControlLabel-label": { flex: 1, minWidth: 0 },
+                  }}
                 />
-              </Paper>
-            );
-          })}
-        </Box>
-      </RadioGroup>
-    </Box>
+              ))}
+            </Stack>
+          </RadioGroup>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pt: 1, pb: "max(16px, env(safe-area-inset-bottom))", borderTop: "1px solid", borderColor: "divider" }}>
+          <Button onClick={() => setIsOpen(false)} sx={{ flex: 1 }}>Отмена</Button>
+          <Button
+            variant="contained" disabled={!draftTransfer} sx={{ flex: 1 }}
+            onClick={() => {
+              if (draftTransfer) {
+                onSelect(group.sellerId, draftTransfer);
+                setIsOpen(false);
+              }
+            }}
+          >
+            Применить
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };

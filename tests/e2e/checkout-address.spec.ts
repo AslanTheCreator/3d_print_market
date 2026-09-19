@@ -281,7 +281,9 @@ const openCheckout = async (page: Page, selectExistingAddress = true) => {
   await expect(
     page.getByRole("heading", { name: "Оформление заказа", exact: true }),
   ).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId("checkout-delivery-trigger-10").click();
   await page.getByTestId("checkout-delivery-10-102").click();
+  await page.getByRole("dialog", { name: "Способ доставки" }).getByRole("button", { name: "Применить" }).click();
   await page
     .getByRole("checkbox", { name: "Выбрать товар Товар 2", exact: true })
     .uncheck();
@@ -433,8 +435,8 @@ test.describe("checkout address creation", () => {
       getAddressCard(page, "Тестовая 1").getByTestId("RadioButtonCheckedIcon"),
     ).toBeVisible();
     await expect(
-      page.getByTestId("checkout-delivery-10-102").getByRole("radio"),
-    ).toBeChecked();
+      page.getByTestId("checkout-delivery-trigger-10"),
+    ).toContainText("Транспортная компания");
     await expect(
       page.getByRole("checkbox", { name: "Выбрать товар Товар 2", exact: true }),
     ).not.toBeChecked();

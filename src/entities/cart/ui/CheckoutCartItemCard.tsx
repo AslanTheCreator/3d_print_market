@@ -1,15 +1,8 @@
 "use client";
 
 import {
-  Box,
-  Checkbox,
-  Chip,
-  IconButton,
-  Stack,
-  Typography,
-  useTheme,
-  alpha,
-  Skeleton,
+  Alert, Box, Button, Checkbox, Chip, FormControlLabel, IconButton,
+  Stack, Typography, useTheme, alpha, Skeleton,
 } from "@mui/material";
 import Image from "next/image";
 import Link from "next/link";
@@ -27,6 +20,7 @@ interface CheckoutCartItemCardProps {
   quantity: number;
   onQuantityIncrement: () => void;
   onQuantityDecrement: () => void;
+  onQuantitySet?: (quantity: number) => void;
   onRemove: (id: number) => void;
   isRemoving?: boolean;
   maxQuantity?: number;
@@ -34,16 +28,9 @@ interface CheckoutCartItemCardProps {
 }
 
 export const CheckoutCartItemCard = ({
-  item,
-  isSelected,
-  onSelectChange,
-  quantity,
-  onQuantityIncrement,
-  onQuantityDecrement,
-  onRemove,
-  isRemoving = false,
-  maxQuantity,
-  actionSlot,
+  item, isSelected, onSelectChange, quantity, onQuantityIncrement,
+  onQuantityDecrement, onQuantitySet, onRemove, isRemoving = false,
+  maxQuantity, actionSlot,
 }: CheckoutCartItemCardProps) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [hasImageError, setHasImageError] = useState(false);
@@ -54,16 +41,15 @@ export const CheckoutCartItemCard = ({
   const { id, name, price, categories, image, currency } = product;
   const isExternalOnly = product.availability === "EXTERNAL_ONLY";
   const isPreorder = product.availability === "PREORDER";
-  const isStockInsufficient =
-    !isExternalOnly && item.enoughStock === false;
+  const isStockInsufficient = !isExternalOnly && item.enoughStock === false;
   const displayQuantity = isExternalOnly ? 1 : quantity;
   const fullPrice = price * displayQuantity;
   const preorderPrepayment = product.prepaymentAmount * displayQuantity;
-  const preorderRemainder =
-    (price - product.prepaymentAmount) * displayQuantity;
+  const preorderRemainder = (price - product.prepaymentAmount) * displayQuantity;
   const productImage = image?.[0] ?? null;
   const productImageSrc = getImageUrl(productImage, "thumbnail");
   const imageSrc = productImageSrc && !hasImageError ? productImageSrc : null;
+  const availableCount = item.availableCount;
 
   useEffect(() => {
     setIsImageLoaded(false);
@@ -75,54 +61,80 @@ export const CheckoutCartItemCard = ({
   };
 
   const handleRemove = () => onRemove(id);
-
   const categoryName = categories?.[0]?.name;
 
   return (
     <Box
       data-testid={`checkout-cart-item-${id}`}
       data-stock-status={isStockInsufficient ? "insufficient" : "enough"}
+      aria-busy={isRemoving}
       sx={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: { xs: 1.5, sm: 2 },
-        py: { xs: 2, sm: 2.5 },
-        px: { xs: 1, sm: 1.5 },
-        mx: { xs: -1, sm: -1.5 },
-        border: `1px solid ${
-          isStockInsufficient
-            ? alpha(theme.palette.error.main, 0.55)
-            : "transparent"
-        }`,
-        borderBottomColor: isStockInsufficient
-          ? alpha(theme.palette.error.main, 0.55)
-          : alpha(theme.palette.divider, 0.8),
-        borderRadius: isStockInsufficient ? 2 : 0,
-        backgroundColor: isStockInsufficient
-          ? alpha(theme.palette.error.main, 0.06)
-          : "transparent",
+        display: "grid",
+        gridTemplateColumns: { xs: "80px minmax(0, 1fr)", sm: "100px minmax(0, 1fr)" },
+        gap: 1.5,
+        pt: 1,
+        pb: 2.5,
+        borderBottom: "1px solid",
+        borderColor: "divider",
         opacity: isRemoving ? 0.5 : 1,
         pointerEvents: isRemoving ? "none" : "auto",
-        transition: "opacity 0.2s ease-in-out, background-color 0.2s ease-in-out",
+        transition: "opacity 0.2s ease-in-out",
+        "& a:focus-visible": {
+          outline: `2px solid ${theme.palette.primary.main}`,
+          outlineOffset: 3,
+          borderRadius: 1,
+        },
       }}
     >
-      {/* Checkbox */}
-      <Checkbox
-        checked={isSelected}
-        onChange={handleCheckboxChange}
-        inputProps={{ "aria-label": `Выбрать товар ${name}` }}
-        sx={{
-          p: 0,
-          mt: 0.5,
-          color: theme.palette.grey[400],
-          "&.Mui-checked": {
-            color: theme.palette.success.main,
-          },
-        }}
-      />
+      <Stack direction="row" alignItems="center" gap={1} sx={{ gridColumn: "1 / -1" }}>
+        {/* Checkbox */}
+        <FormControlLabel
+          sx={{ m: 0, minWidth: 0, "& .MuiFormControlLabel-label": { fontSize: "0.75rem" } }}
+          label={isSelected ? "В заказе" : "Выбрать"}
+          control={
+            <Checkbox
+              checked={isSelected}
+              onChange={handleCheckboxChange}
+              disabled={isRemoving}
+              inputProps={{ "aria-label": `Выбрать товар ${name}` }}
+              sx={{
+                color: "text.secondary",
+                "&.Mui-checked": { color: "success.main" },
+                "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main" },
+              }}
+            />
+          }
+        />
+        {isPreorder && (
+          <Chip
+            data-testid={`checkout-preorder-badge-${id}`}
+            label="Предзаказ"
+            color="primary"
+            variant="outlined"
+            size="small"
+            sx={{ fontWeight: 600, fontSize: "0.6875rem" }}
+          />
+        )}
+        {/* Delete button */}
+        <IconButton
+          onClick={handleRemove}
+          disabled={isRemoving}
+          aria-label={`Удалить товар ${name} из корзины`}
+          size="small"
+          sx={{
+            ml: "auto", flexShrink: 0, color: "text.secondary",
+            "&:hover": {
+              color: "error.main",
+              backgroundColor: alpha(theme.palette.error.main, 0.08),
+            },
+          }}
+        >
+          <DeleteOutlineIcon fontSize="small" />
+        </IconButton>
+      </Stack>
 
       {/* Product Image */}
-      <Link href={`/catalog/${id}/detail`} style={{ textDecoration: "none" }}>
+      <Link href={`/catalog/${id}/detail`} style={{ textDecoration: "none", alignSelf: "start" }}>
         <Box
           sx={{
             position: "relative",
@@ -130,23 +142,15 @@ export const CheckoutCartItemCard = ({
             height: { xs: 80, sm: 100 },
             borderRadius: 2,
             overflow: "hidden",
-            flexShrink: 0,
             backgroundColor: alpha(theme.palette.grey[200], 0.5),
-            cursor: "pointer",
-            transition: "opacity 0.2s ease",
-            "&:hover": {
-              opacity: 0.85,
-            },
+            "&:hover": { opacity: 0.85 },
           }}
         >
           {imageSrc ? (
             <>
               {!isImageLoaded && (
                 <Skeleton
-                  variant="rectangular"
-                  width="100%"
-                  height="100%"
-                  animation="wave"
+                  variant="rectangular" width="100%" height="100%" animation="wave"
                   sx={{ position: "absolute", top: 0, left: 0 }}
                 />
               )}
@@ -154,9 +158,9 @@ export const CheckoutCartItemCard = ({
                 src={imageSrc}
                 alt={name}
                 fill
+                sizes="(max-width: 599px) 80px, 100px"
                 style={{
-                  objectFit: "cover",
-                  opacity: isImageLoaded ? 1 : 0,
+                  objectFit: "cover", opacity: isImageLoaded ? 1 : 0,
                   transition: "opacity 0.3s ease",
                 }}
                 onLoad={() => setIsImageLoaded(true)}
@@ -170,181 +174,100 @@ export const CheckoutCartItemCard = ({
       </Link>
 
       {/* Product Info */}
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="flex-start"
-        >
-          <Box sx={{ minWidth: 0, flex: 1, pr: 1 }}>
-            {categoryName && (
-              <Typography
-                variant="caption"
-                sx={{
-                  color: theme.palette.text.secondary,
-                  display: "block",
-                  mb: 0.5,
-                }}
-              >
-                {categoryName}
-              </Typography>
-            )}
-            {isPreorder && (
-              <Chip
-                data-testid={`checkout-preorder-badge-${id}`}
-                label="Предзаказ"
-                color="primary"
-                variant="outlined"
-                size="small"
-                sx={{ mb: 0.75, fontWeight: 600 }}
-              />
-            )}
-            <Link
-              href={`/catalog/${id}/detail`}
-              style={{ textDecoration: "none" }}
-            >
-              <Typography
-                variant="body1"
-                fontWeight={600}
-                sx={{
-                  fontSize: { xs: "0.875rem", sm: "1rem" },
-                  lineHeight: { xs: 1.57, sm: 1.5 },
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  textDecoration: "none",
-                  color: "inherit",
-                  cursor: "pointer",
-                  "&:hover": {
-                    color: theme.palette.primary.main,
-                  },
-                }}
-              >
-                {name}
-              </Typography>
-            </Link>
-
-            {isExternalOnly ? (
-              <Typography
-                data-testid={`checkout-external-notice-${id}`}
-                variant="body2"
-                fontWeight={600}
-                color="primary.main"
-                sx={{ mt: 0.75 }}
-              >
-                Доступно только через Telegram
-              </Typography>
-            ) : (
-              <>
-                <Typography
-                  data-testid={`checkout-stock-availability-${id}`}
-                  variant="caption"
-                  color={
-                    isStockInsufficient ? "error.main" : "text.secondary"
-                  }
-                  sx={{ display: "block", mt: 0.75 }}
-                >
-                  {item.availableCount === null
-                    ? "Количество не ограничено"
-                    : `Доступно: ${item.availableCount} шт.`}
-                </Typography>
-
-                {isStockInsufficient && (
-                  <Typography
-                    data-testid={`checkout-stock-error-${id}`}
-                    variant="body2"
-                    color="error.main"
-                    fontWeight={600}
-                    sx={{ mt: 0.5 }}
-                  >
-                    {item.availableCount === null
-                      ? "Недостаточно товара для выбранного количества"
-                      : `Недостаточно товара: в корзине ${quantity} шт., доступно ${item.availableCount} шт.`}
-                  </Typography>
-                )}
-              </>
-            )}
-          </Box>
-
-          {/* Delete button */}
-          <IconButton
-            onClick={handleRemove}
-            disabled={isRemoving}
-            aria-label={`Удалить товар ${name} из корзины`}
-            size="small"
+      <Box sx={{ minWidth: 0, overflowWrap: "anywhere" }}>
+        {categoryName && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+            {categoryName}
+          </Typography>
+        )}
+        <Link href={`/catalog/${id}/detail`} style={{ textDecoration: "none", color: "inherit" }}>
+          <Typography
+            variant="body1" fontWeight={600}
             sx={{
-              color: theme.palette.grey[500],
-              "&:hover": {
-                color: theme.palette.error.main,
-                backgroundColor: alpha(theme.palette.error.main, 0.08),
-              },
+              fontSize: { xs: "0.875rem", sm: "1rem" }, lineHeight: 1.5,
+              display: "-webkit-box", WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical", overflow: "hidden",
+              "&:hover": { color: "primary.main" },
             }}
           >
-            <DeleteOutlineIcon fontSize="small" />
-          </IconButton>
-        </Stack>
-
-        {/* Price and Quantity */}
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "stretch", sm: "center" }}
-          gap={1.5}
-          sx={{ mt: { xs: 1.5, sm: 2 } }}
-        >
-          {isPreorder ? (
-            <Stack
-              data-testid={`checkout-preorder-finance-${id}`}
-              spacing={0.5}
-              sx={{ flex: 1, maxWidth: 360 }}
-            >
-              <PriceRow
-                testId={`checkout-preorder-total-${id}`}
-                label="Полная стоимость"
-                value={formatPrice(fullPrice, currency)}
-                emphasized
-              />
-              <PriceRow
-                testId={`checkout-preorder-prepayment-${id}`}
-                label="Предоплата"
-                value={formatPrice(preorderPrepayment, currency)}
-              />
-              <PriceRow
-                testId={`checkout-preorder-remainder-${id}`}
-                label="Остаток после предоплаты"
-                value={formatPrice(preorderRemainder, currency)}
-              />
-            </Stack>
-          ) : (
-            <Typography
-              variant="h6"
-              component="p"
-              fontWeight={700}
-              color="text.primary"
-            >
-              {formatPrice(fullPrice, currency)}
-            </Typography>
-          )}
-
-          {isExternalOnly ? (
-            actionSlot
-          ) : (
-            <QuantityCounter
-              value={quantity}
-              onIncrement={onQuantityIncrement}
-              onDecrement={onQuantityDecrement}
-              min={1}
-              max={
-                maxQuantity ?? (isStockInsufficient ? quantity : undefined)
-              }
-              size="responsive"
-              itemName={name}
-            />
-          )}
-        </Stack>
+            {name}
+          </Typography>
+        </Link>
+        {isExternalOnly ? (
+          <Typography
+            data-testid={`checkout-external-notice-${id}`}
+            variant="body2" fontWeight={600} color="primary.main" sx={{ mt: 0.75 }}
+          >
+            Доступно только через Telegram
+          </Typography>
+        ) : (
+          <Typography
+            data-testid={`checkout-stock-availability-${id}`}
+            variant="caption"
+            color={isStockInsufficient ? "error.main" : "text.secondary"}
+            sx={{ display: "block", mt: 0.75 }}
+          >
+            {availableCount === null ? "Количество не ограничено" : `Доступно: ${availableCount} шт.`}
+          </Typography>
+        )}
       </Box>
+
+      {/* Price and Quantity */}
+      <Stack
+        direction="row" justifyContent="space-between" alignItems="center"
+        flexWrap="wrap" gap={1} sx={{ gridColumn: "1 / -1" }}
+      >
+        <Box sx={{ minWidth: 0, overflowWrap: "anywhere" }} data-testid={isPreorder ? `checkout-preorder-total-${id}` : undefined}>
+          <Typography variant="h6" component="p" fontWeight={700} sx={{ fontSize: { xs: "1.125rem", sm: "1.25rem" } }}>
+            {formatPrice(fullPrice, currency)}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {isPreorder ? "Полная стоимость" : `${formatPrice(price, currency)} / шт.`}
+          </Typography>
+        </Box>
+        {isExternalOnly ? actionSlot : (
+          <QuantityCounter
+            value={quantity}
+            onIncrement={onQuantityIncrement}
+            onDecrement={onQuantityDecrement}
+            disabled={isRemoving}
+            min={1}
+            max={maxQuantity ?? (isStockInsufficient ? quantity : undefined)}
+            size="small"
+            itemName={name}
+          />
+        )}
+      </Stack>
+
+      {isPreorder && (
+        <Stack
+          data-testid={`checkout-preorder-finance-${id}`}
+          spacing={0.75}
+          sx={{ gridColumn: "1 / -1", p: 1.5, bgcolor: "action.hover", borderRadius: 1.5 }}
+        >
+          <PriceRow testId={`checkout-preorder-prepayment-${id}`} label="Предоплата" value={formatPrice(preorderPrepayment, currency)} />
+          <PriceRow testId={`checkout-preorder-remainder-${id}`} label="Остаток после предоплаты" value={formatPrice(preorderRemainder, currency)} />
+        </Stack>
+      )}
+
+      {isStockInsufficient && (
+        <Alert severity="warning" sx={{ gridColumn: "1 / -1", "& .MuiAlert-message": { minWidth: 0, width: "100%" } }}>
+          <Typography data-testid={`checkout-stock-error-${id}`} variant="body2" sx={{ overflowWrap: "anywhere" }}>
+            {availableCount === null
+              ? "Недостаточно товара для выбранного количества"
+              : `Недостаточно товара: в корзине ${quantity} шт., доступно ${availableCount} шт.`}
+          </Typography>
+          {availableCount !== null && availableCount > 0 && availableCount < quantity && onQuantitySet ? (
+            <Button color="inherit" size="small" disabled={isRemoving} onClick={() => onQuantitySet(availableCount)} sx={{ mt: 0.5 }}>
+              Оставить {availableCount} шт.
+            </Button>
+          ) : availableCount === 0 && isSelected ? (
+            <Button color="inherit" size="small" disabled={isRemoving} onClick={() => onSelectChange(id, false)} sx={{ mt: 0.5 }}>
+              Исключить из заказа
+            </Button>
+          ) : null}
+        </Alert>
+      )}
     </Box>
   );
 };
@@ -353,35 +276,14 @@ interface PriceRowProps {
   testId: string;
   label: string;
   value: string;
-  emphasized?: boolean;
 }
 
-const PriceRow = ({
-  testId,
-  label,
-  value,
-  emphasized = false,
-}: PriceRowProps) => (
-  <Stack
-    data-testid={testId}
-    direction="row"
-    justifyContent="space-between"
-    alignItems="baseline"
-    gap={2}
-  >
-    <Typography
-      variant={emphasized ? "body1" : "caption"}
-      color={emphasized ? "text.primary" : "text.secondary"}
-      fontWeight={emphasized ? 700 : 500}
-    >
+const PriceRow = ({ testId, label, value }: PriceRowProps) => (
+  <Stack data-testid={testId} direction="row" justifyContent="space-between" alignItems="baseline" flexWrap="wrap" gap={0.5}>
+    <Typography variant="caption" color="text.secondary" sx={{ flex: "1 1 110px" }}>
       {label}
     </Typography>
-    <Typography
-      variant={emphasized ? "h6" : "body2"}
-      color="text.primary"
-      fontWeight={emphasized ? 700 : 600}
-      sx={{ whiteSpace: "nowrap" }}
-    >
+    <Typography variant="body2" fontWeight={600} sx={{ ml: "auto", overflowWrap: "anywhere" }}>
       {value}
     </Typography>
   </Stack>
