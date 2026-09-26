@@ -479,9 +479,9 @@ test("public routes render the expected mobile chrome", async ({ page }) => {
     },
     {
       path: "/checkout",
-      mode: "focused",
-      label: "Корзина",
-      showBottomNavigation: false,
+      mode: "browse",
+      label: null,
+      showBottomNavigation: true,
       showFooter: false,
     },
     {

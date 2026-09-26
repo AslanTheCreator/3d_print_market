@@ -31,7 +31,7 @@ Routes: `/auth/login`, `/auth/register`, `/dashboard/*`.
 
 - login, register, verification и password reset используют общий auth flow;
 - register показывает юридическое уведомление со ссылками на пользовательское соглашение и политику конфиденциальности, но не требует отдельного checkbox и не передаёт факт согласия в backend payload;
-- redirect после auth проверяет начальный `/` и исключает `/auth`, но текущая проверка не отклоняет backslash-вариант внешнего URL; origin-based sanitizer ещё не реализован;
+- redirect сохраняется между login/register и проверяется общим sanitizer; правила описаны в [api-and-auth.md](./api-and-auth.md#текущий-auth-flow);
 - `middleware.ts`, dashboard layout и `RequireAuth` защищают личный кабинет;
 - `/favorites` и `/checkout` доступны как routes, но показывают unauthorized state анониму.
 

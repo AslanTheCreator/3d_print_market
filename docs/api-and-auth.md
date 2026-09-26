@@ -51,13 +51,20 @@ Auth API, store, `useAuth`, инициализация и refresh lifecycle пр
 
 Это действующая реализация, но не целевая production-модель: токены доступны JavaScript. Риски, требования к backend и критерии миграции описаны в [auth-security-requirements.md](./auth-security-requirements.md).
 
+Login/register сохраняют `redirect` при переключении форм, после входа и
+подтверждения почты на всех размерах экрана. Public API `entities/session`
+экспортирует `getPostAuthRedirectPath` и `getAuthSwitchPath`: общий sanitizer
+принимает локальный путь с query/hash, проверяет origin и нормализованный путь,
+отклоняет внешние адреса, обратные слеши, управляющие символы и переходы на auth.
+Некорректный адрес заменяется `/`. Auth routes используют `Suspense` для чтения
+query-параметров через `useSearchParams`.
+
 Дополнительные открытые ограничения:
 
 - автоматический logout через interceptor/token manager не гарантирует централизованную очистку auth-bound TanStack Query cache, Zustand и user-scoped browser data;
 - product draft хранится в `localStorage` под общим ключом и не очищается при logout;
 - очередь запросов во время refresh имеет 10-секундный client timeout, но не удаляет subscriber; поздний refresh способен повторить исходный запрос после уже показанной ошибки;
-- server guards определяют auth только по наличию cookie и не подтверждают backend session;
-- redirect после login/register не использует origin-based проверку и допускает backslash-вариант внешнего URL.
+- server guards определяют auth только по наличию cookie и не подтверждают backend session.
 
 ## Ошибки и типы
 

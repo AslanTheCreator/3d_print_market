@@ -189,6 +189,12 @@ const cases: MobileChromeTestCase[] = [
 ];
 
 test.describe("mobile chrome route model", () => {
+  test("guest checkout keeps browsing navigation", () => {
+    expect(getMobileChromeConfig("/checkout", true)).toEqual({
+      mode: "browse", showBottomNavigation: true, showMobileFooter: false,
+    });
+  });
+
   for (const { name, pathname, expected } of cases) {
     test(name, () => {
       expect(getMobileChromeConfig(pathname)).toEqual(expected);

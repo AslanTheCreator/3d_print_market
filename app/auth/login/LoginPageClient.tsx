@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AuthForm from "@/widgets/auth-form";
 import {
   PasswordResetDialog,
@@ -11,34 +11,15 @@ import {
   authApi,
   useAuthStore,
   VerificationRequiredError,
+  getPostAuthRedirectPath,
+  getAuthSwitchPath,
 } from "@/entities/session";
 import { useNotification } from "@/shared/ui/notification";
 
-const DEFAULT_POST_AUTH_REDIRECT = "/";
-
-const getPostAuthRedirectPath = (): string => {
-  if (typeof window === "undefined") {
-    return DEFAULT_POST_AUTH_REDIRECT;
-  }
-
-  const redirectPath = new URLSearchParams(window.location.search).get(
-    "redirect",
-  );
-
-  if (
-    !redirectPath ||
-    !redirectPath.startsWith("/") ||
-    redirectPath.startsWith("//") ||
-    redirectPath.startsWith("/auth")
-  ) {
-    return DEFAULT_POST_AUTH_REDIRECT;
-  }
-
-  return redirectPath;
-};
-
 export default function LoginPageClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = getPostAuthRedirectPath(searchParams.get("redirect"));
   const [isLoading, setIsLoading] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
@@ -63,7 +44,7 @@ export default function LoginPageClient() {
       const isLoginSuccessful = await login(userLogin, password);
 
       if (isLoginSuccessful) {
-        router.replace(getPostAuthRedirectPath());
+        router.replace(redirectPath);
       }
     } catch (error) {
       console.error("Login failed:", error);
@@ -126,7 +107,7 @@ export default function LoginPageClient() {
         setAuthenticated();
         setIsVerificationOpen(false);
         showNotification("Email успешно подтвержден!", "success");
-        router.replace(getPostAuthRedirectPath());
+        router.replace(redirectPath);
       }
     } catch (error) {
       console.error("Verification failed:", error);
@@ -187,7 +168,7 @@ export default function LoginPageClient() {
       <AuthForm
         title="Вход в аккаунт"
         subtitle="Войдите или "
-        url="/auth/register"
+        url={getAuthSwitchPath("/auth/register", redirectPath)}
         linkText="зарегистрируйтесь"
         buttonTitle="Войти"
         onSubmit={handleLogin}

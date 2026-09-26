@@ -43,6 +43,7 @@ const isProductEditorPath = (pathname: string) =>
 
 export const getMobileChromeConfig = (
   pathname: string,
+  isGuest = false,
 ): MobileChromeConfig => {
   const normalizedPathname = normalizePathname(pathname);
 
@@ -58,6 +59,10 @@ export const getMobileChromeConfig = (
   }
 
   if (normalizedPathname === "/checkout") {
+    if (isGuest) {
+      return { mode: "browse", showBottomNavigation: true, showMobileFooter: false };
+    }
+
     return {
       mode: "focused",
       parentLabel: "Корзина",

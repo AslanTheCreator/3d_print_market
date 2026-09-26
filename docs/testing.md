@@ -18,6 +18,14 @@ Steiger применяет к `src` recommended FSD rules, кроме
 layer находится в корневом `app/`. Этот каталог не входит в автоматическую
 проверку, поэтому его импорты и route-композиция проверяются вручную.
 
+### Важно
+
+Не выполняйте повторно дорогостоящие проверки после каждого промежуточного редактирования.
+Сначала завершите логическое изменение, а затем подтвердите его один раз.
+
+If a validation command fails, investigate the failure before rerunning it.
+Do not repeatedly rerun the same expensive command without making a relevant change.
+
 ## Выбор проверок
 
 После обновления зависимостей проверять установку через `npm ci`, runtime audit
@@ -95,19 +103,32 @@ accessibility scan (например, axe по матрице routes/states) п�
 
 `mobile-chrome-model.spec.ts` table-driven тестом проверяет pathname resolver:
 
-| Маршруты | Mobile chrome | Bottom nav | Mobile footer |
-| --- | --- | --- | --- |
-| `/`, `/catalog/search`, `/catalog/category/**`, `/favorites`, неизвестный | browse | да | да |
-| `/sellers/**` | context | да | да |
-| `/catalog/:id/detail` | context | нет | нет |
-| `/dashboard/**` | account | да | нет |
-| create/edit product, `/checkout` | focused | нет | нет |
-| `/auth/login`, `/auth/register` | auth | нет | нет |
-| about, contacts и legal routes | context | нет | да |
+| Маршруты                                                                  | Mobile chrome | Bottom nav | Mobile footer |
+| ------------------------------------------------------------------------- | ------------- | ---------- | ------------- |
+| `/`, `/catalog/search`, `/catalog/category/**`, `/favorites`, неизвестный | browse        | да         | да            |
+| `/sellers/**`                                                             | context       | да         | да            |
+| `/catalog/:id/detail`                                                     | context       | нет        | нет           |
+| `/dashboard/**`                                                           | account       | да         | нет           |
+| create/edit product, авторизованный `/checkout`                           | focused       | нет        | нет           |
+| гостевой `/checkout` после инициализации сессии                           | browse        | да         | нет           |
+| `/auth/login`, `/auth/register`                                           | auth          | нет        | нет           |
+| about, contacts и legal routes                                            | context       | нет        | да            |
 
 Model-тест также фиксирует приоритет create/edit перед общим dashboard matcher,
 category перед динамическим product detail, fallback для Back и нормализацию
 trailing slash.
+
+На гостевом `/favorites` mobile footer сокращён до контактов, юридических ссылок
+и копирайта. `guest-shopping.mobile.spec.ts` проверяет оба гостевых экрана на
+`320/375/393/599/600/768/899/900/1280 px`: заголовки, отсутствие overflow,
+размеры кнопок, доступность перехода в каталог над нижней навигацией, active state,
+отсутствие hydration errors и сохранение desktop-композиции.
+`auth-return-path.spec.ts` проверяет на `393/1280 px` возврат в корзину и избранное
+после переключения login/register, входа и регистрации с подтверждением почты.
+Запросы авторизации и регистрации подменяются mock API. Негативные model cases
+покрывают внешние URL, backslash, закодированные варианты, нормализацию пути и
+auth loops; browser case проверяет удаление небезопасного redirect при переходе
+между формами.
 
 Для корневого `/dashboard` resolver отключает отдельное меню разделов;
 на вложенных account-маршрутах оно остаётся доступным.

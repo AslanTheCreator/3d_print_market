@@ -1,42 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AuthForm from "@/widgets/auth-form";
 import { VerificationCodeDialog } from "@/features/auth";
 import {
   authApi,
   RegisterFormModel,
   useAuthStore,
+  getPostAuthRedirectPath,
+  getAuthSwitchPath,
 } from "@/entities/session";
 import { ApiError } from "@/shared/lib/errorHandler";
 import { useNotification } from "@/shared/ui/notification";
 
-const DEFAULT_POST_AUTH_REDIRECT = "/";
-
-const getPostAuthRedirectPath = (): string => {
-  if (typeof window === "undefined") {
-    return DEFAULT_POST_AUTH_REDIRECT;
-  }
-
-  const redirectPath = new URLSearchParams(window.location.search).get(
-    "redirect",
-  );
-
-  if (
-    !redirectPath ||
-    !redirectPath.startsWith("/") ||
-    redirectPath.startsWith("//") ||
-    redirectPath.startsWith("/auth")
-  ) {
-    return DEFAULT_POST_AUTH_REDIRECT;
-  }
-
-  return redirectPath;
-};
-
 export default function RegisterPageClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = getPostAuthRedirectPath(searchParams.get("redirect"));
   const [isLoading, setIsLoading] = useState(false);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -137,7 +118,7 @@ export default function RegisterPageClient() {
       if (isVerificationSuccessful) {
         setAuthenticated();
         setIsVerificationOpen(false);
-        router.replace(getPostAuthRedirectPath());
+        router.replace(redirectPath);
       }
     } catch (error) {
       console.error("Verification failed:", error);
@@ -158,7 +139,7 @@ export default function RegisterPageClient() {
       <AuthForm
         title="Регистрация"
         subtitle="У вас уже есть учетная запись?"
-        url="/auth/login"
+        url={getAuthSwitchPath("/auth/login", redirectPath)}
         linkText="Авторизуйтесь"
         buttonTitle="Зарегистрироваться"
         onSubmit={handleRegister}

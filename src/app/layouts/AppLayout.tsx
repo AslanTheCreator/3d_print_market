@@ -6,6 +6,7 @@ import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import { Box, GlobalStyles, IconButton } from "@mui/material";
 import { Header } from "@/widgets/header";
 import { Footer } from "@/widgets/footer";
+import { useAuthStore } from "@/entities/session";
 import {
   MobileAccountMenu,
   MobileBottomNavigation,
@@ -19,9 +20,10 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
+  const isGuest = useAuthStore((state) => state.isInitialized && !state.isAuthenticated);
   const mobileChrome = useMemo(
-    () => getMobileChromeConfig(pathname),
-    [pathname],
+    () => getMobileChromeConfig(pathname, isGuest),
+    [pathname, isGuest],
   );
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
@@ -85,7 +87,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               },
             }}
           >
-            <Footer />
+            <Footer mobileCompact={isGuest && pathname === "/favorites"} />
           </Box>
         </Box>
 

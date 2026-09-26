@@ -36,6 +36,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = "";
     if (file) {
       onImageChange(file);
     }

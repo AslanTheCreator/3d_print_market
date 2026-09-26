@@ -35,20 +35,39 @@ const footerColumns = [
   },
 ] as const;
 
-export const Footer = () => {
+export const Footer = ({ mobileCompact = false }: { mobileCompact?: boolean }) => {
   return (
     <Box
       component="footer"
       sx={{
-        mt: { xs: 5, sm: 7 },
+        mt: mobileCompact ? { xs: 2, md: 7 } : { xs: 5, sm: 7 },
         bgcolor: "rgba(122, 212, 238, 0.12)",
         borderTop: "1px solid rgba(84, 197, 229, 0.28)",
       }}
     >
       <Container>
+        {mobileCompact && (
+          <Stack
+            component="nav"
+            aria-label="Информация о сервисе"
+            sx={{ display: { xs: "flex", md: "none" }, py: 1 }}
+          >
+            {[footerColumns[2].links[1], ...footerColumns[3].links].map((link) => (
+              <Typography
+                key={link.href}
+                component={Link}
+                href={link.href}
+                variant="body2"
+                sx={{ minHeight: 44, display: "flex", alignItems: "center", width: "fit-content" }}
+              >
+                {link.label}
+              </Typography>
+            ))}
+          </Stack>
+        )}
         <Box
           sx={{
-            display: "grid",
+            display: mobileCompact ? { xs: "none", md: "grid" } : "grid",
             gridTemplateColumns: {
               xs: "1fr",
               sm: "repeat(2, minmax(0, 1fr))",
@@ -99,7 +118,7 @@ export const Footer = () => {
           alignItems={{ xs: "flex-start", sm: "center" }}
           spacing={1}
           sx={{
-            py: 2.5,
+            py: mobileCompact ? { xs: 1.5, md: 2.5 } : 2.5,
             borderTop: "1px solid rgba(33, 33, 33, 0.08)",
           }}
         >
@@ -112,6 +131,7 @@ export const Footer = () => {
             variant="body2"
             color="text.secondary"
             sx={{
+              display: mobileCompact ? { xs: "none", md: "inline" } : undefined,
               transition: "color 0.2s ease",
               "&:hover": {
                 color: "primary.main",
