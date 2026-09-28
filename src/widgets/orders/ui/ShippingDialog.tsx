@@ -354,7 +354,7 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
             </Stack>
             <Typography
               variant="body2"
-              color="primary.main"
+              color="accent.primary"
               sx={{
                 mt: 1,
                 wordBreak: "break-all",

@@ -363,8 +363,6 @@ const HeaderActionItem = ({
                 }),
               },
               "&:hover img": {
-                filter:
-                  "brightness(0) invert(1) drop-shadow(0px 0px 4px rgba(247, 110, 160, 0.6))",
                 transform: "scale(1.1)",
               },
             }}
@@ -382,7 +380,7 @@ const HeaderActionItem = ({
             variant="caption"
             sx={{
               display: { xs: "none", md: "block" },
-              color: "#ffffff",
+              color: "secondary.contrastText",
               fontWeight: 500,
               fontSize: "0.78rem",
               letterSpacing: 0,

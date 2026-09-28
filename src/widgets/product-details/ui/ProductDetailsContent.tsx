@@ -94,7 +94,7 @@ function ProductPriceSection({
         <Chip
           icon={<Schedule sx={{ fontSize: { xs: 14, sm: 18 } }} />}
           label="Предзаказ"
-          color="warning"
+          color="preorder"
           size="small"
           sx={{
             position: "absolute",

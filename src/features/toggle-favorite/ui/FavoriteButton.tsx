@@ -80,7 +80,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
             ? "common.white"
             : variant === "bar" || variant === "overlay"
               ? isFavorite
-                ? "error.main"
+                ? "primary.main"
                 : "text.secondary"
               : theme.palette.text.secondary,
         filter: cardIconFilter,
@@ -90,7 +90,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
     <FavoriteIcon
       sx={{
         color:
-          variant === "fab" ? "common.white" : theme.palette.error.main,
+          variant === "fab" ? "common.white" : theme.palette.primary.main,
         fontSize: iconFontSize,
         filter: cardIconFilter,
         stroke: isCardVariant
@@ -135,7 +135,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
             zIndex: 1001,
             boxShadow: "0 4px 16px rgba(247, 110, 160, 0.3)",
           }}
-          onClick={handleClick}
+          aria-pressed={isFavorite} onClick={handleClick}
           disabled={isLoading}
           aria-label={
             isFavorite ? "Удалить из избранного" : "Добавить в избранное"
@@ -147,7 +147,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
         <Button
           className={className}
           variant={isFavorite ? "contained" : "outlined"}
-          color={isFavorite ? "error" : "inherit"}
+          color={isFavorite ? "primary" : "inherit"}
           fullWidth
           startIcon={
             isLoading ? (
@@ -158,7 +158,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
               <FavoriteBorderIcon />
             )
           }
-          onClick={handleClick}
+          aria-pressed={isFavorite} onClick={handleClick}
           disabled={isLoading}
           sx={{
             borderRadius: "12px",
@@ -171,7 +171,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
               : {
                   bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
                   borderColor: "primary.main",
-                  color: "primary.main",
+                  color: "accent.primary",
                   "&:hover": {
                     bgcolor: (theme) => alpha(theme.palette.primary.main, 0.15),
                     borderColor: "primary.main",
@@ -195,7 +195,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
               <FavoriteBorderIcon />
             )
           }
-          onClick={handleClick}
+          aria-pressed={isFavorite} onClick={handleClick}
           disabled={isLoading}
           aria-label={
             isFavorite ? "Удалить из избранного" : "Добавить в избранное"
@@ -210,14 +210,14 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
             fontSize: "16px",
             textTransform: "none",
             color: {
-              xs: isFavorite ? "error.main" : "text.secondary",
-              sm: isFavorite ? "common.white" : "primary.main",
+              xs: isFavorite ? "primary.main" : "text.secondary",
+              sm: isFavorite ? "common.white" : "accent.primary",
             },
-            borderColor: isFavorite ? "error.light" : "primary.main",
+            borderColor: isFavorite ? "primary.light" : "primary.main",
             bgcolor: {
               xs: alpha(theme.palette.background.paper, 0.92),
               sm: isFavorite
-                ? theme.palette.error.main
+                ? theme.palette.primary.dark
                 : alpha(theme.palette.primary.main, 0.08),
             },
             backdropFilter: { xs: "blur(10px)", sm: "none" },
@@ -230,11 +230,11 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
               color: "inherit",
             },
             "&:hover": {
-              borderColor: isFavorite ? "error.main" : "primary.main",
+              borderColor: "primary.main",
               bgcolor: {
                 xs: alpha(theme.palette.background.paper, 0.98),
                 sm: isFavorite
-                  ? theme.palette.error.dark
+                  ? theme.palette.accent.primary
                   : alpha(theme.palette.primary.main, 0.15),
               },
             },
@@ -247,7 +247,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       ) : variant === "bar" ? (
         <IconButton
           className={className}
-          onClick={handleClick}
+          aria-pressed={isFavorite} onClick={handleClick}
           disabled={isLoading}
           aria-label={
             isFavorite ? "Удалить из избранного" : "Добавить в избранное"
@@ -257,11 +257,11 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
             height: 48,
             borderRadius: 2.5,
             border: "1px solid",
-            borderColor: isFavorite ? "error.main" : "divider",
+            borderColor: isFavorite ? "primary.main" : "divider",
             bgcolor: isFavorite
-              ? (theme) => alpha(theme.palette.error.main, 0.08)
+              ? (theme) => alpha(theme.palette.primary.main, 0.08)
               : (theme) => theme.palette.background.paper,
-            color: isFavorite ? "error.main" : "text.secondary",
+            color: isFavorite ? "primary.main" : "text.secondary",
             flexShrink: 0,
           }}
         >
@@ -270,7 +270,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       ) : variant === "overlay" ? (
         <IconButton
           className={className}
-          onClick={handleClick}
+          aria-pressed={isFavorite} onClick={handleClick}
           disabled={isLoading}
           aria-label={
             isFavorite ? "Удалить из избранного" : "Добавить в избранное"
@@ -284,9 +284,9 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
             boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)",
             border: "1px solid",
             borderColor: isFavorite
-              ? "error.light"
+              ? "primary.light"
               : (theme) => alpha(theme.palette.common.black, 0.08),
-            color: isFavorite ? "error.main" : "text.primary",
+            color: isFavorite ? "primary.main" : "text.primary",
             "&:hover": {
               bgcolor: (theme) => alpha(theme.palette.background.paper, 0.98),
             },
@@ -328,7 +328,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
               }),
             },
           }}
-          onClick={handleClick}
+          aria-pressed={isFavorite} onClick={handleClick}
           disabled={isLoading}
           aria-label={
             isFavorite ? "Удалить из избранного" : "Добавить в избранное"

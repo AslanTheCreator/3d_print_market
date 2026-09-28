@@ -99,7 +99,7 @@ export const Footer = ({ mobileCompact = false }: { mobileCompact?: boolean }) =
                         width: "fit-content",
                         transition: "color 0.2s ease",
                         "&:hover": {
-                          color: "primary.main",
+                          color: "accent.primary",
                         },
                       }}
                     >
@@ -134,7 +134,7 @@ export const Footer = ({ mobileCompact = false }: { mobileCompact?: boolean }) =
               display: mobileCompact ? { xs: "none", md: "inline" } : undefined,
               transition: "color 0.2s ease",
               "&:hover": {
-                color: "primary.main",
+                color: "accent.primary",
               },
             }}
           >

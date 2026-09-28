@@ -1,4 +1,4 @@
-import { alpha, Avatar, Box, ButtonBase, styled } from "@mui/material";
+import { Avatar, Box, ButtonBase, styled } from "@mui/material";
 
 export const AvatarUploadContainer = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -35,7 +35,7 @@ export const AvatarSelectButton = styled(ButtonBase)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 1.5,
   cursor: "pointer",
   "&.Mui-focusVisible": {
-    outline: `3px solid ${alpha(theme.palette.primary.main, 0.45)}`,
+    outline: `3px solid ${theme.palette.primary.dark}`,
     outlineOffset: 4,
   },
   "&.Mui-disabled": {

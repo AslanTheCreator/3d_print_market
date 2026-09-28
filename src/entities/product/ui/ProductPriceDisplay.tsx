@@ -102,7 +102,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
         <Star
           sx={{
             fontSize: { xs: "1rem", sm: "1.125rem" },
-            color: "warning.main",
+            color: "warning.light",
           }}
         />
         <Typography

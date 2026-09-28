@@ -23,7 +23,7 @@ export const getCreateProductErrorNotification = (
             {error.message}.{" "}
             <AppLink
               href={SHIPPING_SETTINGS_PATH}
-              color="primary"
+              color="accent.primary"
               underline="hover"
               sx={{ fontWeight: 600 }}
             >
@@ -42,7 +42,7 @@ export const getCreateProductErrorNotification = (
             {error.message}.{" "}
             <AppLink
               href={PAYMENT_SETTINGS_PATH}
-              color="primary"
+              color="accent.primary"
               underline="hover"
               sx={{ fontWeight: 600 }}
             >

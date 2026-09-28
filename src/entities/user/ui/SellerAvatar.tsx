@@ -51,7 +51,7 @@ export const SellerAvatar: React.FC<SellerAvatarProps> = ({
       sx={{
         width: responsiveSize,
         height: responsiveSize,
-        bgcolor: imageSrc ? "transparent" : "primary.main",
+        bgcolor: imageSrc ? "transparent" : "primary.dark",
         color: "white",
         fontWeight: 700,
         fontSize: { xs: compactSize * 0.4, sm: size * 0.4 },

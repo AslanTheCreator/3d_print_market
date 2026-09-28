@@ -240,7 +240,7 @@ export const MultiImageUpload = ({
                       position: "absolute",
                       bottom: 8,
                       left: 8,
-                      bgcolor: alpha(theme.palette.primary.main, 0.94),
+                      bgcolor: theme.palette.primary.dark,
                       color: "white",
                       px: 1.25,
                       py: 0.4,

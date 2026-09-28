@@ -89,6 +89,8 @@ export const Header = ({
         width: "100%",
         top: 0,
         backgroundColor: theme.palette.secondary.main,
+        color: theme.palette.secondary.contrastText,
+        "--focus-ring-color": theme.palette.secondary.contrastText,
         zIndex: theme.zIndex.appBar,
         boxShadow: theme.shadows[4],
       }}
@@ -152,7 +154,7 @@ export const Header = ({
                   border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
                   borderRadius: 1.5,
                   "&:focus-visible": {
-                    outline: `2px solid ${theme.palette.primary.main}`,
+                    outline: `3px solid ${theme.palette.secondary.contrastText}`,
                     outlineOffset: 2,
                   },
                 }}
@@ -177,7 +179,7 @@ export const Header = ({
                 <IconButton
                   onClick={handleBack}
                   aria-label={`Назад${mobileLabel ? `: ${mobileLabel}` : ""}`}
-                  sx={{ color: "common.white" }}
+                  sx={{ color: "secondary.contrastText" }}
                 >
                   <ArrowBackIcon />
                 </IconButton>
@@ -207,7 +209,7 @@ export const Header = ({
                   component={mobileConfig.title ? "h1" : "span"}
                   noWrap
                   sx={{
-                    color: "common.white",
+                    color: "secondary.contrastText",
                     fontWeight: 700,
                     textAlign: showBack ? "left" : "center",
                   }}

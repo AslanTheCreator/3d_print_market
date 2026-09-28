@@ -1,6 +1,7 @@
 "use client";
 import {
   alpha,
+  Components,
   createTheme,
   responsiveFontSizes,
   Theme,
@@ -21,14 +22,20 @@ const secondaryColor = {
   light: "#7ad4ee",
   main: "#54C5E5",
   dark: "#3ca8c6",
-  contrastText: "#fff",
+  contrastText: "#212121",
 };
 
-const preorderColor = {
+const successColor = {
   light: "#81c784", // Светло-зеленый
   main: "#4caf50", // Основной зеленый (Material Design Green 500)
   dark: "#388e3c", // Темно-зеленый
   contrastText: "#fff",
+};
+
+const preorderColor = { ...secondaryColor };
+const accentColors = {
+  primary: "#b51f57",
+  secondary: "#17627a",
 };
 
 // Создаем базовую тему без компонентов
@@ -122,36 +129,37 @@ let theme = createTheme({
   },
   palette: {
     mode: "light",
+    contrastThreshold: 4.5,
     primary: primaryColor,
     secondary: secondaryColor,
     preorder: preorderColor,
+    accent: accentColors,
     error: {
-      main: "#f44336",
+      main: "#d32f2f",
       light: "#e57373",
-      dark: "#d32f2f",
+      dark: "#b71c1c",
       contrastText: "#fff",
     },
     warning: {
-      main: "#ff9800",
+      main: "#ffb020",
       light: "#ffb74d",
-      dark: "#f57c00",
-      contrastText: "#fff",
+      dark: "#f59e0b",
+      contrastText: "#212121",
     },
     info: {
-      main: "#2196f3",
-      light: "#64b5f6",
-      dark: "#1976d2",
+      main: accentColors.secondary,
+      light: secondaryColor.light,
+      dark: "#124d60",
       contrastText: "#fff",
     },
     success: {
-      main: "#4caf50",
-      light: "#81c784",
-      dark: "#388e3c",
-      contrastText: "#fff",
+      ...successColor,
+      main: "#2e7d32",
+      dark: "#1b5e20",
     },
     text: {
       primary: "#212121",
-      secondary: "#757575",
+      secondary: "#616161",
       disabled: "#9e9e9e",
     },
     background: {
@@ -185,6 +193,14 @@ theme = createTheme(theme, {
         body: {
           backgroundColor: theme.palette.background.default,
           color: theme.palette.text.primary,
+        },
+        a: {
+          color: "inherit",
+          textDecoration: "none",
+          "&:focus-visible": {
+            outline: `3px solid var(--focus-ring-color, ${theme.palette.primary.dark})`,
+            outlineOffset: 3,
+          },
         },
         // Глобальные стили для скроллбара
         "*::-webkit-scrollbar": {
@@ -226,6 +242,16 @@ theme = createTheme(theme, {
         }),
       },
     },
+    MuiButtonBase: {
+      styleOverrides: {
+        root: ({ theme }: { theme: Theme }) => ({
+          "&.Mui-focusVisible": {
+            outline: `3px solid var(--focus-ring-color, ${theme.palette.primary.dark})`,
+            outlineOffset: 2,
+          },
+        }),
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: ({ theme }: { theme: Theme }) => ({
@@ -235,7 +261,7 @@ theme = createTheme(theme, {
           fontWeight: 600,
           boxShadow: "none",
           "&.Mui-focusVisible": {
-            outline: `3px solid ${alpha(theme.palette.primary.main, 0.45)}`,
+            outline: `3px solid var(--focus-ring-color, ${theme.palette.primary.dark})`,
             outlineOffset: 2,
           },
         }),
@@ -245,20 +271,43 @@ theme = createTheme(theme, {
           },
         },
         containedPrimary: ({ theme }: { theme: Theme }) => ({
+          backgroundColor: theme.palette.primary.dark,
+          color: theme.palette.primary.contrastText,
           "&:hover": {
-            backgroundColor: theme.palette.primary.dark,
+            backgroundColor: theme.palette.accent.primary,
+          },
+          "&.Mui-disabled": {
+            backgroundColor: theme.palette.action.disabledBackground,
+            color: theme.palette.action.disabled,
           },
         }),
         outlinedPrimary: ({ theme }: { theme: Theme }) => ({
+          color: theme.palette.accent.primary,
           borderColor: theme.palette.primary.main,
           "&:hover": {
             backgroundColor: alpha(theme.palette.primary.main, 0.04),
           },
         }),
         textPrimary: ({ theme }: { theme: Theme }) => ({
+          color: theme.palette.accent.primary,
           "&:hover": {
             backgroundColor: alpha(theme.palette.primary.main, 0.04),
           },
+        }),
+        textSecondary: ({ theme }: { theme: Theme }) => ({
+          color: theme.palette.accent.secondary,
+        }),
+        outlinedSecondary: ({ theme }: { theme: Theme }) => ({
+          color: theme.palette.accent.secondary,
+          borderColor: theme.palette.accent.secondary,
+        }),
+        textWarning: ({ theme }: { theme: Theme }) => ({
+          color: theme.palette.warning.contrastText,
+        }),
+        outlinedWarning: ({ theme }: { theme: Theme }) => ({
+          color: theme.palette.warning.contrastText,
+          borderColor: theme.palette.warning.main,
+          backgroundColor: alpha(theme.palette.warning.main, 0.08),
         }),
         // Добавляем размер small для мобильных кнопок
         sizeSmall: {
@@ -278,6 +327,20 @@ theme = createTheme(theme, {
           },
         },
       },
+    },
+    MuiFormLabel: {
+      styleOverrides: {
+        root: ({ theme, ownerState }) => ({
+          "&.Mui-focused:not(.Mui-error)": {
+            color: ownerState.color === "secondary"
+              ? theme.palette.accent.secondary
+              : theme.palette.accent.primary,
+          },
+        }),
+      },
+    },
+    MuiLink: {
+      defaultProps: { color: "accent.primary" },
     },
     MuiCard: {
       styleOverrides: {
@@ -300,11 +363,28 @@ theme = createTheme(theme, {
     },
     MuiChip: {
       styleOverrides: {
-        root: {
-          fontWeight: 500,
-          "&.MuiChip-clickable, &.MuiChip-deletable": {
-            minHeight: 44,
-          },
+        root: ({ theme, ownerState }) => {
+          const color = ownerState.color;
+          const palette = color && color !== "default" ? theme.palette[color] : null;
+          const foreground = color === "primary" ? theme.palette.accent.primary
+            : color === "secondary" ? theme.palette.accent.secondary
+            : color === "warning" ? theme.palette.warning.contrastText : palette?.dark;
+          return {
+            fontWeight: 500,
+            "&.MuiChip-clickable, &.MuiChip-deletable": { minHeight: 44 },
+            ...(palette && {
+              color: color === "preorder" ? palette.contrastText : foreground,
+              backgroundColor: color === "preorder" ? palette.main : alpha(palette.main, color === "warning" ? 0.16 : 0.08),
+              "& .MuiChip-icon": { color: "inherit" },
+              "& .MuiChip-deleteIcon": {
+                color: "inherit",
+                "&:hover": { color: "inherit" },
+              },
+              "&.MuiChip-clickable:hover, &.Mui-focusVisible": {
+                backgroundColor: color === "preorder" ? palette.light : alpha(palette.main, color === "warning" ? 0.24 : 0.14),
+              },
+            }),
+          };
         },
         sizeSmall: {
           height: "24px",
@@ -320,7 +400,7 @@ theme = createTheme(theme, {
             backgroundColor: alpha(theme.palette.primary.main, 0.04),
           },
           "&.Mui-focusVisible": {
-            outline: `3px solid ${alpha(theme.palette.primary.main, 0.45)}`,
+            outline: `3px solid var(--focus-ring-color, ${theme.palette.primary.dark})`,
             outlineOffset: 2,
           },
         }),
@@ -352,10 +432,13 @@ theme = createTheme(theme, {
     },
     MuiToggleButton: {
       styleOverrides: {
-        root: {
+        root: ({ theme, ownerState }) => ({
           minWidth: 44,
           minHeight: 44,
-        },
+          ...((ownerState.color === "primary" || ownerState.color === "secondary") && {
+            "&.Mui-selected": { color: theme.palette.accent[ownerState.color] },
+          }),
+        }),
       },
     },
     MuiListItemButton: {
@@ -367,6 +450,7 @@ theme = createTheme(theme, {
     },
     MuiRating: {
       styleOverrides: {
+        iconFilled: ({ theme }: { theme: Theme }) => ({ color: theme.palette.warning.light }),
         root: {
           "&:not(.MuiRating-readOnly) .MuiRating-label": {
             display: "inline-flex",
@@ -397,15 +481,61 @@ theme = createTheme(theme, {
         root: {
           borderRadius: "8px",
         },
+        standardWarning: ({ theme }: { theme: Theme }) => ({
+          color: theme.palette.warning.contrastText,
+          backgroundColor: alpha(theme.palette.warning.main, 0.16),
+          "& .MuiAlert-icon": { color: "inherit" },
+        }),
+        outlinedWarning: ({ theme }: { theme: Theme }) => ({
+          color: theme.palette.warning.contrastText,
+          borderColor: theme.palette.warning.main,
+          "& .MuiAlert-icon": { color: "inherit" },
+        }),
+        filledWarning: ({ theme }: { theme: Theme }) => ({
+          color: theme.palette.warning.contrastText,
+          backgroundColor: theme.palette.warning.main,
+        }),
       },
     },
     MuiBadge: {
       styleOverrides: {
+        colorPrimary: ({ theme }: { theme: Theme }) => ({
+          backgroundColor: theme.palette.primary.dark,
+          color: theme.palette.primary.contrastText,
+        }),
         root: {
           "& .MuiBadge-badge": {
             fontWeight: 600,
           },
         },
+      },
+    },
+    MuiFab: {
+      styleOverrides: {
+        primary: ({ theme }: { theme: Theme }) => ({
+          backgroundColor: theme.palette.primary.dark,
+          "&:hover": { backgroundColor: theme.palette.accent.primary },
+        }),
+      },
+    },
+    MuiPaginationItem: {
+      styleOverrides: {
+        root: ({ theme, ownerState }) => ({
+          ...(ownerState.color === "primary" && {
+            "&.Mui-selected": {
+              backgroundColor: theme.palette.primary.dark,
+              color: theme.palette.primary.contrastText,
+              "&:hover": { backgroundColor: theme.palette.accent.primary },
+            },
+          }),
+        }),
+      },
+    },
+    MuiStepIcon: {
+      styleOverrides: {
+        root: ({ theme }: { theme: Theme }) => ({
+          "&.Mui-active, &.Mui-completed": { color: theme.palette.primary.dark },
+        }),
       },
     },
     MuiPagination: {
@@ -436,8 +566,9 @@ theme = createTheme(theme, {
           fontWeight: 600,
           fontSize: "0.875rem",
           minHeight: 44,
+          "&.Mui-selected": { color: theme.palette.accent.primary },
           "&.Mui-focusVisible": {
-            outline: `3px solid ${alpha(theme.palette.primary.main, 0.45)}`,
+            outline: `3px solid var(--focus-ring-color, ${theme.palette.primary.dark})`,
             outlineOffset: -3,
           },
         }),
@@ -470,7 +601,7 @@ theme = createTheme(theme, {
         }),
       },
     },
-  },
+  } satisfies Components<Theme>,
 });
 
 // Применяем адаптивные размеры шрифтов
@@ -481,9 +612,17 @@ export default theme;
 declare module "@mui/material/styles" {
   interface Palette {
     preorder: Palette["primary"];
+    accent: typeof accentColors;
   }
 
   interface PaletteOptions {
     preorder?: PaletteOptions["primary"];
+    accent?: typeof accentColors;
+  }
+}
+
+declare module "@mui/material/Chip" {
+  interface ChipPropsColorOverrides {
+    preorder: true;
   }
 }

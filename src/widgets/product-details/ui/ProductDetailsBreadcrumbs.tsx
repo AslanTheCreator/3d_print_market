@@ -37,7 +37,7 @@ export function ProductDetailsBreadcrumbs({
           alignItems: "center",
           color: "text.secondary",
           "&:hover": {
-            color: "primary.main",
+            color: "accent.primary",
           },
         }}
       >
@@ -53,7 +53,7 @@ export function ProductDetailsBreadcrumbs({
           sx={{
             color: "text.secondary",
             "&:hover": {
-              color: "primary.main",
+              color: "accent.primary",
             },
           }}
         >

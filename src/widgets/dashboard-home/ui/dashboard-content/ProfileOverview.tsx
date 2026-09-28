@@ -214,11 +214,11 @@ export const ProfileOverview = ({
                 fontWeight: 600,
                 width: "100%",
                 borderColor: { xs: "primary.main", md: "transparent" },
-                bgcolor: { xs: "transparent", md: "primary.main" },
-                color: { xs: "primary.main", md: "primary.contrastText" },
+                bgcolor: { xs: "transparent", md: "primary.dark" },
+                color: { xs: "accent.primary", md: "primary.contrastText" },
                 "&:hover": {
                   borderColor: { xs: "primary.main", md: "transparent" },
-                  bgcolor: { xs: alpha(theme.palette.primary.main, 0.04), md: "primary.dark" },
+                  bgcolor: { xs: alpha(theme.palette.primary.main, 0.04), md: "accent.primary" },
                 },
               }}
             >

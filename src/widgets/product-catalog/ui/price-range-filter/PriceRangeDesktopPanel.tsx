@@ -125,10 +125,10 @@ export const PriceRangeDesktopPanel = ({
                   fontWeight: 700,
                   textTransform: "none",
                   background: (theme) =>
-                    `linear-gradient(90deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+                    `linear-gradient(90deg, ${theme.palette.primary.dark} 0%, ${theme.palette.accent.primary} 100%)`,
                   "&:hover": {
                     background: (theme) =>
-                      `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                      `linear-gradient(90deg, ${theme.palette.accent.primary} 0%, ${theme.palette.accent.primary} 100%)`,
                   },
                 }}
               >

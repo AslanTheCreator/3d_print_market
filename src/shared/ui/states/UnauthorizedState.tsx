@@ -172,7 +172,7 @@ export const UnauthorizedState = ({
           </Button>
         </Stack>
 
-        <Typography variant="caption" color={isShoppingState ? "grey.700" : "text.disabled"} sx={isShoppingState ? {
+        <Typography variant="caption" color="text.secondary" sx={isShoppingState ? {
           maxWidth: { xs: 360, md: "none" },
           fontSize: { xs: "0.875rem", md: "0.75rem" },
         } : undefined}>

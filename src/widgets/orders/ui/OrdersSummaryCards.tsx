@@ -120,8 +120,8 @@ export const OrdersSummaryCards = ({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: mainColor,
-                  bgcolor: alpha(mainColor, 0.12),
+                  color: color === "warning" ? "warning.contrastText" : mainColor,
+                  bgcolor: color === "warning" ? mainColor : alpha(mainColor, 0.12),
                   flexShrink: 0,
                   "& .MuiSvgIcon-root": {
                     fontSize: { xs: 21, sm: 24 },
@@ -144,7 +144,7 @@ export const OrdersSummaryCards = ({
                 <Typography
                   variant="h5"
                   fontWeight={800}
-                  color={mainColor}
+                  color={color === "warning" ? "warning.contrastText" : mainColor}
                   sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}
                 >
                   {value}

@@ -72,7 +72,7 @@ export function ProductDescription({
             borderRadius: 0,
             "&:hover": {
               bgcolor: "transparent",
-              color: "primary.main",
+              color: "accent.primary",
             },
           }}
         >

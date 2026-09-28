@@ -89,7 +89,7 @@ export const AgeVerificationGate = ({
                 position: "absolute",
                 top: { xs: 12, sm: 16 },
                 right: { xs: 12, sm: 16 },
-                color: "text.disabled",
+                color: "text.secondary",
               }}
             >
               <CloseIcon />

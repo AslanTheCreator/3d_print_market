@@ -102,7 +102,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
         } as const;
       case "PREORDER":
         return {
-          color: "warning",
+          color: "preorder",
           label: "Предзаказ",
         } as const;
       default:

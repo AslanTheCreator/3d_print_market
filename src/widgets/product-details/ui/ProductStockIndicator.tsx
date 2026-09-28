@@ -1,7 +1,7 @@
 "use client";
 
 import { Inventory2Outlined } from "@mui/icons-material";
-import { Box, Stack, Typography } from "@mui/material";
+import { alpha, Box, Stack, Typography } from "@mui/material";
 import { getStockColor } from "./productDetailsFormatters";
 
 interface ProductStockIndicatorProps {
@@ -18,15 +18,24 @@ export function ProductStockIndicator({
   const stockColor = getStockColor(stockCount);
 
   return (
-    <Stack direction="row" spacing={1} alignItems="center">
+    <Stack direction="row" spacing={1} alignItems="center"
+      sx={stockColor === "warning" ? {
+        width: "fit-content",
+        px: 1,
+        py: 0.5,
+        borderRadius: 1.5,
+        bgcolor: (theme) => alpha(theme.palette.warning.main, 0.16),
+        color: "warning.contrastText",
+      } : undefined}
+    >
       <Inventory2Outlined
         sx={{ fontSize: { xs: 16, sm: 20 } }}
-        color={stockColor}
+        color={stockColor === "warning" ? "inherit" : stockColor}
       />
       <Typography
         variant="body2"
         fontWeight={600}
-        color={`${stockColor}.main`}
+        color={stockColor === "warning" ? "warning.contrastText" : `${stockColor}.main`}
         sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
       >
         <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>

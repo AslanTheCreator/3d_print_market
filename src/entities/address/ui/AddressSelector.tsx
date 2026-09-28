@@ -191,7 +191,7 @@ export const AddressSelector = ({
                           p: 1,
                           borderRadius: 2,
                           bgcolor: alpha(theme.palette.primary.main, 0.08),
-                          color: "primary.main",
+                          color: "accent.primary",
                           display: { xs: "none", sm: compact ? "none" : "flex", md: "flex" },
                         }}
                       >
@@ -205,7 +205,7 @@ export const AddressSelector = ({
                         fontWeight={isSelected ? 600 : 500}
                         sx={{
                           mb: 0.5,
-                          color: isSelected ? "primary.main" : "text.primary",
+                          color: isSelected ? "accent.primary" : "text.primary",
                         }}
                       >
                         {address.street} {address.houseNumber}
@@ -230,7 +230,7 @@ export const AddressSelector = ({
                           height: 24,
                           fontSize: "0.75rem",
                           bgcolor: alpha(theme.palette.secondary.main, 0.08),
-                          color: "secondary.main",
+                          color: "accent.secondary",
                           fontWeight: 500,
                         }}
                       />
@@ -251,7 +251,7 @@ export const AddressSelector = ({
                             color: "text.secondary",
                             transition: "all 0.2s",
                             "&:hover": {
-                              color: "primary.main",
+                              color: "accent.primary",
                               bgcolor: alpha(theme.palette.primary.main, 0.08),
                             },
                           }}

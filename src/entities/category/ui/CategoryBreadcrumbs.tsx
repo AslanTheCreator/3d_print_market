@@ -28,7 +28,7 @@ export const CategoryBreadcrumbs = ({ items }: CategoryBreadcrumbsProps) => {
           alignItems: "center",
           color: "text.secondary",
           "&:hover": {
-            color: "primary.main",
+            color: "accent.primary",
           },
         }}
       >
@@ -55,7 +55,7 @@ export const CategoryBreadcrumbs = ({ items }: CategoryBreadcrumbsProps) => {
             sx={{
               color: "text.secondary",
               "&:hover": {
-                color: "primary.main",
+                color: "accent.primary",
               },
             }}
           >

@@ -240,7 +240,7 @@ export const ChangePasswordForm: React.FC = () => {
                         fontSize: 16,
                         color: passed
                           ? theme.palette.success.main
-                          : theme.palette.text.disabled,
+                          : theme.palette.text.secondary,
                       }}
                     />
                     <Typography

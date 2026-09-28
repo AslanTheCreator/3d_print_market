@@ -130,8 +130,9 @@ const SellerStat = ({
           width: 34,
           height: 34,
           borderRadius: 2,
-          color: `${accent}.main`,
-          bgcolor: (theme) => alpha(theme.palette[accent].main, 0.1),
+          color: accent === "warning" ? "warning.contrastText" : `${accent}.main`,
+          bgcolor: (theme) => accent === "warning"
+            ? theme.palette.warning.main : alpha(theme.palette[accent].main, 0.1),
           flexShrink: 0,
         }}
       >

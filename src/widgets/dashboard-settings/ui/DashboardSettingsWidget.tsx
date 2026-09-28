@@ -240,8 +240,8 @@ function SettingsContent() {
               },
               "&.Mui-selected": {
                 fontWeight: 700,
-                color: { xs: "primary.contrastText", md: "primary.main" },
-                bgcolor: { xs: "primary.main", md: "transparent" },
+                color: { xs: "primary.contrastText", md: "accent.primary" },
+                bgcolor: { xs: "primary.dark", md: "transparent" },
                 boxShadow: {
                   xs: "none",
                   md: "none",

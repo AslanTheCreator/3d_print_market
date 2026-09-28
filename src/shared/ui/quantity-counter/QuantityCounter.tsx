@@ -69,7 +69,7 @@ export const QuantityCounter = ({
           minWidth: 44,
           minHeight: 44,
           backgroundColor: alpha(theme.palette.primary.main, 0.1),
-          color: theme.palette.primary.main,
+          color: theme.palette.accent.primary,
           border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
           transition: "all 0.2s ease-in-out",
           "&:hover": {
@@ -109,7 +109,7 @@ export const QuantityCounter = ({
           minWidth: 44,
           minHeight: 44,
           backgroundColor: alpha(theme.palette.primary.main, 0.1),
-          color: theme.palette.primary.main,
+          color: theme.palette.accent.primary,
           border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
           transition: "all 0.2s ease-in-out",
           "&:hover": {

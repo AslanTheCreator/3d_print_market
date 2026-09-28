@@ -58,7 +58,7 @@ export const PriceRangeTrigger = ({
           px: 2,
           py: 1.25,
           borderRadius: 3,
-          color: hasActiveValue ? "primary.main" : "text.primary",
+          color: hasActiveValue ? "accent.primary" : "text.primary",
           bgcolor: hasActiveValue
             ? (theme) => alpha(theme.palette.primary.main, 0.1)
             : isOpen
@@ -108,7 +108,7 @@ export const PriceRangeTrigger = ({
             width: 44,
             height: 44,
             flexShrink: 0,
-            color: "primary.main",
+            color: "accent.primary",
             bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
             border: "1px solid",
             borderColor: (theme) => alpha(theme.palette.primary.main, 0.18),

@@ -146,8 +146,10 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     return {
       ...baseStyles,
       py: { xs: 0.75, sm: 1 },
+      px: { xs: 1, sm: 2 },
       fontSize: { xs: "0.75rem", sm: "0.875rem" },
       borderRadius: { xs: 1, sm: 1.5 },
+      "& .MuiButton-startIcon": { display: { xs: "none", sm: "inherit" } },
     };
   };
 
@@ -172,11 +174,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       };
     }
 
-    return {
-      "&:hover": {
-        bgcolor: theme.palette.primary.dark,
-      },
-    };
+    return {};
   };
 
   const getButtonText = () => {
@@ -190,7 +188,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       return "Нет в наличии";
     }
     if (isPreorder) {
-      return "Предзаказ";
+      return "Предзаказать";
     }
     return variant === "detailed" ? "Добавить в корзину" : "Купить";
   };
@@ -243,9 +241,6 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
               overflow: "hidden",
               "& .MuiButton-endIcon": {
                 display: { xs: "none", sm: "inherit" },
-              },
-              "&:hover": {
-                bgcolor: "primary.dark",
               },
             }}
           >

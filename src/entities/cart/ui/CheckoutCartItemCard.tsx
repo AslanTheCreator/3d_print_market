@@ -109,8 +109,7 @@ export const CheckoutCartItemCard = ({
           <Chip
             data-testid={`checkout-preorder-badge-${id}`}
             label="Предзаказ"
-            color="primary"
-            variant="outlined"
+            color="preorder"
             size="small"
             sx={{ fontWeight: 600, fontSize: "0.6875rem" }}
           />
@@ -196,7 +195,7 @@ export const CheckoutCartItemCard = ({
         {isExternalOnly ? (
           <Typography
             data-testid={`checkout-external-notice-${id}`}
-            variant="body2" fontWeight={600} color="primary.main" sx={{ mt: 0.75 }}
+            variant="body2" fontWeight={600} color="accent.primary" sx={{ mt: 0.75 }}
           >
             Доступно только через Telegram
           </Typography>

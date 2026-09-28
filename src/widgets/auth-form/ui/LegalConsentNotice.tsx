@@ -44,7 +44,7 @@ export const LegalConsentNotice = (): ReactElement => {
         <Typography
           component="span"
           variant="inherit"
-          color="primary"
+          color="accent.primary"
           sx={LEGAL_LINK_TEXT_SX}
         >
           пользовательское соглашение
@@ -62,7 +62,7 @@ export const LegalConsentNotice = (): ReactElement => {
         <Typography
           component="span"
           variant="inherit"
-          color="primary"
+          color="accent.primary"
           sx={LEGAL_LINK_TEXT_SX}
         >
           политикой конфиденциальности

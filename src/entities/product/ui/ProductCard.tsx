@@ -138,13 +138,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <Chip
               icon={<Schedule sx={{ fontSize: 14 }} />}
               label="Предзаказ"
+              color="preorder"
               size="small"
               sx={{
                 position: "absolute",
-                top: 10,
+                top: { xs: "auto", sm: 10 },
+                bottom: { xs: 10, sm: "auto" },
                 left: 10,
-                bgcolor: alpha(theme.palette.preorder.main, 0.92),
-                color: theme.palette.preorder.contrastText,
                 fontWeight: 700,
                 fontSize: { xs: "0.65rem", sm: "0.7rem" },
                 height: { xs: 22, sm: 24 },

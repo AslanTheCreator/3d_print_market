@@ -169,7 +169,7 @@ const AuthForm: React.FC<IAuthForm> = ({
         <Link href={url} passHref>
           <Typography
             component="span"
-            color="primary"
+            color="accent.primary"
             sx={{
               fontSize: { xs: "0.875rem", sm: "1rem" },
               textDecoration: "underline",
@@ -335,7 +335,7 @@ const AuthForm: React.FC<IAuthForm> = ({
                   alignItems: "center",
                   fontSize: { xs: "0.8rem", sm: "0.875rem" },
                   fontWeight: 500,
-                  color: "primary.main",
+                  color: "accent.primary",
                   textDecoration: "none",
                   cursor: "pointer",
                   transition: "color 0.2s ease",

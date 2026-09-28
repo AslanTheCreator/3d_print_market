@@ -76,18 +76,12 @@ export const ExtendProductButton: React.FC<ExtendProductButtonProps> = ({
       {variant === "button" ? (
         <Button
           variant="contained"
+          color="warning"
           size={size}
           startIcon={<Update />}
           onClick={handleOpenDialog}
           disabled={isPending}
-          sx={{
-            bgcolor: "warning.main",
-            color: "white",
-            fontWeight: 600,
-            "&:hover": {
-              bgcolor: "warning.dark",
-            },
-          }}
+          sx={{ fontWeight: 600 }}
         >
           Продлить
         </Button>
@@ -121,13 +115,14 @@ export const ExtendProductButton: React.FC<ExtendProductButtonProps> = ({
                 width: 40,
                 height: 40,
                 borderRadius: "50%",
-                bgcolor: alpha(theme.palette.warning.main, 0.1),
+                bgcolor: "warning.main",
+                color: "warning.contrastText",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <CalendarMonth color="warning" />
+              <CalendarMonth color="inherit" />
             </Box>
             <Typography variant="h6" fontWeight={700}>
               Продление срока действия
@@ -237,7 +232,7 @@ export const ExtendProductButton: React.FC<ExtendProductButtonProps> = ({
             variant="contained"
             color="warning"
             size="large"
-            startIcon={isPending ? <CircularProgress size={20} /> : <Update />}
+            startIcon={isPending ? <CircularProgress size={20} color="inherit" /> : <Update />}
             sx={{ minWidth: 140 }}
           >
             {isPending ? "Продление..." : "Продлить"}

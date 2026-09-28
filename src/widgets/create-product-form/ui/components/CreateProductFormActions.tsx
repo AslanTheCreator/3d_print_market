@@ -327,7 +327,7 @@ export const CreateProductFormActions = ({
         )}
         {!isEditMode && (
           <Typography role="status" data-testid="product-draft-status" variant="caption"
-            color={draftStatus === "memory" || draftStatus === "error" || draftImageError ? "warning.main" : "text.secondary"}
+            color={draftStatus === "memory" || draftStatus === "error" || draftImageError ? "warning.contrastText" : "text.secondary"}
             sx={{ display: { xs: "block", md: "none" }, mb: 0.75, lineHeight: 1.4 }}>
             {draftText}
           </Typography>
@@ -376,7 +376,7 @@ export const CreateProductFormActions = ({
             borderRadius: 1.5,
             ...(!isEditMode && {
               borderWidth: { xs: 0, md: 1 },
-              color: { xs: "text.secondary", md: "primary.main" },
+              color: { xs: "text.secondary", md: "accent.primary" },
               fontWeight: { xs: 400, md: 600 },
               "& .MuiButton-startIcon": { display: { xs: "none", md: "inline-flex" } },
               "&:hover": { borderWidth: { xs: 0, md: 1 } },

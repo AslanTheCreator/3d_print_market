@@ -161,7 +161,7 @@ export const MobileBottomNavigation = () => {
                 minHeight: 64,
                 px: 0.25,
                 py: 0.5,
-                color: isActive ? "primary.main" : "text.secondary",
+                color: isActive ? "accent.primary" : "text.secondary",
                 "&::before": isActive
                   ? {
                       content: '""',
@@ -175,6 +175,7 @@ export const MobileBottomNavigation = () => {
                     }
                   : undefined,
                 "&.Mui-focusVisible": {
+                  outlineOffset: -4,
                   bgcolor: (currentTheme) =>
                     alpha(currentTheme.palette.primary.main, 0.1),
                 },
@@ -191,7 +192,7 @@ export const MobileBottomNavigation = () => {
                 }}
               >
                 <Badge
-                  color="error"
+                  color="primary"
                   badgeContent={itemPresentation.badge}
                   max={99}
                   invisible={!itemPresentation.badge}

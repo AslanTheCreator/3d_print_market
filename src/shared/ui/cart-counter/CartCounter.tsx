@@ -102,8 +102,9 @@ export const CartCounter: React.FC<CartCounterProps> = ({
           minHeight: 44,
           height: "100%",
           borderRadius: 0,
-          color: theme.palette.primary.main,
+          color: theme.palette.accent.primary,
           transition: "background-color 0.15s ease",
+          "&.Mui-focusVisible": { outlineOffset: -3 },
           "&:hover": {
             bgcolor: alpha(theme.palette.primary.main, 0.15),
           },
@@ -135,7 +136,7 @@ export const CartCounter: React.FC<CartCounterProps> = ({
             xs: config.fontSize.mobile,
             sm: config.fontSize.desktop,
           },
-          color: theme.palette.primary.main,
+          color: theme.palette.accent.primary,
           userSelect: "none",
         }}
       >
@@ -157,9 +158,10 @@ export const CartCounter: React.FC<CartCounterProps> = ({
           minHeight: 44,
           height: "100%",
           borderRadius: 0,
-          color: theme.palette.primary.main,
+          color: theme.palette.accent.primary,
           opacity: isAtMax ? 0.5 : 1,
           transition: "background-color 0.15s ease",
+          "&.Mui-focusVisible": { outlineOffset: -3 },
           "&:hover": {
             bgcolor: alpha(theme.palette.primary.main, 0.15),
           },

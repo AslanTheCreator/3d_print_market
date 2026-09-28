@@ -285,7 +285,7 @@ export const CollapsibleFormCard: React.FC<CollapsibleFormCardProps> = ({
           </Box>
         )}
 
-        {notice && <Typography color="warning.main" variant="body2" sx={{ mt: 1 }}>{notice}</Typography>}
+        {notice && <Typography color="warning.contrastText" variant="body2" sx={{ mt: 1, p: 1, borderRadius: 1, bgcolor: (theme) => alpha(theme.palette.warning.main, 0.16) }}>{notice}</Typography>}
 
         {hasChildren && (
           <Collapse

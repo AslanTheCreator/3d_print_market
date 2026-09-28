@@ -41,7 +41,7 @@ export const ProfileProgress = ({
         <Typography variant="body2" color="text.secondary">
           Заполненность профиля
         </Typography>
-        <Typography variant="body2" fontWeight={800} color="primary.main">
+        <Typography variant="body2" fontWeight={800} color="accent.primary">
           {completion}%
         </Typography>
       </Stack>

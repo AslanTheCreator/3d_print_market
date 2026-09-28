@@ -23,7 +23,7 @@ export default function ContactsPage() {
             component="a"
             href={`mailto:${SITE_INFO.email}`}
             variant="body1"
-            color="primary.main"
+            color="accent.primary"
             fontWeight={600}
           >
             {SITE_INFO.email}
@@ -42,7 +42,7 @@ export default function ContactsPage() {
             component="a"
             href={`mailto:${SITE_INFO.moderatorEmail}`}
             variant="body1"
-            color="primary.main"
+            color="accent.primary"
             fontWeight={600}
           >
             {SITE_INFO.moderatorEmail}
@@ -61,7 +61,7 @@ export default function ContactsPage() {
             component="a"
             href={SITE_INFO.url}
             variant="body1"
-            color="primary.main"
+            color="accent.primary"
             fontWeight={600}
           >
             {SITE_INFO.url}
