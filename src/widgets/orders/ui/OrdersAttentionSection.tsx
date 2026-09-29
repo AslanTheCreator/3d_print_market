@@ -71,7 +71,7 @@ export const OrdersAttentionSection = ({
           const hint = getOrderStatusActionHint(
             order.actualStatus,
             userRole,
-            order.product.availability === "PREORDER",
+            order.prepaymentAmount > 0,
           );
 
           return (

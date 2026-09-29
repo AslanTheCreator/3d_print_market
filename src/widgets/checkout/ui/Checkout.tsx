@@ -46,12 +46,14 @@ const Checkout = () => {
     isPending: isLoadingCurrentUser,
     isError: isCurrentUserError,
   } = useProfileUser();
-  const preorderProductIdsRef = useRef<Set<number>>(new Set());
+  const prepaymentProductIdsRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     for (const item of cartItems ?? []) {
-      if (item.product.availability === "PREORDER") {
-        preorderProductIdsRef.current.add(item.product.id);
+      if (item.product.prepaymentAmount > 0) {
+        prepaymentProductIdsRef.current.add(item.product.id);
+      } else {
+        prepaymentProductIdsRef.current.delete(item.product.id);
       }
     }
   }, [cartItems]);
@@ -78,13 +80,13 @@ const Checkout = () => {
 
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
-  const [hasCompletedPreorder, setHasCompletedPreorder] = useState(false);
-  const [lastResultHasPreorder, setLastResultHasPreorder] = useState(false);
+  const [hasCompletedPrepayment, setHasCompletedPrepayment] = useState(false);
+  const [lastResultHasPrepayment, setLastResultHasPrepayment] = useState(false);
   const [lastResult, setLastResult] = useState<CheckoutResult | null>(null);
 
   const rememberSuccessfulOrders = useCallback((result: CheckoutResult) => {
-    const hasPreorder = result.success.some((order) =>
-      preorderProductIdsRef.current.has(order.productId),
+    const hasPrepayment = result.success.some((order) =>
+      prepaymentProductIdsRef.current.has(order.productId),
     );
 
     if (result.success.length > 0) {
@@ -99,16 +101,16 @@ const Checkout = () => {
       });
     }
 
-    if (hasPreorder) {
-      setHasCompletedPreorder(true);
+    if (hasPrepayment) {
+      setHasCompletedPrepayment(true);
     }
 
-    return hasPreorder;
+    return hasPrepayment;
   }, []);
 
   const handleSuccess = useCallback(
     (result: CheckoutResult) => {
-      setLastResultHasPreorder(rememberSuccessfulOrders(result));
+      setLastResultHasPrepayment(rememberSuccessfulOrders(result));
       setResultDialogOpen(true);
       setOrderCompleted(true);
       setLastResult(result);
@@ -118,7 +120,7 @@ const Checkout = () => {
 
   const handlePartialSuccess = useCallback(
     (result: CheckoutResult) => {
-      setLastResultHasPreorder(rememberSuccessfulOrders(result));
+      setLastResultHasPrepayment(rememberSuccessfulOrders(result));
       setResultDialogOpen(true);
       setLastResult(result);
     },
@@ -126,7 +128,7 @@ const Checkout = () => {
   );
 
   const handleError = useCallback((result: CheckoutResult) => {
-    setLastResultHasPreorder(false);
+    setLastResultHasPrepayment(false);
     setResultDialogOpen(true);
     setLastResult(result);
   }, []);
@@ -170,7 +172,7 @@ const Checkout = () => {
 
   // После успешного оформления — показываем OrderSuccessState вместо пустой корзины
   if (checkoutCartItems.length === 0 && orderCompleted) {
-    if (hasCompletedPreorder) {
+    if (hasCompletedPrepayment) {
       return (
         <EmptyPageState
           icon={
@@ -182,7 +184,7 @@ const Checkout = () => {
             />
           }
           title="Заказы оформлены!"
-          description="Заказы успешно созданы. Для предзаказов продавец сначала подтвердит заказ, после чего вам потребуется внести предоплату и затем оплатить остаток."
+          description="Заказы успешно созданы. Для заказов с предоплатой продавец сначала подтвердит заказ, после чего вам потребуется внести предоплату и затем оплатить остаток."
           actions={[
             {
               label: "Мои покупки",
@@ -197,7 +199,7 @@ const Checkout = () => {
             },
           ]}
           tips={{
-            title: "Что дальше с предзаказом",
+            title: "Что дальше с заказом",
             items: [
               "Дождитесь подтверждения заказа продавцом",
               "Внесите предоплату на следующем этапе",
@@ -284,7 +286,7 @@ const Checkout = () => {
         onGoHome={handleGoHome}
         onGoToOrders={handleGoToOrders}
         isRetrying={isSubmitting}
-        hasPreorderSuccess={lastResultHasPreorder}
+        hasPrepaymentSuccess={lastResultHasPrepayment}
       />
     </>
   );

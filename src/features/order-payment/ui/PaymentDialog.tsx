@@ -366,12 +366,12 @@ export const PaymentDialog = ({
             {order.product.name}
           </Typography>
           <Typography variant="h6" color="text.primary" fontWeight={600}>
-            {paymentBreakdown.isPreorder && paymentType === "payment"
+            {paymentBreakdown.hasPrepayment && paymentType === "payment"
               ? "Остаток к оплате:"
               : config.amountLabel}{" "}
             {formatPrice(amountToPay, order.product.currency)}
           </Typography>
-          {paymentBreakdown.isPreorder && (
+          {paymentBreakdown.hasPrepayment && (
             <Stack spacing={0.25} sx={{ mt: 1 }}>
               <Typography variant="caption" color="text.secondary">
                 Предоплата:{" "}

@@ -12,8 +12,6 @@ import { useFavoritesChecks } from "@/entities/favorite";
 import { Product } from "@/entities/product";
 import { FavoriteButton } from "@/features/toggle-favorite";
 import { AddToCartButton } from "@/features/add-to-cart";
-import { ExternalPurchaseButton } from "@/features/external-purchase";
-import { useProfileUser } from "@/entities/user";
 import { ErrorState, EmptyCatalogState } from "@/shared/ui/states";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/entities/session";
@@ -36,20 +34,6 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   skeletonCount = 12,
 }) => {
   const { isAuthenticated } = useAuth();
-  const hasExternalProducts = products.some(
-    (product) => product.availability === "EXTERNAL_ONLY",
-  );
-  const {
-    data: currentUser,
-    isPending: isOwnerCheckPending,
-    isError: isOwnerCheckError,
-  } = useProfileUser({
-    enabled: isAuthenticated && hasExternalProducts,
-  });
-  const isOwnerCheckUnavailable =
-    isAuthenticated &&
-    hasExternalProducts &&
-    (isOwnerCheckPending || isOwnerCheckError);
   const router = useRouter();
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
 
@@ -103,32 +87,13 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                 {...product}
                 onCardClick={() => handleCardClick(product.id)}
                 actions={
-                  product.availability === "EXTERNAL_ONLY" ? (
-                    <ExternalPurchaseButton
-                      externalUrl={product.externalUrl}
-                      label={
-                        isAuthenticated &&
-                        currentUser?.id === product.sellerId
-                          ? "Ваш товар"
-                          : isOwnerCheckError
-                            ? "Недоступно"
-                            : "Купить"
-                      }
-                      disabled={
-                        isOwnerCheckUnavailable ||
-                        (isAuthenticated &&
-                          currentUser?.id === product.sellerId)
-                      }
-                    />
-                  ) : (
-                    <AddToCartButton
-                      productId={product.id}
-                      sellerId={product.sellerId}
-                      availability={product.availability}
-                      productName={product.name}
-                      stockCount={product.count}
-                    />
-                  )
+                  <AddToCartButton
+                    productId={product.id}
+                    sellerId={product.sellerId}
+                    availability={product.availability}
+                    productName={product.name}
+                    stockCount={product.count}
+                  />
                 }
               />
               <FavoriteButton

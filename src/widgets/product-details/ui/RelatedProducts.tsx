@@ -15,10 +15,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/entities/session";
 import { AddToCartButton } from "@/features/add-to-cart";
-import { ExternalPurchaseButton } from "@/features/external-purchase";
 import { FavoriteButton } from "@/features/toggle-favorite";
 import { Product } from "@/entities/product";
-import { useProfileUser } from "@/entities/user";
 
 interface RelatedProductsProps {
   categoryId: number;
@@ -36,20 +34,6 @@ const RelatedProductsGrid = ({
 }: RelatedProductsGridProps) => {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const hasExternalProducts = products.some(
-    (product) => product.availability === "EXTERNAL_ONLY",
-  );
-  const {
-    data: currentUser,
-    isPending: isOwnerCheckPending,
-    isError: isOwnerCheckError,
-  } = useProfileUser({
-    enabled: isAuthenticated && hasExternalProducts,
-  });
-  const isOwnerCheckUnavailable =
-    isAuthenticated &&
-    hasExternalProducts &&
-    (isOwnerCheckPending || isOwnerCheckError);
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
 
   if (isLoading) {
@@ -67,30 +51,13 @@ const RelatedProductsGrid = ({
               {...product}
               onCardClick={() => router.push(`/catalog/${product.id}/detail`)}
               actions={
-                product.availability === "EXTERNAL_ONLY" ? (
-                  <ExternalPurchaseButton
-                    externalUrl={product.externalUrl}
-                    label={
-                      isAuthenticated && currentUser?.id === product.sellerId
-                        ? "Ваш товар"
-                        : isOwnerCheckError
-                          ? "Недоступно"
-                          : "Купить"
-                    }
-                    disabled={
-                      isOwnerCheckUnavailable ||
-                      (isAuthenticated && currentUser?.id === product.sellerId)
-                    }
-                  />
-                ) : (
-                  <AddToCartButton
-                    productId={product.id}
-                    sellerId={product.sellerId}
-                    availability={product.availability}
-                    productName={product.name}
-                    stockCount={product.count}
-                  />
-                )
+                <AddToCartButton
+                  productId={product.id}
+                  sellerId={product.sellerId}
+                  availability={product.availability}
+                  productName={product.name}
+                  stockCount={product.count}
+                />
               }
             />
             <FavoriteButton
@@ -109,6 +76,7 @@ export function RelatedProducts({
   categoryId,
   excludeProductId,
 }: RelatedProductsProps) {
+  const { isInitialized, sessionKey } = useAuth();
   const [canLoadProducts, setCanLoadProducts] = useState(false);
   const { ref, entry } = useIntersectionObserver({
     threshold: 0,
@@ -123,7 +91,8 @@ export function RelatedProducts({
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useProductsInfinite(10, { categoryId }, undefined, {
-      enabled: canLoadProducts,
+      sessionKey,
+      enabled: isInitialized && canLoadProducts,
     });
 
   const filteredProducts = useMemo(

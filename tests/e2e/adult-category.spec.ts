@@ -52,6 +52,7 @@ const mockAdultProducts = async (
       return;
     }
 
+    expect(request.headers().authorization).toBe("Bearer test-access-token");
     productRequests.push(request.postDataJSON());
 
     if (status === 403) {
@@ -104,8 +105,7 @@ const mockAdultProducts = async (
 const includesAdultFlag = (requestBody: unknown): boolean =>
   typeof requestBody === "object" &&
   requestBody !== null &&
-  "includeAdult" in requestBody &&
-  requestBody.includeAdult === true;
+  "includeAdult" in requestBody;
 
 test.describe("adult category access", () => {
   test("shows unauthorized state for anonymous user", async ({ page }) => {
@@ -139,7 +139,8 @@ test.describe("adult category access", () => {
     await page.getByTestId("age-verification-confirm").click();
 
     await expect(page.getByText("Adult category test product")).toBeVisible();
-    expect(productRequests.some(includesAdultFlag)).toBe(true);
+    expect(productRequests.length).toBeGreaterThan(0);
+    expect(productRequests.some(includesAdultFlag)).toBe(false);
   });
 
   test("shows forbidden state when backend rejects adult access", async ({
@@ -157,6 +158,6 @@ test.describe("adult category access", () => {
     await expect(page.getByTestId("error-state-products")).toBeVisible({
       timeout: 15_000,
     });
-    expect(productRequests.some(includesAdultFlag)).toBe(true);
+    expect(productRequests.some(includesAdultFlag)).toBe(false);
   });
 });

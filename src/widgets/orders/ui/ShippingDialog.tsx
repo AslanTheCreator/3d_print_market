@@ -208,7 +208,7 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
             </Box>
             <Box textAlign="right">
               <Typography variant="caption" color="text.secondary">
-                {paymentBreakdown.isPreorder
+                {paymentBreakdown.hasPrepayment
                   ? "Стоимость товаров"
                   : "Сумма заказа"}
               </Typography>
@@ -221,7 +221,7 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
             </Box>
           </Stack>
 
-          {paymentBreakdown.isPreorder && (
+          {paymentBreakdown.hasPrepayment && (
             <Stack
               data-testid="shipping-payment-breakdown"
               spacing={0.75}

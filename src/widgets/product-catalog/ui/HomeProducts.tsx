@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Box, Container, Typography } from "@mui/material";
 import { useProductsInfinite } from "@/entities/product";
+import { useAuth } from "@/entities/session";
 import { ProductGridSkeleton, type Product } from "@/entities/product";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { ProductCatalog } from "./ProductCatalog";
@@ -22,7 +23,9 @@ export const HomeProducts = ({
   initialError,
   pageSize,
 }: HomeProductsProps) => {
+  const { isInitialized, isAuthenticated, sessionKey } = useAuth();
   const [hasInitialError, setHasInitialError] = useState(initialError);
+  const shouldBlockQuery = hasInitialError && !isAuthenticated;
 
   const {
     data,
@@ -33,13 +36,14 @@ export const HomeProducts = ({
     isError,
     refetch,
   } = useProductsInfinite(pageSize, undefined, "DATE_DESC", {
+    sessionKey,
     initialProducts: initialError ? undefined : initialProducts,
     initialDataUpdatedAt,
-    enabled: !hasInitialError,
+    enabled: isInitialized && !shouldBlockQuery,
   });
 
   const products = data?.pages.flat() ?? [];
-  const hasError = hasInitialError || isError;
+  const hasError = shouldBlockQuery || isError;
   const isCatalogLoading = !hasError && isLoading;
 
   const handleRetry = () => {

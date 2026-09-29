@@ -54,9 +54,10 @@ export interface ListOrdersModel {
   orderId: number;
   actualStatus: OrderStatus;
   totalPrice: number;
+  prepaymentAmount: number;
   createdAt: string;
   userInfo: OrderUserInfo;
-  product: Product;
+  product: Product & { count: number };
   transfer: OrderTransfer;
   images: number[];
   deliveryUrl: string;
@@ -64,7 +65,7 @@ export interface ListOrdersModel {
 }
 
 export interface ListOrdersDto extends Omit<ListOrdersModel, "product"> {
-  product: ProductDto;
+  product: ProductDto & { count: number };
 }
 
 export interface OrderCancel {

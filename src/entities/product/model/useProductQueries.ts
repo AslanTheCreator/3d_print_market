@@ -13,6 +13,7 @@ interface ProductByIdOptions {
 }
 
 interface ProductsInfiniteOptions {
+  sessionKey?: number | null;
   initialProducts?: Product[];
   initialDataUpdatedAt?: number;
   staleTime?: number;
@@ -60,14 +61,16 @@ export const useProductsInfinite = (
   sortBy?: SortBy,
   options?: ProductsInfiniteOptions,
 ) => {
+  const sessionKey = options?.sessionKey ?? null;
+
   return useInfiniteProducts({
     size,
     filters,
     sortBy,
-    fetchFunction: productApi.getProducts,
-    queryKey: productKeys.lists(),
+    fetchFunction: (params) => productApi.getProducts(params, sessionKey !== null),
+    queryKey: productKeys.catalog(sessionKey),
     initialData:
-      options?.initialProducts !== undefined
+      sessionKey === null && options?.initialProducts !== undefined
         ? {
             pages: [options.initialProducts],
             pageParams: [null],

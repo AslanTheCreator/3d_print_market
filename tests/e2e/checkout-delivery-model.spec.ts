@@ -304,7 +304,6 @@ test.describe("checkout delivery model", () => {
       hasPendingSelectedItems: false,
       hasNeedsValidationSelectedItems: false,
       hasInsufficientStockSelectedItems: false,
-      hasExternalOnlySelectedItems: false,
       isRefreshingCart: false,
     };
 
@@ -318,19 +317,6 @@ test.describe("checkout delivery model", () => {
         hasInsufficientStockSelectedItems: true,
       }).submitBlockerMessage,
     ).toBe("Выберите хотя бы один товар");
-
-    expect(
-      getCheckoutSubmitReadiness({
-        ...commonParams,
-        selectedAddress: null,
-        hasExternalOnlySelectedItems: true,
-        hasPendingSelectedItems: true,
-        hasNeedsValidationSelectedItems: true,
-        hasInsufficientStockSelectedItems: true,
-      }).submitBlockerMessage,
-    ).toBe(
-      "Среди выбранных товаров есть доступные только через Telegram. Снимите их с выбора или перейдите к продавцу",
-    );
 
     expect(
       getCheckoutSubmitReadiness({
@@ -385,7 +371,6 @@ test.describe("checkout delivery model", () => {
         hasPendingSelectedItems: false,
         hasNeedsValidationSelectedItems: false,
         hasInsufficientStockSelectedItems: false,
-        hasExternalOnlySelectedItems: false,
         isRefreshingCart: false,
       }),
     ).toEqual({

@@ -110,6 +110,19 @@ const server = createServer((request, response) => {
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/product/902") {
+    sendJson(response, 200, {
+      ...product,
+      id: 902,
+      name: "Внешняя фигурка без ограничения остатка",
+      availability: "EXTERNAL_PRODUCT",
+      count: null,
+      externalUrl: null,
+      prepaymentAmount: 0,
+    });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/images/metadata") {
     const ids = (url.searchParams.get("ids") ?? "")
       .split(",")

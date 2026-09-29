@@ -13,7 +13,6 @@ import { ApiError, ErrorCodes } from "@/shared/lib/errorHandler";
 import { buildOrderToCreate, getFailedOrders } from "./orderCreatePayload";
 import {
   buildCheckoutResult,
-  markFailedOrdersNonRetryable,
   mergeCheckoutResults,
 } from "./orderCreateResult";
 import { useOrderCreateSideEffects } from "./useOrderCreateSideEffects";
@@ -27,12 +26,11 @@ import type {
 const UNKNOWN_ERROR_MESSAGE = "Неизвестная ошибка";
 const UNKNOWN_PRODUCT_NAME = "Неизвестный товар";
 const NETWORK_ERROR_MESSAGE = "Ошибка сети";
-const EXTERNAL_PRODUCT_ERROR_MESSAGE =
-  "Этот товар можно приобрести только через Telegram";
+const NON_PURCHASABLE_PRODUCT_ERROR_MESSAGE =
+  "Этот товар сейчас недоступен для покупки";
 
 interface ProductSubmissionCheck {
   canSubmit: boolean;
-  externalProductIds: number[];
 }
 
 export const useOrderCreateSubmit = ({
@@ -65,7 +63,7 @@ export const useOrderCreateSubmit = ({
         cartQueryState?.fetchStatus === "fetching" ||
         cartQueryState?.status === "error"
       ) {
-        return { canSubmit: false, externalProductIds: [] };
+        return { canSubmit: false };
       }
 
       const latestCartItems = queryClient.getQueryData<ProductBasket[]>(
@@ -86,17 +84,7 @@ export const useOrderCreateSubmit = ({
       );
 
       if (resolvedItems.some((item) => item === undefined)) {
-        return { canSubmit: false, externalProductIds: [] };
-      }
-
-      const externalProductIds = resolvedItems.flatMap((item) =>
-        item?.product.availability === "EXTERNAL_ONLY"
-          ? [item.product.id]
-          : [],
-      );
-
-      if (externalProductIds.length > 0) {
-        return { canSubmit: false, externalProductIds };
+        return { canSubmit: false };
       }
 
       const quantityState = useCartQuantityStore.getState();
@@ -112,14 +100,13 @@ export const useOrderCreateSubmit = ({
             quantityState.getSyncStatus(productId) !== "synced",
         )
       ) {
-        return { canSubmit: false, externalProductIds: [] };
+        return { canSubmit: false };
       }
 
       return {
         canSubmit: resolvedItems.every(
           (item) => item !== undefined && item.enoughStock !== false,
         ),
-        externalProductIds: [],
       };
     },
     [queryClient],
@@ -183,7 +170,7 @@ export const useOrderCreateSubmit = ({
             productName: order.productName,
             status: "error",
             errorCode: ErrorCodes.PRODUCT_NOT_PURCHASABLE,
-            errorMessage: EXTERNAL_PRODUCT_ERROR_MESSAGE,
+            errorMessage: NON_PURCHASABLE_PRODUCT_ERROR_MESSAGE,
             retryable: false,
           };
         }
@@ -275,41 +262,15 @@ export const useOrderCreateSubmit = ({
       return;
     }
 
-    let retryOrders = failedOrdersRef.current;
-    let resultBeforeRetry = submitResult;
+    const retryOrders = failedOrdersRef.current;
+    const resultBeforeRetry = submitResult;
     const retryProductIds = retryOrders.map((order) => order.productId);
     const fallbackItems = cartItems ?? [];
 
-    let submissionCheck = checkProductsForSubmission(
+    const submissionCheck = checkProductsForSubmission(
       retryProductIds,
       fallbackItems,
     );
-
-    if (submissionCheck.externalProductIds.length > 0) {
-      const externalProductIds = new Set(
-        submissionCheck.externalProductIds,
-      );
-      resultBeforeRetry = markFailedOrdersNonRetryable(
-        resultBeforeRetry,
-        externalProductIds,
-        ErrorCodes.PRODUCT_NOT_PURCHASABLE,
-        EXTERNAL_PRODUCT_ERROR_MESSAGE,
-      );
-
-      retryOrders = retryOrders.filter(
-        (order) => !externalProductIds.has(order.productId),
-      );
-      failedOrdersRef.current = retryOrders;
-      setSubmitResult(resultBeforeRetry);
-      await refreshNonPurchasableProducts(
-        submissionCheck.externalProductIds,
-      );
-
-      submissionCheck = checkProductsForSubmission(
-        retryOrders.map((order) => order.productId),
-        fallbackItems,
-      );
-    }
 
     if (retryOrders.length === 0 || !submissionCheck.canSubmit) {
       return resultBeforeRetry;
@@ -343,7 +304,6 @@ export const useOrderCreateSubmit = ({
     cartItems,
     checkProductsForSubmission,
     executeOrders,
-    refreshNonPurchasableProducts,
     syncAfterSubmit,
     notifySubmitResult,
   ]);

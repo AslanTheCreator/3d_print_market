@@ -52,10 +52,10 @@ const getStepIndex = (
 
 const OrderMiniProgress = ({ order }: { order: ListOrdersModel }) => {
   const theme = useTheme();
-  const isPreorder = order.product.availability === "PREORDER";
+  const hasPrepayment = order.prepaymentAmount > 0;
   const shouldShowProgress = shouldShowOrderProgress(
     order.actualStatus,
-    isPreorder,
+    hasPrepayment,
   );
 
   if (!shouldShowProgress) {
@@ -66,7 +66,7 @@ const OrderMiniProgress = ({ order }: { order: ListOrdersModel }) => {
     );
   }
 
-  const steps = getOrderProgressSteps(isPreorder);
+  const steps = getOrderProgressSteps(hasPrepayment);
   const activeIndex = getStepIndex(steps, order);
 
   return (

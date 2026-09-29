@@ -7,7 +7,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductBasket } from "../model/types";
 import { formatPrice, getImageUrl } from "@/shared/lib";
 import { QuantityCounter } from "@/shared/ui/quantity-counter";
@@ -24,13 +24,12 @@ interface CheckoutCartItemCardProps {
   onRemove: (id: number) => void;
   isRemoving?: boolean;
   maxQuantity?: number;
-  actionSlot?: ReactNode;
 }
 
 export const CheckoutCartItemCard = ({
   item, isSelected, onSelectChange, quantity, onQuantityIncrement,
   onQuantityDecrement, onQuantitySet, onRemove, isRemoving = false,
-  maxQuantity, actionSlot,
+  maxQuantity,
 }: CheckoutCartItemCardProps) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [hasImageError, setHasImageError] = useState(false);
@@ -39,13 +38,12 @@ export const CheckoutCartItemCard = ({
   // Деструктурируем product из ProductBasket
   const { product } = item;
   const { id, name, price, categories, image, currency } = product;
-  const isExternalOnly = product.availability === "EXTERNAL_ONLY";
   const isPreorder = product.availability === "PREORDER";
-  const isStockInsufficient = !isExternalOnly && item.enoughStock === false;
-  const displayQuantity = isExternalOnly ? 1 : quantity;
-  const fullPrice = price * displayQuantity;
-  const preorderPrepayment = product.prepaymentAmount * displayQuantity;
-  const preorderRemainder = (price - product.prepaymentAmount) * displayQuantity;
+  const hasPrepayment = product.prepaymentAmount > 0;
+  const isStockInsufficient = item.enoughStock === false;
+  const fullPrice = price * quantity;
+  const preorderPrepayment = product.prepaymentAmount * quantity;
+  const preorderRemainder = (price - product.prepaymentAmount) * quantity;
   const productImage = image?.[0] ?? null;
   const productImageSrc = getImageUrl(productImage, "thumbnail");
   const imageSrc = productImageSrc && !hasImageError ? productImageSrc : null;
@@ -192,23 +190,14 @@ export const CheckoutCartItemCard = ({
             {name}
           </Typography>
         </Link>
-        {isExternalOnly ? (
-          <Typography
-            data-testid={`checkout-external-notice-${id}`}
-            variant="body2" fontWeight={600} color="accent.primary" sx={{ mt: 0.75 }}
-          >
-            Доступно только через Telegram
-          </Typography>
-        ) : (
-          <Typography
-            data-testid={`checkout-stock-availability-${id}`}
-            variant="caption"
-            color={isStockInsufficient ? "error.main" : "text.secondary"}
-            sx={{ display: "block", mt: 0.75 }}
-          >
-            {availableCount === null ? "Количество не ограничено" : `Доступно: ${availableCount} шт.`}
-          </Typography>
-        )}
+        <Typography
+          data-testid={`checkout-stock-availability-${id}`}
+          variant="caption"
+          color={isStockInsufficient ? "error.main" : "text.secondary"}
+          sx={{ display: "block", mt: 0.75 }}
+        >
+          {availableCount === null ? "Количество не ограничено" : `Доступно: ${availableCount} шт.`}
+        </Typography>
       </Box>
 
       {/* Price and Quantity */}
@@ -216,34 +205,35 @@ export const CheckoutCartItemCard = ({
         direction="row" justifyContent="space-between" alignItems="center"
         flexWrap="wrap" gap={1} sx={{ gridColumn: "1 / -1" }}
       >
-        <Box sx={{ minWidth: 0, overflowWrap: "anywhere" }} data-testid={isPreorder ? `checkout-preorder-total-${id}` : undefined}>
+        <Box sx={{ minWidth: 0, overflowWrap: "anywhere" }} data-testid={hasPrepayment ? `checkout-preorder-total-${id}` : undefined}>
           <Typography variant="h6" component="p" fontWeight={700} sx={{ fontSize: { xs: "1.125rem", sm: "1.25rem" } }}>
             {formatPrice(fullPrice, currency)}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {isPreorder ? "Полная стоимость" : `${formatPrice(price, currency)} / шт.`}
+            {hasPrepayment ? "Полная стоимость" : `${formatPrice(price, currency)} / шт.`}
           </Typography>
         </Box>
-        {isExternalOnly ? actionSlot : (
-          <QuantityCounter
-            value={quantity}
-            onIncrement={onQuantityIncrement}
-            onDecrement={onQuantityDecrement}
-            disabled={isRemoving}
-            min={1}
-            max={maxQuantity ?? (isStockInsufficient ? quantity : undefined)}
-            size="small"
-            itemName={name}
-          />
-        )}
+        <QuantityCounter
+          value={quantity}
+          onIncrement={onQuantityIncrement}
+          onDecrement={onQuantityDecrement}
+          disabled={isRemoving}
+          min={1}
+          max={maxQuantity ?? (isStockInsufficient ? quantity : undefined)}
+          size="small"
+          itemName={name}
+        />
       </Stack>
 
-      {isPreorder && (
+      {hasPrepayment && (
         <Stack
           data-testid={`checkout-preorder-finance-${id}`}
           spacing={0.75}
           sx={{ gridColumn: "1 / -1", p: 1.5, bgcolor: "action.hover", borderRadius: 1.5 }}
         >
+          <Typography variant="caption" color="text.secondary">
+            Предварительный расчёт. Итоговые суммы будут указаны в заказе.
+          </Typography>
           <PriceRow testId={`checkout-preorder-prepayment-${id}`} label="Предоплата" value={formatPrice(preorderPrepayment, currency)} />
           <PriceRow testId={`checkout-preorder-remainder-${id}`} label="Остаток после предоплаты" value={formatPrice(preorderRemainder, currency)} />
         </Stack>

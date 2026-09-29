@@ -8,6 +8,7 @@ import { authApi } from "../api/authApi";
 export interface AuthState {
   isAuthenticated: boolean;
   isInitialized: boolean;
+  sessionRevision: number;
   user: {
     id?: string;
     mail?: string;
@@ -35,6 +36,7 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       isAuthenticated: false,
       isInitialized: false,
+      sessionRevision: 0,
       user: null,
 
       login: async (mail: string, password: string) => {
@@ -43,10 +45,11 @@ export const useAuthStore = create<AuthState>()(
 
           if (success) {
             log("Login successful");
-            set({
+            set((state) => ({
               isAuthenticated: true,
               user: { mail },
-            });
+              sessionRevision: state.sessionRevision + 1,
+            }));
 
             if (tokenRefreshManager.isInitialized()) {
               tokenRefreshManager.start();
@@ -66,17 +69,19 @@ export const useAuthStore = create<AuthState>()(
         log("Logging out");
         tokenRefreshManager.stop();
         authApi.logout();
-        set({
+        set((state) => ({
           isAuthenticated: false,
           user: null,
-        });
+          sessionRevision: state.sessionRevision + 1,
+        }));
       },
 
       setAuthenticated: () => {
         log("Setting authenticated");
-        set({
+        set((state) => ({
           isAuthenticated: true,
-        });
+          sessionRevision: state.sessionRevision + 1,
+        }));
 
         if (tokenRefreshManager.isInitialized()) {
           tokenRefreshManager.start();
@@ -90,10 +95,11 @@ export const useAuthStore = create<AuthState>()(
 
           if (accessToken) {
             log("Access token found, setting authenticated");
-            set({
+            set((state) => ({
               isAuthenticated: true,
               isInitialized: true,
-            });
+              sessionRevision: state.sessionRevision + 1,
+            }));
 
             if (tokenRefreshManager.isInitialized()) {
               tokenRefreshManager.start();
@@ -134,7 +140,10 @@ export const useAuthStore = create<AuthState>()(
 
         if (get().isAuthenticated !== isAuth) {
           log("Auth status changed", { isAuth });
-          set({ isAuthenticated: isAuth });
+          set((state) => ({
+            isAuthenticated: isAuth,
+            sessionRevision: state.sessionRevision + 1,
+          }));
         }
 
         return isAuth;
@@ -146,7 +155,10 @@ export const useAuthStore = create<AuthState>()(
         try {
           await authApi.refreshAccessToken();
           log("Token refreshed successfully");
-          set({ isAuthenticated: true });
+          set((state) => ({
+            isAuthenticated: true,
+            sessionRevision: state.sessionRevision + 1,
+          }));
           return true;
         } catch (error) {
           console.error("Token refresh failed:", error);

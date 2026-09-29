@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Box, Container, Typography } from "@mui/material";
 import { useSearchParams } from "next/navigation";
 import { useProductsInfinite } from "@/entities/product";
+import { useAuth } from "@/entities/session";
 import {
   ProductGridSkeleton,
   type PriceRange,
@@ -15,6 +16,7 @@ import { ProductCatalog } from "./ProductCatalog";
 import { SEARCH_PRODUCTS_PAGE_SIZE } from "../model/pageSizes";
 
 export const SearchProducts = () => {
+  const { isInitialized, sessionKey } = useAuth();
   const searchParams = useSearchParams();
   const query = searchParams?.get("query") || "";
   const [priceRange, setPriceRange] = useState<PriceRange | undefined>();
@@ -35,7 +37,10 @@ export const SearchProducts = () => {
     isFetchingNextPage,
     isLoading,
     refetch,
-  } = useProductsInfinite(SEARCH_PRODUCTS_PAGE_SIZE, filters);
+  } = useProductsInfinite(SEARCH_PRODUCTS_PAGE_SIZE, filters, undefined, {
+    sessionKey,
+    enabled: isInitialized,
+  });
 
   const products = useMemo(() => data?.pages.flat() ?? [], [data?.pages]);
 
@@ -96,7 +101,7 @@ export const SearchProducts = () => {
           <ProductCatalog
             products={products}
             isError={isError}
-            isLoading={isLoading}
+            isLoading={isLoading || !isInitialized}
             skeletonCount={SEARCH_PRODUCTS_PAGE_SIZE}
             onRetry={() => {
               void refetch();

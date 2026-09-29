@@ -4,6 +4,7 @@ export const useAuth = () => {
   const {
     isAuthenticated,
     isInitialized,
+    sessionRevision,
     user,
     login,
     logout,
@@ -13,6 +14,7 @@ export const useAuth = () => {
   return {
     isAuthenticated,
     isInitialized,
+    sessionKey: isInitialized && isAuthenticated ? sessionRevision : null,
     user,
     login,
     logout,

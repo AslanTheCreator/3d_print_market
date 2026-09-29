@@ -52,13 +52,13 @@ const createProduct = ({
 }: {
   id: number;
   name: string;
-  availability: "PURCHASABLE" | "PREORDER";
+  availability: "PURCHASABLE" | "PREORDER" | "EXTERNAL_PRODUCT";
   price: number;
   prepaymentAmount: number;
 }) => ({
   id,
   name,
-  count: 10,
+  count: availability === "EXTERNAL_PRODUCT" ? null : 10,
   price,
   prepaymentAmount,
   currency: "RUB",
@@ -80,7 +80,7 @@ type ProductFixture = ReturnType<typeof createProduct>;
 const createCartItem = (product: ProductFixture, count: number) => ({
   product,
   count,
-  availableCount: 10,
+  availableCount: product.count,
   enoughStock: true,
 });
 
@@ -263,7 +263,7 @@ test("explains preorder payment stages in a successful result", async ({
   const resultDialog = page.getByTestId("checkout-result-dialog");
   await expect(resultDialog).toBeVisible();
   await expect(resultDialog).toContainText(
-    "Для предзаказа продавец сначала подтвердит заказ",
+    "Для заказа с предоплатой продавец сначала подтвердит заказ",
   );
   await expect(resultDialog).toContainText(
     "внести предоплату и после её подтверждения — оплатить остаток",
@@ -296,7 +296,7 @@ test("shows accurate preorder guidance after the cart is completed", async ({
   await expect(
     page.getByRole("heading", { name: "Заказы оформлены!" }),
   ).toBeVisible();
-  await expect(page.getByText("Что дальше с предзаказом")).toBeVisible();
+  await expect(page.getByText("Что дальше с заказом")).toBeVisible();
   await expect(
     page.getByText("Внесите предоплату на следующем этапе"),
   ).toBeVisible();
@@ -304,3 +304,40 @@ test("shows accurate preorder guidance after the cart is completed", async ({
     page.getByText("После подтверждения предоплаты оплатите остаток"),
   ).toBeVisible();
 });
+
+for (const prepaymentAmount of [0, 250]) {
+  test(`creates an unlimited external order with prepayment ${prepaymentAmount}`, async ({ context, page, baseURL }) => {
+    await authenticate(context, baseURL);
+    const requests = await setupCheckoutApi(page, [
+      createCartItem(createProduct({
+        id: 1,
+        name: "Внешняя фигурка",
+        availability: "EXTERNAL_PRODUCT",
+        price: 1_000,
+        prepaymentAmount,
+      }), 3),
+    ]);
+    await openCheckout(page);
+    const item = page.getByTestId("checkout-cart-item-1");
+    await expect(item.getByTestId("checkout-stock-availability-1")).toHaveText("Количество не ограничено");
+    await expect(item.getByTestId("checkout-preorder-badge-1")).toHaveCount(0);
+    if (prepaymentAmount > 0) {
+      await expect(item.getByTestId("checkout-preorder-prepayment-1")).toContainText("750");
+      await expect(item.getByTestId("checkout-preorder-remainder-1")).toContainText("2 250");
+      await expect(item).toContainText("Предварительный расчёт");
+    } else {
+      await expect(item.getByTestId("checkout-preorder-finance-1")).toHaveCount(0);
+    }
+    await page.getByText("Тестовая 1", { exact: true }).click();
+    await page.getByRole("button", { name: "Оформить заказ" }).click();
+    await expect.poll(() => requests).toEqual([[{
+      productId: 1, count: 3, addressId: 50, transferId: 101, comment: "",
+    }]]);
+    await expect(page.getByRole("heading", { name: prepaymentAmount > 0 ? "Заказы оформлены!" : "Заказ оформлен!" })).toBeVisible();
+    if (prepaymentAmount > 0) {
+      await expect(page.getByText("Внесите предоплату на следующем этапе")).toBeVisible();
+    } else {
+      await expect(page.getByText("Внесите предоплату на следующем этапе")).toHaveCount(0);
+    }
+  });
+}

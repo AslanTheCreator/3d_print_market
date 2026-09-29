@@ -80,6 +80,11 @@ Axios clients остаются в `shared`. Они не импортируют s
 `AuthProvider` регистрирует `AuthSessionAdapter`, через который interceptor
 запрашивает refresh и сообщает об истечении сессии.
 
+Авторизация публичного поиска передаётся из композиции: `useAuth.sessionKey`
+поступает в опции `useProductsInfinite`. Entity товара не импортирует session;
+правила изоляции query cache и гостевого SSR описаны в
+[api-and-auth.md](./api-and-auth.md#поиск-товаров-и-сессия).
+
 Server state хранится в TanStack Query. Zustand используется для клиентского состояния.
 
 Подтверждённое исключение — `cartQuantityStore`: он хранит optimistic projection количества, revisions, sync status и последнее подтверждённое значение, синхронизируясь с cart query. Источником истины об актуальной корзине и остатках остаётся backend/TanStack Query; Zustand не должен превращаться во второй независимый cache.

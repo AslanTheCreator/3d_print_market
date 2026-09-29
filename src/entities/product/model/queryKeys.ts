@@ -1,6 +1,8 @@
 export const productKeys = {
   all: ["products"] as const,
   lists: () => [...productKeys.all, "list"] as const,
+  catalog: (sessionKey: number | null) =>
+    [...productKeys.lists(), { sessionKey }] as const,
   list: (filters?: Record<string, unknown>) =>
     filters
       ? ([...productKeys.lists(), { filters }] as const)

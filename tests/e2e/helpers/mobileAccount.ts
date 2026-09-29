@@ -6,7 +6,7 @@ export const image = { id: 77, originalUrl: `data:image/png;base64,${png}`, medi
 export const categories = [{ id: 1, name: "Фигурки", childs: [{ id: 2, name: "Аниме", childs: [] }, { id: 3, name: "Игры", childs: [] }] }];
 
 export const orderFixture = (orderId: number, actualStatus: string, day: number) => ({
-  orderId, actualStatus, totalPrice: 2500, createdAt: `2026-07-${String(day).padStart(2, "0")}T10:00:00.000Z`,
+  orderId, actualStatus, totalPrice: 2500, prepaymentAmount: 0, createdAt: `2026-07-${String(day).padStart(2, "0")}T10:00:00.000Z`,
   userInfo: { id: 10, imageId: 0, login: "seller", phoneNumber: "+79990000000", mail: "seller@example.com" },
   product: { id: orderId + 100, name: longProductName, count: 2, price: 1250, prepaymentAmount: 0, currency: "RUB", categories,
     imageId: 0, sellerId: 10, expirationDate: "2030-01-01T00:00:00Z", status: "ACTIVE", availability: "PURCHASABLE", sellerLogin: "seller", sellerRating: 5, totalReviews: 2, createdAt: "2026-07-01T00:00:00Z", externalUrl: null },

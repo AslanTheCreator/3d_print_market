@@ -4,7 +4,6 @@ import { useCallback } from "react";
 import { Box, Divider, Paper, Stack, Typography, alpha, useTheme } from "@mui/material";
 import { StorefrontOutlined } from "@mui/icons-material";
 import { useAuth } from "@/entities/session";
-import { ExternalPurchaseButton } from "@/features/external-purchase";
 import {
   CheckoutCartItemCard,
   useCartQuantity,
@@ -24,55 +23,6 @@ interface CheckoutSellerGroupCardProps {
   onTransferSelect: (sellerId: number, transfer: Transfer) => void;
   onRetryDelivery: (sellerId: number) => void;
 }
-
-const CheckoutCartItemWrapper = ({
-  item,
-  isSelected,
-  onSelectChange,
-  onRemove,
-  isRemoving,
-}: {
-  item: ProductBasket;
-  isSelected: boolean;
-  onSelectChange: (id: number, selected: boolean) => void;
-  onRemove: (id: number) => void;
-  isRemoving: boolean;
-}) => {
-  const isExternalOnly = item.product.availability === "EXTERNAL_ONLY";
-
-  if (isExternalOnly) {
-    return (
-      <CheckoutCartItemCard
-        item={item}
-        isSelected={isSelected}
-        onSelectChange={onSelectChange}
-        quantity={item.count}
-        onQuantityIncrement={() => undefined}
-        onQuantityDecrement={() => undefined}
-        onRemove={onRemove}
-        isRemoving={isRemoving}
-        actionSlot={
-          <ExternalPurchaseButton
-            externalUrl={item.product.externalUrl}
-            label="Купить"
-            size="small"
-            fullWidth={false}
-          />
-        }
-      />
-    );
-  }
-
-  return (
-    <CheckoutQuantityCartItem
-      item={item}
-      isSelected={isSelected}
-      onSelectChange={onSelectChange}
-      onRemove={onRemove}
-      isRemoving={isRemoving}
-    />
-  );
-};
 
 const CheckoutQuantityCartItem = ({
   item,
@@ -130,9 +80,6 @@ export const CheckoutSellerGroupCard = ({
   const selectedItemsCount = group.items.filter((item) =>
     selectedProductIds.has(item.product.id),
   ).length;
-  const hasPurchasableItems = group.items.some(
-    (item) => item.product.availability !== "EXTERNAL_ONLY",
-  );
 
   return (
     <Paper
@@ -172,7 +119,7 @@ export const CheckoutSellerGroupCard = ({
 
       <Box>
         {group.items.map((item) => (
-          <CheckoutCartItemWrapper
+          <CheckoutQuantityCartItem
             key={item.product.id}
             item={item}
             isSelected={selectedProductIds.has(item.product.id)}
@@ -183,15 +130,13 @@ export const CheckoutSellerGroupCard = ({
         ))}
       </Box>
 
-      {hasPurchasableItems && (
-        <Box sx={{ pt: 2 }}>
-          <SellerDeliverySelector
-            group={group}
-            onSelect={onTransferSelect}
-            onRetry={onRetryDelivery}
-          />
-        </Box>
-      )}
+      <Box sx={{ pt: 2 }}>
+        <SellerDeliverySelector
+          group={group}
+          onSelect={onTransferSelect}
+          onRetry={onRetryDelivery}
+        />
+      </Box>
     </Paper>
   );
 };

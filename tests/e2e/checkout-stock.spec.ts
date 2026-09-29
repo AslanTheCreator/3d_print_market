@@ -63,7 +63,7 @@ const createCartItem = ({
   availableCount,
   enoughStock,
   availability = "PURCHASABLE",
-  externalUrl = "",
+  externalUrl = null,
   sellerId = 10,
   sellerLogin = "stock-seller",
 }: {
@@ -72,15 +72,15 @@ const createCartItem = ({
   count: number;
   availableCount: number | null;
   enoughStock: boolean;
-  availability?: "PURCHASABLE" | "PREORDER" | "EXTERNAL_ONLY";
-  externalUrl?: string;
+  availability?: "PURCHASABLE" | "PREORDER" | "EXTERNAL_PRODUCT";
+  externalUrl?: string | null;
   sellerId?: number;
   sellerLogin?: string;
 }) => ({
   product: {
     id,
     name,
-    count: 20,
+    count: availableCount,
     price: 1000 * id,
     prepaymentAmount: 0,
     currency: "RUB",
@@ -263,8 +263,9 @@ const setupCheckoutApi = async (
       );
 
       if (item) {
-        item.product.availability = "EXTERNAL_ONLY";
-        item.product.externalUrl = "https://t.me/stock_seller";
+        item.availableCount = 0;
+        item.product.count = 0;
+        item.enoughStock = false;
       }
 
       await route.fulfill({
@@ -531,7 +532,7 @@ test("rolls back a failed PUT and retries failed stock validation", async ({
   await expect(page.getByTestId("checkout-stock-validation-retry")).toHaveCount(0);
 });
 
-test("keeps an external cart item visible but outside quantity, delivery and order flows", async ({
+test("orders an external product with unlimited stock alongside a regular product", async ({
   context,
   page,
   baseURL,
@@ -553,8 +554,8 @@ test("keeps an external cart item visible but outside quantity, delivery and ord
       count: 3,
       availableCount: null,
       enoughStock: true,
-      availability: "EXTERNAL_ONLY",
-      externalUrl: "https://t.me/external_seller",
+      availability: "EXTERNAL_PRODUCT",
+      externalUrl: null,
       sellerId: 20,
       sellerLogin: "external-seller",
     }),
@@ -564,34 +565,25 @@ test("keeps an external cart item visible but outside quantity, delivery and ord
 
   const externalItem = page.getByTestId("checkout-cart-item-2");
   await expect(
-    externalItem.getByTestId("checkout-external-notice-2"),
-  ).toHaveText("Доступно только через Telegram");
+    externalItem.getByTestId("checkout-stock-availability-2"),
+  ).toHaveText("Количество не ограничено");
   await expect(
     externalItem.locator('svg[data-testid="AddIcon"]'),
-  ).toHaveCount(0);
-  await expect(externalItem.getByRole("button", { name: "Купить" })).toBeVisible();
-  await expect(page.getByTestId("checkout-submit-blocker")).toHaveText(
-    "Среди выбранных товаров есть доступные только через Telegram. Снимите их с выбора или перейдите к продавцу",
-  );
-  await expect.poll(() => controller.orderDataProductIds).toEqual([1]);
+  ).toHaveCount(1);
+  await expect(page.getByTestId("checkout-submit-blocker")).toHaveCount(0);
+  await expect.poll(() => [...controller.orderDataProductIds].sort()).toEqual([1, 2]);
   expect(controller.putRequests).toEqual([]);
 
-  await externalItem.getByRole("button", { name: "Купить" }).click();
-  await expect(
-    page.getByRole("dialog", { name: "Покупка через Telegram" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Отмена" }).click();
-
-  await page
-    .getByRole("checkbox", { name: "Выбрать товар Внешний товар" })
-    .uncheck();
+  await externalItem.getByRole("button", { name: /Увеличить/ }).click();
+  await expect.poll(() => controller.putRequests).toEqual([{ productId: 2, count: 4 }]);
+  await expect(page.getByRole("link", { name: /Telegram/ })).toHaveCount(0);
 
   const submitButton = page.getByRole("button", { name: "Оформить заказ" });
   await expect(submitButton).toBeEnabled();
   await submitButton.click();
 
-  await expect.poll(() => controller.orderCreateRequests.length).toBe(1);
-  expect(controller.orderCreateRequests[0]).toEqual([
+  await expect.poll(() => controller.orderCreateRequests.length).toBe(2);
+  expect(controller.orderCreateRequests.flat().sort((a, b) => a.productId - b.productId)).toEqual([
     {
       productId: 1,
       count: 1,
@@ -599,11 +591,14 @@ test("keeps an external cart item visible but outside quantity, delivery and ord
       transferId: 101,
       comment: "",
     },
+    {
+      productId: 2,
+      count: 4,
+      addressId: 50,
+      transferId: 102,
+      comment: "",
+    },
   ]);
-  expect(
-    controller.orderCreateRequests.flat().some((order) => order.productId === 2),
-  ).toBe(false);
-  expect(controller.putRequests).toEqual([]);
 });
 
 test("does not offer retry after PRODUCT_NOT_PURCHASABLE and refreshes the cart item", async ({
@@ -615,7 +610,7 @@ test("does not offer retry after PRODUCT_NOT_PURCHASABLE and refreshes the cart 
   const controller = await setupCheckoutApi(page, [
     createCartItem({
       id: 1,
-      name: "Ставший внешним товар",
+      name: "Недоступный товар",
       count: 1,
       availableCount: 5,
       enoughStock: true,
@@ -629,7 +624,7 @@ test("does not offer retry after PRODUCT_NOT_PURCHASABLE and refreshes the cart 
   const resultDialog = page.getByTestId("checkout-result-dialog");
   await expect(resultDialog).toBeVisible();
   await expect(resultDialog).toContainText(
-    "Этот товар можно приобрести только через Telegram",
+    "Этот товар сейчас недоступен для покупки",
   );
   await expect(
     resultDialog.getByRole("button", {
@@ -640,13 +635,7 @@ test("does not offer retry after PRODUCT_NOT_PURCHASABLE and refreshes the cart 
   await resultDialog
     .getByRole("button", { name: "Вернуться к оформлению" })
     .click();
-  await expect(page.getByTestId("checkout-external-notice-1")).toHaveText(
-    "Доступно только через Telegram",
-  );
-  await expect(
-    page
-      .getByTestId("checkout-cart-item-1")
-      .locator('svg[data-testid="AddIcon"]'),
-  ).toHaveCount(0);
+  await expect(page.getByTestId("checkout-stock-availability-1")).toHaveText("Доступно: 0 шт.");
+  await expect(page.getByRole("button", { name: "Оформить заказ" })).toBeDisabled();
   expect(controller.orderCreateRequests).toHaveLength(1);
 });

@@ -130,7 +130,7 @@ const REGULAR_PROGRESS_STEPS: readonly OrderProgressStep[] = [
   { key: "COMPLETED", label: "Завершен" },
 ];
 
-const PREORDER_PROGRESS_STEPS: readonly OrderProgressStep[] = [
+const PREPAYMENT_PROGRESS_STEPS: readonly OrderProgressStep[] = [
   { key: "BOOKED", label: "Забронирован", sellerAction: true },
   { key: "AWAITING_PREPAYMENT", label: "Предоплата", customerAction: true },
   {
@@ -182,9 +182,9 @@ export const shouldShowTrackingForRole = (
 
 export const shouldShowOrderProgress = (
   status: OrderStatus,
-  isPreorder: boolean,
+  hasPrepayment: boolean,
 ) => {
-  if (isPreorder) {
+  if (hasPrepayment) {
     return true;
   }
 
@@ -193,21 +193,21 @@ export const shouldShowOrderProgress = (
   );
 };
 
-export const getOrderProgressSteps = (isPreorder: boolean) => {
-  return isPreorder ? PREORDER_PROGRESS_STEPS : REGULAR_PROGRESS_STEPS;
+export const getOrderProgressSteps = (hasPrepayment: boolean) => {
+  return hasPrepayment ? PREPAYMENT_PROGRESS_STEPS : REGULAR_PROGRESS_STEPS;
 };
 
 export const getOrderStatusActionHint = (
   status: OrderStatus,
   userRole: OrderUserRole,
-  isPreorder = false,
+  hasPrepayment = false,
 ) => {
   switch (status) {
     case "BOOKED":
-      if (isPreorder) {
+      if (hasPrepayment) {
         return userRole === "seller"
-          ? "Подтвердите предзаказ, чтобы покупатель смог перейти к предоплате"
-          : "Ожидайте подтверждения предзаказа продавцом";
+          ? "Подтвердите заказ, чтобы покупатель смог перейти к предоплате"
+          : "Ожидайте подтверждения заказа продавцом";
       }
 
       return userRole === "seller"

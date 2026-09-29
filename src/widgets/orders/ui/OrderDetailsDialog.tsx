@@ -121,7 +121,7 @@ export const OrderDetailsDialog = ({
             <Divider sx={{ my: 1.5 }} />
             <Stack
               data-testid="order-payment-breakdown"
-              spacing={paymentBreakdown.isPreorder ? 1 : 0}
+              spacing={paymentBreakdown.hasPrepayment ? 1 : 0}
             >
               <Stack
                 direction="row"
@@ -130,7 +130,7 @@ export const OrderDetailsDialog = ({
                 spacing={2}
               >
                 <Typography variant="body2" color="text.secondary">
-                  {paymentBreakdown.isPreorder
+                  {paymentBreakdown.hasPrepayment
                     ? "Стоимость товаров"
                     : "Сумма заказа"}
                 </Typography>
@@ -139,7 +139,7 @@ export const OrderDetailsDialog = ({
                 </Typography>
               </Stack>
 
-              {paymentBreakdown.isPreorder && (
+              {paymentBreakdown.hasPrepayment && (
                 <>
                   <Stack
                     direction="row"

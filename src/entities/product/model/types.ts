@@ -3,13 +3,13 @@ import type { ImageMetadata } from "@/entities/image/@x/product";
 import type { Review } from "@/entities/review/@x/product";
 import type { Currency } from "@/shared/types";
 
-export type Availability = "PURCHASABLE" | "PREORDER" | "EXTERNAL_ONLY";
+export type Availability = "PURCHASABLE" | "PREORDER" | "EXTERNAL_PRODUCT";
 type Status = "ACTIVE" | "TIME_EXPIRED" | "BLOCKED" | "DELETED";
 
 export interface ProductDto {
   id: number;
   name: string;
-  count: number;
+  count: number | null;
   price: number;
   prepaymentAmount: number;
   currency: Currency;
@@ -19,7 +19,7 @@ export interface ProductDto {
   expirationDate: string;
   status: Status;
   availability: Availability;
-  externalUrl: string;
+  externalUrl: string | null;
   sellerLogin: string;
   sellerRating: number;
   totalReviews: number;
@@ -36,14 +36,14 @@ export interface ProductDetailDto {
   description: string;
   price: number;
   prepaymentAmount: number;
-  count: number;
+  count: number | null;
   currency: Currency;
   originality: string;
   participantId: number;
   status: Status;
   categories: CategoryModel[];
   availability: Availability;
-  externalUrl: string;
+  externalUrl: string | null;
   imageIds: number[];
   reviews: Review[];
   sellerLogin: string;
@@ -55,7 +55,7 @@ export interface ProductDetail extends ProductDetailDto {
   image: ImageMetadata[];
 }
 
-export type EditableAvailability = Exclude<Availability, "EXTERNAL_ONLY">;
+export type EditableAvailability = Exclude<Availability, "EXTERNAL_PRODUCT">;
 
 export interface ProductCreateModel {
   name: string;

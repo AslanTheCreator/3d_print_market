@@ -19,6 +19,7 @@ import type { SelectChangeEvent } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { ProductGridSkeleton, useProductsInfinite } from "@/entities/product";
 import { useUserById } from "@/entities/user";
+import { useAuth } from "@/entities/session";
 import type { PriceRange, ProductFilter, SortBy } from "@/entities/product";
 import { EmptyCatalogState, ErrorState } from "@/shared/ui/states";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
@@ -67,6 +68,7 @@ interface SellerPageClientProps {
 }
 
 export const SellerPageClient = ({ sellerId }: SellerPageClientProps) => {
+  const { isInitialized, sessionKey } = useAuth();
   const sellerIdNumber = Number(sellerId);
   const isSellerIdValid =
     Number.isInteger(sellerIdNumber) && sellerIdNumber > 0;
@@ -100,7 +102,8 @@ export const SellerPageClient = ({ sellerId }: SellerPageClientProps) => {
     isError: isProductsError,
     refetch: refetchProducts,
   } = useProductsInfinite(PAGE_SIZE, filters, sortBy, {
-    enabled: isSellerIdValid && Boolean(seller),
+    sessionKey,
+    enabled: isInitialized && isSellerIdValid && Boolean(seller),
   });
 
   const products = useMemo(() => data?.pages.flat() ?? [], [data?.pages]);

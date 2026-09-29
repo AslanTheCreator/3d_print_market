@@ -83,15 +83,20 @@ const createPreorder = ({
   status,
   sellerId,
   quantity = 3,
+  availability = "PREORDER",
+  orderPrepaymentAmount = 2_500 * quantity,
 }: {
   orderId: number;
   status: PaymentStatus;
   sellerId: number;
   quantity?: number;
+  availability?: "PREORDER" | "EXTERNAL_PRODUCT";
+  orderPrepaymentAmount?: number;
 }) => ({
   orderId,
   actualStatus: status,
   totalPrice: 30_000,
+  prepaymentAmount: orderPrepaymentAmount,
   createdAt: "2026-07-20T10:00:00.000Z",
   userInfo: {
     id: sellerId,
@@ -112,7 +117,7 @@ const createPreorder = ({
     sellerId,
     expirationDate: "2030-01-01T00:00:00.000Z",
     status: "ACTIVE",
-    availability: "PREORDER",
+    availability,
     externalUrl: "",
     sellerLogin: `test-seller-${sellerId}`,
     sellerRating: 5,
@@ -776,3 +781,53 @@ test.describe("order payment flow", () => {
     expect(tracker.deletedImageIds).toEqual([]);
   });
 });
+
+
+for (const width of [393, 1280]) {
+  for (const scenario of [
+    { status: "AWAITING_PREPAYMENT", prepaymentAmount: 1_200, action: "Подтвердить предоплату", amount: /1\s*200/, endpoint: "AWAITING_PREPAYMENT_APPROVAL" },
+    { status: "AWAITING_PAYMENT", prepaymentAmount: 1_200, action: "Подтвердить оплату", amount: /30\s*000/, endpoint: "ASSEMBLING" },
+    { status: "AWAITING_PAYMENT", prepaymentAmount: 0, action: "Подтвердить оплату", amount: /30\s*000/, endpoint: "ASSEMBLING" },
+  ] as const) {
+    test('external payment uses server totals: ' + scenario.status + ', prepayment ' + scenario.prepaymentAmount + ', width ' + width, async ({ context, page, baseURL }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await authenticate(context, baseURL);
+      const order = createPreorder({
+        orderId: 801, status: scenario.status, sellerId: 77, quantity: 3,
+        availability: "EXTERNAL_PRODUCT", orderPrepaymentAmount: scenario.prepaymentAmount,
+      });
+      const tracker = await mockPaymentApi(page, {
+        orders: [order],
+        accounts: [createAccount({ id: 701, participantId: 77, username: "Тестовый счёт", entityValue: "TEST-ACCOUNT" })],
+        uploadImageId: 9_101,
+      });
+      await page.goto('/dashboard/purchase');
+      await page.getByRole('button', { name: 'Подробнее о заказе №801' }).first().click();
+      const details = page.getByRole('dialog', { name: 'Детали заказа №801' });
+      const breakdown = details.getByTestId('order-payment-breakdown');
+      await expect(breakdown).toContainText(scenario.prepaymentAmount > 0 ? /31\s*200/ : /30\s*000/);
+      await expect(breakdown).not.toContainText(/37\s*500/);
+      if (scenario.prepaymentAmount > 0) {
+        await expect(breakdown).toContainText(/1\s*200/);
+        await expect(breakdown).toContainText('Остаток к оплате');
+      } else {
+        await expect(breakdown).not.toContainText('Предоплата');
+      }
+      await details.getByRole('button', { name: 'Закрыть детали заказа' }).click();
+      const dialog = await openPaymentDialog(page, scenario.action);
+      await expect(dialog.getByText(/^(К предоплате|К оплате|Сумма к оплате|Остаток к оплате):/)).toContainText(scenario.amount);
+      if (scenario.prepaymentAmount > 0) {
+        await expect(dialog.getByText(/^Предоплата:/)).toContainText(/1\s*200/);
+      } else {
+        await expect(dialog.getByText(/^Предоплата:/)).toHaveCount(0);
+      }
+      await uploadPaymentProof(dialog);
+      const request = page.waitForRequest((request) => request.method() === 'POST' && new URL(request.url()).pathname === '/order/801/' + scenario.endpoint);
+      await dialog.getByRole('button', { name: scenario.action, exact: true }).click();
+      const mutation = await request;
+      expect(mutation.headers().authorization).toBe('Bearer order-payment-test-access-token');
+      await expect.poll(() => tracker.statusImageIds).toEqual([9_101]);
+      await expect(dialog).toBeHidden();
+    });
+  }
+}

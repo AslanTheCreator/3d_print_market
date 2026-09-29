@@ -257,17 +257,17 @@ test("mobile age gate respects shell safe areas and scrolls on a short viewport"
 
     await page.getByTestId("age-verification-confirm").click();
     await expect(gate).toBeHidden();
+    await expect.poll(() => productRequests.length).toBeGreaterThan(0);
     await expect
       .poll(() =>
         productRequests.some(
           (request) =>
             typeof request === "object" &&
             request !== null &&
-            "includeAdult" in request &&
-            request.includeAdult === true,
+            "includeAdult" in request,
         ),
       )
-      .toBe(true);
+      .toBe(false);
   } finally {
     await safeAreaSession.send("Emulation.setSafeAreaInsetsOverride", {
       insets: { top: 0, right: 0, bottom: 0, left: 0 },

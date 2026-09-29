@@ -12,7 +12,7 @@ import type {
 import type { ProductDetail } from "@/entities/product";
 
 type WriteModelAllowsExternal =
-  "EXTERNAL_ONLY" extends ProductCreateModel["availability"] ? true : false;
+  "EXTERNAL_PRODUCT" extends ProductCreateModel["availability"] ? true : false;
 
 const writeModelAllowsExternal: WriteModelAllowsExternal = false;
 
@@ -28,7 +28,7 @@ const externalProduct: ProductDetail = {
   participantId: 7,
   status: "ACTIVE",
   categories: [{ id: 3, name: "Фигурки", childs: [] }],
-  availability: "EXTERNAL_ONLY",
+  availability: "EXTERNAL_PRODUCT",
   externalUrl: "https://example.com/product/42",
   imageIds: [101],
   reviews: [],
@@ -38,9 +38,9 @@ const externalProduct: ProductDetail = {
   image: [],
 };
 
-test("write model excludes EXTERNAL_ONLY", () => {
+test("write model excludes EXTERNAL_PRODUCT", () => {
   expect(writeModelAllowsExternal).toBe(false);
-  expect(isEditableAvailability("EXTERNAL_ONLY")).toBe(false);
+  expect(isEditableAvailability("EXTERNAL_PRODUCT")).toBe(false);
   expect(isEditableAvailability("PURCHASABLE")).toBe(true);
   expect(isEditableAvailability("PREORDER")).toBe(true);
 });
@@ -51,9 +51,9 @@ test("external product is not mapped to the edit form", () => {
   expect(formData).toBeNull();
 });
 
-test("runtime mapper rejects forged EXTERNAL_ONLY form data", () => {
+test("runtime mapper rejects forged EXTERNAL_PRODUCT form data", () => {
   const forgedAvailability =
-    "EXTERNAL_ONLY" as unknown as EditableAvailability;
+    "EXTERNAL_PRODUCT" as unknown as EditableAvailability;
 
   expect(
     mapFormDataToCreateModel(

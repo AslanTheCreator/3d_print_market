@@ -50,12 +50,7 @@ export const useCheckoutState = ({
     cartItems: normalizedCartItems,
     selectedProductIds,
   });
-  const orderableSelectedItems = selectedItems.filter(
-    (item) => item.product.availability !== "EXTERNAL_ONLY",
-  );
-  const hasExternalOnlySelectedItems = selectedItems.some(
-    (item) => item.product.availability === "EXTERNAL_ONLY",
-  );
+  const orderableSelectedItems = selectedItems;
   const hasOwnSelectedItems =
     currentUserId !== undefined &&
     orderableSelectedItems.some(
@@ -88,7 +83,6 @@ export const useCheckoutState = ({
       isLoadingCurrentUser,
       isCurrentUserError: isCurrentUserUnavailable,
       hasOwnSelectedItems,
-      hasExternalOnlySelectedItems,
       hasPendingSelectedItems,
       hasNeedsValidationSelectedItems,
       hasInsufficientStockSelectedItems,

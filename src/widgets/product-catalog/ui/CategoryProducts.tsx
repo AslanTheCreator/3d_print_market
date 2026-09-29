@@ -41,7 +41,7 @@ export const CategoryProducts = ({
   const router = useRouter();
   const [priceRange, setPriceRange] = useState<PriceRange | undefined>();
   const [hasInitialError, setHasInitialError] = useState(initialError);
-  const { isAuthenticated, isInitialized } = useAuth();
+  const { isAuthenticated, isInitialized, sessionKey } = useAuth();
 
   const isAdultCategory = useMemo(() => {
     return categoryPath ? isAdultCategoryPath(categoryPath) : false;
@@ -58,15 +58,14 @@ export const CategoryProducts = ({
 
     return {
       categoryId: categoryPath.categoryId,
-      ...(isAdultCategory ? { includeAdult: true } : {}),
       ...(priceRange ? { priceRange } : {}),
     };
-  }, [categoryPath, isAdultCategory, priceRange]);
+  }, [categoryPath, priceRange]);
 
   const isBaseFilter = priceRange === undefined;
   const shouldUseInitialProducts =
     isBaseFilter && !initialError && !isAdultCategory;
-  const shouldBlockQuery = isBaseFilter && hasInitialError;
+  const shouldBlockQuery = isBaseFilter && hasInitialError && !isAuthenticated;
   const shouldWaitForAuthInitialization =
     isAdultCategory && !isInitialized;
   const shouldRequireAuthentication =
@@ -91,9 +90,11 @@ export const CategoryProducts = ({
     error,
     refetch,
   } = useProductsInfinite(pageSize, filters, "DATE_DESC", {
+    sessionKey,
     initialProducts: shouldUseInitialProducts ? initialProducts : undefined,
     initialDataUpdatedAt,
     enabled:
+      isInitialized &&
       Boolean(categoryPath) &&
       !shouldBlockQuery &&
       !shouldWaitForAuthInitialization &&

@@ -54,7 +54,7 @@ export const MobileOrders = ({ orders, userRole, onOpenDetails }: MobileOrdersPr
         <Stack spacing={1.5}>
           {visibleOrders.map((order) => {
             const needsAttention = orderNeedsAttention(order.actualStatus, userRole);
-            const hint = getOrderStatusActionHint(order.actualStatus, userRole, order.product.availability === "PREORDER");
+            const hint = getOrderStatusActionHint(order.actualStatus, userRole, order.prepaymentAmount > 0);
             const details = (
               <Button onClick={() => onOpenDetails(order)} aria-label={`Подробнее о заказе №${order.orderId}`} endIcon={<ChevronRightRounded />} sx={{ ml: "auto" }}>Подробнее</Button>
             );

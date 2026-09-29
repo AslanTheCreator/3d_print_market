@@ -39,9 +39,7 @@ export const useCheckoutDelivery = ({
 
   const sellerQueries = useQueries({
     queries: sellerCartGroups.map((group) => {
-      const deliveryItem = group.items.find(
-        (item) => item.product.availability !== "EXTERNAL_ONLY",
-      );
+      const deliveryItem = group.items[0];
 
       return {
         queryKey: deliveryItem
@@ -49,12 +47,12 @@ export const useCheckoutDelivery = ({
           : [
               ...orderQueryKeys.all,
               "data",
-              "external-only",
+              "empty-seller-group",
               group.sellerId,
             ],
         queryFn: () => {
           if (!deliveryItem) {
-            throw new Error("Delivery is not available for an external item");
+            throw new Error("No cart item available for delivery lookup");
           }
 
           return orderApi.getOrderData(deliveryItem.product.id);
@@ -82,7 +80,6 @@ export const useCheckoutDelivery = ({
         transfers,
         selectedTransfer,
         isActive: group.items.some((item) =>
-          item.product.availability !== "EXTERNAL_ONLY" &&
           selectedProductIds.has(item.product.id),
         ),
         isLoading: query?.isLoading ?? false,
@@ -144,11 +141,7 @@ export const useCheckoutDelivery = ({
   const retrySellerDelivery = useCallback(
     (sellerId: number) => {
       const sellerIndex = sellerCartGroups.findIndex(
-        (group) =>
-          group.sellerId === sellerId &&
-          group.items.some(
-            (item) => item.product.availability !== "EXTERNAL_ONLY",
-          ),
+        (group) => group.sellerId === sellerId,
       );
 
       if (sellerIndex >= 0) {

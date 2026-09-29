@@ -41,10 +41,11 @@ interface OrderFixtureOptions {
   deliveryUrl?: string;
   imageIds?: number[];
   histories: OrderHistoryFixture[];
-  availability?: "PURCHASABLE" | "PREORDER";
+  availability?: "PURCHASABLE" | "PREORDER" | "EXTERNAL_PRODUCT";
   quantity?: number;
   unitPrice?: number;
   prepaymentAmount?: number;
+  orderPrepaymentAmount?: number;
   totalPrice?: number;
   createdAt?: string;
 }
@@ -125,14 +126,14 @@ const createOrderFixture = ({
   quantity = 1,
   unitPrice = 12_500,
   prepaymentAmount = availability === "PREORDER" ? 2_500 : 0,
-  totalPrice = availability === "PREORDER"
-    ? (unitPrice - prepaymentAmount) * quantity
-    : unitPrice * quantity,
+  orderPrepaymentAmount = prepaymentAmount * quantity,
+  totalPrice = unitPrice * quantity - orderPrepaymentAmount,
   createdAt = "2026-07-10T10:00:00.000Z",
 }: OrderFixtureOptions) => ({
   orderId,
   actualStatus,
   totalPrice,
+  prepaymentAmount: orderPrepaymentAmount,
   createdAt,
   userInfo: {
     id: peerId,
@@ -690,3 +691,39 @@ test.describe("order details", () => {
     expect(receiptRequests).toBe(1);
   });
 });
+
+
+for (const scenario of [
+  { availability: "EXTERNAL_PRODUCT", prepaymentAmount: 1_200, nextStatus: "AWAITING_PREPAYMENT", stage: "предоплате", action: "Подтвердить заказ" },
+  { availability: "EXTERNAL_PRODUCT", prepaymentAmount: 0, nextStatus: "AWAITING_PAYMENT", stage: "оплате", action: "Подтвердить заказ" },
+  { availability: "PREORDER", prepaymentAmount: 0, nextStatus: "AWAITING_PAYMENT", stage: "оплате", action: "Подтвердить предзаказ" },
+] as const) {
+  test('confirmation follows the server status for ' + scenario.availability + ' with prepayment ' + scenario.prepaymentAmount, async ({ context, page, baseURL }) => {
+    await authenticate(context, baseURL);
+    const order = createOrderFixture({
+      orderId: 901, actualStatus: "BOOKED", peerId: 31, peerLogin: "buyer",
+      peerPhone: "", peerMail: "buyer@example.test", deliveryAddress: "Тестовый адрес", histories: [],
+      availability: scenario.availability, quantity: 3, prepaymentAmount: 2_500,
+      orderPrepaymentAmount: scenario.prepaymentAmount, totalPrice: 30_000,
+    });
+    await mockDashboardApi(page, { sellerOrders: [order] });
+    const mutations: string[] = [];
+    await page.route('**/order/901/**', async (route) => {
+      if (route.request().method() !== 'OPTIONS') {
+        mutations.push(new URL(route.request().url()).pathname);
+        order.actualStatus = scenario.nextStatus;
+      }
+      await fulfillJson(route, 901);
+    });
+    await page.goto('/dashboard/sales');
+    await page.getByRole('button', { name: scenario.action, exact: true }).first().click();
+    const dialog = page.getByRole('dialog', { name: scenario.action });
+    await expect(dialog).toContainText('перейти к ' + scenario.stage);
+    await expect(dialog).toContainText(scenario.prepaymentAmount > 0 ? /31\s*200/ : /30\s*000/);
+    await dialog.getByRole('button', { name: scenario.action, exact: true }).click();
+    await expect(dialog).toBeHidden();
+    expect(mutations).toEqual(['/order/901/AWAITING_PREPAYMENT']);
+    await expect(page.getByRole('button', { name: scenario.action, exact: true })).toHaveCount(0);
+    await expect(page.getByText(scenario.prepaymentAmount > 0 ? 'Ожидает предоплату' : 'Ожидает оплату', { exact: true }).first()).toBeVisible();
+  });
+}

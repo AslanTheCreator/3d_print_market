@@ -170,9 +170,9 @@ export const mapProductDetailToFormData = (
       product.availability === "PREORDER" && product.prepaymentAmount > 0
         ? String(product.prepaymentAmount)
         : "",
-    count: product.count > 0 ? String(product.count) : "",
+    count: product.count !== null && product.count > 0 ? String(product.count) : "",
     originality: product.originality,
-    externalUrl: product.externalUrl,
+    externalUrl: product.externalUrl ?? "",
   };
 };
 

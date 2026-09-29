@@ -79,14 +79,14 @@ const confirmationConfig = {
   regularOrder: {
     title: "Подтвердить заказ",
     description:
-      "Вы уверены, что хотите подтвердить заказ #{orderId}? После подтверждения покупатель сможет перейти к оплате.",
+      "Вы уверены, что хотите подтвердить заказ #{orderId}? После подтверждения покупатель сможет перейти к {paymentStage}.",
     buttonText: "Подтвердить заказ",
     buttonLoadingText: "Подтверждение...",
   },
   initialPreorder: {
     title: "Подтвердить предзаказ",
     description:
-      "Вы уверены, что хотите подтвердить предзаказ #{orderId}? После подтверждения покупатель сможет перейти к предоплате.",
+      "Вы уверены, что хотите подтвердить предзаказ #{orderId}? После подтверждения покупатель сможет перейти к {paymentStage}.",
     buttonText: "Подтвердить предзаказ",
     buttonLoadingText: "Подтверждение...",
   },
@@ -102,14 +102,23 @@ const confirmationConfig = {
 const getConfirmationConfig = (
   confirmationType: ConfirmationType,
   isPreorder: boolean,
+  hasPrepayment: boolean,
 ): ConfirmationConfig => {
   if (confirmationType === "preorder") {
     return confirmationConfig.prepaymentApproval;
   }
 
-  return isPreorder
+  const config = isPreorder
     ? confirmationConfig.initialPreorder
     : confirmationConfig.regularOrder;
+
+  return {
+    ...config,
+    description: config.description.replace(
+      "{paymentStage}",
+      hasPrepayment ? "предоплате" : "оплате",
+    ),
+  };
 };
 
 export const ConfirmationDialog = ({
@@ -122,6 +131,7 @@ export const ConfirmationDialog = ({
   const config = getConfirmationConfig(
     confirmationType,
     order.product.availability === "PREORDER",
+    order.prepaymentAmount > 0,
   );
   const mutationErrorMessage = confirmationMutation.error
     ? transformToApiError(confirmationMutation.error).message
@@ -215,7 +225,7 @@ export const ConfirmationDialog = ({
                 order.product.currency,
               )}
             </Typography>
-            {paymentBreakdown.isPreorder && (
+            {paymentBreakdown.hasPrepayment && (
               <>
                 <Typography variant="body2" color="text.secondary">
                   Предоплата:{" "}

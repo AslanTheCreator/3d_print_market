@@ -108,7 +108,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
       default:
         return {
           color: "info",
-          label: "Внешний источник",
+          label: "Внешний товар",
         } as const;
     }
   };
@@ -271,8 +271,8 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
             />
 
             <Chip
-              label={count > 0 ? `${count} шт` : "Нет в наличии"}
-              color={count > 0 ? "default" : "error"}
+              label={count === null ? "Количество не ограничено" : count > 0 ? `${count} шт` : "Нет в наличии"}
+              color={count === null || count > 0 ? "default" : "error"}
               size="small"
               sx={{
                 height: 18,

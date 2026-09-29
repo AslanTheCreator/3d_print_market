@@ -89,7 +89,7 @@ const mockUserProductsApi = async (page: Page) => {
       {
         id: 103,
         name: "Внешний товар",
-        count: 1,
+        count: null,
         price: 1700,
         prepaymentAmount: 0,
         currency: "RUB",
@@ -98,8 +98,8 @@ const mockUserProductsApi = async (page: Page) => {
         sellerId: 1,
         expirationDate: "2020-01-01T00:00:00.000Z",
         status: "ACTIVE",
-        availability: "EXTERNAL_ONLY",
-        externalUrl: "https://example.com/external-product",
+        availability: "EXTERNAL_PRODUCT",
+        externalUrl: null,
         sellerLogin: "seller",
         sellerRating: 5,
         totalReviews: 1,
@@ -137,8 +137,9 @@ test("внешний товар недоступен для управления
   await page.goto("/dashboard/products");
 
   await expect(
-    page.getByText("Внешний источник", { exact: true }),
+    page.locator(".MuiChip-root").filter({ hasText: "Внешний товар" }),
   ).toBeVisible();
+  await expect(page.getByText("Количество не ограничено", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("button", {
       name: "Действия с товаром Внешний товар",
@@ -201,7 +202,7 @@ test("прямой edit route внешнего товара показывает
       participantId: 1,
       status: "ACTIVE",
       categories: [],
-      availability: "EXTERNAL_ONLY",
+      availability: "EXTERNAL_PRODUCT",
       externalUrl: "https://example.com/external-product",
       imageIds: [],
       reviews: [],
@@ -225,7 +226,7 @@ test("прямой edit route внешнего товара показывает
   expect(updateRequests).toBe(0);
 });
 
-test("EXTERNAL_ONLY из старого черновика не попадает в форму создания", async ({
+test("EXTERNAL_PRODUCT из старого черновика не попадает в форму создания", async ({
   page,
   context,
   baseURL,
@@ -237,7 +238,7 @@ test("EXTERNAL_ONLY из старого черновика не попадает
       JSON.stringify({
         imageIds: [],
         values: {
-          availability: "EXTERNAL_ONLY",
+          availability: "EXTERNAL_PRODUCT",
           isPreorder: true,
           categoryIds: [],
           name: "Старый внешний черновик",

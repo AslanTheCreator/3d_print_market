@@ -16,9 +16,7 @@ import { buildCategoryPath } from "@/entities/category";
 import { useFavoritesChecks } from "@/entities/favorite";
 import type { ProductDetail } from "@/entities/product";
 import { useAuth } from "@/entities/session";
-import { useProfileUser } from "@/entities/user";
 import { AddToCartButton } from "@/features/add-to-cart";
-import { ExternalPurchaseButton } from "@/features/external-purchase";
 import { FavoriteButton } from "@/features/toggle-favorite";
 import {
   ImageGallery,
@@ -189,16 +187,10 @@ function ProductPriceSection({
 
 interface ProductPurchaseActionProps {
   product: ProductDetail;
-  isOwnProduct: boolean;
-  isOwnerCheckUnavailable: boolean;
-  isOwnerCheckError: boolean;
 }
 
 function ProductPurchaseAction({
   product,
-  isOwnProduct,
-  isOwnerCheckUnavailable,
-  isOwnerCheckError,
 }: ProductPurchaseActionProps) {
   const isPreorder = product.availability === "PREORDER";
   const currentPrice = isPreorder
@@ -262,29 +254,14 @@ function ProductPurchaseAction({
           ) : null}
         </Box>
 
-        {product.availability === "EXTERNAL_ONLY" ? (
-          <ExternalPurchaseButton
-            externalUrl={product.externalUrl}
-            label={
-              isOwnProduct
-                ? "Ваш товар"
-                : isOwnerCheckError
-                  ? "Недоступно"
-                  : "Добавить в корзину"
-            }
-            variant="detailed"
-            disabled={isOwnProduct || isOwnerCheckUnavailable}
-          />
-        ) : (
-          <AddToCartButton
-            productId={product.id}
-            sellerId={product.participantId}
-            availability={product.availability}
-            variant="detailed"
-            productName={product.name}
-            stockCount={product.count}
-          />
-        )}
+        <AddToCartButton
+          productId={product.id}
+          sellerId={product.participantId}
+          availability={product.availability}
+          variant="detailed"
+          productName={product.name}
+          stockCount={product.count}
+        />
       </Stack>
     </Paper>
   );
@@ -296,22 +273,8 @@ export function ProductDetailsContent({
 }: ProductDetailsContentProps) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const {
-    data: currentUser,
-    isPending: isOwnerCheckPending,
-    isError: isOwnerCheckError,
-  } = useProfileUser({
-    enabled:
-      isAuthenticated && productCard.availability === "EXTERNAL_ONLY",
-  });
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
 
-  const isOwnerCheckUnavailable =
-    isAuthenticated &&
-    productCard.availability === "EXTERNAL_ONLY" &&
-    (isOwnerCheckPending || isOwnerCheckError);
-  const isOwnProduct =
-    isAuthenticated && currentUser?.id === productCard.participantId;
   const primaryCategoryId = productCard.categories[0]?.id;
   const sellerCardMeta = getSellerCardMeta(
     productCard.totalReviews,
@@ -466,9 +429,6 @@ export function ProductDetailsContent({
           >
             <ProductPurchaseAction
               product={productCard}
-              isOwnProduct={isOwnProduct}
-              isOwnerCheckUnavailable={isOwnerCheckUnavailable}
-              isOwnerCheckError={isOwnerCheckError}
             />
           </Box>
 

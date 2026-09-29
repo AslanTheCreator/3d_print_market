@@ -1,7 +1,7 @@
 import type { ListOrdersModel } from "../model/types";
 
 export interface OrderPaymentBreakdown {
-  isPreorder: boolean;
+  hasPrepayment: boolean;
   quantity: number;
   prepaymentTotal: number;
   remainingTotal: number;
@@ -11,20 +11,15 @@ export interface OrderPaymentBreakdown {
 export const getOrderPaymentBreakdown = (
   order: ListOrdersModel,
 ): OrderPaymentBreakdown => {
-  const isPreorder = order.product.availability === "PREORDER";
   const quantity = order.product.count;
   const remainingTotal = order.totalPrice;
-  const prepaymentTotal = isPreorder
-    ? order.product.prepaymentAmount * quantity
-    : 0;
+  const prepaymentTotal = order.prepaymentAmount;
 
   return {
-    isPreorder,
+    hasPrepayment: prepaymentTotal > 0,
     quantity,
     prepaymentTotal,
     remainingTotal,
-    productTotal: isPreorder
-      ? prepaymentTotal + remainingTotal
-      : remainingTotal,
+    productTotal: prepaymentTotal + remainingTotal,
   };
 };

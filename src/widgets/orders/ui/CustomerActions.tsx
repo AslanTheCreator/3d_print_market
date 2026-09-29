@@ -214,7 +214,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
                   order.product.currency,
                 )}
               </Typography>
-              {paymentBreakdown.isPreorder && (
+              {paymentBreakdown.hasPrepayment && (
                 <>
                   <Typography variant="body2" color="text.secondary">
                     Предоплата:{" "}
