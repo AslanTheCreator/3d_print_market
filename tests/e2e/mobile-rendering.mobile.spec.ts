@@ -395,16 +395,16 @@ test("cold mobile hydration stays stable and loads one compact brand", async ({
   );
 
   expect(metrics.cls).toBeLessThanOrEqual(0.1);
-  expect(currentLogoSource).toContain("site.");
+  expect(currentLogoSource).toMatch(/\/logo\.[^/]*\.svg(?:\?|$)/i);
   expect(decodedRequests.some((url) => url.includes("logo-desktop"))).toBe(
     false,
   );
   expect(
     decodedRequests.some((url) => /\/logo\.[^/]*\.svg(?:\?|$)/i.test(url)),
-  ).toBe(false);
+  ).toBe(true);
   expect(
     decodedRequests.some((url) => url.includes("site.") && url.includes(".png")),
-  ).toBe(true);
+  ).toBe(false);
   expectCleanDiagnostics(diagnostics);
 });
 
@@ -433,9 +433,9 @@ test("cold desktop art direction does not load compact-only assets", async ({
       ),
     );
 
-    expect(currentLogoSource).toContain("logo-desktop");
+    expect(currentLogoSource).toMatch(/\/logo-desktop\.[^/]*\.webp(?:[?&]|$)/i);
     expect(
-      decodedRequests.some((url) => url.includes("logo-desktop")),
+      decodedRequests.some((url) => url.includes("logo-desktop") && url.includes(".webp")),
     ).toBe(true);
     expect(
       decodedRequests.some((url) =>

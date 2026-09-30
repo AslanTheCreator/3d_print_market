@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SearchIcon from "@mui/icons-material/Search";
-import site from "@/shared/assets/logo/site.png";
+import Logo from "@/shared/assets/logo/logo.svg";
 import { LAYOUT } from "@/shared/config";
 import { HeaderActions } from "./HeaderActions";
 import { HeaderLogo } from "./HeaderLogo";
@@ -124,7 +124,7 @@ export const Header = ({
                 }}
               >
                 <Image
-                  src={site}
+                  src={Logo}
                   alt=""
                   aria-hidden
                   width={44}
@@ -195,7 +195,7 @@ export const Header = ({
                   sx={{ justifySelf: "start", width: 44, height: 44, borderRadius: 1.5 }}
                 >
                   <Image
-                    src={site}
+                    src={Logo}
                     alt=""
                     aria-hidden
                     width={44}

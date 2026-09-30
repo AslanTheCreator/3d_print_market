@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Stack, Box, Typography } from "@mui/material";
-import LogoDesktop from "@/shared/assets/logo/logo-desktop.png";
+import Logo from "@/shared/assets/logo/logo-desktop.webp";
 import { HeaderCategoryButton } from "./HeaderCategoryButton";
 import { LOGO_SIZES } from "../model/constants";
 
@@ -39,7 +39,7 @@ export const HeaderLogo = () => {
             }}
           >
             <Image
-              src={LogoDesktop}
+              src={Logo}
               alt=""
               aria-hidden
               width={LOGO_SIZES.desktop.width}

@@ -329,6 +329,9 @@ npm run test:e2e
   route-aware shell, сохранение DOM/state на `599/600`, `899/900`,
   `1375/1376`, смену ориентации, safe areas, horizontal overflow и overlay
   interactions;
+- проверки холодной загрузки шапки в `mobile-rendering.mobile.spec.ts` ожидают
+  `logo.svg` на мобильных и `logo-desktop.webp` на десктопе, без загрузки
+  логотипа другого варианта шапки;
 - Lab CLS вычисляется через `PerformanceObserver` по session-window алгоритму;
   CI gate — `≤0.1`. LCP и transfer size сохраняются как диагностика, но пока
   не имеют hard budget;
