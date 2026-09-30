@@ -33,3 +33,7 @@ export {
 export { productApi } from "./api/productApi";
 export { buildProductRequest } from "./lib/buildProductRequest";
 export * from "./model";
+export { adminProductApi } from "./api/adminProductApi";
+export { adminProductKeys, useAdminProductLists, useAdminProduct, useAdminProductRelations } from "./model/adminQueries";
+export { mergeAdminProduct } from "./model/admin";
+export type { AdminProductDto, AdminProductInput, AdminProductEditorData } from "./model/admin";

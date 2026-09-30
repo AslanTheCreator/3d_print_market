@@ -86,11 +86,11 @@ Frontend рассматривает `EXTERNAL_ONLY` как read-only тип: ф�
 - Подтверждения оплаты читаются через общий `imageApi` на `publicClient`; приватность чеков на уровне backend/object storage не подтверждена.
 - Платёжные реквизиты продавца запрашиваются по `participantId`; order-scoped authorization backend не подтверждена.
 
-Целевая модель auth, приватных изображений и платёжных реквизитов описана в [backend-contract.md](./backend-contract.md). До её проверки на staging реальные auth, order и payment data использовать нельзя.
+Целевая модель auth, приватных изображений и платёжных реквизитов описана в [backend-plan.md](./backend-plan.md). До её проверки на staging реальные auth, order и payment data использовать нельзя.
 
 ### Checkout
 
-Frontend не повторяет уже подтверждённые позиции в текущей сессии, но timeout может означать как ошибку, так и успешно созданный заказ. Без backend idempotency повтор способен создать дубль. Требование описано в [backend-checkout-idempotency.md](./backend-checkout-idempotency.md).
+Frontend не повторяет уже подтверждённые позиции в текущей сессии, но timeout может означать как ошибку, так и успешно созданный заказ. Без backend idempotency повтор способен создать дубль. Требование описано в [backend-plan.md](./backend-plan.md).
 
 ### Acceptance с реальным backend
 

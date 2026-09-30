@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import { Box, GlobalStyles, IconButton } from "@mui/material";
@@ -13,6 +13,7 @@ import {
 } from "@/widgets/mobile-navigation";
 import { NotificationProvider } from "@/shared/ui/notification";
 import { getMobileChromeConfig } from "./mobileChrome";
+import { MetrikaHead } from "../analytics/MetrikaHead";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -20,6 +21,12 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
+  const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
+  const initialAdmin = useRef(isAdmin);
+  const crossingBoundary = initialAdmin.current !== isAdmin;
+  useEffect(() => {
+    if (crossingBoundary) window.location.replace(window.location.href);
+  }, [crossingBoundary]);
   const isGuest = useAuthStore((state) => state.isInitialized && !state.isAuthenticated);
   const mobileChrome = useMemo(
     () => getMobileChromeConfig(pathname, isGuest),
@@ -45,6 +52,9 @@ export function AppLayout({ children }: AppLayoutProps) {
     </IconButton>
   ) : undefined;
 
+  if (crossingBoundary) return null;
+  if (isAdmin) return <NotificationProvider maxNotifications={3}>{children}</NotificationProvider>;
+
   return (
     <Box
       data-testid="app-chrome"
@@ -66,6 +76,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         })}
       />
       <NotificationProvider maxNotifications={3}>
+        <MetrikaHead />
         <Header
           mobileConfig={mobileChrome}
           mobileAction={accountMenuAction}

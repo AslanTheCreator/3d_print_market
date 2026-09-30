@@ -24,3 +24,4 @@ export type {
   TransferInput,
   TransferStatus,
 } from "./model/types";
+export { adminTransfersApi } from "./api/adminTransfersApi";

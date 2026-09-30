@@ -22,3 +22,4 @@ export { AddressForm } from "./ui/AddressForm";
 // Types
 export type { Address, AddressInput } from "./model/types";
 export { DEFAULT_COUNTRY, ADDRESS_VALIDATION } from "./model/types";
+export { adminAddressesApi } from "./api/adminAddressesApi";

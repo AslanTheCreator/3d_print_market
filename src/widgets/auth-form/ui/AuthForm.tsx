@@ -35,6 +35,7 @@ interface IAuthForm {
   passwordAutoComplete?: "current-password" | "new-password";
   showAgeField?: boolean;
   showLegalConsentNotice?: boolean;
+  allowLoginIdentifier?: boolean;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -72,6 +73,7 @@ const AuthForm: React.FC<IAuthForm> = ({
   passwordAutoComplete = "current-password",
   showAgeField = false,
   showLegalConsentNotice = false,
+  allowLoginIdentifier = false,
 }) => {
   const theme = useTheme();
 
@@ -93,7 +95,7 @@ const AuthForm: React.FC<IAuthForm> = ({
     const normalizedEmail = email.trim();
     const nextEmailError = !normalizedEmail
       ? "Введите email"
-      : EMAIL_PATTERN.test(normalizedEmail)
+      : allowLoginIdentifier || EMAIL_PATTERN.test(normalizedEmail)
         ? ""
         : "Введите корректный email";
     const nextPasswordError = password ? "" : "Введите пароль";
@@ -202,7 +204,7 @@ const AuthForm: React.FC<IAuthForm> = ({
             id="auth-email"
             fullWidth
             label="Email"
-            type="email"
+            type={allowLoginIdentifier ? "text" : "email"}
             name="email"
             autoComplete="email"
             required

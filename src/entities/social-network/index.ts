@@ -11,3 +11,4 @@ export type {
   SocialNetworkInput,
   SocialNetworkType,
 } from "./model/types";
+export { adminSocialNetworksApi } from "./api/adminSocialNetworksApi";

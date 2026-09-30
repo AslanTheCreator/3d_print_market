@@ -7,6 +7,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import theme from "@/app/config/theme";
 import { QueryProvider } from "./QueryProvider";
 import { AuthProvider } from "./AuthProvider";
+import { AdminCacheBoundary } from "./AdminCacheBoundary";
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -18,7 +19,7 @@ export function AppProviders({ children }: AppProvidersProps) {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider><AdminCacheBoundary>{children}</AdminCacheBoundary></QueryProvider>
         </AuthProvider>
       </ThemeProvider>
     </AppRouterCacheProvider>

@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { MetrikaHead } from "@/app/analytics/MetrikaHead";
 import { AppProviders } from "@/app/providers/AppProviders";
 import { AppLayout } from "@/app/layouts/AppLayout";
 import { montserrat } from "@/app/config/fonts";
@@ -39,9 +38,6 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ru">
-      <head>
-        <MetrikaHead />
-      </head>
       <body className={montserrat.variable}>
         <AppProviders>
           <AppLayout>{children}</AppLayout>

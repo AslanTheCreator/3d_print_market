@@ -1,5 +1,37 @@
 # Архитектура
 
+## Административная панель
+
+`app/admin` содержит `/orders`, `/products`, `/products/[productId]`, `/agents`
+и `/agents/[agentId]`; `/admin` перенаправляет на заказы. Последний маршрут
+собирает три widget через slots, без cross-widget imports. Бот имеет вкладки
+заказов, товаров и настроек. Детали заказа открываются в Drawer, отдельного
+order route нет. Фильтры и страницы хранятся в URL, редактор принимает
+проверенный локальный `returnTo`.
+
+Widgets `admin-shell`, `admin-orders`, `admin-products`, `admin-agents`,
+`admin-agent-details` собирают features `admin-access`, `admin-product-management`,
+`admin-order-action`, `admin-agent-settings`. Доменные DTO/API/queries находятся
+в соответствующих entities, включая новую `agent`. Обычные seller forms и
+mutations не используются для административной записи.
+
+`AdminAccess` после `RequireAuth` проверяет свежий session-scoped профиль.
+Дочерние widgets монтируются только для ADMIN. Правила кэша и API описаны в
+[api-and-auth.md](./api-and-auth.md#административный-api).
+
+`AppLayout` имеет отдельную ветку `/admin` без витринных header/footer/bottom
+navigation, с общим NotificationProvider. Providers и тема остаются общими.
+Desktop от 900 px использует sidebar и таблицы, mobile — Drawer меню и карточки;
+панель заказа на мобильном полноэкранная. Административная навигация между
+страницами — нативные ссылки: уход из изменённых форм защищает beforeunload;
+данные форм не сохраняются в браузерное хранилище. Изменение query фильтров
+списка использует router.replace без перезагрузки.
+
+Метрика подключается только в витринной ветке. При клиентском пересечении
+границы витрина/admin контент новой ветки не монтируется до полной навигации,
+чтобы Webvisor не наблюдал административные данные. `/admin` имеет noindex,
+запрет в robots и не входит в явный перечень sitemap.
+
 Figurzilla — frontend marketplace на Next.js App Router. Backend находится в отдельном проекте, поэтому новые endpoint'ы, поля и статусы добавляются только по подтверждённому контракту.
 
 ## Структура
@@ -150,7 +182,7 @@ SSR-visible UI строится CSS-first: сервер и первый клие
 
 ### Route-aware application shell
 
-`AppLayout` получает pathname и состояние гостевой сессии и через чистый resolver выбирает mobile chrome:
+Для витрины `AppLayout` получает pathname и состояние гостевой сессии и через чистый resolver выбирает mobile chrome:
 `browse`, `context`, `account`, `focused` или `auth`. Конфигурация определяет
 родительский заголовок и fallback для Back, наличие нижней навигации, mobile
 footer и меню кабинета; маршрутизация App Router при этом не дублируется и не

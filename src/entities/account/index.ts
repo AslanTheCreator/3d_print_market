@@ -12,3 +12,4 @@ export type {
   AccountsCreateModel,
   TransferMoney,
 } from "./model/types";
+export { adminAccountsApi } from "./api/adminAccountsApi";

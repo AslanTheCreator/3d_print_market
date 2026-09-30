@@ -197,6 +197,8 @@ const setupErrorInterceptor = (instance: AxiosInstance): void => {
   instance.interceptors.response.use(
     (response) => response,
     (error: AxiosError<BackendErrorResponse>) => {
+      // Отмена query при смене страницы/сессии — не ошибка backend.
+      if (axios.isCancel(error)) return Promise.reject(error);
       const config = error.config as RetryableRequestConfig | undefined;
 
       if (config?._skipErrorTransform) {

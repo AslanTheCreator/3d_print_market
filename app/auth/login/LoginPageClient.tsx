@@ -171,6 +171,7 @@ export default function LoginPageClient() {
         url={getAuthSwitchPath("/auth/register", redirectPath)}
         linkText="зарегистрируйтесь"
         buttonTitle="Войти"
+        allowLoginIdentifier
         onSubmit={handleLogin}
         isLoading={isLoading}
         onForgotPassword={() => setIsResetDialogOpen(true)}

@@ -9,6 +9,7 @@ export interface AuthState {
   isAuthenticated: boolean;
   isInitialized: boolean;
   sessionRevision: number;
+  accountRevision: number;
   user: {
     id?: string;
     mail?: string;
@@ -37,6 +38,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isInitialized: false,
       sessionRevision: 0,
+      accountRevision: 0,
       user: null,
 
       login: async (mail: string, password: string) => {
@@ -49,6 +51,7 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
               user: { mail },
               sessionRevision: state.sessionRevision + 1,
+              accountRevision: state.accountRevision + 1,
             }));
 
             if (tokenRefreshManager.isInitialized()) {
@@ -73,6 +76,7 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           user: null,
           sessionRevision: state.sessionRevision + 1,
+          accountRevision: state.accountRevision + 1,
         }));
       },
 
@@ -81,6 +85,7 @@ export const useAuthStore = create<AuthState>()(
         set((state) => ({
           isAuthenticated: true,
           sessionRevision: state.sessionRevision + 1,
+          accountRevision: state.accountRevision + 1,
         }));
 
         if (tokenRefreshManager.isInitialized()) {
@@ -99,6 +104,7 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
               isInitialized: true,
               sessionRevision: state.sessionRevision + 1,
+              accountRevision: state.accountRevision + 1,
             }));
 
             if (tokenRefreshManager.isInitialized()) {
@@ -143,6 +149,7 @@ export const useAuthStore = create<AuthState>()(
           set((state) => ({
             isAuthenticated: isAuth,
             sessionRevision: state.sessionRevision + 1,
+            accountRevision: state.accountRevision + 1,
           }));
         }
 
@@ -158,6 +165,7 @@ export const useAuthStore = create<AuthState>()(
           set((state) => ({
             isAuthenticated: true,
             sessionRevision: state.sessionRevision + 1,
+            accountRevision: state.isAuthenticated ? state.accountRevision : state.accountRevision + 1,
           }));
           return true;
         } catch (error) {

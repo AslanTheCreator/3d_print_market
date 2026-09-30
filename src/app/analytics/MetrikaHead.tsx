@@ -1,3 +1,6 @@
+"use client";
+import Script from "next/script";
+
 export function MetrikaHead() {
   if (process.env.NODE_ENV !== "production") {
     return null;
@@ -5,7 +8,7 @@ export function MetrikaHead() {
 
   return (
     <>
-      <script
+      <Script id="marketplace-metrika" strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `
             (function(m,e,t,r,i,k,a){

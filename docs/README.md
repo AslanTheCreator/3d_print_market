@@ -11,9 +11,7 @@
 
 ## Согласование с backend
 
-- [backend-contract.md](./backend-contract.md) — открытые production-требования; это не подтверждённый контракт.
-- [auth-security-requirements.md](./auth-security-requirements.md) — риски JS-readable tokens и требования к безопасной production-сессии.
-- [backend-checkout-idempotency.md](./backend-checkout-idempotency.md) — предложение по идемпотентности заказов.
+- [backend-plan.md](./backend-plan.md) — единый план доработок, проверок и предложений backend по приоритетам P0–P2.
 
 ## Аудиты
 

@@ -9,6 +9,7 @@ import { DashboardContent } from "./DashboardContent";
 import { DashboardHomeSkeleton } from "./DashboardHomeSkeleton";
 import { DashboardMobileNavigation } from "./DashboardMobileNavigation";
 import { ProfileForm } from "./ProfileForm";
+import { AdminEntryLink } from "@/features/admin-access";
 
 export const DashboardHomeWidget = () => {
   const { data: userData, isLoading, error, refetch, isFetching } = useCurrentUser();
@@ -26,6 +27,7 @@ export const DashboardHomeWidget = () => {
 
   return (
     <Box>
+      <AdminEntryLink />
       {isLoading ? (
         <DashboardHomeSkeleton />
       ) : error || !userData ? (

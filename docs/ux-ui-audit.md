@@ -824,7 +824,7 @@
    `PUT /participant/password` с обоими паролями через Axios `params`. Значения
    могут попасть в access logs, reverse proxy, APM и error telemetry; HTTPS не
    устраняет этот риск. Целевой JSON body и обязательная redaction уже
-   зафиксированы в [`backend-contract.md`](./backend-contract.md). До исправления
+   зафиксированы в [`backend-plan.md`](./backend-plan.md). До исправления
    real-backend смену пароля нельзя считать безопасной.
 
 2. **P0 — приватность подтверждений оплаты не обеспечена frontend-контрактом.**
@@ -834,7 +834,7 @@
    UI не является границей доступа: нужны authenticated order-scoped read,
    object-level authorization, private ACL или короткоживущие signed URL и
    защита от перебора image ID. Это открытое требование
-   [`backend-contract.md`](./backend-contract.md).
+   [`backend-plan.md`](./backend-plan.md).
 
 3. **P0, до подтверждения backend — платёжные реквизиты читаются по
    произвольному `participantId`.** Диалог оплаты использует
@@ -876,7 +876,7 @@
    заказанное количество, а `totalPrice` предзаказа — как остаток. На этом
    строятся детали, оплата, подтверждение и отправка. Требования immutable
    snapshot и точной семантики полей остаются открыты в
-   [`backend-contract.md`](./backend-contract.md); несоответствие приведёт к
+   [`backend-plan.md`](./backend-plan.md); несоответствие приведёт к
    неверным обязательствам и суммам.
 
 ### Общие проблемы кабинета
@@ -1528,7 +1528,7 @@ auth flow пока блокируют небезопасный redirect, пот�
    этого не гарантируют. Риск особенно заметен при истечении сессии и
    неявной смене аккаунта. Единый session teardown уже обозначен как требование
    в [`api-and-auth.md`](./api-and-auth.md) и
-   [`auth-security-requirements.md`](./auth-security-requirements.md).
+   [`backend-plan.md`](./backend-plan.md).
 
 7. **P1 — raw auth errors могут унести password и request metadata в console
    или telemetry.** Login намеренно пропускает общий error transform, после
@@ -1652,7 +1652,7 @@ auth flow пока блокируют небезопасный redirect, пот�
 5. **P1, требует product/legal решения — согласие не имеет подтверждённого
    audit trail.** UI считает сам submit принятием документов, а payload содержит
    только `mail`, `password`, `age`: версия документов и время не передаются.
-   [`backend-contract.md`](./backend-contract.md) уже фиксирует этот пробел.
+   [`backend-plan.md`](./backend-plan.md) уже фиксирует этот пробел.
    Нельзя добавлять поля без backend-контракта, но до production нужен явный
    ответ, требуется ли и как хранится факт согласия.
 
@@ -1703,8 +1703,7 @@ auth flow пока блокируют небезопасный redirect, пот�
 2. **P1 — сценарий рассылает временный пароль, а не одноразовую reset link.**
    UI не объясняет expiry, single-use, обязательную смену и отзыв активных
    сессий. Требования к безопасному reset уже перечислены в
-   [`auth-security-requirements.md`](./auth-security-requirements.md) и
-   [`backend-contract.md`](./backend-contract.md).
+   [`backend-plan.md`](./backend-plan.md).
 
 #### Средний приоритет
 

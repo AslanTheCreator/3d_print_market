@@ -50,3 +50,7 @@ export type { ListOrdersModel, OrderCancel, OrderStatus } from "./model/types";
 export type { OrderProgressStep, OrderUserRole } from "./lib/orderStatusMeta";
 
 export { orderApi } from "./api/orderApi";
+export { adminOrderApi } from "./api/adminOrderApi";
+export { adminOrderKeys, useAdminOrders } from "./model/adminQueries";
+export { adminOrderStatuses } from "./model/admin";
+export type { AdminOrderAction, AdminOrderDto, AdminOrderFilter } from "./model/admin";

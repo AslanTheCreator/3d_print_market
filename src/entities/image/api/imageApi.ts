@@ -37,9 +37,11 @@ const getImagesInRequestedOrder = async (
 
 const getMetadataBatch = async (
   imageIds: number[],
+  signal?: AbortSignal,
 ): Promise<ImageMetadata[]> => {
   const { data } = await publicClient.get<ImageMetadata[]>(
     `${API_URL}/metadata?ids=${imageIds.join(",")}`,
+    { signal },
   );
   const imageById = new Map((data ?? []).map((image) => [image.id, image]));
 
@@ -66,6 +68,7 @@ export const imageApi = {
   },
   async getImageMetadata(
     imageIds: number | number[] | null,
+    signal?: AbortSignal,
   ): Promise<ImageMetadata[]> {
     const validIds = normalizeImageIds(imageIds);
 
@@ -73,7 +76,7 @@ export const imageApi = {
       return [];
     }
 
-    return getMetadataBatch(validIds);
+    return getMetadataBatch(validIds, signal);
   },
   async saveImage(file: File, tag: ImageTag): Promise<number[]> {
     const formData = new FormData();
