@@ -39,6 +39,7 @@ viewBox="0 0 10742.14 15745.54"
   </style>
  <mask id="original-feet-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="10742.14" height="15745.54"><rect width="10742.14" height="15745.54" fill="white"/><g transform="scale(17.9035666667)" fill="black"><path d="M100 778 H247 V805 L285 825 V880 H100 Z M389 778 H445 V680 H560 V880 H389 Z"/></g></mask>
  </defs>
+ <path id="ground-shadow" transform="scale(17.9035666667)" fill="#442B46" stroke="#270433" stroke-width="1.2" stroke-linejoin="round" d="M30 835 C70 829 108 827 141 827 L179 808 L354 815 L462 831 L515 844 C485 853 429 858 368 861 C291 870 213 869 157 857 L75 843 L111 844 Z"/>
  <g id="Слой_x0020_1">
   <metadata id="CorelCorpID_0Corel-Layer"/>
   <g id="_1758141244992">

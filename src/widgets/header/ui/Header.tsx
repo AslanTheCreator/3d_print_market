@@ -47,6 +47,12 @@ const DEFAULT_MOBILE_CONFIG: MobileHeaderConfig = {
   mode: "browse",
 };
 
+const mobileLogoSx = {
+  width: 44,
+  height: 44,
+  borderRadius: 1.5,
+} as const;
+
 const SearchFallback = () => (
   <Box sx={{ minHeight: 58, display: "grid", placeItems: "center" }}>
     <CircularProgress size={22} color="primary" />
@@ -117,10 +123,8 @@ export const Header = ({
                 href="/"
                 aria-label="Figurzilla — главная страница"
                 sx={{
-                  width: 44,
-                  height: 44,
+                  ...mobileLogoSx,
                   flex: "0 0 44px",
-                  borderRadius: 1.5,
                 }}
               >
                 <Image
@@ -192,7 +196,7 @@ export const Header = ({
                   component={Link}
                   href="/"
                   aria-label="Figurzilla — главная страница"
-                  sx={{ justifySelf: "start", width: 44, height: 44, borderRadius: 1.5 }}
+                  sx={{ ...mobileLogoSx, justifySelf: "start" }}
                 >
                   <Image
                     src={Logo}

@@ -59,8 +59,8 @@ export const MobileBottomNavigation = () => {
       id: "categories",
       fallbackHref: "/catalog/search",
     },
-    { kind: "link", id: "favorites", href: "/favorites" },
     { kind: "link", id: "cart", href: "/checkout" },
+    { kind: "link", id: "favorites", href: "/favorites" },
     { kind: "link", id: "profile", href: profileHref },
   ];
 
