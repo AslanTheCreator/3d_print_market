@@ -297,11 +297,22 @@ test("mobile streamed SSR fallback exposes progressive navigation without JavaSc
     const mobileBrandLink = page.getByRole("link", {
       name: "Figurzilla — главная страница",
     });
-    const mobileBrandSource = await mobileBrandLink
-      .locator("img")
-      .getAttribute("src");
-    expect(mobileBrandSource).not.toBeNull();
-    expect(decodeURIComponent(mobileBrandSource ?? "")).toContain("site");
+    await expect(mobileBrandLink).toBeVisible();
+    await expect(mobileBrandLink).toHaveAttribute("href", "/");
+    const mobileBrandImage = mobileBrandLink.locator("img");
+    await expect(mobileBrandImage).toBeVisible();
+    await expect(mobileBrandImage).toHaveAttribute(
+      "src",
+      /\/logo(?:\.[^/]+)?\.svg(?:\?|$)/i,
+    );
+    await expect
+      .poll(() =>
+        mobileBrandImage.evaluate((element) => {
+          const image = element as HTMLImageElement;
+          return image.complete && image.naturalWidth > 0 && image.naturalHeight > 0;
+        }),
+      )
+      .toBe(true);
 
     const mobileNavigation = page.getByRole("navigation", {
       name: "Основная навигация",

@@ -386,6 +386,9 @@ npm run test:e2e
   route-aware shell, сохранение DOM/state на `599/600`, `899/900`,
   `1375/1376`, смену ориентации, safe areas, horizontal overflow и overlay
   interactions;
+- целевой `mobile streamed SSR fallback exposes progressive navigation without JavaScript`
+  с SSR fixture проверяет именованную ссылку на главную и загрузку mobile logo
+  без привязки к generated hash, затем навигацию, skeleton и его геометрию;
 - проверки холодной загрузки шапки в `mobile-rendering.mobile.spec.ts` ожидают
   `logo.svg` на мобильных и `logo-desktop.webp` на десктопе, без загрузки
   логотипа другого варианта шапки;
