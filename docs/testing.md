@@ -138,6 +138,14 @@ fixture сценарии пропускаются, если `PLAYWRIGHT_FIXTURE_
 
 Тесты с реальным backend требуют подходящих env и тестовых данных. Секреты из `.env.local` не выводятся в логи.
 
+`safe-diagnostics.spec.ts` проверяет console arguments в development и production
+на синтетических секретах в headers, body, params, вложенных details и сообщениях.
+Проверяются serializer, HTTP/config/refresh failures, auth store, таймер обновления
+и mutation callbacks. Console calls из `app`/`src` также исполняются отдельно
+с синтетическим error для проверки всех точек вывода, включая UI handlers и boundaries;
+это не браузерное воспроизведение их lifecycle. Проверки сохраняют полезные
+status/code и исключают query/hash/credentials из маршрута. Backend не вызывается.
+
 ## Каталог нового backend
 
 `product-search-session.spec.ts` проверяет отсутствие `includeAdult`, bearer

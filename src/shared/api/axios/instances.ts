@@ -16,6 +16,7 @@ import axios, {
 } from "axios";
 import { tokenRefreshManager, tokenStorage } from "@/shared/lib";
 import {
+  serializeApiError,
   ApiError,
   BackendErrorResponse,
   transformToApiError,
@@ -49,19 +50,14 @@ let refreshFailSubscribers: Array<(error: ApiError) => void> = [];
 // ЛОГИРОВАНИЕ (только dev)
 // ============================================================================
 
-const log = (message: string, data?: unknown): void => {
+const log = (message: string): void => {
   if (process.env.NODE_ENV !== "development") return;
-
-  if (data !== undefined) {
-    console.log(`[Axios] ${message}`, data);
-  } else {
-    console.log(`[Axios] ${message}`);
-  }
+  console.log(`[Axios] ${message}`);
 };
 
 const logError = (message: string, error?: unknown): void => {
   if (process.env.NODE_ENV !== "development") return;
-  console.error(`[Axios] ${message}`, error);
+  console.error(`[Axios] ${message}`, serializeApiError(error));
 };
 
 // ============================================================================
@@ -153,7 +149,7 @@ const getApiBaseUrl = async (): Promise<string> => {
 
     const apiUrl = config.apiUrl;
     cachedApiUrl = apiUrl;
-    log("API URL loaded", apiUrl);
+    log("API URL loaded");
     return apiUrl;
   } catch (error) {
     logError("Failed to load API config", error);

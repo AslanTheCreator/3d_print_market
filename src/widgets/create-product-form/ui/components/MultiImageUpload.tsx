@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
+import { serializeApiError } from "@/shared/lib/errorHandler";
 import { useRef, useState } from "react";
 import {
   Box,
@@ -50,7 +51,7 @@ export const MultiImageUpload = ({
       try {
         await addImage(file);
       } catch (error) {
-        console.error(error);
+        console.error(serializeApiError(error));
       }
     }
 
@@ -94,7 +95,7 @@ export const MultiImageUpload = ({
         try {
           await addImage(file);
         } catch (error) {
-          console.error(error);
+          console.error(serializeApiError(error));
         }
       }
     }

@@ -1,3 +1,4 @@
+import { serializeApiError } from "@/shared/lib/errorHandler";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { OrderCreateModel, OrderCancel } from "../model/types";
 import { orderApi } from "../api/orderApi";
@@ -17,7 +18,7 @@ const invalidateOrdersLists = (
 
 const logMutationError = (message: string) => {
   return (error: unknown) => {
-    console.error(message, error);
+    console.error(message, serializeApiError(error));
   };
 };
 

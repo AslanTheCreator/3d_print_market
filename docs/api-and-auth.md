@@ -178,7 +178,14 @@ API-модуля. Формы позволяют добавить первую з
 query hooks и `attachImages`. В `src/shared/model` остаётся только нейтральный
 тип `Currency`.
 
-Сейчас redaction не централизован: часть login/refresh ошибок логируется как raw error. До подключения production error tracking требуется безопасная нормализация и удаление секретов.
+Диагностика ошибок проходит через `serializeApiError` в `shared/lib/errorHandler`:
+в консоль передаются только HTTP status, известный code (неизвестный заменяется
+на `UNKNOWN`), нейтральное сообщение и pathname без query, hash, origin и URL credentials.
+Backend message, details, timestamp, stack, config, request и исходный error
+в логи не передаются. `ApiError` для обработки в UI сохраняет прежние поля;
+его нельзя передавать в console/error tracking напрямую. HTTP и timer logger
+по-прежнему работают только в development; остальные error calls используют
+тот же serializer и в production. Это правило действует и для будущего error tracking.
 
 ## Server и client state
 

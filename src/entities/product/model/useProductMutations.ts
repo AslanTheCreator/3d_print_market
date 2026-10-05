@@ -1,3 +1,4 @@
+import { serializeApiError } from "@/shared/lib/errorHandler";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { imageApi } from "@/entities/image/@x/product";
 import { productApi } from "../api/productApi";
@@ -52,7 +53,7 @@ export const useExtendProductExpiration = () => {
       queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) });
     },
     onError: (error) => {
-      console.error("Failed to extend product expiration:", error);
+      console.error("Failed to extend product expiration:", serializeApiError(error));
     },
   });
 };
@@ -67,7 +68,7 @@ export const useDeleteProduct = () => {
       await queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) });
     },
     onError: (error) => {
-      console.error("Failed to delete product:", error);
+      console.error("Failed to delete product:", serializeApiError(error));
     },
   });
 };

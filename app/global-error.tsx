@@ -1,5 +1,6 @@
 "use client";
 
+import { serializeApiError } from "@/shared/lib/errorHandler";
 import { useEffect } from "react";
 import Link from "next/link";
 
@@ -13,7 +14,7 @@ export default function GlobalErrorPage({
   reset,
 }: GlobalErrorPageProps) {
   useEffect(() => {
-    console.error("Global error boundary caught an error:", error);
+    console.error("Global error boundary caught an error:", serializeApiError(error));
   }, [error]);
 
   return (

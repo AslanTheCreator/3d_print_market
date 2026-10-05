@@ -29,7 +29,7 @@ import {
   revokeImagePreview,
   validateImage,
 } from "@/shared/lib";
-import { transformToApiError } from "@/shared/lib/errorHandler";
+import { serializeApiError, transformToApiError } from "@/shared/lib/errorHandler";
 import { UseMutationResult } from "@tanstack/react-query";
 import { SellerPaymentDetails } from "./SellerPaymentDetails";
 
@@ -179,7 +179,7 @@ export const PaymentDialog = ({
       await imageApi.deleteImages([unlinkedImageId], "ORDER");
       return true;
     } catch (error) {
-      console.error("Ошибка при удалении неподтверждённого изображения:", error);
+      console.error("Ошибка при удалении неподтверждённого изображения:", serializeApiError(error));
       setImageError(
         "Не удалось удалить предыдущий чек. Повторите попытку, чтобы не создавать лишние файлы.",
       );
@@ -235,7 +235,7 @@ export const PaymentDialog = ({
       const response = await imageApi.saveImage(file, "ORDER");
       setImageId(response[0]);
     } catch (error) {
-      console.error("Ошибка при загрузке изображения:", error);
+      console.error("Ошибка при загрузке изображения:", serializeApiError(error));
       setImageError("Не удалось загрузить изображение на сервер");
       resetImageState();
     } finally {

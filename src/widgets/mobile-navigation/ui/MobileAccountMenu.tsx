@@ -1,5 +1,6 @@
 "use client";
 
+import { serializeApiError } from "@/shared/lib/errorHandler";
 import {
   Box,
   CircularProgress,
@@ -116,7 +117,7 @@ export const MobileAccountMenu = ({
       onClose();
       router.push("/auth/login");
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("Logout error:", serializeApiError(error));
     } finally {
       setIsLoggingOut(false);
     }

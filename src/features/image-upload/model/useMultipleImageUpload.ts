@@ -1,3 +1,4 @@
+import { serializeApiError } from "@/shared/lib/errorHandler";
 import { useState, useCallback, useEffect, useRef } from "react";
 import {
   revokeImagePreview,
@@ -118,7 +119,7 @@ export const useMultipleImageUpload = (
           return next;
         });
       } catch (error) {
-        console.error("Ошибка загрузки изображения:", error);
+        console.error("Ошибка загрузки изображения:", serializeApiError(error));
         setUploadError("Не удалось загрузить изображение");
         setImages((prev) => {
           const next = prev.map((img) =>

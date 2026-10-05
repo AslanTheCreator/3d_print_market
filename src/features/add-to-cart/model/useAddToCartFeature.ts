@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cartKeys, useAddToCart, useCartChecks } from "@/entities/cart";
 import { productKeys } from "@/entities/product";
 import { useProfileUser } from "@/entities/user";
-import { ApiError, ErrorCodes } from "@/shared/lib/errorHandler";
+import { ApiError, ErrorCodes, serializeApiError } from "@/shared/lib/errorHandler";
 
 const OWN_PRODUCT_MESSAGE = "Нельзя добавить в корзину собственный товар";
 const OWNER_CHECK_ERROR_MESSAGE = "Не удалось проверить владельца товара";
@@ -71,7 +71,7 @@ export function useAddToCartFeature(
             );
           },
           onError: (error) => {
-            console.error("Ошибка добавления в корзину:", error);
+            console.error("Ошибка добавления в корзину:", serializeApiError(error));
             let message = ADD_TO_CART_ERROR_MESSAGE;
 
             if (error instanceof ApiError) {

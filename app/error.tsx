@@ -1,5 +1,6 @@
 "use client";
 
+import { serializeApiError } from "@/shared/lib/errorHandler";
 import { useEffect } from "react";
 import Link from "next/link";
 import { Button, Stack } from "@mui/material";
@@ -12,7 +13,7 @@ interface ErrorPageProps {
 
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   useEffect(() => {
-    console.error("Route error boundary caught an error:", error);
+    console.error("Route error boundary caught an error:", serializeApiError(error));
   }, [error]);
 
   return (

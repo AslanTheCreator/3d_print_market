@@ -1,5 +1,6 @@
 "use client";
 
+import { serializeApiError } from "@/shared/lib/errorHandler";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { tokenRefreshManager, tokenStorage } from "@/shared/lib";
@@ -22,14 +23,9 @@ export interface AuthState {
   setAuthenticated: () => void;
 }
 
-const log = (message: string, data?: unknown): void => {
+const log = (message: string): void => {
   if (process.env.NODE_ENV !== "development") return;
-
-  if (data !== undefined) {
-    console.log(`[AuthStore] ${message}`, data);
-  } else {
-    console.log(`[AuthStore] ${message}`);
-  }
+  console.log(`[AuthStore] ${message}`);
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -131,7 +127,7 @@ export const useAuthStore = create<AuthState>()(
             });
           }
         } catch (error) {
-          console.error("Auth initialization failed:", error);
+          console.error("Auth initialization failed:", serializeApiError(error));
           set({
             isAuthenticated: false,
             isInitialized: true,
@@ -145,7 +141,7 @@ export const useAuthStore = create<AuthState>()(
         const isAuth = !!accessToken;
 
         if (get().isAuthenticated !== isAuth) {
-          log("Auth status changed", { isAuth });
+          log(`Auth status changed: ${isAuth}`);
           set((state) => ({
             isAuthenticated: isAuth,
             sessionRevision: state.sessionRevision + 1,
@@ -169,7 +165,7 @@ export const useAuthStore = create<AuthState>()(
           }));
           return true;
         } catch (error) {
-          console.error("Token refresh failed:", error);
+          console.error("Token refresh failed:", serializeApiError(error));
           set({ isAuthenticated: false, user: null });
           return false;
         }

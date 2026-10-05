@@ -1,3 +1,4 @@
+import { serializeApiError } from "@/shared/lib/errorHandler";
 import { useState, useCallback, useEffect } from "react";
 import {
   revokeImagePreview,
@@ -70,7 +71,7 @@ export const useImageUpload = (tag: ImageTag): UseImageUploadReturn => {
         const response = await imageApi.saveImage(file, tag);
         setImageIds(response);
       } catch (error) {
-        console.error("Ошибка при загрузке изображения:", error);
+        console.error("Ошибка при загрузке изображения:", serializeApiError(error));
         setImageError("Не удалось загрузить изображение на сервер");
       } finally {
         setIsUploading(false);

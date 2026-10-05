@@ -1,5 +1,6 @@
 "use client";
 
+import { serializeApiError } from "@/shared/lib/errorHandler";
 import React, { useState } from "react";
 import {
   Box,
@@ -124,7 +125,7 @@ const AuthForm: React.FC<IAuthForm> = ({
           ...(showAgeField ? { age: Number(normalizedAge) } : {}),
         });
       } catch (error) {
-        console.error("Authentication error:", error);
+        console.error("Authentication error:", serializeApiError(error));
       } finally {
         setIsSubmitting(false);
       }

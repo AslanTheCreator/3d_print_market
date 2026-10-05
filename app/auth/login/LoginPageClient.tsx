@@ -1,5 +1,6 @@
 "use client";
 
+import { serializeApiError } from "@/shared/lib/errorHandler";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthForm from "@/widgets/auth-form";
@@ -47,7 +48,7 @@ export default function LoginPageClient() {
         router.replace(redirectPath);
       }
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("Login failed:", serializeApiError(error));
 
       if (error instanceof VerificationRequiredError) {
         setUserEmail(error.email);
@@ -71,7 +72,7 @@ export default function LoginPageClient() {
             setUserId(null);
           }
         } catch (sendError) {
-          console.error("Failed to send verification code:", sendError);
+          console.error("Failed to send verification code:", serializeApiError(sendError));
           showNotification(
             "Не удалось отправить код. Вы можете повторить попытку в окне верификации.",
             "warning",
@@ -110,7 +111,7 @@ export default function LoginPageClient() {
         router.replace(redirectPath);
       }
     } catch (error) {
-      console.error("Verification failed:", error);
+      console.error("Verification failed:", serializeApiError(error));
       throw error;
     } finally {
       setIsVerifying(false);
@@ -142,7 +143,7 @@ export default function LoginPageClient() {
 
       return { success: false };
     } catch (error) {
-      console.error("Resend code failed:", error);
+      console.error("Resend code failed:", serializeApiError(error));
       throw error;
     }
   };
@@ -158,7 +159,7 @@ export default function LoginPageClient() {
       await authApi.passwordReset(email);
       showNotification("Временный пароль отправлен на вашу почту", "success");
     } catch (error) {
-      console.error("Password reset failed:", error);
+      console.error("Password reset failed:", serializeApiError(error));
       throw error;
     }
   };

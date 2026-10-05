@@ -10,6 +10,7 @@
  * @module shared/lib/token/tokenRefreshManager
  */
 
+import { serializeApiError } from "../errorHandler";
 import { tokenStorage } from "./tokenStorage";
 
 // ============================================================================
@@ -69,20 +70,16 @@ let config: TokenRefreshManagerConfig | null = null;
 // ЛОГИРОВАНИЕ (только dev)
 // ============================================================================
 
-const log = (message: string, data?: unknown): void => {
+const log = (message: string): void => {
   if (process.env.NODE_ENV !== "development") return;
 
   const timestamp = new Date().toLocaleTimeString();
-  if (data !== undefined) {
-    console.log(`[TokenRefresh ${timestamp}] ${message}`, data);
-  } else {
-    console.log(`[TokenRefresh ${timestamp}] ${message}`);
-  }
+  console.log(`[TokenRefresh ${timestamp}] ${message}`);
 };
 
 const logError = (message: string, error?: unknown): void => {
   if (process.env.NODE_ENV !== "development") return;
-  console.error(`[TokenRefresh] ${message}`, error);
+  console.error(`[TokenRefresh] ${message}`, serializeApiError(error));
 };
 
 // ============================================================================
@@ -114,13 +111,7 @@ const calculateRefreshDelay = (): number => {
   const refreshAt = tokenExpiresAt - refreshBuffer;
   const delay = refreshAt - now;
 
-  log("Calculated refresh delay", {
-    tokenCreatedAt: new Date(tokenCreatedAt).toLocaleTimeString(),
-    tokenExpiresAt: new Date(tokenExpiresAt).toLocaleTimeString(),
-    refreshAt: new Date(refreshAt).toLocaleTimeString(),
-    delayMs: delay,
-    delayMinutes: Math.round(delay / 60000),
-  });
+  log(`Calculated refresh delay: ${delay} ms`);
 
   // Если время уже прошло - обновляем немедленно (но с минимальной задержкой)
   return Math.max(delay, 1000);

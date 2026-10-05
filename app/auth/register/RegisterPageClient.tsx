@@ -11,7 +11,7 @@ import {
   getPostAuthRedirectPath,
   getAuthSwitchPath,
 } from "@/entities/session";
-import { ApiError } from "@/shared/lib/errorHandler";
+import { ApiError, serializeApiError } from "@/shared/lib/errorHandler";
 import { useNotification } from "@/shared/ui/notification";
 
 export default function RegisterPageClient() {
@@ -58,7 +58,7 @@ export default function RegisterPageClient() {
         setIsVerificationOpen(true);
       }
     } catch (error) {
-      console.error("Registration failed:", error);
+      console.error("Registration failed:", serializeApiError(error));
 
       if (
         error instanceof ApiError &&
@@ -100,7 +100,7 @@ export default function RegisterPageClient() {
 
       return { success: false };
     } catch (error) {
-      console.error("Resend code failed:", error);
+      console.error("Resend code failed:", serializeApiError(error));
       throw error;
     }
   };
@@ -121,7 +121,7 @@ export default function RegisterPageClient() {
         router.replace(redirectPath);
       }
     } catch (error) {
-      console.error("Verification failed:", error);
+      console.error("Verification failed:", serializeApiError(error));
       throw error;
     } finally {
       setIsVerifying(false);

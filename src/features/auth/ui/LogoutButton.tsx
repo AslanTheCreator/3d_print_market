@@ -1,5 +1,6 @@
 "use client";
 
+import { serializeApiError } from "@/shared/lib/errorHandler";
 import React, { useState } from "react";
 import {
   ListItemButton,
@@ -28,7 +29,7 @@ export const LogoutButton: React.FC = () => {
       queryClient.removeQueries();
       router.push("/auth/login");
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("Logout error:", serializeApiError(error));
     } finally {
       setIsLoading(false);
     }

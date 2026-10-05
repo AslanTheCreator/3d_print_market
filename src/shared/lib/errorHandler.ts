@@ -245,26 +245,60 @@ export function logApiError(error: ApiError, context?: string): void {
     return;
   }
 
-  const prefix = context ? `[API Error: ${context}]` : "[API Error]";
+  console.error("[API Error]", serializeApiError(error, context));
+}
 
-  console.group(`${prefix} ${error.code || "UNKNOWN"}`);
-  console.error("Message:", error.message);
+const DIAGNOSTIC_CODES: ReadonlySet<string> = new Set([
+  ...Object.values(ErrorCodes),
+  "TIMEOUT",
+  "NETWORK_ERROR",
+  "REFRESH_TIMEOUT",
+]);
 
-  if (error.statusCode) {
-    console.error("Status:", error.statusCode);
+export interface ApiErrorDiagnostic {
+  status?: number;
+  code: string;
+  message: string;
+  route?: string;
+}
+
+/** Диагностика не копирует сообщения backend, details или исходный HTTP error. */
+export function serializeApiError(
+  error: unknown,
+  route?: string,
+): ApiErrorDiagnostic {
+  const apiError = transformToApiError(error);
+  const status =
+    typeof apiError.statusCode === "number" &&
+    Number.isInteger(apiError.statusCode) &&
+    apiError.statusCode >= 100 &&
+    apiError.statusCode <= 599
+      ? apiError.statusCode
+      : undefined;
+  const code =
+    apiError.code && DIAGNOSTIC_CODES.has(apiError.code)
+      ? apiError.code
+      : "UNKNOWN";
+  const diagnostic: ApiErrorDiagnostic = {
+    code,
+    message: status
+      ? HTTP_STATUS_MESSAGES[status] ?? "Ошибка HTTP-запроса"
+      : "Ошибка выполнения запроса",
+  };
+  if (status !== undefined) diagnostic.status = status;
+
+  const original = apiError.originalError;
+  const requestRoute =
+    route ?? (axios.isAxiosError(original) ? original.config?.url : undefined);
+  if (requestRoute) {
+    try {
+      const url = new URL(requestRoute, "http://diagnostic.invalid");
+      if (url.protocol === "http:" || url.protocol === "https:") {
+        diagnostic.route = url.pathname;
+      }
+    } catch {
+      // Некорректный URL не должен попадать в логи или ломать обработку ошибки.
+    }
   }
-
-  if (error.code) {
-    console.error("Code:", error.code);
-  }
-
-  if (error.details) {
-    console.error("Details:", error.details);
-  }
-
-  if (error.originalError) {
-    console.error("Original:", error.originalError);
-  }
-
-  console.groupEnd();
+  return diagnostic;
 }
