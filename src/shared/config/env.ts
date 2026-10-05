@@ -75,6 +75,16 @@ const getConfiguredApiUrl = (
   return apiUrl;
 };
 
+// Политику окружения проверяет /api/config; клиент проверяет формат ответа.
+export const parseRuntimeApiUrl = (value: unknown): string => {
+  if (typeof value !== "string") {
+    throw new Error("apiUrl must be a non-empty string");
+  }
+  const apiUrl = normalizeApiUrl(value, "apiUrl");
+  if (!apiUrl) throw new Error("apiUrl must be a non-empty string");
+  return apiUrl;
+};
+
 const getLocalApiUrl = (): string => {
   if (!isProduction) {
     return LOCAL_API_URL;

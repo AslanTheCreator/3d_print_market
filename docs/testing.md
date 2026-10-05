@@ -165,6 +165,15 @@ Stage 04: `npx playwright test auth-boundaries session-lifecycle auth-return-pat
 `auth-boundaries.spec.ts` проверяет browser cookies и auth при отказах storage,
 восстановление после ошибок, нулевой/дробный cooldown, resend и verify на mock API.
 
+Регрессия Stage 05: `npx playwright test http-preparation session-lifecycle refresh-queue-model safe-diagnostics auth-boundaries --project=chromium`.
+`http-preparation-model.spec.ts` исполняет настоящие Axios interceptors с
+управляемыми fetch/body promises и таймерами: deadline, отмена transport,
+single-flight config, повтор после ошибки, отклонение невалидного URL,
+защита кэша от позднего ответа, независимая отмена consumer, dev fallback/SSR
+и неизменный адрес leader/queue при replay для absolute/root-relative base.
+`http-preparation.spec.ts` проверяет восстановление login после timeout config
+и конкурентный refresh через same-origin proxy в браузере на mock API.
+
 ## Каталог нового backend
 
 `product-search-session.spec.ts` проверяет отсутствие `includeAdult`, bearer

@@ -6,6 +6,7 @@ import vm from "node:vm";
 import ts from "typescript";
 import { authApi, useAuthStore } from "@/entities/session";
 import { tokenStorage } from "@/shared/lib";
+import { parseRuntimeApiUrl } from "@/shared/config/env";
 import * as errorHandler from "@/shared/lib/errorHandler";
 
 const { ApiError, serializeApiError, transformToApiError, logApiError } = errorHandler;
@@ -84,7 +85,7 @@ const loadModule = <T>(
       if (!(name in mocks)) throw new Error(`Missing mock for ${name}`);
       return mocks[name];
     },
-    console, process, URL, setTimeout, clearTimeout,
+    console, process, URL, AbortController, setTimeout, clearTimeout,
     ...globals,
   }, { filename: file });
   return module.exports as T;
@@ -188,7 +189,7 @@ for (const mode of ["development", "production"] as const) {
             tokenStorage: { canRefresh: () => true, getAccessToken: () => secrets[0] },
             tokenRefreshManager: { reset: () => {} },
           },
-          "@/shared/config/env": { getServerApiBaseUrl: () => "https://fixture.invalid" },
+          "@/shared/config/env": { getServerApiBaseUrl: () => "https://fixture.invalid", parseRuntimeApiUrl },
           "./authSessionAdapter": {
             getAuthSessionAdapter: () => ({
               getSessionSignal: () => new AbortController().signal,
@@ -205,7 +206,10 @@ for (const mode of ["development", "production"] as const) {
           () => undefined,
           (error: unknown) => error,
         );
-        expect(configResult).toBe(mode === "production" ? configError : undefined);
+        if (mode === "production") {
+          expect(configResult).toBeInstanceOf(ApiError);
+          expect(configResult).toMatchObject({ statusCode: 500, originalError: configError });
+        } else expect(configResult).toBeUndefined();
         const { publicClient, authClient } = loadModule<{
           publicClient: AxiosInstance; authClient: AxiosInstance;
         }>("src/shared/api/axios/instances.ts", mocks, {

@@ -8,6 +8,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import * as errorHandler from "@/shared/lib/errorHandler";
 import * as authTypes from "@/entities/session/model/types";
 import { createAuthStorage } from "@/entities/session/model/authPersistence";
+import { parseRuntimeApiUrl } from "@/shared/config/env";
 import type { useAuthStore as AuthStore } from "@/entities/session/model/authStore";
 import type { tokenRefreshManager as Manager } from "@/shared/lib/token/tokenRefreshManager";
 import type { AuthSessionAdapter } from "@/shared/api/axios/authSessionAdapter";
@@ -67,7 +68,7 @@ const fixture = () => {
     "src/shared/api/axios/instances.ts", {
       axios, "@/shared/lib": { tokenStorage },
       "@/shared/lib/errorHandler": errorHandler,
-      "@/shared/config/env": { getServerApiBaseUrl: () => "https://fixture.invalid" },
+      "@/shared/config/env": { getServerApiBaseUrl: () => "https://fixture.invalid", parseRuntimeApiUrl },
       "./authSessionAdapter": { getAuthSessionAdapter: () => sessionAdapter },
     },
   );
@@ -198,7 +199,7 @@ for (const ending of ["timeout", "abort"] as const) {
     await f.store.getState().refreshToken();
     // Новый допустимый запрос — barrier после всех callbacks завершившегося refresh.
     await f.authClient.post("/active");
-    expect(f.sent.map(c => c.url)).toEqual([
+    expect(f.sent.map(c => f.authClient.getUri(c))).toEqual([
       "https://fixture.invalid/write-0", "https://fixture.invalid/write-1", "https://fixture.invalid/active",
     ]);
     expect(f.expired()).toBe(0);
@@ -215,7 +216,7 @@ test("cancelling leader leaves live queue able to replay", async () => {
   expect(axios.isCancel(await a)).toBe(true);
   f.refreshes[0].resolve("fresh");
   await b;
-  expect(f.sent.map(c => c.url)).toEqual([
+  expect(f.sent.map(c => f.authClient.getUri(c))).toEqual([
     "https://fixture.invalid/leader", "https://fixture.invalid/queue", "https://fixture.invalid/queue",
   ]);
 });

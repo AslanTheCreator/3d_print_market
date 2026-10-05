@@ -24,7 +24,7 @@ import {
   logApiError,
   ErrorCodes,
 } from "@/shared/lib/errorHandler";
-import { getServerApiBaseUrl } from "@/shared/config/env";
+import { getServerApiBaseUrl, parseRuntimeApiUrl } from "@/shared/config/env";
 import { getAuthSessionAdapter } from "./authSessionAdapter";
 
 // ============================================================================
@@ -42,6 +42,8 @@ interface RetryableRequestConfig extends InternalAxiosRequestConfig {
 // ============================================================================
 
 let cachedApiUrl: string | null = null;
+let pendingApiConfig: Promise<string> | null = null;
+const API_CONFIG_TIMEOUT_MS = 10000;
 
 // ============================================================================
 // ЛОГИРОВАНИЕ (только dev)
@@ -161,43 +163,87 @@ const shouldAttemptRefresh = (
 // ПОЛУЧЕНИЕ API URL
 // ============================================================================
 
-const getApiBaseUrl = async (): Promise<string> => {
-  if (cachedApiUrl) {
-    return cachedApiUrl;
-  }
-
+const loadApiBaseUrl = async (): Promise<string> => {
   if (typeof window === "undefined") {
-    const apiUrl = getServerApiBaseUrl();
-    cachedApiUrl = apiUrl;
-    return apiUrl;
+    return getServerApiBaseUrl();
   }
 
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new ApiError("Превышено время загрузки конфигурации API", "TIMEOUT", 408));
+      controller.abort();
+    }, API_CONFIG_TIMEOUT_MS);
+  });
   try {
-    const response = await fetch("/api/config");
-    if (!response.ok) {
-      throw new Error(`Failed to load API config: ${response.status}`);
-    }
-
-    const config = await response.json();
-    if (!config.apiUrl) {
-      throw new Error("API URL is missing in /api/config response");
-    }
-
-    const apiUrl = config.apiUrl;
-    cachedApiUrl = apiUrl;
+    const apiUrl = await Promise.race([
+      (async () => {
+        const response = await fetch("/api/config", { signal: controller.signal });
+        if (!response.ok) {
+          throw new ApiError("Не удалось загрузить конфигурацию API", undefined, response.status);
+        }
+        const config: unknown = await response.json();
+        return parseRuntimeApiUrl(
+          typeof config === "object" && config !== null && "apiUrl" in config
+            ? config.apiUrl : undefined,
+        );
+      })(),
+      deadline,
+    ]);
     log("API URL loaded");
     return apiUrl;
   } catch (error) {
     logError("Failed to load API config", error);
 
     if (process.env.NODE_ENV !== "production") {
-      const fallbackUrl = getServerApiBaseUrl();
-      cachedApiUrl = fallbackUrl;
-      return fallbackUrl;
+      return getServerApiBaseUrl();
     }
 
     throw error;
+  } finally {
+    clearTimeout(timer);
   }
+};
+
+const getApiBaseUrl = (): Promise<string> => {
+  if (cachedApiUrl) return Promise.resolve(cachedApiUrl);
+  if (!pendingApiConfig) {
+    pendingApiConfig = loadApiBaseUrl().then((apiUrl) => {
+      cachedApiUrl = apiUrl;
+      return apiUrl;
+    }, (error: unknown) => {
+      throw transformToApiError(error);
+    }).finally(() => {
+      pendingApiConfig = null;
+    });
+  }
+  return pendingApiConfig;
+};
+
+const getRequestApiBaseUrl = (config: RetryableRequestConfig): Promise<string> => {
+  assertRequestActive(config);
+  const pending = getApiBaseUrl();
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      config.signal?.removeEventListener?.("abort", cancel);
+      config._sessionSignal?.removeEventListener("abort", cancel);
+    };
+    const cancel = () => {
+      cleanup();
+      reject(new CanceledError("Запрос отменён", config));
+    };
+    config.signal?.addEventListener?.("abort", cancel);
+    config._sessionSignal?.addEventListener("abort", cancel);
+    void pending.then((apiUrl) => {
+      cleanup();
+      resolve(apiUrl);
+    }, (error: unknown) => {
+      cleanup();
+      reject(error);
+    });
+    if (config.signal?.aborted || config._sessionSignal?.aborted) cancel();
+  });
 };
 
 // ============================================================================
@@ -207,18 +253,9 @@ const getApiBaseUrl = async (): Promise<string> => {
 const setupUrlInterceptor = (instance: AxiosInstance): void => {
   instance.interceptors.request.use(
     async (config) => {
-      const apiBaseUrl = await getApiBaseUrl();
+      const apiBaseUrl = await getRequestApiBaseUrl(config);
       assertRequestActive(config);
-
-      if (config.url) {
-        const isFullUrl =
-          config.url.startsWith("http://") || config.url.startsWith("https://");
-
-        if (!isFullUrl) {
-          const cleanUrl = config.url.replace(/^\/+/, "/");
-          config.url = `${apiBaseUrl}${cleanUrl}`;
-        }
-      }
+      config.baseURL = apiBaseUrl;
 
       return config;
     },

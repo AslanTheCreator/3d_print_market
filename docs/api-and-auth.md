@@ -80,6 +80,21 @@ Auth API, store, `useAuth`, инициализация и refresh lifecycle пр
 
 Браузер получает `CLIENT_API_BASE_URL` через `GET /api/config`. Local URL в production разрешается только при `ALLOW_LOCAL_API_URL=true`.
 
+Загрузка runtime config общая для public/auth clients и `preloadApiConfig`.
+Deadline 10 секунд охватывает fetch и чтение JSON; при истечении transport
+отменяется, а ошибка нормализуется в `ApiError` (`TIMEOUT`, 408). Ошибки HTTP,
+JSON и формата `apiUrl` также нормализуются. После отказа pending promise
+сбрасывается, следующая попытка может загрузить config заново; поздний ответ
+не заменяет актуальный кэш. Вне production сохраняется прежний fallback на
+`getServerApiBaseUrl`; успешно полученный fallback кэшируется.
+
+`apiUrl` проверяется и нормализуется по общим правилам `shared/config/env`;
+ограничения окружения проверяет серверный route. AbortSignal отдельного
+запроса или смена поколения сессии отменяет только его ожидание config.
+Interceptor назначает Axios `baseURL`, сохраняя endpoint в `url`, поэтому
+повтор после 401 не удваивает root-relative префикс. Абсолютный endpoint
+остаётся абсолютным; query params передаются обычным механизмом Axios.
+
 Текущая валидация принимает `http:` и `https:`. Требование HTTPS для публичного browser API пока зафиксировано только в `.env.example`, но не обеспечено кодом. Root-relative URL допустим для browser same-origin proxy, однако server-side `API_BASE_URL` должен быть абсолютным.
 
 ## Текущий auth flow
