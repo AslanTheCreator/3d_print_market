@@ -10,6 +10,7 @@ import {
 } from "@/features/auth";
 import {
   authApi,
+  type VerificationCodeResponse,
   useAuthStore,
   VerificationRequiredError,
   getPostAuthRedirectPath,
@@ -64,7 +65,7 @@ export default function LoginPageClient() {
           if (result.success && result.userId) {
             setUserId(result.userId);
             showNotification("Код верификации отправлен на почту", "info");
-          } else if (result.retryAfterSec) {
+          } else if (!result.success) {
             showNotification(
               `Код уже был отправлен. Повторная отправка через ${result.retryAfterSec} сек.`,
               "info",
@@ -118,30 +119,19 @@ export default function LoginPageClient() {
     }
   };
 
-  const handleResendCode = async (): Promise<{
-    success: boolean;
-    retryAfterSec?: number;
-  }> => {
+  const handleResendCode = async (): Promise<VerificationCodeResponse> => {
     if (!userEmail) {
-      return { success: false };
+      throw new Error("Email is required to resend verification code");
     }
 
     try {
       const result = await authApi.sendVerificationCode(userEmail);
 
-      if (result.success && result.userId) {
+      if (result.success) {
         setUserId(result.userId);
-        return { success: true };
       }
 
-      if (result.retryAfterSec) {
-        return {
-          success: false,
-          retryAfterSec: result.retryAfterSec,
-        };
-      }
-
-      return { success: false };
+      return result;
     } catch (error) {
       console.error("Resend code failed:", serializeApiError(error));
       throw error;

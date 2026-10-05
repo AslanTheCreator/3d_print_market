@@ -110,6 +110,21 @@ Adapter передаёт HTTP-слою `getSessionSignal()`: неперсист�
 Token manager отдельно инвалидирует выполняющиеся callbacks при stop/start/reset,
 чтобы старый callback не планировал retry и не завершал новую сессию.
 
+`auth-storage` сохраняет только поле `user`, без токенов и пароля. Сессия
+использует безопасный storage adapter: при отказе доступа, get/set/remove он
+переходит на память до конца жизни экземпляра. Это исключает повторное чтение
+устаревшего значения после неудачной записи/удаления. Persistence не отменяет
+login/refresh/logout; initialize завершается с `isInitialized` для актуального
+поколения. Cookies остаются источником наличия токенов, память не заменяет их.
+
+Специальные ошибки login/resend читаются как unknown. Ветка подтверждения
+требует `WAITING_VERIFY` + `VERIFY_EMAIL`; cooldown требует
+`VERIFICATION_COOLDOWN` и конечное неотрицательное число `retryAfterSec`.
+Остальные отказы преобразуются в `ApiError` с сохранением исходной ошибки.
+`VerificationCodeResponse` различает успех с `userId` и cooldown с
+`retryAfterSec`; ноль разрешает немедленный повтор, дробные секунды в диалоге
+округляются вверх для обратного отсчёта.
+
 Это действующая реализация, но не целевая production-модель: токены доступны JavaScript. Риски, требования к backend и критерии миграции описаны в [backend-plan.md](./backend-plan.md).
 
 Login/register сохраняют `redirect` при переключении форм, после входа и

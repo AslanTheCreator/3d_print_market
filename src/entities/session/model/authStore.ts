@@ -2,10 +2,11 @@
 
 import { serializeApiError } from "@/shared/lib/errorHandler";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { tokenRefreshManager, tokenStorage } from "@/shared/lib";
 import { authApi } from "../api/authApi";
 import { advanceSessionGeneration, getSessionSignal } from "./sessionGeneration";
+import { createAuthStorage } from "./authPersistence";
 
 let pendingRefresh: { generation: AbortSignal; promise: Promise<boolean> } | null = null;
 
@@ -111,7 +112,6 @@ export const useAuthStore = create<AuthState>()(
             log("Access token found, setting authenticated");
             set((state) => ({
               isAuthenticated: true,
-              isInitialized: true,
               sessionRevision: state.sessionRevision + 1,
               accountRevision: state.accountRevision + 1,
             }));
@@ -126,7 +126,6 @@ export const useAuthStore = create<AuthState>()(
 
             set({
               isAuthenticated: refreshSuccess,
-              isInitialized: true,
             });
 
             if (!refreshSuccess) {
@@ -136,7 +135,6 @@ export const useAuthStore = create<AuthState>()(
             log("No tokens found");
             set({
               isAuthenticated: false,
-              isInitialized: true,
               user: null,
             });
           }
@@ -145,9 +143,10 @@ export const useAuthStore = create<AuthState>()(
           console.error("Auth initialization failed:", serializeApiError(error));
           set({
             isAuthenticated: false,
-            isInitialized: true,
             user: null,
           });
+        } finally {
+          if (!generation.aborted) set({ isInitialized: true });
         }
       },
 
@@ -206,6 +205,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
+      storage: createJSONStorage(() => createAuthStorage()),
       partialize: (state) => ({
         user: state.user,
       }),

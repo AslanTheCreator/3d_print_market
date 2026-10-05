@@ -7,6 +7,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import * as errorHandler from "@/shared/lib/errorHandler";
 import * as authTypes from "@/entities/session/model/types";
+import { createAuthStorage } from "@/entities/session/model/authPersistence";
 import type { useAuthStore as AuthStore } from "@/entities/session/model/authStore";
 import type { tokenRefreshManager as Manager } from "@/shared/lib/token/tokenRefreshManager";
 import type { AuthSessionAdapter } from "@/shared/api/axios/authSessionAdapter";
@@ -73,6 +74,7 @@ const fixture = () => {
   const api = load<typeof import("@/entities/session/api/authApi")>(
     "src/entities/session/api/authApi.ts", {
       axios, "@/shared/api": clients, "@/shared/lib": { tokenStorage },
+      "@/shared/lib/errorHandler": errorHandler,
       "../model/types": authTypes, "../model/sessionGeneration": generation,
     },
   );
@@ -80,6 +82,7 @@ const fixture = () => {
     "src/entities/session/model/authStore.ts", {
       zustand: { create },
       "zustand/middleware": {
+        createJSONStorage,
         persist: (initializer: Parameters<typeof persist>[0], options: Parameters<typeof persist>[1]) =>
           persist(initializer, { ...options, storage: createJSONStorage(() => ({
             getItem: () => null, setItem: () => {}, removeItem: () => {},
@@ -88,6 +91,7 @@ const fixture = () => {
       "@/shared/lib": { tokenStorage, tokenRefreshManager: manager },
       "@/shared/lib/errorHandler": errorHandler,
       "../api/authApi": api, "./sessionGeneration": generation,
+      "./authPersistence": { createAuthStorage },
     },
   );
   let expired = 0;

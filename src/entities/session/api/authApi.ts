@@ -1,15 +1,14 @@
 import { AxiosError, AxiosRequestConfig } from "axios";
 import { publicClient } from "@/shared/api";
 import { tokenStorage } from "@/shared/lib";
+import { transformToApiError } from "@/shared/lib/errorHandler";
 import { getSessionSignal } from "../model/sessionGeneration";
 import {
   AuthFormModel,
-  LoginErrorResponse,
   RegisterFormModel,
   RegisterResponse,
   TokensResponse,
   VerificationCodeResponse,
-  VerificationCooldownError,
   VerificationRequiredError,
 } from "../model/types";
 
@@ -23,6 +22,9 @@ interface AuthRequestConfig extends AxiosRequestConfig {
 const skipErrorTransformConfig: AuthRequestConfig = {
   _skipErrorTransform: true,
 };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 export const authApi = {
   async registerUser({
@@ -66,26 +68,28 @@ export const authApi = {
       return true;
     } catch (error) {
       if (error instanceof AxiosError && error.response?.status === 403) {
-        const errorData = error.response.data as LoginErrorResponse;
+        const errorData: unknown = error.response.data;
 
         if (
+          isRecord(errorData) &&
           errorData.code === "WAITING_VERIFY" &&
           errorData.next === "VERIFY_EMAIL"
         ) {
           throw new VerificationRequiredError(
-            errorData.message || "Необходимо подтвердить почту",
+            typeof errorData.message === "string" && errorData.message
+              ? errorData.message : "Необходимо подтвердить почту",
             mail,
           );
         }
       }
 
-      throw error;
+      throw transformToApiError(error);
     }
   },
 
   async sendVerificationCode(email: string): Promise<VerificationCodeResponse> {
     try {
-      const { data: userId } = await publicClient.post(
+      const { data: userId } = await publicClient.post<number>(
         `${API_URL_AUTH}/verification/resend`,
         undefined,
         {
@@ -100,9 +104,15 @@ export const authApi = {
       };
     } catch (error) {
       if (error instanceof AxiosError && error.response?.status === 429) {
-        const errorData = error.response.data as VerificationCooldownError;
+        const errorData: unknown = error.response.data;
 
-        if (errorData.code === "VERIFICATION_COOLDOWN") {
+        if (
+          isRecord(errorData) &&
+          errorData.code === "VERIFICATION_COOLDOWN" &&
+          typeof errorData.retryAfterSec === "number" &&
+          Number.isFinite(errorData.retryAfterSec) &&
+          errorData.retryAfterSec >= 0
+        ) {
           return {
             success: false,
             retryAfterSec: errorData.retryAfterSec,
@@ -110,7 +120,7 @@ export const authApi = {
         }
       }
 
-      throw error;
+      throw transformToApiError(error);
     }
   },
 

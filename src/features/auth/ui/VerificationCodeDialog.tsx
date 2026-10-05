@@ -20,13 +20,14 @@ import {
 } from "@mui/material";
 import { Email, CheckCircle } from "@mui/icons-material";
 import { ApiError } from "@/shared/lib/errorHandler";
+import type { VerificationCodeResponse } from "@/entities/session";
 import { AuthDialog, authDialogActionsSx, authDialogContentSx } from "./AuthDialog";
 
 interface VerificationCodeDialogProps {
   open: boolean;
   onClose: () => void;
   onVerify: (code: string) => Promise<void>;
-  onResendCode: () => Promise<{ success: boolean; retryAfterSec?: number }>;
+  onResendCode: () => Promise<VerificationCodeResponse>;
   email: string;
   isLoading?: boolean;
 }
@@ -131,10 +132,8 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
         setCode(["", "", "", "", ""]);
         setResendMessage("Код отправлен повторно");
         requestAnimationFrame(() => inputRefs.current[0]?.focus());
-      } else if (result.retryAfterSec) {
-        setCountdown(result.retryAfterSec);
       } else {
-        setError("Не удалось отправить код. Попробуйте ещё раз");
+        setCountdown(Math.ceil(result.retryAfterSec));
       }
     } catch (error) {
       setError("Ошибка при отправке кода. Попробуйте позже");

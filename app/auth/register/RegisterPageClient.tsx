@@ -6,6 +6,7 @@ import AuthForm from "@/widgets/auth-form";
 import { VerificationCodeDialog } from "@/features/auth";
 import {
   authApi,
+  type VerificationCodeResponse,
   RegisterFormModel,
   useAuthStore,
   getPostAuthRedirectPath,
@@ -79,26 +80,15 @@ export default function RegisterPageClient() {
     }
   };
 
-  const handleResendCode = async (): Promise<{
-    success: boolean;
-    retryAfterSec?: number;
-  }> => {
+  const handleResendCode = async (): Promise<VerificationCodeResponse> => {
     try {
       const result = await authApi.sendVerificationCode(userEmail);
 
-      if (result.success && result.userId) {
+      if (result.success) {
         setUserId(result.userId);
-        return { success: true };
       }
 
-      if (result.retryAfterSec) {
-        return {
-          success: false,
-          retryAfterSec: result.retryAfterSec,
-        };
-      }
-
-      return { success: false };
+      return result;
     } catch (error) {
       console.error("Resend code failed:", serializeApiError(error));
       throw error;

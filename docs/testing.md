@@ -156,6 +156,15 @@ timeout/abort первого и ожидающих запросов, продо�
 токены, состояние, таймеры и фактическое число отправок, включая POST.
 Это не проверка реального backend.
 
+Stage 04: `npx playwright test auth-boundaries session-lifecycle auth-return-path refresh-queue-model safe-diagnostics admin-session-model --project=chromium`;
+существующие диалоги: `npx playwright test auth-dialogs.mobile --project=mobile-chromium`.
+`auth-boundaries-model.spec.ts` проверяет lifecycle с отказами get/set/remove
+и доступа к storage, memory fallback, отсутствие unhandled rejection и секретов
+в persistence; также матрицу некорректных 403/429 для login/verify/resend,
+включая NaN/Infinity и корректные специальные ошибки.
+`auth-boundaries.spec.ts` проверяет browser cookies и auth при отказах storage,
+восстановление после ошибок, нулевой/дробный cooldown, resend и verify на mock API.
+
 ## Каталог нового backend
 
 `product-search-session.spec.ts` проверяет отсутствие `includeAdult`, bearer

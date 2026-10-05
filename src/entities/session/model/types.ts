@@ -23,11 +23,9 @@ export interface VerificationCooldownError {
   message: string;
 }
 
-export interface VerificationCodeResponse {
-  success: boolean;
-  userId?: number;
-  retryAfterSec?: number;
-}
+export type VerificationCodeResponse =
+  | { success: true; userId: number }
+  | { success: false; retryAfterSec: number };
 
 export interface LoginVerificationRequiredError {
   next: "VERIFY_EMAIL";
