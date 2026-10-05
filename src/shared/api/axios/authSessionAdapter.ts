@@ -1,4 +1,5 @@
 export interface AuthSessionAdapter {
+  getSessionSignal(): AbortSignal;
   refreshAccessToken(): Promise<boolean>;
   onSessionExpired(): void;
 }

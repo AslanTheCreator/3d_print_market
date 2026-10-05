@@ -5,6 +5,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { tokenRefreshManager, tokenStorage } from "@/shared/lib";
 import { authApi } from "../api/authApi";
+import { advanceSessionGeneration, getSessionSignal } from "./sessionGeneration";
+
+let pendingRefresh: { generation: AbortSignal; promise: Promise<boolean> } | null = null;
 
 export interface AuthState {
   isAuthenticated: boolean;
@@ -21,6 +24,7 @@ export interface AuthState {
   checkAuthStatus: () => boolean;
   refreshToken: () => Promise<boolean>;
   setAuthenticated: () => void;
+  getSessionSignal: () => AbortSignal;
 }
 
 const log = (message: string): void => {
@@ -36,10 +40,14 @@ export const useAuthStore = create<AuthState>()(
       sessionRevision: 0,
       accountRevision: 0,
       user: null,
+      getSessionSignal,
 
       login: async (mail: string, password: string) => {
+        const generation = advanceSessionGeneration();
+        tokenRefreshManager.stop();
         try {
           const success = await authApi.loginUser({ mail, password });
+          if (generation.aborted) return false;
 
           if (success) {
             log("Login successful");
@@ -59,12 +67,14 @@ export const useAuthStore = create<AuthState>()(
 
           return false;
         } catch (error) {
+          if (generation.aborted) return false;
           set({ isAuthenticated: false, user: null });
           throw error;
         }
       },
 
       logout: () => {
+        advanceSessionGeneration();
         log("Logging out");
         tokenRefreshManager.stop();
         authApi.logout();
@@ -77,6 +87,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setAuthenticated: () => {
+        advanceSessionGeneration();
+        tokenRefreshManager.stop();
         log("Setting authenticated");
         set((state) => ({
           isAuthenticated: true,
@@ -90,6 +102,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       initializeAuth: async () => {
+        const generation = getSessionSignal();
         try {
           const accessToken = tokenStorage.getAccessToken();
           const refreshToken = tokenStorage.getRefreshToken();
@@ -109,6 +122,7 @@ export const useAuthStore = create<AuthState>()(
           } else if (refreshToken) {
             log("Only refresh token found, attempting refresh");
             const refreshSuccess = await get().refreshToken();
+            if (generation.aborted) return;
 
             set({
               isAuthenticated: refreshSuccess,
@@ -127,6 +141,7 @@ export const useAuthStore = create<AuthState>()(
             });
           }
         } catch (error) {
+          if (generation.aborted) return;
           console.error("Auth initialization failed:", serializeApiError(error));
           set({
             isAuthenticated: false,
@@ -141,6 +156,8 @@ export const useAuthStore = create<AuthState>()(
         const isAuth = !!accessToken;
 
         if (get().isAuthenticated !== isAuth) {
+          advanceSessionGeneration();
+          tokenRefreshManager.stop();
           log(`Auth status changed: ${isAuth}`);
           set((state) => ({
             isAuthenticated: isAuth,
@@ -152,23 +169,39 @@ export const useAuthStore = create<AuthState>()(
         return isAuth;
       },
 
-      refreshToken: async () => {
+      refreshToken: () => {
+        const generation = getSessionSignal();
+        if (pendingRefresh?.generation === generation) return pendingRefresh.promise;
+        const refreshToken = tokenStorage.getRefreshToken();
         log("Refreshing token...");
 
-        try {
-          await authApi.refreshAccessToken();
-          log("Token refreshed successfully");
-          set((state) => ({
-            isAuthenticated: true,
-            sessionRevision: state.sessionRevision + 1,
-            accountRevision: state.isAuthenticated ? state.accountRevision : state.accountRevision + 1,
-          }));
-          return true;
-        } catch (error) {
-          console.error("Token refresh failed:", serializeApiError(error));
-          set({ isAuthenticated: false, user: null });
-          return false;
-        }
+        const promise = (async () => {
+          try {
+            const accessToken = await authApi.refreshAccessToken(refreshToken);
+            if (generation.aborted) return false;
+            tokenStorage.saveTokens({ accessToken, refreshToken });
+            log("Token refreshed successfully");
+            set((state) => ({
+              isAuthenticated: true,
+              sessionRevision: state.sessionRevision + 1,
+              accountRevision: state.isAuthenticated ? state.accountRevision : state.accountRevision + 1,
+            }));
+            if (!generation.aborted && tokenRefreshManager.isInitialized()) {
+              tokenRefreshManager.reset();
+            }
+            return true;
+          } catch (error) {
+            if (generation.aborted) return false;
+            console.error("Token refresh failed:", serializeApiError(error));
+            set({ isAuthenticated: false, user: null });
+            return false;
+          }
+        })();
+        pendingRefresh = { generation, promise };
+        void promise.finally(() => {
+          if (pendingRefresh?.promise === promise) pendingRefresh = null;
+        });
+        return promise;
       },
     }),
     {

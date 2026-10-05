@@ -12,9 +12,10 @@
 import axios, {
   AxiosInstance,
   AxiosError,
+  CanceledError,
   InternalAxiosRequestConfig,
 } from "axios";
-import { tokenRefreshManager, tokenStorage } from "@/shared/lib";
+import { tokenStorage } from "@/shared/lib";
 import {
   serializeApiError,
   ApiError,
@@ -32,6 +33,7 @@ import { getAuthSessionAdapter } from "./authSessionAdapter";
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
+  _sessionSignal?: AbortSignal;
   _skipErrorTransform?: boolean;
 }
 
@@ -40,11 +42,6 @@ interface RetryableRequestConfig extends InternalAxiosRequestConfig {
 // ============================================================================
 
 let cachedApiUrl: string | null = null;
-
-// Mutex для предотвращения гонки при refresh
-let isRefreshing = false;
-let refreshSubscribers: Array<(token: string) => void> = [];
-let refreshFailSubscribers: Array<(error: ApiError) => void> = [];
 
 // ============================================================================
 // ЛОГИРОВАНИЕ (только dev)
@@ -64,25 +61,64 @@ const logError = (message: string, error?: unknown): void => {
 // REFRESH TOKEN МЕХАНИЗМ
 // ============================================================================
 
+const assertRequestActive = (config: RetryableRequestConfig): void => {
+  if (config.signal?.aborted || config._sessionSignal?.aborted) {
+    throw new CanceledError("Запрос отменён", config);
+  }
+};
+
+type RefreshResult = { success: boolean } | { error: unknown };
+type RefreshSubscriber = (result: RefreshResult) => void;
+const refreshWaiters = new WeakMap<Promise<boolean>, Set<RefreshSubscriber>>();
+
 const subscribeToRefresh = (
-  onSuccess: (token: string) => void,
-  onError: (error: ApiError) => void,
-): void => {
-  refreshSubscribers.push(onSuccess);
-  refreshFailSubscribers.push(onError);
+  refresh: Promise<boolean>,
+  subscriber: RefreshSubscriber,
+): (() => void) => {
+  const existing = refreshWaiters.get(refresh);
+  const subscribers = existing ?? new Set<RefreshSubscriber>();
+  if (!existing) {
+    refreshWaiters.set(refresh, subscribers);
+    const notify = (result: RefreshResult) => {
+      subscribers.forEach((callback) => callback(result));
+      subscribers.clear();
+      refreshWaiters.delete(refresh);
+    };
+    void refresh.then((success) => notify({ success }), (error) => notify({ error }));
+  }
+  subscribers.add(subscriber);
+  return () => subscribers.delete(subscriber);
 };
 
-const onRefreshSuccess = (newToken: string): void => {
-  refreshSubscribers.forEach((callback) => callback(newToken));
-  refreshSubscribers = [];
-  refreshFailSubscribers = [];
-};
-
-const onRefreshFailure = (error: ApiError): void => {
-  refreshFailSubscribers.forEach((callback) => callback(error));
-  refreshSubscribers = [];
-  refreshFailSubscribers = [];
-};
+// Leader и очередь имеют одинаковое терминальное состояние ожидания.
+const waitForRefresh = (
+  refresh: Promise<boolean>,
+  config: RetryableRequestConfig,
+): Promise<boolean> => new Promise((resolve, reject) => {
+  let settled = false;
+  let unsubscribe: (() => void) | undefined;
+  const finish = (error?: unknown, success?: boolean) => {
+    if (settled) return;
+    settled = true;
+    unsubscribe?.();
+    clearTimeout(timer);
+    config.signal?.removeEventListener?.("abort", cancel);
+    config._sessionSignal?.removeEventListener("abort", cancel);
+    if (error) reject(error);
+    else resolve(success ?? false);
+  };
+  const cancel = () => finish(new CanceledError("Запрос отменён", config));
+  const timer = setTimeout(() => finish(new ApiError(
+    "Превышено время ожидания обновления токена", "REFRESH_TIMEOUT", 408,
+  )), 10000);
+  config.signal?.addEventListener?.("abort", cancel);
+  config._sessionSignal?.addEventListener("abort", cancel);
+  unsubscribe = subscribeToRefresh(refresh, (result) => {
+    if ("error" in result) finish(result.error);
+    else finish(undefined, result.success);
+  });
+  if (config.signal?.aborted || config._sessionSignal?.aborted) cancel();
+});
 
 /**
  * ИСПРАВЛЕННАЯ ФУНКЦИЯ: Проверяет, нужно ли пытаться обновить токен
@@ -172,6 +208,7 @@ const setupUrlInterceptor = (instance: AxiosInstance): void => {
   instance.interceptors.request.use(
     async (config) => {
       const apiBaseUrl = await getApiBaseUrl();
+      assertRequestActive(config);
 
       if (config.url) {
         const isFullUrl =
@@ -212,7 +249,9 @@ const setupErrorInterceptor = (instance: AxiosInstance): void => {
 const setupAuthInterceptor = (instance: AxiosInstance): void => {
   // REQUEST — добавляем токен
   instance.interceptors.request.use(
-    (config) => {
+    (config: RetryableRequestConfig) => {
+      config._sessionSignal ??= getAuthSessionAdapter()?.getSessionSignal();
+      assertRequestActive(config);
       const token = tokenStorage.getAccessToken();
       if (token) {
         config.headers["Authorization"] = `Bearer ${token}`;
@@ -240,86 +279,32 @@ const setupAuthInterceptor = (instance: AxiosInstance): void => {
       originalRequest._retry = true;
       log("401 detected, attempting token refresh...");
 
-      // Если уже идёт refresh — становимся в очередь
-      if (isRefreshing) {
-        log("Refresh in progress, queuing request...");
-
-        return new Promise((resolve, reject) => {
-          subscribeToRefresh(
-            (newToken: string) => {
-              originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
-              resolve(instance(originalRequest));
-            },
-            (refreshError: ApiError) => {
-              reject(refreshError);
-            },
-          );
-
-          // Таймаут на случай зависания
-          setTimeout(() => {
-            reject(
-              new ApiError(
-                "Превышено время ожидания обновления токена",
-                "REFRESH_TIMEOUT",
-                408,
-              ),
-            );
-          }, 10000);
-        });
+      assertRequestActive(originalRequest);
+      const adapter = getAuthSessionAdapter();
+      if (!adapter) {
+        throw new ApiError("Сессия не инициализирована", ErrorCodes.TOKEN_INVALID_OR_EXPIRED, 401);
       }
-
-      // Начинаем refresh
-      isRefreshing = true;
-
+      let success: boolean;
       try {
-        const authSessionAdapter = getAuthSessionAdapter();
-
-        if (!authSessionAdapter) {
-          throw new ApiError(
-            "Сессия не инициализирована",
-            ErrorCodes.TOKEN_INVALID_OR_EXPIRED,
-            401,
-          );
-        }
-
-        const success = await authSessionAdapter.refreshAccessToken();
-
-        if (success) {
-          const newToken = tokenStorage.getAccessToken();
-
-          if (newToken) {
-            log("Token refreshed successfully via interceptor");
-
-            // ВАЖНО: Сбрасываем таймер проактивного обновления
-            tokenRefreshManager.reset();
-
-            onRefreshSuccess(newToken);
-            originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
-            return instance(originalRequest);
-          }
-        }
-
-        // Refresh не удался — logout
-        log("Token refresh failed, logging out");
-        const logoutError = new ApiError(
-          "Сессия истекла",
-          ErrorCodes.TOKEN_INVALID_OR_EXPIRED,
-          401,
-        );
-        onRefreshFailure(logoutError);
-        authSessionAdapter.onSessionExpired();
-
-        return Promise.reject(logoutError);
+        success = await waitForRefresh(adapter.refreshAccessToken(), originalRequest);
       } catch (refreshError) {
+        assertRequestActive(originalRequest);
+        if (axios.isCancel(refreshError) ||
+            (refreshError instanceof ApiError && refreshError.code === "REFRESH_TIMEOUT")) {
+          throw refreshError;
+        }
         logError("Error during token refresh", refreshError);
-        const apiError = transformToApiError(refreshError);
-        onRefreshFailure(apiError);
-        getAuthSessionAdapter()?.onSessionExpired();
-
-        return Promise.reject(apiError);
-      } finally {
-        isRefreshing = false;
+        adapter.onSessionExpired();
+        throw transformToApiError(refreshError);
       }
+      assertRequestActive(originalRequest);
+      const newToken = tokenStorage.getAccessToken();
+      if (!success || !newToken) {
+        adapter.onSessionExpired();
+        throw new ApiError("Сессия истекла", ErrorCodes.TOKEN_INVALID_OR_EXPIRED, 401);
+      }
+      originalRequest.headers["Authorization"] = "Bearer " + newToken;
+      return instance(originalRequest);
     },
   );
 };

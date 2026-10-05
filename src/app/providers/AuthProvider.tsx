@@ -6,6 +6,7 @@ import { useAuthStore, useTokenRefresh } from "@/entities/session";
 import { registerAuthSessionAdapter } from "@/shared/api";
 
 registerAuthSessionAdapter({
+  getSessionSignal: () => useAuthStore.getState().getSessionSignal(),
   refreshAccessToken: () => useAuthStore.getState().refreshToken(),
   onSessionExpired: () => {
     useAuthStore.getState().logout();

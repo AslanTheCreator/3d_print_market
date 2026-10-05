@@ -94,6 +94,22 @@ Auth API, store, `useAuth`, инициализация и refresh lifecycle пр
 - logout сейчас очищает токены только на клиенте;
 - `middleware.ts` предварительно защищает `/dashboard` и `/admin` по наличию cookies; проверка роли админки дополнительно выполняется через backend-профиль.
 
+`authStore.refreshToken()` объединяет timer, initialization и конкурентные 401
+в один pending promise текущего поколения. Auth API возвращает access token;
+его запись, auth state и перезапуск таймера принадлежат store и выполняются
+только для актуального поколения. Logout и начало нового login отменяют
+старое поколение; поздний success/error не меняет новую сессию. Успешный
+refresh того же аккаунта сохраняет accountRevision.
+
+Adapter передаёт HTTP-слою `getSessionSignal()`: неперсистентный AbortSignal
+поколения. Исходный запрос и replay сохраняют этот сигнал. И первый запрос,
+и очередь ждут refresh не более 10 секунд; timeout, AbortSignal запроса или
+смена поколения удаляют subscriber, listeners и таймер ожидания. Перед replay
+и после асинхронной подготовки URL актуальность проверяется повторно.
+Отмена одного ожидания не отменяет общий refresh для остальных запросов.
+Token manager отдельно инвалидирует выполняющиеся callbacks при stop/start/reset,
+чтобы старый callback не планировал retry и не завершал новую сессию.
+
 Это действующая реализация, но не целевая production-модель: токены доступны JavaScript. Риски, требования к backend и критерии миграции описаны в [backend-plan.md](./backend-plan.md).
 
 Login/register сохраняют `redirect` при переключении форм, после входа и
@@ -108,7 +124,6 @@ query-параметров через `useSearchParams`.
 
 - автоматический logout через interceptor/token manager не гарантирует централизованную очистку auth-bound TanStack Query cache, Zustand и user-scoped browser data;
 - product draft хранится в `localStorage` под общим ключом и не очищается при logout;
-- очередь запросов во время refresh имеет 10-секундный client timeout, но не удаляет subscriber; поздний refresh способен повторить исходный запрос после уже показанной ошибки;
 - server guards определяют auth только по наличию cookie и не подтверждают backend session.
 
 ## Поиск товаров и сессия

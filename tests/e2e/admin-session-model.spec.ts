@@ -5,7 +5,7 @@ test("admin identity survives token refresh but changes on new account", async (
   const initial = useAuthStore.getState();
   const refresh = authApi.refreshAccessToken;
   const login = authApi.loginUser;
-  authApi.refreshAccessToken = async () => {};
+  authApi.refreshAccessToken = async () => "fixture-access";
   authApi.loginUser = async () => true;
   try {
     useAuthStore.setState({ isAuthenticated: true, isInitialized: true, accountRevision: 10, sessionRevision: 20 });

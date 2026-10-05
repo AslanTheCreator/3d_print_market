@@ -146,6 +146,16 @@ fixture сценарии пропускаются, если `PLAYWRIGHT_FIXTURE_
 это не браузерное воспроизведение их lifecycle. Проверки сохраняют полезные
 status/code и исключают query/hash/credentials из маршрута. Backend не вызывается.
 
+Регрессия refresh: `npx playwright test session-lifecycle refresh-queue-model admin-session-model safe-diagnostics --project=chromium`.
+`session-lifecycle.spec.ts` проверяет браузерный login/refresh/logout на mock API.
+`refresh-queue-model.spec.ts` исполняет настоящие session store/API, token manager
+и Axios interceptors с управляемыми promises, таймерами и mock transport:
+общий timer/init/401 refresh, поздний success/error после logout/login,
+timeout/abort первого и ожидающих запросов, продолжение живой очереди,
+поздний 401 и независимость pending refresh разных поколений. Проверяются
+токены, состояние, таймеры и фактическое число отправок, включая POST.
+Это не проверка реального backend.
+
 ## Каталог нового backend
 
 `product-search-session.spec.ts` проверяет отсутствие `includeAdult`, bearer

@@ -1,6 +1,7 @@
 import { AxiosError, AxiosRequestConfig } from "axios";
 import { publicClient } from "@/shared/api";
 import { tokenStorage } from "@/shared/lib";
+import { getSessionSignal } from "../model/sessionGeneration";
 import {
   AuthFormModel,
   LoginErrorResponse,
@@ -45,6 +46,7 @@ export const authApi = {
   },
 
   async loginUser({ mail, password }: AuthFormModel): Promise<boolean> {
+    const generation = getSessionSignal();
     try {
       const { data } = await publicClient.post<TokensResponse>(
         `${API_URL_AUTH}/login`,
@@ -55,6 +57,7 @@ export const authApi = {
         skipErrorTransformConfig,
       );
 
+      if (generation.aborted) return false;
       tokenStorage.saveTokens({
         accessToken: data.access_token,
         refreshToken: data.refresh_token,
@@ -112,6 +115,7 @@ export const authApi = {
   },
 
   async verifyCode(userId: number, code: string): Promise<boolean> {
+    const generation = getSessionSignal();
     const { data } = await publicClient.post<TokensResponse>(
       `${API_URL_AUTH}/verify-code`,
       {
@@ -120,6 +124,7 @@ export const authApi = {
       },
     );
 
+    if (generation.aborted) return false;
     tokenStorage.saveTokens({
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
@@ -128,11 +133,8 @@ export const authApi = {
     return true;
   },
 
-  async refreshAccessToken(): Promise<void> {
-    const refreshToken = tokenStorage.getRefreshToken();
-
+  async refreshAccessToken(refreshToken: string | undefined): Promise<string> {
     if (!refreshToken) {
-      tokenStorage.clearTokens();
       throw new Error("Refresh token отсутствует");
     }
 
@@ -146,7 +148,7 @@ export const authApi = {
       },
     );
 
-    tokenStorage.saveTokens({ accessToken, refreshToken });
+    return accessToken;
   },
 
   async passwordReset(email: string): Promise<boolean> {

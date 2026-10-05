@@ -111,6 +111,9 @@ app layer находится в корневом `app/`, вне `src`.
 Axios clients остаются в `shared`. Они не импортируют session store:
 `AuthProvider` регистрирует `AuthSessionAdapter`, через который interceptor
 запрашивает refresh и сообщает об истечении сессии.
+Adapter также передаёт сигнал поколения сессии для отмены устаревших ожиданий
+и replay. Общим pending refresh и записью токенов владеет session store;
+детали lifecycle описаны в [api-and-auth.md](./api-and-auth.md#текущий-auth-flow).
 
 Авторизация публичного поиска передаётся из композиции: `useAuth.sessionKey`
 поступает в опции `useProductsInfinite`. Entity товара не импортирует session;

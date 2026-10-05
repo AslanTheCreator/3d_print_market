@@ -191,6 +191,7 @@ for (const mode of ["development", "production"] as const) {
           "@/shared/config/env": { getServerApiBaseUrl: () => "https://fixture.invalid" },
           "./authSessionAdapter": {
             getAuthSessionAdapter: () => ({
+              getSessionSignal: () => new AbortController().signal,
               refreshAccessToken: async () => { throw makeError(503); },
               onSessionExpired: () => {},
             }),

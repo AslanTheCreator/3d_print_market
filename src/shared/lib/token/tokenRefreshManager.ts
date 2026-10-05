@@ -63,6 +63,7 @@ interface TokenRefreshManagerConfig {
 
 let refreshTimerId: ReturnType<typeof setTimeout> | null = null;
 let retryCount = 0;
+let lifecycleRevision = 0;
 let isInitialized = false;
 let config: TokenRefreshManagerConfig | null = null;
 
@@ -125,6 +126,7 @@ const calculateRefreshDelay = (): number => {
  * Выполняет обновление токена
  */
 const performRefresh = async (): Promise<void> => {
+  const revision = lifecycleRevision;
   if (!config) {
     logError("TokenRefreshManager not initialized");
     return;
@@ -133,7 +135,7 @@ const performRefresh = async (): Promise<void> => {
   const hasRefreshToken = !!tokenStorage.getRefreshToken();
   if (!hasRefreshToken) {
     log("No refresh token, stopping silent refresh");
-    stop();
+    tokenRefreshManager.stop();
     return;
   }
 
@@ -141,6 +143,7 @@ const performRefresh = async (): Promise<void> => {
 
   try {
     const success = await config.refreshToken();
+    if (revision !== lifecycleRevision) return;
 
     if (success) {
       log("Silent refresh successful");
@@ -151,6 +154,7 @@ const performRefresh = async (): Promise<void> => {
       handleRefreshFailure(new Error("Refresh returned false"));
     }
   } catch (error) {
+    if (revision !== lifecycleRevision) return;
     handleRefreshFailure(error);
   }
 };
@@ -168,7 +172,7 @@ const handleRefreshFailure = (error: unknown): void => {
   if (retryCount >= MAX_RETRY_ATTEMPTS) {
     log("Max retry attempts reached, logging out");
     config?.logout();
-    stop();
+    tokenRefreshManager.stop();
     return;
   }
 
@@ -235,6 +239,7 @@ export const tokenRefreshManager = {
    * Вызывать после успешного логина или верификации
    */
   start(): void {
+    lifecycleRevision++;
     if (!isInitialized) {
       log("Not initialized, cannot start");
       return;
@@ -250,6 +255,7 @@ export const tokenRefreshManager = {
    * Вызывать при logout
    */
   stop(): void {
+    lifecycleRevision++;
     log("Stopping refresh timer");
 
     if (refreshTimerId) {
@@ -265,6 +271,8 @@ export const tokenRefreshManager = {
    * Полезно когда токен обновился через interceptor
    */
   reset(): void {
+    lifecycleRevision++;
+    if (!isInitialized) return;
     log("Resetting refresh timer");
     retryCount = 0;
     scheduleNextRefresh();
