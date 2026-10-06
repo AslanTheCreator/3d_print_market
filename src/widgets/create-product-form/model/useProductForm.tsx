@@ -17,6 +17,7 @@ import { useCurrentUser } from "@/entities/user";
 import {
   type InitialImageUploadState,
   useMultipleImageUpload,
+  useImageCleanup,
 } from "@/features/image-upload";
 import { useNotification } from "@/shared/ui/notification";
 import type { ImageMetadata } from "@/entities/image";
@@ -69,6 +70,9 @@ export const useProductForm = ({
   const [initialImages, setInitialImages] = useState<InitialImageUploadState[]>(
     [],
   );
+  const [isSaved, setIsSaved] = useState(false);
+  const savedRef = useRef(false);
+  const imageCleanup = useImageCleanup("PRODUCT");
 
   const {
     data: categories = [],
@@ -249,7 +253,7 @@ export const useProductForm = ({
 
   const scope = usePrivateScope();
   const resetForm = () => {
-    if (!scope.isCurrent()) return;
+    if (!scope.isCurrent() || savedRef.current) return;
     if (isEditMode) {
       reset(initialFormValues);
       imageUploadState.resetImages(initialImages);
@@ -266,6 +270,20 @@ export const useProductForm = ({
     router.back();
   };
 
+  const finishSavedProduct = () => {
+    if (!scope.isCurrent()) return;
+    showNotification("Товар успешно обновлён", "success");
+    router.push(PRODUCT_LIST_PATH);
+  };
+  const onProductSaved = async (ids: number[]) => {
+    savedRef.current = true;
+    setIsSaved(true);
+    if (await imageCleanup.cleanup(ids)) finishSavedProduct();
+  };
+  const retryImageCleanup = async () => {
+    if (await imageCleanup.retry()) finishSavedProduct();
+  };
+
   const onSubmit = createProductFormSubmitHandler({
     createProduct,
     isCurrentScope: scope.isCurrent,
@@ -274,6 +292,7 @@ export const useProductForm = ({
     hasSellerSocialNetwork,
     hasSellerTransfer,
     imageIdsToDelete,
+    onProductSaved,
     isEditMode,
     isProductReadOnly,
     productId,
@@ -286,6 +305,7 @@ export const useProductForm = ({
   const hasChanges = isEditMode ? isDirty || hasImageChanges : true;
   const isPending = isCreating || isUpdating;
   const isFormValid =
+    !isSaved &&
     !isProductReadOnly &&
     isDraftReady &&
     !draftImageError &&
@@ -309,19 +329,24 @@ export const useProductForm = ({
     }),
     errors,
     handleBack,
-    handleFormSubmit: handleSubmit(onSubmit),
+    handleFormSubmit: handleSubmit((data) => {
+      if (!savedRef.current) onSubmit(data);
+    }),
+    isSaved,
+    imageCleanup,
+    retryImageCleanup,
     imageUploadState: {
       ...imageUploadState,
       addImage: async (file: File) => {
-        if (!isDraftReady || draftImageError) return;
+        if (!isDraftReady || draftImageError || savedRef.current) return;
         await imageUploadState.addImage(file);
       },
       removeImage: (index: number) => {
-        if (!isDraftReady || draftImageError) return;
+        if (!isDraftReady || draftImageError || savedRef.current) return;
         imageUploadState.removeImage(index);
       },
     },
-    isImageEditingBlocked: !isDraftReady || draftImageError,
+    isImageEditingBlocked: isSaved || !isDraftReady || draftImageError,
     isCategoriesError: Boolean(categoriesError),
     isCategoriesLoading,
     isEditMode,

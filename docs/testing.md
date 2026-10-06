@@ -59,6 +59,18 @@ build, HTTP smoke и регрессия общего кабинета/auth. Вс
 
 ## Команды
 
+Stage 10: `npx playwright test save-confirmation image-identity private-data-model --project=chromium`;
+профиль: `npx playwright test dashboard-home.mobile --project=mobile-chromium`.
+`save-confirmation-model.spec.ts` исполняет настоящие entity mutations с
+QueryClient: успех PUT при отдельном отказе cleanup, отсутствие rollback
+подтверждённого профиля, rollback при отказе PUT и invalidation публичных списков,
+detail и собственных товаров только после успешных delete/extend. Cleanup
+проверяется с частичным успехом, повтором только failed IDs, конкурентным retry
+и завершением scope. `save-confirmation.spec.ts` проверяет оба редактора в браузере:
+раздельные сообщения, сохранённый ввод, запрет повторного PUT после успеха,
+cleanup-only retry и клиентский возврат в ранее загруженный каталог после
+delete/extend. Все записи используют mock API; реальный backend не вызывается.
+
 - **`npm audit --omit=dev --audit-level=high`** — проверка runtime-зависимостей, обязательная в Frontend CI после `npm ci`.
 - **`npm run lint`** — ESLint для `app` и `src`.
 - **`npm run typecheck`** — `next typegen` и TypeScript.

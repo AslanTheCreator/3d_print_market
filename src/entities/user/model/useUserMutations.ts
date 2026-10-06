@@ -1,6 +1,5 @@
 import { usePrivateScope, usePrivateMutation } from "@/shared/lib/query";
 import { useQueryClient } from "@tanstack/react-query";
-import { imageApi } from "@/entities/image/@x/user";
 import { userApi } from "../api/userApi";
 import { userKeys } from "./queryKeys";
 import type {
@@ -11,7 +10,6 @@ import type {
 
 interface UpdateUserMutationVariables {
   userData: UserUpdateModel;
-  imageIdToDelete?: number;
 }
 
 export const useUpdateUser = () => {
@@ -21,19 +19,11 @@ export const useUpdateUser = () => {
   return usePrivateMutation({
     mutationFn: async ({
       userData,
-      imageIdToDelete,
     }: UpdateUserMutationVariables): Promise<number> => {
-      const userId = await userApi.updateUser(userData);
-      if (!scope.isCurrent()) throw new Error("Session ended");
-
-      if (imageIdToDelete !== undefined) {
-        await imageApi.deleteImages([imageIdToDelete], "PARTICIPANT");
-      }
-
-      return userId;
+      return userApi.updateUser(userData);
     },
 
-    onMutate: async ({ userData, imageIdToDelete }) => {
+    onMutate: async ({ userData }) => {
       await queryClient.cancelQueries({ queryKey: scope.key(userKeys.current()) });
       if (!scope.isCurrent()) throw new Error("Session ended");
       await queryClient.cancelQueries({ queryKey: scope.key(userKeys.profile()) });
@@ -50,11 +40,7 @@ export const useUpdateUser = () => {
         queryClient.setQueryData<UserBaseModel>(scope.key(userKeys.current()), {
           ...previousCurrent,
           ...userData,
-          imageId:
-            imageIdToDelete !== undefined
-              ? null
-              : (userData.imageId ?? previousCurrent.imageId),
-          image: imageIdToDelete !== undefined ? [] : previousCurrent.image,
+          imageId: userData.imageId ?? previousCurrent.imageId,
         });
       }
 
@@ -63,11 +49,7 @@ export const useUpdateUser = () => {
           ...previousProfile,
           login: userData.login,
           fullName: userData.fullName,
-          imageId:
-            imageIdToDelete !== undefined
-              ? null
-              : (userData.imageId ?? previousProfile.imageId),
-          image: imageIdToDelete !== undefined ? [] : previousProfile.image,
+          imageId: userData.imageId ?? previousProfile.imageId,
         });
       }
 

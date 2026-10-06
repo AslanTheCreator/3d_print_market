@@ -24,6 +24,7 @@ interface CreateProductFormSubmitHandlerParams {
   hasSellerSocialNetwork: boolean;
   hasSellerTransfer: boolean;
   imageIdsToDelete: number[];
+  onProductSaved: (imageIdsToDelete: number[]) => Promise<void>;
   isEditMode: boolean;
   isProductReadOnly: boolean;
   productId: string | undefined;
@@ -41,6 +42,7 @@ export const createProductFormSubmitHandler = ({
   hasSellerSocialNetwork,
   hasSellerTransfer,
   imageIdsToDelete,
+  onProductSaved,
   isEditMode,
   isProductReadOnly,
   productId,
@@ -98,13 +100,11 @@ export const createProductFormSubmitHandler = ({
         {
           productId: Number(productId),
           data: productData,
-          imageIdsToDelete,
         },
         {
           onSuccess: () => {
             if (!isCurrentScope()) return;
-            showNotification("Товар успешно обновлён", "success");
-            setTimeout(() => { if (isCurrentScope()) navigateToProductList(); }, SUCCESS_REDIRECT_DELAY_MS);
+            void onProductSaved(imageIdsToDelete);
           },
           onError: (error) => {
             const notification = getCreateProductErrorNotification(error);

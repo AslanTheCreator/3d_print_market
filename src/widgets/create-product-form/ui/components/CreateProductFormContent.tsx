@@ -77,6 +77,19 @@ export const CreateProductFormContent = ({
         "& input, & textarea": { fontSize: { xs: "1rem", md: "inherit" } },
       } : undefined}
     >
+      {formState.isSaved && (
+        <Alert severity={formState.imageCleanup.hasError ? "warning" : "success"} sx={{ mb: 2 }}
+          action={formState.imageCleanup.hasError ? (
+            <Button disabled={formState.imageCleanup.isCleaning} onClick={() => void formState.retryImageCleanup()} sx={{ minHeight: 44 }}>
+              Повторить очистку
+            </Button>
+          ) : undefined}
+        >
+          {formState.imageCleanup.hasError
+            ? "Товар сохранён, очистка изображений не завершена."
+            : "Товар сохранён. Выполняется очистка изображений."}
+        </Alert>
+      )}
       {compactMobile && formState.draftImageError && (
         <Alert severity="error" sx={{ mb: 2 }} action={
           <Button disabled={!formState.isDraftReady} onClick={formState.retryDraftImages} sx={{ minHeight: 44 }}>Повторить</Button>
@@ -85,7 +98,13 @@ export const CreateProductFormContent = ({
         </Alert>
       )}
       <Box
+        component="fieldset"
+        disabled={formState.isSaved}
         sx={{
+          border: 0,
+          p: 0,
+          m: 0,
+          minWidth: 0,
           display: "grid",
           gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1fr) 320px" },
           gap: 2.5,

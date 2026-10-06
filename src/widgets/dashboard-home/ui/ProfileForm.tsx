@@ -11,6 +11,7 @@ import {
   useTheme,
   Typography,
   Stack,
+  Alert,
 } from "@mui/material";
 import {
   BadgeOutlined,
@@ -19,11 +20,12 @@ import {
 } from "@mui/icons-material";
 import { AvatarUpload } from "@/shared/ui/avatar-upload";
 import { PageHeader } from "@/shared/ui/page-header";
-import { useImageUpload } from "@/features/image-upload";
+import { useImageUpload, useImageCleanup } from "@/features/image-upload";
 import { useUpdateUser, UserBaseModel } from "@/entities/user";
 import { getImageUrl } from "@/shared/lib";
 import { useNotification } from "@/shared/ui/notification";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { usePrivateScope } from "@/shared/lib/query";
 import { ProfileFormSection } from "./components/ProfileFormSection";
 
 interface ProfileFormValues {
@@ -48,6 +50,10 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
   const { showNotification } = useNotification();
   const [hasImageChanged, setHasImageChanged] = useState(false);
   const [currentImageId, setCurrentImageId] = useState<number | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
+  const savedRef = useRef(false);
+  const scope = usePrivateScope();
+  const imageCleanup = useImageCleanup("PARTICIPANT");
 
   const {
     imagePreview,
@@ -80,11 +86,13 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
   }, [imageIds]);
 
   const handleImageChangeWrapper = (file: File) => {
+    if (savedRef.current) return;
     handleImageChange(file);
     setHasImageChanged(true);
   };
 
   const handleResetImage = () => {
+    if (savedRef.current) return;
     resetImageState();
     setHasImageChanged(true);
     setCurrentImageId(null);
@@ -97,8 +105,10 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     : imagePreview || existingImagePreview;
 
   const onSubmit = async (data: ProfileFormValues) => {
+    if (savedRef.current || !scope.isCurrent()) return;
+    let imageIdToDelete: number | undefined;
     try {
-      const imageIdToDelete =
+      imageIdToDelete =
         hasImageChanged && currentImageId === null
           ? (initialData?.imageId ?? existingImage?.id)
           : undefined;
@@ -110,20 +120,35 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
           deadlineSending: 0,
           deadlinePayment: 0,
         },
-        imageIdToDelete,
       });
-      showNotification("Профиль успешно обновлён", "success");
-      onSuccess?.();
     } catch (error) {
+      if (!scope.isCurrent()) return;
       const msg =
         error instanceof Error
           ? error.message
           : "Не удалось сохранить изменения";
       showNotification(msg, "error");
+      return;
+    }
+    if (!scope.isCurrent()) return;
+    savedRef.current = true;
+    setIsSaved(true);
+    if (await imageCleanup.cleanup(imageIdToDelete === undefined ? [] : [imageIdToDelete])) {
+      showNotification("Профиль успешно обновлён", "success");
+      onSuccess?.();
     }
   };
 
-  const statusText = isUploading
+  const retryImageCleanup = async () => {
+    if (await imageCleanup.retry()) {
+      showNotification("Профиль успешно обновлён", "success");
+      onSuccess?.();
+    }
+  };
+
+  const statusText = isSaved
+    ? "Изменения сохранены."
+    : isUploading
     ? "Сначала дождитесь загрузки фото."
     : isFormChanged
       ? "Изменения готовы к сохранению."
@@ -143,6 +168,20 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
         onBack={onBack}
       />
 
+      {isSaved && (
+        <Alert severity={imageCleanup.hasError ? "warning" : "success"} sx={{ mb: 2 }}
+          action={imageCleanup.hasError ? (
+            <Button disabled={imageCleanup.isCleaning} onClick={() => void retryImageCleanup()} sx={{ minHeight: 44 }}>
+              Повторить очистку
+            </Button>
+          ) : undefined}
+        >
+          {imageCleanup.hasError
+            ? "Профиль сохранён, очистка изображений не завершена."
+            : "Профиль сохранён. Выполняется очистка изображений."}
+        </Alert>
+      )}
+
       <Paper
         elevation={0}
         sx={{
@@ -152,6 +191,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
         }}
       >
         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+          <Box component="fieldset" disabled={isSaved} sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}>
           <Grid container>
             <Grid
               item
@@ -287,7 +327,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                   type="submit"
                   variant="contained"
                   size="large"
-                  disabled={isLoading || !isFormChanged}
+                  disabled={isSaved || isLoading || !isFormChanged}
                   sx={{
                     width: { xs: "100%", sm: "auto" },
                     minWidth: { sm: 220 },
@@ -311,6 +351,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
               </Stack>
             </Grid>
           </Grid>
+          </Box>
         </Box>
       </Paper>
     </Box>
