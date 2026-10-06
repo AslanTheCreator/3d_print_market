@@ -7,14 +7,15 @@ import type { FetchProductsParams } from "@/entities/product/@x/cart";
 const API_URL = `/basket`;
 
 export const cartApi = {
-  getCart: async (params: FetchProductsParams): Promise<ProductBasket[]> => {
+  getCart: async (params: FetchProductsParams, signal?: AbortSignal): Promise<ProductBasket[]> => {
     const requestData = buildProductRequest(params);
     const { data } = await authClient.post<ProductBasketDto[]>(
       `${API_URL}/find`,
       requestData,
+      { signal },
     );
 
-    const withImages = await attachImages(data, (item) => item.product.imageId);
+    const withImages = await attachImages(data, (item) => item.product.imageId, signal);
     return withImages.map(({ image, ...item }) => ({
       ...item,
       product: { ...item.product, image },

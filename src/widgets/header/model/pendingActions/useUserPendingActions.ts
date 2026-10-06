@@ -1,3 +1,4 @@
+import { usePrivateScope } from "@/shared/lib/query";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/entities/session";
@@ -23,12 +24,13 @@ interface UseUserPendingActionsOptions {
 }
 
 const useUserProductsForRenewal = (enabled: boolean) => {
+  const scope = usePrivateScope();
   const { isAuthenticated } = useAuth();
 
   return useQuery({
-    queryKey: productKeys.renewalCheck(),
-    queryFn: () => productApi.getUserProducts({ size: 100 }),
-    enabled: enabled && isAuthenticated,
+    queryKey: scope.key(productKeys.renewalCheck()),
+    queryFn: ({ signal }) => productApi.getUserProducts({ size: 100 }, signal),
+    enabled: scope.id !== null && enabled && isAuthenticated,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: true,

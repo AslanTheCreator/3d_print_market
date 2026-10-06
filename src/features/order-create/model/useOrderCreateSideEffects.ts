@@ -1,5 +1,6 @@
 "use client";
 
+import { usePrivateScope } from "@/shared/lib/query";
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cartKeys, useCartQuantityStore } from "@/entities/cart";
@@ -17,25 +18,28 @@ export const useOrderCreateSideEffects = ({
   onPartialSuccess,
   onError,
 }: UseOrderCreateSideEffectsProps) => {
+  const scope = usePrivateScope();
   const queryClient = useQueryClient();
   const { removeItem: removeQuantityItem } = useCartQuantityStore();
 
   const syncAfterSubmit = useCallback(
     async (successOrders: OrderResult[]) => {
+      if (!scope.isCurrent()) return;
       for (const order of successOrders) {
         removeQuantityItem(order.productId);
       }
 
-      await queryClient.invalidateQueries({ queryKey: cartKeys.all });
+      await queryClient.invalidateQueries({ queryKey: scope.key(cartKeys.all) });
       await queryClient.invalidateQueries({
-        queryKey: orderQueryKeys.customerOrders(),
+        queryKey: scope.key(orderQueryKeys.customerOrders()),
       });
     },
-    [queryClient, removeQuantityItem],
+    [scope, queryClient, removeQuantityItem],
   );
 
   const notifySubmitResult = useCallback(
     (result: CheckoutResult) => {
+      if (!scope.isCurrent()) return;
       if (result.successCount === result.totalCount) {
         onSuccess(result);
         return;
@@ -48,7 +52,7 @@ export const useOrderCreateSideEffects = ({
 
       onError(result);
     },
-    [onSuccess, onPartialSuccess, onError],
+    [scope, onSuccess, onPartialSuccess, onError],
   );
 
   return {

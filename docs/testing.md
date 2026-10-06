@@ -478,3 +478,14 @@ regressions, но не является production acceptance.
 ## Documentation-only
 
 Если менялись только Markdown-файлы, достаточно проверить diff, ссылки и соответствие коду. Полный test suite не требуется.
+
+## Владение приватными данными
+
+`private-data-model.spec.ts` исполняет lifecycle subscription, настоящие TanStack
+mutations и hooks с управляемыми promises: logout/expiry/A → B, сохранение scope
+при refresh, поздний GET, optimistic rollback, ручной refresh корзины и запрет
+отправки операции старого scope. `private-data.spec.ts` проверяет в браузере
+профиль B после выхода A, отсутствие чужого и legacy draft при reload,
+сохранение ввода после refresh и очистку при автоматическом завершении.
+`create-product.mobile.spec.ts` использует draft с подтверждённым owner.
+Все API в этих сценариях подменяются; реальный backend не проверяется.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePrivateScope } from "@/shared/lib/query";
 import type { UseFormReset } from "react-hook-form";
 import type {
   InitialImageUploadState,
@@ -29,6 +30,7 @@ export const normalizeProductFormValues = (
 });
 
 interface UseProductFormDraftStateOptions {
+  owner: number | undefined;
   isEditMode: boolean;
   formValues: ProductFormData;
   imageUploadState: UseMultipleImageUploadReturn;
@@ -36,11 +38,13 @@ interface UseProductFormDraftStateOptions {
 }
 
 export const useProductFormDraftState = ({
+  owner,
   isEditMode,
   formValues,
   imageUploadState,
   reset,
 }: UseProductFormDraftStateOptions) => {
+  const scope = usePrivateScope();
   const [draftStatus, setDraftStatus] = useState<ProductFormDraftStatus>("empty");
   const [draftImageError, setDraftImageError] = useState(false);
   const [restoreAttempt, setRestoreAttempt] = useState(0);
@@ -78,13 +82,14 @@ export const useProductFormDraftState = ({
       return;
     }
 
+    if (owner === undefined || !scope.isCurrent()) return;
     let isActive = true;
 
     const restoreDraft = async () => {
-      const draft = readProductFormDraft();
+      const draft = readProductFormDraft(owner);
 
       if (!draft) {
-        if (isActive) {
+        if (isActive && scope.isCurrent()) {
           setIsDraftReady(true);
         }
         return;
@@ -100,20 +105,20 @@ export const useProductFormDraftState = ({
               : await loadProductFormDraftImages(draft.imageIds);
 
           if (draftImages.length !== draft.imageIds.length) throw new Error("Incomplete draft images");
-          if (isActive) {
+          if (isActive && scope.isCurrent()) {
             setPreservedDraftImageIds([]);
             setUploadInitialImages(draftImages);
             setDraftImageError(false);
           }
         } catch {
-          if (isActive) {
+          if (isActive && scope.isCurrent()) {
             setPreservedDraftImageIds(draft.imageIds);
             setDraftImageError(true);
           }
         }
       }
 
-      if (isActive) {
+      if (isActive && scope.isCurrent()) {
         setIsDraftReady(true);
       }
     };
@@ -123,10 +128,10 @@ export const useProductFormDraftState = ({
     return () => {
       isActive = false;
     };
-  }, [isEditMode, reset, setUploadInitialImages, restoreAttempt]);
+  }, [isEditMode, reset, setUploadInitialImages, restoreAttempt, owner, scope]);
 
   useEffect(() => {
-    if (isEditMode || !isDraftReady) {
+    if (isEditMode || !isDraftReady || owner === undefined || !scope.isCurrent()) {
       return;
     }
 
@@ -139,8 +144,10 @@ export const useProductFormDraftState = ({
       values: formValues,
       imageIds: effectiveImageIds,
       images: currentDraftImages,
-    }));
+    }, owner));
   }, [
+    owner,
+    scope,
     currentDraftImages,
     effectiveImageIds,
     formValues,

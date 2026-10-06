@@ -6,7 +6,7 @@ const draftKey = "create-product-form-draft";
 const formValues = { categoryIds: [2], name: "Тестовая фигурка", price: "1250", currency: "RUB", description: "Комплектация", availability: "PURCHASABLE", prepaymentAmount: "", count: "2", originality: "ORIGINAL", externalUrl: "" };
 const seedDraft = async (page: Page, values = formValues) => page.addInitScript(({ key, values }) => {
   if (!sessionStorage.getItem("draft-seeded")) {
-    localStorage.setItem(key, JSON.stringify({ values, imageIds: [77] }));
+    localStorage.setItem(key, JSON.stringify({ owner: 1, values, imageIds: [77] }));
     sessionStorage.setItem("draft-seeded", "yes");
   }
 }, { key: draftKey, values });

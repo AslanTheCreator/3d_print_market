@@ -1,4 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { usePrivateScope, usePrivateMutation } from "@/shared/lib/query";
+import { useQueryClient } from "@tanstack/react-query";
 import { cartApi } from "../api/cartApi";
 import { useCartQuantityStore } from "./cartQuantityStore";
 import { cartKeys } from "./queryKeys";
@@ -10,25 +11,27 @@ const toServerQuantityItems = (cart: ProductBasket[]) =>
     count: item.count,
   }));
 
-let cartRefreshQueue: Promise<void> = Promise.resolve();
+const cartRefreshQueues = new WeakMap<AbortSignal, Promise<void>>();
 
-const enqueueCartRefresh = <T>(refresh: () => Promise<T>): Promise<T> => {
+const enqueueCartRefresh = <T>(signal: AbortSignal, refresh: () => Promise<T>): Promise<T> => {
+  const cartRefreshQueue = cartRefreshQueues.get(signal) ?? Promise.resolve();
   const result = cartRefreshQueue.then(refresh, refresh);
-  cartRefreshQueue = result.then(
+  cartRefreshQueues.set(signal, result.then(
     () => undefined,
     () => undefined,
-  );
+  ));
   return result;
 };
 
 export const useAddToCart = () => {
+  const scope = usePrivateScope();
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return usePrivateMutation({
     mutationFn: ({ productId, count }: { productId: number; count: number }) =>
       cartApi.addToCart(productId, count),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: cartKeys.all });
+      queryClient.invalidateQueries({ queryKey: scope.key(cartKeys.all) });
     },
   });
 };
@@ -46,22 +49,26 @@ export const useUpdateCartQuantity = (
   productId: number,
   options?: UseUpdateCartQuantityOptions,
 ) => {
+  const scope = usePrivateScope();
   const queryClient = useQueryClient();
 
   const refreshCart = () =>
-    enqueueCartRefresh(async () => {
-      await queryClient.cancelQueries({ queryKey: cartKeys.all });
-      const cart = await cartApi.getCart({ size: 100 });
-      queryClient.setQueryData<ProductBasket[]>(cartKeys.all, cart);
+    enqueueCartRefresh(scope.signal, async () => {
+      if (!scope.isCurrent()) throw new Error("Session ended");
+      await queryClient.cancelQueries({ queryKey: scope.key(cartKeys.all) });
+      if (!scope.isCurrent()) throw new Error("Session ended");
+      const cart = await cartApi.getCart({ size: 100 }, scope.signal);
+      if (!scope.isCurrent()) throw new Error("Session ended");
+      queryClient.setQueryData<ProductBasket[]>(scope.key(cartKeys.all), cart);
       useCartQuantityStore
         .getState()
         .syncWithServer(toServerQuantityItems(cart));
       return cart;
     });
 
-  return useMutation({
-    mutationKey: [...cartKeys.all, "quantity", productId],
-    scope: { id: `cart-quantity-${productId}` },
+  return usePrivateMutation({
+    mutationKey: [...scope.key(cartKeys.all), "quantity", productId],
+    scope: { id: `cart-quantity-${scope.id}-${productId}` },
     mutationFn: ({ count }: UpdateCartQuantityVariables) =>
       cartApi.update(productId, count),
     onSuccess: async (_data, variables) => {
@@ -70,6 +77,7 @@ export const useUpdateCartQuantity = (
 
       try {
         const cart = await refreshCart();
+        if (!scope.isCurrent()) return;
         const serverQuantity = cart.find(
           (item) => item.product.id === productId,
         )?.count;
@@ -77,6 +85,7 @@ export const useUpdateCartQuantity = (
           .getState()
           .validateUpdate(productId, variables.revision, serverQuantity);
       } catch {
+        if (!scope.isCurrent()) return;
         useCartQuantityStore
           .getState()
           .markNeedsValidation(productId, variables.revision);
@@ -93,6 +102,7 @@ export const useUpdateCartQuantity = (
 
       try {
         const cart = await refreshCart();
+        if (!scope.isCurrent()) return;
         const serverQuantity = cart.find(
           (item) => item.product.id === productId,
         )?.count;
@@ -100,6 +110,7 @@ export const useUpdateCartQuantity = (
           .getState()
           .validateUpdate(productId, variables.revision, serverQuantity);
       } catch {
+        if (!scope.isCurrent()) return;
         useCartQuantityStore
           .getState()
           .markNeedsValidation(productId, variables.revision);
@@ -109,22 +120,24 @@ export const useUpdateCartQuantity = (
 };
 
 export const useRemoveFromCart = () => {
+  const scope = usePrivateScope();
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return usePrivateMutation({
     mutationFn: cartApi.removeFromCart,
     onMutate: async (productId: number) => {
-      await queryClient.cancelQueries({ queryKey: cartKeys.all });
+      await queryClient.cancelQueries({ queryKey: scope.key(cartKeys.all) });
+      if (!scope.isCurrent()) throw new Error("Session ended");
 
       const previousCart = queryClient.getQueryData<ProductBasket[]>(
-        cartKeys.all,
+        scope.key(cartKeys.all),
       );
 
       if (previousCart) {
         const updatedCart = previousCart.filter(
           (item) => item.product.id !== productId,
         );
-        queryClient.setQueryData<ProductBasket[]>(cartKeys.all, updatedCart);
+        queryClient.setQueryData<ProductBasket[]>(scope.key(cartKeys.all), updatedCart);
       }
 
       return { previousCart };
@@ -132,13 +145,13 @@ export const useRemoveFromCart = () => {
     onError: (_err, _variables, context) => {
       if (context?.previousCart) {
         queryClient.setQueryData<ProductBasket[]>(
-          cartKeys.all,
+          scope.key(cartKeys.all),
           context.previousCart,
         );
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: cartKeys.all });
+      queryClient.invalidateQueries({ queryKey: scope.key(cartKeys.all) });
     },
   });
 };

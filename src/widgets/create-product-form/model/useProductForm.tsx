@@ -21,6 +21,7 @@ import {
 import { useNotification } from "@/shared/ui/notification";
 import type { ImageMetadata } from "@/entities/image";
 import { getImageUrl } from "@/shared/lib";
+import { usePrivateScope } from "@/shared/lib/query";
 import { clearProductFormDraft, isProductFormDraftEmpty } from "./productFormDraft";
 import { PRODUCT_IMAGE_LIMIT } from "./constants";
 import {
@@ -124,6 +125,7 @@ export const useProductForm = ({
   );
   const { effectiveImageIds, isDraftReady, resetDraftImageIds, draftStatus, draftImageError, retryDraftImages } =
     useProductFormDraftState({
+      owner: currentUser?.id,
       isEditMode,
       formValues,
       imageUploadState,
@@ -247,7 +249,9 @@ export const useProductForm = ({
       .filter((imageId) => !currentImageIds.has(imageId));
   }, [imageUploadState.imageIds, initialImages, isEditMode]);
 
+  const scope = usePrivateScope();
   const resetForm = () => {
+    if (!scope.isCurrent()) return;
     if (isEditMode) {
       reset(initialFormValues);
       imageUploadState.resetImages(initialImages);
@@ -266,6 +270,7 @@ export const useProductForm = ({
 
   const onSubmit = createProductFormSubmitHandler({
     createProduct,
+    isCurrentScope: scope.isCurrent,
     effectiveImageIds,
     hasSellerAccount,
     hasSellerSocialNetwork,

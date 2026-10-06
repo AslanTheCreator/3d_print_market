@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 export interface CartQuantityItem {
   productId: number;
@@ -66,7 +65,6 @@ const replaceQuantity = (
 };
 
 export const useCartQuantityStore = create<CartQuantityState>()(
-  persist(
     (set, get) => ({
       items: [],
       syncStates: {},
@@ -146,6 +144,11 @@ export const useCartQuantityStore = create<CartQuantityState>()(
 
       clearQuantities: () => {
         set({ items: [], syncStates: {} });
+        try {
+          if (typeof window !== "undefined") window.localStorage.removeItem("cart-quantity-storage");
+        } catch {
+          // Legacy storage is never read, even if removal is unavailable.
+        }
       },
 
       getAllItems: () => get().items,
@@ -295,9 +298,4 @@ export const useCartQuantityStore = create<CartQuantityState>()(
         });
       },
     }),
-    {
-      name: "cart-quantity-storage",
-      partialize: (state) => ({ items: state.items }),
-    },
-  ),
 );

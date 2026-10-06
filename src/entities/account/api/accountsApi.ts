@@ -15,11 +15,11 @@ type AccountsRequestConfig = AxiosRequestConfig & {
 };
 
 export const accountsApi = {
-  getAll: async (): Promise<AccountsBaseModel[]> => {
+  getAll: async (signal?: AbortSignal): Promise<AccountsBaseModel[]> => {
     try {
       const { data } = await authClient.get<AccountsBaseModel[]>(
         API_URL,
-        { _skipErrorTransform: true } as AccountsRequestConfig,
+        { signal, _skipErrorTransform: true } as AccountsRequestConfig,
       );
       return data;
     } catch (error) {
@@ -35,9 +35,10 @@ export const accountsApi = {
     }
   },
 
-  getUser: async (id: number): Promise<AccountsBaseModel[]> => {
+  getUser: async (id: number, signal?: AbortSignal): Promise<AccountsBaseModel[]> => {
     const { data } = await authClient.get<AccountsBaseModel[]>(
       `${API_URL}/participant/${id}`,
+      { signal },
     );
     return data;
   },

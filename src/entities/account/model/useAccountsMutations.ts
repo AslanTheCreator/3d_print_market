@@ -1,24 +1,27 @@
-﻿import { useMutation, useQueryClient } from "@tanstack/react-query";
+﻿import { usePrivateScope, usePrivateMutation } from "@/shared/lib/query";
+import { useQueryClient } from "@tanstack/react-query";
 import { accountsApi } from "../api/accountsApi";
 import { accountsKeys } from "./queryKeys";
 import type { AccountsCreateModel } from "./types";
 import { AccountsBaseModel } from "./types";
 
 export const useCreateAccount = () => {
+  const scope = usePrivateScope();
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return usePrivateMutation({
     mutationFn: accountsApi.create,
 
     onMutate: async (newAccount) => {
-      await queryClient.cancelQueries({ queryKey: accountsKeys.userList() });
+      await queryClient.cancelQueries({ queryKey: scope.key(accountsKeys.userList()) });
+      if (!scope.isCurrent()) throw new Error("Session ended");
 
       const previous = queryClient.getQueryData<AccountsBaseModel[]>(
-        accountsKeys.userList(),
+        scope.key(accountsKeys.userList()),
       );
 
       queryClient.setQueryData<AccountsBaseModel[]>(
-        accountsKeys.userList(),
+        scope.key(accountsKeys.userList()),
         (old = []) => [
           ...old,
           {
@@ -33,31 +36,33 @@ export const useCreateAccount = () => {
     },
 
     onError: (_error, _vars, context) => {
-      queryClient.setQueryData(accountsKeys.userList(), context?.previous);
+      queryClient.setQueryData(scope.key(accountsKeys.userList()), context?.previous);
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: accountsKeys.all });
+      queryClient.invalidateQueries({ queryKey: scope.key(accountsKeys.all) });
     },
   });
 };
 
 export const useUpdateAccount = () => {
+  const scope = usePrivateScope();
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return usePrivateMutation({
     mutationFn: ({ id, input }: { id: number; input: AccountsCreateModel }) =>
       accountsApi.update(id, input),
 
     onMutate: async ({ id, input }) => {
-      await queryClient.cancelQueries({ queryKey: accountsKeys.userList() });
+      await queryClient.cancelQueries({ queryKey: scope.key(accountsKeys.userList()) });
+      if (!scope.isCurrent()) throw new Error("Session ended");
 
       const previous = queryClient.getQueryData<AccountsBaseModel[]>(
-        accountsKeys.userList(),
+        scope.key(accountsKeys.userList()),
       );
 
       queryClient.setQueryData<AccountsBaseModel[]>(
-        accountsKeys.userList(),
+        scope.key(accountsKeys.userList()),
         (old = []) =>
           old.map((account) =>
             account.id === id ? { ...account, ...input } : account,
@@ -68,29 +73,31 @@ export const useUpdateAccount = () => {
     },
 
     onError: (_error, _vars, context) => {
-      queryClient.setQueryData(accountsKeys.userList(), context?.previous);
+      queryClient.setQueryData(scope.key(accountsKeys.userList()), context?.previous);
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: accountsKeys.all });
+      queryClient.invalidateQueries({ queryKey: scope.key(accountsKeys.all) });
     },
   });
 };
 
 export const useDeleteAccount = () => {
+  const scope = usePrivateScope();
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return usePrivateMutation({
     mutationFn: accountsApi.delete,
 
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: accountsKeys.userList() });
+      await queryClient.cancelQueries({ queryKey: scope.key(accountsKeys.userList()) });
+      if (!scope.isCurrent()) throw new Error("Session ended");
       const previous = queryClient.getQueryData<AccountsBaseModel[]>(
-        accountsKeys.userList(),
+        scope.key(accountsKeys.userList()),
       );
 
       queryClient.setQueryData<AccountsBaseModel[]>(
-        accountsKeys.userList(),
+        scope.key(accountsKeys.userList()),
         (old = []) => old.filter((account) => account.id !== id),
       );
 
@@ -98,11 +105,11 @@ export const useDeleteAccount = () => {
     },
 
     onError: (_err, _id, context) => {
-      queryClient.setQueryData(accountsKeys.userList(), context?.previous);
+      queryClient.setQueryData(scope.key(accountsKeys.userList()), context?.previous);
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: accountsKeys.all });
+      queryClient.invalidateQueries({ queryKey: scope.key(accountsKeys.all) });
     },
   });
 };
@@ -113,9 +120,10 @@ interface SaveBatchInput {
 }
 
 export const useSaveAccountsBatch = () => {
+  const scope = usePrivateScope();
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return usePrivateMutation({
     mutationFn: async ({ toCreate, toDelete }: SaveBatchInput) => {
       await Promise.all([
         ...toCreate.map((acc) => accountsApi.create(acc)),
@@ -124,14 +132,15 @@ export const useSaveAccountsBatch = () => {
     },
 
     onMutate: async ({ toCreate, toDelete }) => {
-      await queryClient.cancelQueries({ queryKey: accountsKeys.userList() });
+      await queryClient.cancelQueries({ queryKey: scope.key(accountsKeys.userList()) });
+      if (!scope.isCurrent()) throw new Error("Session ended");
 
       const previous = queryClient.getQueryData<AccountsBaseModel[]>(
-        accountsKeys.userList(),
+        scope.key(accountsKeys.userList()),
       );
 
       queryClient.setQueryData<AccountsBaseModel[]>(
-        accountsKeys.userList(),
+        scope.key(accountsKeys.userList()),
         (old = []) => {
           const updated = old.filter((acc) => !toDelete.includes(acc.id));
 
@@ -152,11 +161,11 @@ export const useSaveAccountsBatch = () => {
     },
 
     onError: (_err, _vars, context) => {
-      queryClient.setQueryData(accountsKeys.userList(), context?.previous);
+      queryClient.setQueryData(scope.key(accountsKeys.userList()), context?.previous);
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: accountsKeys.all });
+      queryClient.invalidateQueries({ queryKey: scope.key(accountsKeys.all) });
     },
   });
 };

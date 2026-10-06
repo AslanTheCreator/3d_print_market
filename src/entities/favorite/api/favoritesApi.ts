@@ -10,14 +10,15 @@ import type {
 const API_URL = `/favorites`;
 
 export const favoritesApi = {
-  getFavorites: async (params: FetchProductsParams): Promise<Product[]> => {
+  getFavorites: async (params: FetchProductsParams, signal?: AbortSignal): Promise<Product[]> => {
     const requestData = buildProductRequest(params);
     const { data } = await authClient.post<ProductDto[]>(
       `${API_URL}/find`,
       requestData,
+      { signal },
     );
 
-    return attachImages<ProductDto, Product>(data, (p) => p.imageId);
+    return attachImages<ProductDto, Product>(data, (p) => p.imageId, signal);
   },
 
   addToFavorites: async (productId: number) => {

@@ -5,8 +5,8 @@ import { Address } from "../model/types";
 const API_URL = "/address";
 
 export const addressApi = {
-  getAll: async (): Promise<Address[]> => {
-    const { data } = await authClient.get<Address[]>(API_URL);
+  getAll: async (signal?: AbortSignal): Promise<Address[]> => {
+    const { data } = await authClient.get<Address[]>(API_URL, { signal });
     return data;
   },
 

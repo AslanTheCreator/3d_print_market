@@ -24,7 +24,6 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import ShieldIcon from "@mui/icons-material/Shield";
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -101,7 +100,6 @@ export const MobileAccountMenu = ({
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
   const pathname = usePathname();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const logout = useAuthStore((state) => state.logout);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -113,7 +111,6 @@ export const MobileAccountMenu = ({
     try {
       setIsLoggingOut(true);
       logout();
-      queryClient.removeQueries();
       onClose();
       router.push("/auth/login");
     } catch (error) {

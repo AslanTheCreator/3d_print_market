@@ -16,7 +16,7 @@
 проверку после монтирования guard. До проверки дочерние запросы не запускаются.
 
 Административные query keys начинаются с `["admin", sessionKey, ...]`; параметры
-бота/товара/заказа/фильтра входят в ключ. `AdminCacheBoundary` отменяет и удаляет
+бота/товара/заказа/фильтра входят в ключ. `PrivateDataBoundary` отменяет и удаляет
 ключи предыдущей сессии при login/logout/смене аккаунта. `useAccountSessionKey`
 использует неперсистентный accountRevision: обновление токена того же аккаунта
 не уничтожает открытый ввод, а обычный sessionRevision для публичного поиска
@@ -152,8 +152,6 @@ query-параметров через `useSearchParams`.
 
 Дополнительные открытые ограничения:
 
-- автоматический logout через interceptor/token manager не гарантирует централизованную очистку auth-bound TanStack Query cache, Zustand и user-scoped browser data;
-- product draft хранится в `localStorage` под общим ключом и не очищается при logout;
 - server guards определяют auth только по наличию cookie и не подтверждают backend session.
 
 ## Поиск товаров и сессия
@@ -238,7 +236,13 @@ TanStack Query хранит backend data, loading/error state, cache и invalida
 
 Zustand используется для session state в `entities/session` и другого локального client state. Исключение — `cartQuantityStore`: он хранит optimistic projection количества, revisions и последнее подтверждённое значение, синхронизируясь с cart query. Это не второй источник истины о корзине; подтверждённые данные и остатки по-прежнему приходят с backend.
 
-Auth-bound cache и persisted client state должны очищаться единым session teardown независимо от причины logout. В текущей реализации очистка query cache выполняется UI-кнопками logout, но не является частью `authStore.logout()`.
+`PrivateDataBoundary` в app layer подписан на auth store: login/logout, смена аккаунта и автоматическое завершение отменяют и удаляют приватные/admin queries, очищают проекцию корзины и черновик товара. Клиентское поддерево перемонтируется при смене владельца, сбрасывая формы и selection. Успешный refresh того же аккаунта сохраняет scope и ввод. Завершение не зависит от кнопки выхода или успешной записи storage.
+
+Обычные приватные ключи имеют вид `["private", accountRevision, ...entityKey]`. Scope передаётся через нейтральный React context из `shared/lib/query`; соседние entities не импортируют session. Это относится к профилю, корзине, избранному, заказам, адресам, реквизитам, доставке, контактам и собственным товарам. Публичные ключи сохраняют прежний формат. Приватные чтения, включая вложенную image metadata, получают AbortSignal; scoped key изолирует результат даже без поддержки отмены транспортом.
+
+`usePrivateMutation` проверяет владельца перед отправкой и settlement callbacks. Ручные cache writes используют захваченный scope; корзина дополнительно проверяет его после каждого ожидания перед записью общей проекции. Очередь подтверждающих чтений разделена по scope. Количества больше не восстанавливаются из localStorage: после reload источником служит GET корзины.
+
+Черновик товара содержит `owner` — ID подтверждённого `/participant`. Восстановление ждёт профиль текущего scope; legacy и чужой owner не принимаются, включая reload. При logout/смене аккаунта очищаются память и storage, а принадлежащие memory draft blob URL освобождаются без DELETE серверных изображений. Отказ storage не позволяет восстановить чужой черновик; refresh того же аккаунта его не очищает.
 
 ## Адрес доставки в checkout
 

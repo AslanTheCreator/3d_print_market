@@ -12,10 +12,10 @@ const API_URL_FIND = `/participants/find`;
 const API_URL_PROFILE = `/auth/profile`;
 
 export const userApi = {
-  async getUser(): Promise<UserBaseModel> {
-    const { data } = await authClient.get<UserBaseModel>(API_URL);
+  async getUser(signal?: AbortSignal): Promise<UserBaseModel> {
+    const { data } = await authClient.get<UserBaseModel>(API_URL, { signal });
     const images = data.imageId
-      ? await imageApi.getImageMetadata(data.imageId)
+      ? await imageApi.getImageMetadata(data.imageId, signal)
       : [];
     return { ...data, image: images };
   },
@@ -25,10 +25,10 @@ export const userApi = {
     });
     return data ?? [];
   },
-  async getProfileUser(): Promise<UserProfileModel> {
-    const { data } = await authClient.get<UserProfileModel>(API_URL_PROFILE);
+  async getProfileUser(signal?: AbortSignal): Promise<UserProfileModel> {
+    const { data } = await authClient.get<UserProfileModel>(API_URL_PROFILE, { signal });
     const image = data.imageId
-      ? await imageApi.getImageMetadata(data.imageId)
+      ? await imageApi.getImageMetadata(data.imageId, signal)
       : [];
     return { ...data, image: image };
   },

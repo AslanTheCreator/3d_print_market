@@ -15,11 +15,11 @@ type SocialNetworksRequestConfig = AxiosRequestConfig & {
 };
 
 export const socialNetworksApi = {
-  getAll: async (): Promise<SocialNetwork[]> => {
+  getAll: async (signal?: AbortSignal): Promise<SocialNetwork[]> => {
     try {
       const { data } = await authClient.get<SocialNetwork[]>(
         API_URL,
-        { _skipErrorTransform: true } as SocialNetworksRequestConfig,
+        { signal, _skipErrorTransform: true } as SocialNetworksRequestConfig,
       );
       return data;
     } catch (error) {

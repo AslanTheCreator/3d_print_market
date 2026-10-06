@@ -1,3 +1,5 @@
+"use client";
+
 import type { InitialImageUploadState } from "@/features/image-upload";
 import { imageApi } from "@/entities/image";
 import { getImageUrl } from "@/shared/lib";
@@ -12,6 +14,7 @@ const PRODUCT_FORM_DRAFT_KEY = "create-product-form-draft";
 const PRODUCT_FORM_CURRENCIES = ["RUB", "USD", "EUR", "GBP", "JPY", "CNY"];
 let memoryProductFormDraft: ProductFormDraft | null = null;
 let hasUnsavedMemoryDraft = false;
+let memoryOwner: number | null = null;
 
 export type ProductFormDraftStatus = "empty" | "saved" | "memory" | "error";
 
@@ -135,7 +138,13 @@ const getDraftStorage = (): Storage | null => {
   }
 };
 
-export const readProductFormDraft = (): ProductFormDraft | null => {
+export const readProductFormDraft = (owner: number): ProductFormDraft | null => {
+  if (memoryOwner !== owner) {
+    releaseMemoryPreviews();
+    memoryProductFormDraft = null;
+    hasUnsavedMemoryDraft = false;
+    memoryOwner = owner;
+  }
   if (hasUnsavedMemoryDraft) return memoryProductFormDraft;
   const storage = getDraftStorage();
 
@@ -145,7 +154,10 @@ export const readProductFormDraft = (): ProductFormDraft | null => {
 
   try {
     const rawDraft = storage.getItem(PRODUCT_FORM_DRAFT_KEY);
-    const draft = rawDraft ? parseProductFormDraft(JSON.parse(rawDraft)) : null;
+    const saved: unknown = rawDraft ? JSON.parse(rawDraft) : null;
+    const draft = isRecord(saved) && saved.owner === owner
+      ? parseProductFormDraft(saved) : null;
+    if (rawDraft && !draft) storage.removeItem(PRODUCT_FORM_DRAFT_KEY);
     const draftWithMemoryImages = draft ? mergeMemoryImages(draft) : null;
     memoryProductFormDraft = draftWithMemoryImages;
     return draftWithMemoryImages;
@@ -154,7 +166,11 @@ export const readProductFormDraft = (): ProductFormDraft | null => {
   }
 };
 
-export const writeProductFormDraft = (draft: ProductFormDraft): ProductFormDraftStatus => {
+export const writeProductFormDraft = (draft: ProductFormDraft, owner: number): ProductFormDraftStatus => {
+  if (memoryOwner !== owner) {
+    releaseMemoryPreviews();
+    memoryOwner = owner;
+  }
   const storage = getDraftStorage();
 
   if (isProductFormDraftEmpty(draft)) {
@@ -168,7 +184,7 @@ export const writeProductFormDraft = (draft: ProductFormDraft): ProductFormDraft
   try {
     storage.setItem(
       PRODUCT_FORM_DRAFT_KEY,
-      JSON.stringify(serializeProductFormDraft(draft)),
+      JSON.stringify({ ...serializeProductFormDraft(draft), owner }),
     );
     hasUnsavedMemoryDraft = false;
     return "saved";
@@ -209,7 +225,14 @@ const loadProductFormDraftImagesFromContent = async (
   return images.filter((image): image is InitialImageUploadState => !!image);
 };
 
+const releaseMemoryPreviews = () => {
+  for (const image of memoryProductFormDraft?.images ?? []) {
+    if (image.preview?.startsWith("blob:")) URL.revokeObjectURL(image.preview);
+  }
+};
+
 export const clearProductFormDraft = (): ProductFormDraftStatus => {
+  releaseMemoryPreviews();
   const storage = getDraftStorage();
   memoryProductFormDraft = null;
   hasUnsavedMemoryDraft = true;

@@ -1,20 +1,27 @@
 "use client";
 
 import { ReactNode, useEffect } from "react";
-import { useCartQuantityStore } from "@/entities/cart";
 import { useAuthStore, useTokenRefresh } from "@/entities/session";
 import { registerAuthSessionAdapter } from "@/shared/api";
 
+const expireSession = () => {
+  useAuthStore.getState().logout();
+
+  if (typeof window !== "undefined") {
+    window.location.href = "/auth/login";
+  }
+};
+
 registerAuthSessionAdapter({
   getSessionSignal: () => useAuthStore.getState().getSessionSignal(),
-  refreshAccessToken: () => useAuthStore.getState().refreshToken(),
-  onSessionExpired: () => {
-    useAuthStore.getState().logout();
-
-    if (typeof window !== "undefined") {
-      window.location.href = "/auth/login";
-    }
+  refreshAccessToken: async () => {
+    const signal = useAuthStore.getState().getSessionSignal();
+    const success = await useAuthStore.getState().refreshToken();
+    // Teardown cancels query waiters; expiry must not depend on a surviving request.
+    if (!success && !signal.aborted) expireSession();
+    return success;
   },
+  onSessionExpired: expireSession,
 });
 
 interface AuthProviderProps {
@@ -23,12 +30,6 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isInitialized = useAuthStore((state) => state.isInitialized);
-  const clearCartQuantities = useCartQuantityStore(
-    (state) => state.clearQuantities,
-  );
-
   // Инициализируем автоматическое обновление токенов
   useTokenRefresh();
 
@@ -36,12 +37,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     void initializeAuth();
   }, [initializeAuth]);
-
-  useEffect(() => {
-    if (isInitialized && !isAuthenticated) {
-      clearCartQuantities();
-    }
-  }, [clearCartQuantities, isAuthenticated, isInitialized]);
 
   return <>{children}</>;
 }

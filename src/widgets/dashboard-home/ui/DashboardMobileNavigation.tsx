@@ -3,7 +3,6 @@
 import { Fragment, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   AddRounded,
   ChevronRightRounded,
@@ -60,7 +59,6 @@ const rowSx = {
 
 export const DashboardMobileNavigation = () => {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const logout = useAuthStore((state) => state.logout);
   const { showNotification } = useNotification();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -69,7 +67,6 @@ export const DashboardMobileNavigation = () => {
     setIsLoggingOut(true);
     try {
       logout();
-      queryClient.removeQueries();
       router.push("/auth/login");
     } catch {
       setIsLoggingOut(false);

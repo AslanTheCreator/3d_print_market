@@ -1,5 +1,6 @@
 "use client";
 
+import { usePrivateScope } from "@/shared/lib/query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import type { ProductBasket } from "@/entities/cart";
@@ -28,6 +29,7 @@ export const useCheckoutDelivery = ({
   cartItems,
   selectedProductIds,
 }: UseCheckoutDeliveryProps) => {
+  const scope = usePrivateScope();
   const [selectedTransfersBySeller, setSelectedTransfersBySeller] = useState<
     Map<number, Transfer>
   >(() => new Map());
@@ -43,21 +45,21 @@ export const useCheckoutDelivery = ({
 
       return {
         queryKey: deliveryItem
-          ? orderQueryKeys.orderData(deliveryItem.product.id)
+          ? scope.key(orderQueryKeys.orderData(deliveryItem.product.id))
           : [
-              ...orderQueryKeys.all,
+              ...scope.key(orderQueryKeys.all),
               "data",
               "empty-seller-group",
               group.sellerId,
             ],
-        queryFn: () => {
+        queryFn: ({ signal }: { signal: AbortSignal }) => {
           if (!deliveryItem) {
             throw new Error("No cart item available for delivery lookup");
           }
 
-          return orderApi.getOrderData(deliveryItem.product.id);
+          return orderApi.getOrderData(deliveryItem.product.id, signal);
         },
-        enabled: deliveryItem !== undefined,
+        enabled: scope.id !== null && deliveryItem !== undefined,
         staleTime: 5 * 60 * 1000,
         gcTime: 10 * 60 * 1000,
         refetchOnWindowFocus: false,

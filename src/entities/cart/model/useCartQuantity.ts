@@ -1,3 +1,4 @@
+import { usePrivateScope } from "@/shared/lib/query";
 import { useCallback, useEffect, useRef } from "react";
 import { debounce } from "lodash";
 import { useCartChecks } from "./useCartChecks";
@@ -17,6 +18,7 @@ export const useCartQuantity = (
   isAuthenticated: boolean,
   options?: UseCartQuantityOptions,
 ) => {
+  const scope = usePrivateScope();
   const { isProductInCart } = useCartChecks(isAuthenticated);
   const { mutate: updateServerQuantity } = useUpdateCartQuantity(productId, {
     onSyncError: options?.onSyncError,
@@ -50,9 +52,10 @@ export const useCartQuantity = (
     const debouncedUpdate = debouncedUpdateRef.current;
 
     return () => {
-      debouncedUpdate.flush();
+      if (scope.isCurrent()) debouncedUpdate.flush();
+      else debouncedUpdate.cancel();
     };
-  }, [productId]);
+  }, [productId, scope]);
 
   const syncWithServer = useCallback(
     (newQuantity: number, revision: number) => {

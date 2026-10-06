@@ -15,11 +15,11 @@ type TransferRequestConfig = AxiosRequestConfig & {
 };
 
 export const transferApi = {
-  getAll: async (): Promise<Transfer[]> => {
+  getAll: async (signal?: AbortSignal): Promise<Transfer[]> => {
     try {
       const { data } = await authClient.get<Transfer[]>(
         API_URL,
-        { _skipErrorTransform: true } as TransferRequestConfig,
+        { signal, _skipErrorTransform: true } as TransferRequestConfig,
       );
 
       return data;

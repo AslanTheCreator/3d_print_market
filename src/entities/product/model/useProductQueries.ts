@@ -1,3 +1,4 @@
+import { usePrivateScope } from "@/shared/lib/query";
 import { useQuery } from "@tanstack/react-query";
 import { productApi } from "../api/productApi";
 import { productKeys } from "./queryKeys";
@@ -87,11 +88,13 @@ export const useUserProductsInfinite = (
   filters?: ProductFilter,
   sortBy?: SortBy,
 ) => {
+  const scope = usePrivateScope();
   return useInfiniteProducts({
     size,
     filters,
     sortBy,
     fetchFunction: productApi.getUserProducts,
-    queryKey: productKeys.userLists(),
+    enabled: scope.id !== null,
+    queryKey: scope.key(productKeys.userLists()),
   });
 };

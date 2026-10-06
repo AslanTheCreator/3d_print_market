@@ -1,14 +1,17 @@
+import { usePrivateScope } from "@/shared/lib/query";
 import { useQuery } from "@tanstack/react-query";
 import { userApi } from "../api/userApi";
 import { userKeys } from "./queryKeys";
 import { UserFindModel } from "../model/types";
 
 export const useCurrentUser = () => {
+  const scope = usePrivateScope();
   return useQuery({
-    queryKey: userKeys.current(),
-    queryFn: userApi.getUser,
+    queryKey: scope.key(userKeys.current()),
+    queryFn: ({ signal }) => userApi.getUser(signal),
     staleTime: 1000 * 60 * 10, // 10 минут
     gcTime: 1000 * 60 * 30,
+    enabled: scope.id !== null,
   });
 };
 
@@ -17,12 +20,13 @@ interface UseProfileUserOptions {
 }
 
 export const useProfileUser = (options?: UseProfileUserOptions) => {
+  const scope = usePrivateScope();
   return useQuery({
-    queryKey: userKeys.profile(),
-    queryFn: () => userApi.getProfileUser(),
+    queryKey: scope.key(userKeys.profile()),
+    queryFn: ({ signal }) => userApi.getProfileUser(signal),
     staleTime: 5 * 60 * 1000,
     retry: 1,
-    enabled: options?.enabled ?? true,
+    enabled: scope.id !== null && (options?.enabled ?? true),
   });
 };
 

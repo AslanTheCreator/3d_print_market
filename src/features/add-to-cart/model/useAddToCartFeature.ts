@@ -1,3 +1,4 @@
+import { usePrivateScope } from "@/shared/lib/query";
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -24,6 +25,7 @@ export function useAddToCartFeature(
   sellerId: number,
   params?: UseAddToCartFeatureParams,
 ) {
+  const scope = usePrivateScope();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { mutate: addToCart, isPending } = useAddToCart();
@@ -80,7 +82,7 @@ export function useAddToCartFeature(
               } else if (error.isCode(ErrorCodes.PRODUCT_NOT_PURCHASABLE)) {
                 message = PRODUCT_NOT_PURCHASABLE_MESSAGE;
                 void Promise.allSettled([
-                  queryClient.invalidateQueries({ queryKey: cartKeys.all }),
+                  queryClient.invalidateQueries({ queryKey: scope.key(cartKeys.all) }),
                   queryClient.invalidateQueries({ queryKey: productKeys.all }),
                 ]);
               }
@@ -102,6 +104,7 @@ export function useAddToCartFeature(
       addToCart,
       router,
       queryClient,
+      scope,
       params,
     ],
   );

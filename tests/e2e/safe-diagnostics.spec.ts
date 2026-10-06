@@ -238,11 +238,15 @@ for (const mode of ["development", "production"] as const) {
       const captured = captureConsole();
       const queryMock = {
         useQueryClient: () => ({}),
-        useMutation: (options: unknown) => options,
+      };
+      const privateQueryMock = {
+        usePrivateScope: () => ({ isCurrent: () => true, key: (key: unknown) => key }),
+        usePrivateMutation: (options: unknown) => options,
       };
       type MutationHooks = Record<string, () => { onError?: (error: unknown) => void }>;
       try {
         const productHooks = loadModule<MutationHooks>("src/entities/product/model/useProductMutations.ts", {
+          "@/shared/lib/query": privateQueryMock,
           "@/shared/lib/errorHandler": errorHandler,
           "@tanstack/react-query": queryMock,
           "@/entities/image/@x/product": { imageApi: {} },
@@ -250,6 +254,7 @@ for (const mode of ["development", "production"] as const) {
           "./queryKeys": { productKeys: {} },
         });
         const orderHooks = loadModule<MutationHooks>("src/entities/order/model/useOrderMutations.ts", {
+          "@/shared/lib/query": privateQueryMock,
           "@/shared/lib/errorHandler": errorHandler,
           "@tanstack/react-query": queryMock,
           "../api/orderApi": { orderApi: {} },

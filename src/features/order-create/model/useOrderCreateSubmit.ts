@@ -1,5 +1,6 @@
 "use client";
 
+import { usePrivateScope } from "@/shared/lib/query";
 import { useState, useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -40,6 +41,7 @@ export const useOrderCreateSubmit = ({
   onPartialSuccess,
   onError,
 }: UseOrderCreateSubmitProps) => {
+  const scope = usePrivateScope();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<CheckoutResult | null>(null);
   const isSubmittingRef = useRef(false);
@@ -57,7 +59,7 @@ export const useOrderCreateSubmit = ({
       productIds: number[],
       fallbackItems: ProductBasket[],
     ): ProductSubmissionCheck => {
-      const cartQueryState = queryClient.getQueryState(cartKeys.all);
+      const cartQueryState = queryClient.getQueryState(scope.key(cartKeys.all));
 
       if (
         cartQueryState?.fetchStatus === "fetching" ||
@@ -67,7 +69,7 @@ export const useOrderCreateSubmit = ({
       }
 
       const latestCartItems = queryClient.getQueryData<ProductBasket[]>(
-        cartKeys.all,
+        scope.key(cartKeys.all),
       );
       const latestItemsById = latestCartItems
         ? new Map(
@@ -109,13 +111,13 @@ export const useOrderCreateSubmit = ({
         ),
       };
     },
-    [queryClient],
+    [scope, queryClient],
   );
 
   const refreshNonPurchasableProducts = useCallback(
     async (productIds: readonly number[]) => {
       await Promise.allSettled([
-        queryClient.invalidateQueries({ queryKey: cartKeys.all }),
+        queryClient.invalidateQueries({ queryKey: scope.key(cartKeys.all) }),
         queryClient.invalidateQueries({ queryKey: productKeys.all }),
         ...productIds.map((productId) =>
           queryClient.invalidateQueries({
@@ -124,7 +126,7 @@ export const useOrderCreateSubmit = ({
         ),
       ]);
     },
-    [queryClient],
+    [scope, queryClient],
   );
 
   const createOrderPayload = useCallback(
@@ -142,6 +144,7 @@ export const useOrderCreateSubmit = ({
 
   const submitSingleOrder = useCallback(
     async (order: OrderToCreate): Promise<OrderResult> => {
+      if (!scope.isCurrent()) throw new Error("Session ended");
       try {
         await orderApi.createOrder([
           {
@@ -184,7 +187,7 @@ export const useOrderCreateSubmit = ({
         };
       }
     },
-    [refreshNonPurchasableProducts],
+    [refreshNonPurchasableProducts, scope],
   );
 
   const executeOrders = useCallback(

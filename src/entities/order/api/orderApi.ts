@@ -15,10 +15,12 @@ type OrderDtoWithImage = ListOrdersDto & { image: ImageMetadata[] };
 
 const attachOrderProductImages = async (
   orders: ListOrdersDto[],
+  signal?: AbortSignal,
 ): Promise<ListOrdersModel[]> => {
   const ordersWithImages = await attachImages<ListOrdersDto, OrderDtoWithImage>(
     orders,
     (order) => order.product.imageId,
+    signal,
   );
 
   return ordersWithImages.map(({ image, ...order }) => ({
@@ -110,9 +112,10 @@ export const orderApi = {
   },
 
   // Получение данных для создания заказа
-  getOrderData: async (productId: number): Promise<OrderGetDataModel> => {
+  getOrderData: async (productId: number, signal?: AbortSignal): Promise<OrderGetDataModel> => {
     const { data } = await authClient.get<OrderGetDataModel>(
       `${API_URL}?productId=${productId}`,
+      { signal },
     );
     if (!data) {
       throw new Error("Пустой ответ от сервера");
@@ -122,16 +125,17 @@ export const orderApi = {
   },
 
   // Получение заказов продавца
-  getSellerOrders: async () => {
-    const { data } = await authClient.get<ListOrdersDto[]>(`${API_URL}/seller`);
-    return attachOrderProductImages(data);
+  getSellerOrders: async (signal?: AbortSignal) => {
+    const { data } = await authClient.get<ListOrdersDto[]>(`${API_URL}/seller`, { signal });
+    return attachOrderProductImages(data, signal);
   },
 
   // Получение заказов покупателя
-  getCustomerOrders: async () => {
+  getCustomerOrders: async (signal?: AbortSignal) => {
     const { data } = await authClient.get<ListOrdersDto[]>(
       `${API_URL}/customer`,
+      { signal },
     );
-    return attachOrderProductImages(data);
+    return attachOrderProductImages(data, signal);
   },
 };

@@ -17,6 +17,7 @@ type ShowNotification = (
 ) => void;
 
 interface CreateProductFormSubmitHandlerParams {
+  isCurrentScope: () => boolean;
   createProduct: ReturnType<typeof useCreateProduct>["mutate"];
   effectiveImageIds: number[];
   hasSellerAccount: boolean;
@@ -34,6 +35,7 @@ interface CreateProductFormSubmitHandlerParams {
 
 export const createProductFormSubmitHandler = ({
   createProduct,
+  isCurrentScope,
   effectiveImageIds,
   hasSellerAccount,
   hasSellerSocialNetwork,
@@ -48,6 +50,7 @@ export const createProductFormSubmitHandler = ({
   navigateToProductList,
 }: CreateProductFormSubmitHandlerParams) => {
   return (data: ProductFormData) => {
+    if (!isCurrentScope()) return;
     if (isProductReadOnly) {
       showNotification(
         "Товар управляется внешним источником и недоступен для редактирования",
@@ -99,8 +102,9 @@ export const createProductFormSubmitHandler = ({
         },
         {
           onSuccess: () => {
+            if (!isCurrentScope()) return;
             showNotification("Товар успешно обновлён", "success");
-            setTimeout(navigateToProductList, SUCCESS_REDIRECT_DELAY_MS);
+            setTimeout(() => { if (isCurrentScope()) navigateToProductList(); }, SUCCESS_REDIRECT_DELAY_MS);
           },
           onError: (error) => {
             const notification = getCreateProductErrorNotification(error);
@@ -114,10 +118,11 @@ export const createProductFormSubmitHandler = ({
 
     createProduct(productData, {
       onSuccess: () => {
+        if (!isCurrentScope()) return;
         showNotification("Товар успешно создан!", "success");
         clearProductFormDraft();
         resetForm();
-        setTimeout(navigateToProductList, SUCCESS_REDIRECT_DELAY_MS);
+        setTimeout(() => { if (isCurrentScope()) navigateToProductList(); }, SUCCESS_REDIRECT_DELAY_MS);
       },
       onError: (error) => {
         const notification = getCreateProductErrorNotification(error);

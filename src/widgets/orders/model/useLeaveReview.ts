@@ -1,5 +1,6 @@
 "use client";
 
+import { usePrivateScope } from "@/shared/lib/query";
 import { useQueryClient } from "@tanstack/react-query";
 import { productKeys } from "@/entities/product";
 import { useCreateReview } from "@/entities/review";
@@ -19,6 +20,7 @@ export const useLeaveReview = ({
   orderId,
   onSuccess,
 }: UseLeaveReviewOptions) => {
+  const scope = usePrivateScope();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogState, setDialogState] = useState<DialogState>("form");
   const createReviewMutation = useCreateReview();
@@ -60,7 +62,7 @@ export const useLeaveReview = ({
           queryClient.invalidateQueries({ queryKey: productKeys.details() });
           queryClient.invalidateQueries({ queryKey: productKeys.lists() });
           queryClient.invalidateQueries({
-            queryKey: orderQueryKeys.customerOrders(),
+            queryKey: scope.key(orderQueryKeys.customerOrders()),
           });
 
           setDialogState("success");

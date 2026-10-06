@@ -1,25 +1,28 @@
+import { usePrivateScope, usePrivateMutation } from "@/shared/lib/query";
 import { serializeApiError } from "@/shared/lib/errorHandler";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { imageApi } from "@/entities/image/@x/product";
 import { productApi } from "../api/productApi";
 import { productKeys } from "./queryKeys";
 
 export const useCreateProduct = () => {
+  const scope = usePrivateScope();
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return usePrivateMutation({
     mutationFn: productApi.createProduct,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: productKeys.userLists() });
+      queryClient.invalidateQueries({ queryKey: scope.key(productKeys.userLists()) });
     },
   });
 };
 
 export const useUpdateProduct = () => {
+  const scope = usePrivateScope();
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return usePrivateMutation({
     mutationFn: async ({
       productId,
       data,
@@ -30,11 +33,12 @@ export const useUpdateProduct = () => {
       imageIdsToDelete?: number[];
     }) => {
       await productApi.updateProduct(productId, data);
+      if (!scope.isCurrent()) throw new Error("Session ended");
       await imageApi.deleteImages(imageIdsToDelete, "PRODUCT");
     },
     onSuccess: async (_, { productId }) => {
       await queryClient.invalidateQueries({ queryKey: productKeys.lists() });
-      await queryClient.invalidateQueries({ queryKey: productKeys.userAll() });
+      await queryClient.invalidateQueries({ queryKey: scope.key(productKeys.userAll()) });
       await queryClient.invalidateQueries({
         queryKey: productKeys.detail(productId),
       });
@@ -43,13 +47,14 @@ export const useUpdateProduct = () => {
 };
 
 export const useExtendProductExpiration = () => {
+  const scope = usePrivateScope();
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return usePrivateMutation({
     mutationFn: (productId: number) =>
       productApi.extendProductExpiration(productId),
     onSuccess: (_, productId) => {
-      queryClient.invalidateQueries({ queryKey: productKeys.userAll() });
+      queryClient.invalidateQueries({ queryKey: scope.key(productKeys.userAll()) });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) });
     },
     onError: (error) => {
@@ -59,12 +64,13 @@ export const useExtendProductExpiration = () => {
 };
 
 export const useDeleteProduct = () => {
+  const scope = usePrivateScope();
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return usePrivateMutation({
     mutationFn: (productId: number) => productApi.deleteProduct(productId),
     onSuccess: async (_, productId) => {
-      await queryClient.invalidateQueries({ queryKey: productKeys.userAll() });
+      await queryClient.invalidateQueries({ queryKey: scope.key(productKeys.userAll()) });
       await queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) });
     },
     onError: (error) => {

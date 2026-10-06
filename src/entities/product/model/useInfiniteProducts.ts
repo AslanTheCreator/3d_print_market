@@ -16,7 +16,7 @@ export interface CursorPageParam {
 }
 
 export interface ProductFetchFunction {
-  (params: FetchProductsParams): Promise<Product[]>;
+  (params: FetchProductsParams, signal?: AbortSignal): Promise<Product[]>;
 }
 
 type QueryRetryValue =
@@ -51,7 +51,7 @@ export const useInfiniteProducts = ({
 }: UseInfiniteProductsOptions) => {
   return useInfiniteQuery({
     queryKey: [...queryKey, size, filters, sortBy],
-    queryFn: ({ pageParam }: { pageParam: CursorPageParam | null }) => {
+    queryFn: ({ pageParam, signal }: { pageParam: CursorPageParam | null; signal: AbortSignal }) => {
       const { lastCreatedAt, lastPrice, lastId } = pageParam || {};
 
       return fetchFunction({
@@ -61,7 +61,7 @@ export const useInfiniteProducts = ({
         lastPrice,
         lastId,
         sortBy,
-      });
+      }, signal);
     },
     getNextPageParam: (lastPage: Product[]) => {
       if (!lastPage || lastPage.length === 0 || lastPage.length < size) {

@@ -122,6 +122,13 @@ Adapter также передаёт сигнал поколения сессии
 
 Server state хранится в TanStack Query. Zustand используется для клиентского состояния.
 
+`PrivateDataBoundary` в app providers задаёт владельца приватных данных через
+`PrivateScopeContext` из `shared/lib/query`. Entities используют `scope.key`
+и `usePrivateMutation`, не импортируя session из соседнего слайса. Граница
+также вызывает public API `clearProductFormDraft` widget создания товара.
+Правила ключей, teardown и восстановления черновика описаны в
+[api-and-auth.md](./api-and-auth.md#server-и-client-state).
+
 Подтверждённое исключение — `cartQuantityStore`: он хранит optimistic projection количества, revisions, sync status и последнее подтверждённое значение, синхронизируясь с cart query. Источником истины об актуальной корзине и остатках остаётся backend/TanStack Query; Zustand не должен превращаться во второй независимый cache.
 
 ## Импорты
