@@ -1,9 +1,10 @@
-import type { CheckoutResult, OrderResult } from "./types";
+import type { CheckoutResult, OrderResult, OrderToCreate } from "./types";
 
 interface BuildCheckoutResultOptions {
   totalCount: number;
   unknownProductName: string;
   networkErrorMessage: string;
+  orders: readonly OrderToCreate[];
 }
 
 const mapRejectedResult = (
@@ -14,7 +15,8 @@ const mapRejectedResult = (
 ): OrderResult => ({
   productId: -(index + 1),
   productName: unknownProductName,
-  status: "error",
+  status: "unknown",
+  retryable: false,
   errorMessage: reason instanceof Error ? reason.message : networkErrorMessage,
 });
 
@@ -24,6 +26,7 @@ export const buildCheckoutResult = (
     totalCount,
     unknownProductName,
     networkErrorMessage,
+    orders,
   }: BuildCheckoutResultOptions,
 ): CheckoutResult => {
   const success: OrderResult[] = [];
@@ -33,12 +36,12 @@ export const buildCheckoutResult = (
     const orderResult =
       result.status === "fulfilled"
         ? result.value
-        : mapRejectedResult(
+        : { ...mapRejectedResult(
             result.reason,
             index,
             unknownProductName,
             networkErrorMessage,
-          );
+          ), productId: orders[index].productId, productName: orders[index].productName };
 
     if (orderResult.status === "success") {
       success.push(orderResult);
@@ -68,7 +71,7 @@ export const mergeCheckoutResults = (
     (item) => !currentSuccessIds.has(item.productId),
   );
   const retryableProductIds = new Set(
-    currentFailed.map((item) => item.productId),
+    currentFailed.filter(item => item.status === "error" && item.retryable === true).map((item) => item.productId),
   );
   const retrySuccess = uniqueByProductId(retryResult.success).filter((item) =>
     retryableProductIds.has(item.productId),

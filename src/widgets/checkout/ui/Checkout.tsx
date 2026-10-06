@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Typography, Box } from "@mui/material";
+import { Typography, Alert, Button, Stack } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useRouter } from "next/navigation";
 import {
@@ -133,7 +133,7 @@ const Checkout = () => {
     setLastResult(result);
   }, []);
 
-  const { handleSubmit, retryFailed, isSubmitting, submitResult, clearResult } =
+  const { handleSubmit, retryFailed, isSubmitting, submitResult, clearResult, hasUncertainOrders, retryMessage } =
     useOrderCreateSubmit({
       cartItems: checkoutState.selectedItems,
       checkoutState,
@@ -160,6 +160,20 @@ const Checkout = () => {
     setResultDialogOpen(false);
     router.push("/dashboard/purchase");
   };
+
+  if (hasUncertainOrders && (!resultDialogOpen || checkoutCartItems.length === 0)) {
+    return (
+      <Stack spacing={2}>
+        <Alert severity="warning" role="status">
+          Результат оформления неизвестен. Заказы могли быть созданы. Повторное оформление
+          в текущей сессии заблокировано. Проверьте покупки и корзину; отсутствие заказа
+          в списке ещё не подтверждает, что он не был создан.
+        </Alert>
+        <Button onClick={handleGoToOrders}>Мои покупки</Button>
+        <Button disabled={isCartFetching} onClick={() => void refetchCart()}>Обновить корзину</Button>
+      </Stack>
+    );
+  }
 
   // Загрузка корзины
   if (isCartError && cartItems === undefined) {
@@ -287,6 +301,7 @@ const Checkout = () => {
         onGoToOrders={handleGoToOrders}
         isRetrying={isSubmitting}
         hasPrepaymentSuccess={lastResultHasPrepayment}
+        retryMessage={retryMessage}
       />
     </>
   );

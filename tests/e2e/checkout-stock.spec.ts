@@ -303,6 +303,82 @@ const getIncrementButton = (page: Page, productId: number) =>
 const getQuantityCounter = (page: Page, productId: number) =>
   getIncrementButton(page, productId).locator("..");
 
+test("explicit empty selection survives quantity confirmation and refetch", async ({ context, page, baseURL }) => {
+  await authenticate(context, baseURL);
+  const controller = await setupCheckoutApi(page, [1, 2].map(id => createCartItem({ id, name: `Товар ${id}`, count: 1, availableCount: 10, enoughStock: true })));
+  await openReadyCheckout(page);
+  await expect(page.getByRole("checkbox", { name: "Выбрать все товары" })).toBeChecked();
+  await page.getByRole("checkbox", { name: "Выбрать все товары" }).uncheck();
+  await getIncrementButton(page, 1).click();
+  await expect.poll(() => controller.putRequests.length).toBe(1);
+  await expect(getQuantityCounter(page, 1)).toContainText("2");
+  const reads = controller.basketFindRequests;
+  await page.clock.setFixedTime(Date.now() + 6 * 60_000);
+  await page.evaluate(() => { window.dispatchEvent(new Event("offline")); window.dispatchEvent(new Event("online")); });
+  await expect.poll(() => controller.basketFindRequests).toBeGreaterThan(reads);
+  await expect(page.getByRole("checkbox", { name: "Выбрать товар Товар 1", exact: true })).not.toBeChecked();
+  await expect(page.getByRole("checkbox", { name: "Выбрать товар Товар 2", exact: true })).not.toBeChecked();
+  await expect(page.getByRole("button", { name: "Оформить заказ" })).toBeDisabled();
+  expect(controller.orderCreateRequests).toEqual([]);
+});
+
+test("removing the last selected item does not select excluded products", async ({ context, page, baseURL }) => {
+  await authenticate(context, baseURL);
+  const controller = await setupCheckoutApi(page, [1, 2].map(id => createCartItem({ id, name: `Товар ${id}`, count: 1, availableCount: 10, enoughStock: true })));
+  await page.route("**/basket?productId=*", async route => {
+    if (route.request().method() === "DELETE") controller.cartItems = controller.cartItems.filter(item => item.product.id !== 1);
+    await fulfillJson(route, null);
+  });
+  await openReadyCheckout(page);
+  await page.getByRole("checkbox", { name: "Выбрать товар Товар 2", exact: true }).uncheck();
+  await page.getByTestId("checkout-cart-item-1").getByRole("button", { name: /Удалить/ }).click();
+  await expect(page.getByTestId("checkout-cart-item-1")).toHaveCount(0);
+  await expect(page.getByRole("checkbox", { name: "Выбрать товар Товар 2", exact: true })).not.toBeChecked();
+  await expect(page.getByRole("button", { name: "Оформить заказ" })).toBeDisabled();
+});
+
+for (const outcome of ["lost", "server-error", "mixed"] as const) {
+  test(`unknown checkout ${outcome} stays blocked after closing and returning`, async ({ context, page, baseURL }) => {
+    await authenticate(context, baseURL);
+    const count = outcome === "mixed" ? 3 : 1;
+    const controller = await setupCheckoutApi(page, Array.from({ length: count }, (_, index) => createCartItem({ id: index + 1, name: `Товар ${index + 1}`, count: 1, availableCount: 10, enoughStock: true })));
+    const accepted: number[] = [];
+    let posts = 0;
+    await page.route("**/order/BOOKED", async route => {
+      if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+      posts++;
+      const id = route.request().postDataJSON()[0].productId;
+      if (outcome === "mixed" && id === 1) return fulfillJson(route, [101]);
+      if (outcome === "mixed" && id === 3) return route.fulfill({ status: 400, headers: corsHeaders, contentType: "application/json", body: JSON.stringify({ code: "COUNT_INVALID", message: "Отказ" }) });
+      accepted.push(id);
+      if (outcome === "server-error") return fulfillError(route);
+      await route.abort("failed");
+    });
+    await openReadyCheckout(page);
+    await page.getByRole("button", { name: "Оформить заказ" }).click();
+    const dialog = page.getByTestId("checkout-result-dialog");
+    await expect(dialog).toContainText("Результат неизвестен (1)");
+    await expect(dialog.getByRole("button", { name: "Повторить для неудачных" })).toHaveCount(0);
+    await expect(dialog).not.toContainText("Заказы не были оформлены");
+    if (outcome === "mixed") {
+      await expect(dialog).toContainText("Успешно оформлено (1)");
+      await expect(dialog).toContainText("Не удалось оформить (1)");
+    }
+    await dialog.getByRole("button", { name: "Вернуться к оформлению" }).click();
+    await expect(page.getByRole("status")).toContainText("Результат оформления неизвестен");
+    const reads = controller.basketFindRequests;
+    await page.getByRole("button", { name: "Обновить корзину" }).click();
+    await expect.poll(() => controller.basketFindRequests).toBeGreaterThan(reads);
+    await page.getByRole("button", { name: "Мои покупки", exact: true }).click();
+    await expect(page).toHaveURL(/dashboard\/purchase/);
+    await page.goBack();
+    await expect(page.getByRole("status")).toContainText("Результат оформления неизвестен");
+    await expect(page.getByRole("button", { name: "Оформить заказ" })).toHaveCount(0);
+    expect(accepted).toHaveLength(1);
+    expect(posts).toBe(count);
+  });
+}
+
 test("shows numeric and unlimited stock and ignores an unselected shortage", async ({
   context,
   page,

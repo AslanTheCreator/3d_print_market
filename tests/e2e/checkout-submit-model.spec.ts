@@ -19,6 +19,7 @@ const resultItem = (
   productName: `Товар ${productId}`,
   status,
   errorMessage,
+  retryable: status === "error",
 });
 
 const checkoutResult = ({

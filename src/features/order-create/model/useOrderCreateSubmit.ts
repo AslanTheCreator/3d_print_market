@@ -3,6 +3,8 @@
 import { usePrivateScope } from "@/shared/lib/query";
 import { useState, useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useStore } from "zustand";
+import { getCheckoutAttempt, isConfirmedOrderRejection } from "./checkoutAttempt";
 import {
   cartKeys,
   type ProductBasket,
@@ -10,7 +12,7 @@ import {
 } from "@/entities/cart";
 import { orderApi } from "@/entities/order";
 import { productKeys } from "@/entities/product";
-import { ApiError, ErrorCodes } from "@/shared/lib/errorHandler";
+import { ErrorCodes } from "@/shared/lib/errorHandler";
 import { buildOrderToCreate, getFailedOrders } from "./orderCreatePayload";
 import {
   buildCheckoutResult,
@@ -42,9 +44,13 @@ export const useOrderCreateSubmit = ({
   onError,
 }: UseOrderCreateSubmitProps) => {
   const scope = usePrivateScope();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const attempt = getCheckoutAttempt(scope.signal);
+  const { pending: isSubmitting, uncertain: hasUncertainOrders } = useStore(attempt);
   const [submitResult, setSubmitResult] = useState<CheckoutResult | null>(null);
-  const isSubmittingRef = useRef(false);
+  const resultRef = useRef<CheckoutResult | null>(null);
+  const selectionRef = useRef<number[]>([]);
+  const successfulIds = useRef(new Set<number>());
+  const [retryMessage, setRetryMessage] = useState<string | null>(null);
   const failedOrdersRef = useRef<OrderToCreate[]>([]);
   const queryClient = useQueryClient();
   const { getQuantity } = useCartQuantityStore();
@@ -107,7 +113,9 @@ export const useOrderCreateSubmit = ({
 
       return {
         canSubmit: resolvedItems.every(
-          (item) => item !== undefined && item.enoughStock !== false,
+          (item) => item !== undefined && item.enoughStock !== false &&
+            item.count === quantityState.getQuantity(item.product.id) &&
+            Number.isSafeInteger(item.count) && item.count > 0,
         ),
       };
     },
@@ -163,7 +171,7 @@ export const useOrderCreateSubmit = ({
         };
       } catch (error) {
         if (
-          error instanceof ApiError &&
+          isConfirmedOrderRejection(error) &&
           error.isCode(ErrorCodes.PRODUCT_NOT_PURCHASABLE)
         ) {
           await refreshNonPurchasableProducts([order.productId]);
@@ -181,7 +189,8 @@ export const useOrderCreateSubmit = ({
         return {
           productId: order.productId,
           productName: order.productName,
-          status: "error",
+          status: isConfirmedOrderRejection(error) ? "error" : "unknown",
+          retryable: isConfirmedOrderRejection(error),
           errorMessage:
             error instanceof Error ? error.message : UNKNOWN_ERROR_MESSAGE,
         };
@@ -200,13 +209,14 @@ export const useOrderCreateSubmit = ({
         totalCount: ordersToCreate.length,
         unknownProductName: UNKNOWN_PRODUCT_NAME,
         networkErrorMessage: NETWORK_ERROR_MESSAGE,
+        orders: ordersToCreate,
       });
     },
     [submitSingleOrder],
   );
 
   const handleSubmit = useCallback(async () => {
-    const selectedCartItems = cartItems ?? [];
+    const selectedCartItems = (cartItems ?? []).filter(item => !successfulIds.current.has(item.product.id));
     const selectedProductIds = selectedCartItems.map(
       (item) => item.product.id,
     );
@@ -217,7 +227,7 @@ export const useOrderCreateSubmit = ({
     );
 
     if (
-      isSubmittingRef.current ||
+      !scope.isCurrent() || attempt.getState().pending || attempt.getState().uncertain ||
       selectedCartItems.length === 0 ||
       !checkoutState.isReadyToSubmit ||
       !submissionCheck.canSubmit
@@ -225,13 +235,18 @@ export const useOrderCreateSubmit = ({
       return;
     }
 
-    isSubmittingRef.current = true;
-    setIsSubmitting(true);
+    attempt.setState({ pending: true });
+    selectionRef.current = selectedProductIds;
+    setRetryMessage(null);
     setSubmitResult(null);
 
     try {
       const ordersToCreate = selectedCartItems.map(createOrderPayload);
       const checkoutResult = await executeOrders(ordersToCreate);
+      if (!scope.isCurrent()) return;
+      attempt.setState({ uncertain: checkoutResult.failed.some(item => item.status === "unknown") });
+      checkoutResult.success.forEach(item => successfulIds.current.add(item.productId));
+      resultRef.current = checkoutResult;
 
       failedOrdersRef.current = getFailedOrders(
         ordersToCreate,
@@ -243,10 +258,11 @@ export const useOrderCreateSubmit = ({
 
       return checkoutResult;
     } finally {
-      isSubmittingRef.current = false;
-      setIsSubmitting(false);
+      attempt.setState({ pending: false });
     }
   }, [
+    attempt,
+    scope,
     cartItems,
     checkProductsForSubmission,
     checkoutState.isReadyToSubmit,
@@ -257,16 +273,16 @@ export const useOrderCreateSubmit = ({
   ]);
 
   const retryFailed = useCallback(async () => {
+    const resultBeforeRetry = resultRef.current;
     if (
-      isSubmittingRef.current ||
-      !submitResult ||
-      submitResult.failed.length === 0
+      !scope.isCurrent() || attempt.getState().pending || attempt.getState().uncertain ||
+      !resultBeforeRetry ||
+      resultBeforeRetry.failed.length === 0
     ) {
       return;
     }
 
     const retryOrders = failedOrdersRef.current;
-    const resultBeforeRetry = submitResult;
     const retryProductIds = retryOrders.map((order) => order.productId);
     const fallbackItems = cartItems ?? [];
 
@@ -275,15 +291,34 @@ export const useOrderCreateSubmit = ({
       fallbackItems,
     );
 
-    if (retryOrders.length === 0 || !submissionCheck.canSubmit) {
+    const selectedItems = fallbackItems.filter(item => !successfulIds.current.has(item.product.id));
+    const expectedSelection = selectionRef.current.filter(id => !successfulIds.current.has(id));
+    const unchanged = selectedItems.length === expectedSelection.length &&
+      selectedItems.every(item => expectedSelection.includes(item.product.id)) &&
+      retryOrders.every(order => {
+        const item = selectedItems.find(item => item.product.id === order.productId);
+        if (!item) return false;
+        const current = createOrderPayload(item);
+        return current.count === order.count && current.addressId === order.addressId &&
+          current.transferId === order.transferId && current.comment === order.comment;
+      });
+    if (retryOrders.length === 0) return resultBeforeRetry;
+    if (!checkoutState.isReadyToSubmit || !submissionCheck.canSubmit || !unchanged) {
+      failedOrdersRef.current = [];
+      const staleResult = { ...resultBeforeRetry, failed: resultBeforeRetry.failed.map(item => ({ ...item, retryable: false })) };
+      resultRef.current = staleResult;
+      setSubmitResult(staleResult);
+      setRetryMessage("Параметры заказа изменились или ещё не проверены. Вернитесь к оформлению и проверьте товары, адрес и доставку.");
       return resultBeforeRetry;
     }
 
-    isSubmittingRef.current = true;
-    setIsSubmitting(true);
+    attempt.setState({ pending: true });
 
     try {
       const retryResult = await executeOrders(retryOrders);
+      if (!scope.isCurrent()) return;
+      attempt.setState({ uncertain: retryResult.failed.some(item => item.status === "unknown") });
+      retryResult.success.forEach(item => successfulIds.current.add(item.productId));
       const updatedResult = mergeCheckoutResults(
         resultBeforeRetry,
         retryResult,
@@ -293,17 +328,20 @@ export const useOrderCreateSubmit = ({
         retryOrders,
         retryResult.failed,
       );
+      resultRef.current = updatedResult;
       setSubmitResult(updatedResult);
       await syncAfterSubmit(retryResult.success);
       notifySubmitResult(updatedResult);
 
       return updatedResult;
     } finally {
-      isSubmittingRef.current = false;
-      setIsSubmitting(false);
+      attempt.setState({ pending: false });
     }
   }, [
-    submitResult,
+    attempt,
+    scope,
+    checkoutState,
+    createOrderPayload,
     cartItems,
     checkProductsForSubmission,
     executeOrders,
@@ -313,6 +351,8 @@ export const useOrderCreateSubmit = ({
 
   const clearResult = useCallback(() => {
     failedOrdersRef.current = [];
+    resultRef.current = null;
+    setRetryMessage(null);
     setSubmitResult(null);
   }, []);
 
@@ -322,5 +362,7 @@ export const useOrderCreateSubmit = ({
     isSubmitting,
     submitResult,
     clearResult,
+    hasUncertainOrders,
+    retryMessage,
   };
 };

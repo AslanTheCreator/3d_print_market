@@ -4,7 +4,7 @@ import type { Address } from "@/entities/address";
 export interface OrderResult {
   productId: number;
   productName: string;
-  status: "success" | "error";
+  status: "success" | "error" | "unknown";
   errorMessage?: string;
   errorCode?: string;
   retryable?: boolean;

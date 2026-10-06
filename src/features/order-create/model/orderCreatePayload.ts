@@ -32,7 +32,7 @@ export const getFailedOrders = (
 ): OrderToCreate[] => {
   const failedProductIds = new Set(
     failedResults
-      .filter((result) => result.retryable !== false)
+      .filter((result) => result.status === "error" && result.retryable === true)
       .map((result) => result.productId),
   );
 

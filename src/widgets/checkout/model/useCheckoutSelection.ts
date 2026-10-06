@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProductBasket } from "@/entities/cart";
 
 interface UseCheckoutSelectionProps {
@@ -24,12 +24,18 @@ const areSetsEqual = (left: Set<number>, right: Set<number>) => {
 export const useCheckoutSelection = ({
   cartItems,
 }: UseCheckoutSelectionProps) => {
+  const initialized = useRef(cartItems.length > 0);
   const [selectedProductIds, setSelectedProductIds] = useState<Set<number>>(
     () => new Set(cartItems.map((item) => item.product.id)),
   );
 
   useEffect(() => {
     const currentProductIds = new Set(cartItems.map((item) => item.product.id));
+    if (!initialized.current && currentProductIds.size > 0) {
+      initialized.current = true;
+      setSelectedProductIds(currentProductIds);
+      return;
+    }
 
     setSelectedProductIds((prev) => {
       const next = new Set<number>();
@@ -39,14 +45,6 @@ export const useCheckoutSelection = ({
           next.add(id);
         }
       });
-
-      if (next.size === 0 && currentProductIds.size > 0) {
-        if (areSetsEqual(prev, currentProductIds)) {
-          return prev;
-        }
-
-        return currentProductIds;
-      }
 
       if (areSetsEqual(prev, next)) {
         return prev;

@@ -18,6 +18,7 @@ import {
   useTheme,
   Chip,
   CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   CheckCircle,
@@ -40,6 +41,7 @@ interface CheckoutResultDialogProps {
   onGoToOrders: () => void;
   isRetrying?: boolean;
   hasPrepaymentSuccess?: boolean;
+  retryMessage?: string | null;
 }
 
 export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
@@ -51,6 +53,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
   onGoToOrders,
   isRetrying = false,
   hasPrepaymentSuccess = false,
+  retryMessage,
 }) => {
   const theme = useTheme();
 
@@ -59,8 +62,10 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
   const isFullSuccess = result.successCount === result.totalCount;
   const isPartialSuccess =
     result.successCount > 0 && result.successCount < result.totalCount;
-  const hasRetryableFailures = result.failed.some(
-    (item) => item.retryable !== false,
+  const unknown = result.failed.filter(item => item.status === "unknown");
+  const rejected = result.failed.filter(item => item.status === "error");
+  const hasRetryableFailures = unknown.length === 0 && result.failed.some(
+    (item) => item.status === "error" && item.retryable === true,
   );
   const getDialogIcon = () => {
     if (isFullSuccess) {
@@ -79,10 +84,14 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
   const getDialogTitle = () => {
     if (isFullSuccess) return "Заказы успешно оформлены!";
     if (isPartialSuccess) return "Часть заказов оформлена";
+    if (unknown.length > 0) return "Результат оформления неизвестен";
     return "Не удалось оформить заказы";
   };
 
   const getDialogDescription = () => {
+    if (unknown.length > 0) {
+      return `Подтверждено заказов: ${result.successCount} из ${result.totalCount}. Для ${unknown.length} результат неизвестен: заказы могли быть созданы. Повтор заблокирован. Проверьте «Мои покупки» и корзину; отсутствие заказа в списке не подтверждает отказ.`;
+    }
     if (isFullSuccess) {
       const baseDescription = `Все ${result.totalCount} ${getItemWord(result.totalCount)} успешно оформлены.`;
 
@@ -144,6 +153,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
       </DialogTitle>
 
       <DialogContent>
+        {retryMessage && <Alert severity="warning" sx={{ mb: 2 }}>{retryMessage}</Alert>}
         <Typography
           variant="body1"
           color="text.secondary"
@@ -205,7 +215,15 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
         )}
 
         {/* Неудачные заказы */}
-        {result.failed.length > 0 && (
+        {unknown.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2">Результат неизвестен ({unknown.length})</Typography>
+            <List>{unknown.map(item => <ListItem key={item.productId}>
+              <ListItemText primary={item.productName} secondary="Заказ мог быть создан. Не отправляйте его повторно." />
+            </ListItem>)}</List>
+          </Box>
+        )}
+        {rejected.length > 0 && (
           <Box>
             <Box
               sx={{
@@ -217,7 +235,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
             >
               <Error sx={{ fontSize: 20, color: theme.palette.error.main }} />
               <Typography variant="subtitle2" fontWeight={600}>
-                Не удалось оформить ({result.failed.length})
+                Не удалось оформить ({rejected.length})
               </Typography>
             </Box>
             <List
@@ -228,10 +246,10 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
                 border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
               }}
             >
-              {result.failed.map((item, index) => (
+              {rejected.map((item, index) => (
                 <ListItem
                   key={item.productId}
-                  divider={index < result.failed.length - 1}
+                  divider={index < rejected.length - 1}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <ShoppingBag
@@ -297,12 +315,13 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
           </Button>
         )}
 
-        {result.success.length > 0 && (
+        {(result.success.length > 0 || unknown.length > 0) && (
           <Button
             variant={result.failed.length > 0 ? "outlined" : "contained"}
             color="primary"
             startIcon={<Receipt />}
             onClick={onGoToOrders}
+            disabled={isRetrying}
             sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             Мои покупки
@@ -313,6 +332,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
           variant={result.failed.length > 0 ? "text" : "outlined"}
           startIcon={<Home />}
           onClick={onGoHome}
+          disabled={isRetrying}
           sx={{ width: { xs: "100%", sm: "auto" } }}
         >
           На главную

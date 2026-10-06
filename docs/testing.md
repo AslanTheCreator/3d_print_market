@@ -377,6 +377,18 @@ touch targets и keyboard focus. `order-details-model.spec.ts` дополнит�
 
 ## Order flow: этапы 1–5
 
+Регрессия Stage 08: `checkout-submit-model.spec.ts`, `checkout-submit-lifecycle.spec.ts`,
+`checkout-stock.spec.ts`, `checkout-address.spec.ts`, `checkout-delivery-groups.spec.ts`.
+Lifecycle-тесты исполняют hook с настоящими QueryClient, scope и quantity store:
+отложенный ответ, повторный submit/remount, смена сессии, неизвестные исходы,
+проверка свежего snapshot и повтор только отказавших позиций.
+Браузерные mocks проверяют явный пустой выбор после refetch/изменения количества,
+удаление последнего выбранного товара, потерю ответа принятой записи, 5xx,
+смешанный результат и блокировку повторного оформления после возврата из покупок.
+Сценарий разрешённого Retry использует доменный отказ `400 + COUNT_INVALID`;
+500 больше не моделирует заведомо безопасный повтор. После этапа выполняется
+полный e2e, а также lint, typecheck, architecture:check, build и HTTP smoke.
+
 Изменения финансового отображения и lifecycle заказа проверяются на трёх уровнях.
 
 Model/contract tests должны покрывать:

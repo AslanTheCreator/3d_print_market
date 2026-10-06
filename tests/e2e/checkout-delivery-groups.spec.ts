@@ -216,13 +216,13 @@ test("selects delivery independently for each seller", async ({
     }
 
     await route.fulfill({
-      status: 500,
+      status: 400,
       headers: corsHeaders,
       contentType: "application/json",
       body: JSON.stringify({
-        code: "ORDER_CREATE_FAILED",
+        code: "COUNT_INVALID",
         message: "Не удалось создать заказ",
-        status: 500,
+        status: 400,
       }),
     });
   });
