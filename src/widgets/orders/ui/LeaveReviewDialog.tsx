@@ -29,6 +29,7 @@ import {
 import { Controller } from "react-hook-form";
 import { Product } from "@/entities/product";
 import { getImageUrl } from "@/shared/lib";
+import { OrderRefreshWarning } from "./OrderRefreshWarning";
 import { useLeaveReview } from "../model/useLeaveReview";
 import { REVIEW_VALIDATION, REVIEW_FORM_RULES } from "../model/types";
 
@@ -208,9 +209,11 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
 }) => {
   const theme = useTheme();
 
-  const { dialogState, form, handleSubmit, isPending, isError, closeDialog } =
+  const { dialogState, form, handleSubmit, isPending, isError, closeDialog, onExited, actionsAvailable } =
     useLeaveReview({
       orderId,
+      open,
+      onClose,
       onSuccess,
     });
 
@@ -224,12 +227,12 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
   // Закрытие через пропс + хук
   const handleClose = () => {
     closeDialog();
-    onClose();
   };
 
   return (
     <Dialog
       open={open}
+      TransitionProps={{ onExited }}
       onClose={dialogState === "form" ? handleClose : undefined}
       maxWidth="sm"
       fullWidth
@@ -267,6 +270,7 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
                 onClick={handleClose}
                 size="small"
                 aria-label="Закрыть окно отзыва"
+                disabled={isPending}
               >
                 <Close />
               </IconButton>
@@ -274,6 +278,7 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
           </DialogTitle>
 
           <DialogContent sx={{ pb: 1 }}>
+            <OrderRefreshWarning />
             <Stack spacing={3}>
               {/* Информация о товаре */}
               <ProductHeader product={product} />
@@ -291,6 +296,7 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
                   render={({ field }) => (
                     <Stack spacing={1}>
                       <Rating
+                        disabled={isPending}
                         value={field.value}
                         onChange={(_, newValue) => {
                           field.onChange(newValue ?? 0);
@@ -388,7 +394,7 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
             <Button
               onClick={handleSubmit}
               variant="contained"
-              disabled={isPending || currentRating === 0}
+              disabled={isPending || !actionsAvailable || currentRating === 0}
               startIcon={
                 isPending ? (
                   <CircularProgress size={18} color="inherit" />

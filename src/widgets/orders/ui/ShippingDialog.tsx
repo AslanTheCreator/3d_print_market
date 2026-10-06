@@ -32,8 +32,11 @@ import {
 } from "@/entities/order";
 import { useOrderShippingAction } from "@/features/order-shipping";
 import { formatPrice } from "@/shared/lib";
+import { OrderRefreshWarning } from "./OrderRefreshWarning";
 import { transformToApiError } from "@/shared/lib/errorHandler";
 import { getSafeTrackingUrl } from "../model/orderDetails";
+
+import { useOrderActionsAvailable } from "../model/orderActionsContext";
 
 interface ShippingDialogProps {
   open: boolean;
@@ -42,6 +45,7 @@ interface ShippingDialogProps {
 }
 
 const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
+  const actionsAvailable = useOrderActionsAvailable();
   const [deliveryUrl, setDeliveryUrl] = useState("");
   const [comment, setComment] = useState("");
   const [deliveryService, setDeliveryService] = useState("");
@@ -117,7 +121,7 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
   });
 
   const handleSendOrder = () => {
-    if (!safeDeliveryUrl || !isExpectedOrderStatus) {
+    if (!actionsAvailable || shippingAction.isPending || !safeDeliveryUrl || !isExpectedOrderStatus) {
       return;
     }
 
@@ -144,6 +148,7 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
 
   const canSendOrder =
     !!safeDeliveryUrl &&
+    actionsAvailable &&
     isExpectedOrderStatus &&
     !shippingAction.isPending;
   const shippingErrorMessage = shippingAction.error
@@ -181,6 +186,7 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
       </DialogTitle>
 
       <DialogContent>
+        <OrderRefreshWarning />
         {/* Информация о заказе */}
         <Paper variant="outlined" sx={{ p: 2, mb: 2.5, bgcolor: "grey.50" }}>
           <Stack

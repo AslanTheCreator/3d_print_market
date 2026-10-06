@@ -25,6 +25,7 @@ import { OrdersSummaryCards } from "./OrdersSummaryCards";
 import { OrdersTable } from "./OrdersTable";
 import { OrderDetailsDialog } from "./OrderDetailsDialog";
 import { MobileOrders } from "./MobileOrders";
+import { OrderActionsContext } from "../model/orderActionsContext";
 
 interface OrdersWidgetProps {
   query: UseQueryResult<ListOrdersModel[]>;
@@ -39,6 +40,9 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
 
   const title = getOrdersTitle(userRole);
   const Icon = userRole === "seller" ? Storefront : Receipt;
+  const refreshWarning = error && orders !== undefined && <Alert severity="warning" sx={{ mb: 2 }} action={<Button color="inherit" disabled={isFetching} onClick={() => void refetch()}>Повторить</Button>}>
+    Не удалось обновить заказы. Действия недоступны до успешной загрузки.
+  </Alert>;
 
   const ordersList = useMemo(
     () => (Array.isArray(orders) ? orders : []),
@@ -90,11 +94,11 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
     [ordersList, selectedOrderId],
   );
 
-  if (isLoading) {
+  if (isLoading && orders === undefined) {
     return <OrdersLoadingSkeleton title={title} icon={<Icon />} userRole={userRole} />;
   }
 
-  if (error) {
+  if (error && orders === undefined) {
     return (
       <Box sx={{ width: "100%", py: { xs: 2, sm: 3 } }}>
         <Box sx={{ display: { xs: "none", md: "block" } }}><PageHeader title={title} icon={<Icon />} /></Box>
@@ -108,6 +112,7 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
   if (ordersList.length === 0) {
     return (
       <Box sx={{ width: "100%", py: { xs: 2, sm: 3 } }}>
+        {refreshWarning}
         <Box sx={{ display: { xs: "none", md: "block" } }}>
           <PageHeader title={title} icon={<Icon />} />
           <OrdersEmptyState userRole={userRole} />
@@ -120,7 +125,9 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
   }
 
   return (
+    <OrderActionsContext.Provider value={{ actionsAvailable: !error, retry: () => void refetch(), retryPending: isFetching }}>
     <Box sx={{ width: "100%", py: { xs: 2, sm: 3 } }}>
+      {refreshWarning}
       <Box sx={{ display: { xs: "none", md: "block" } }}><PageHeader title={title} icon={<Icon />} /></Box>
       <Stack data-testid="desktop-orders" spacing={{ xs: 2, sm: 3 }} sx={{ display: { xs: "none", md: "flex" } }}>
         <OrdersSummaryCards stats={stats} userRole={userRole} />
@@ -161,5 +168,6 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
         />
       )}
     </Box>
+    </OrderActionsContext.Provider>
   );
 };

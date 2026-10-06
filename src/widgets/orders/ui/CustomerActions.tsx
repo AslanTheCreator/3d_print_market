@@ -29,6 +29,9 @@ import { transformToApiError } from "@/shared/lib/errorHandler";
 import { formatPrice } from "@/shared/lib";
 import { CancelOrderDialog } from "./CancelOrderDialog";
 import { LeaveReviewDialog } from "./LeaveReviewDialog";
+import { OrderRefreshWarning } from "./OrderRefreshWarning";
+
+import { useOrderActionsRecovery } from "../model/orderActionsContext";
 
 interface CustomerActionsProps {
   order: ListOrdersModel;
@@ -36,6 +39,7 @@ interface CustomerActionsProps {
 }
 
 export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps) => {
+  const { actionsAvailable, retry, retryPending } = useOrderActionsRecovery();
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
@@ -56,7 +60,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
   } = getCustomerOrderActionFlags(order.actualStatus);
 
   const handleConfirmReceipt = () => {
-    if (!isReceiptStatusCurrent) {
+    if (!actionsAvailable || receiptAction.mutation.isPending || !isReceiptStatusCurrent) {
       return;
     }
 
@@ -78,6 +82,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
           variant="contained"
           color="primary"
           startIcon={<Payment />}
+          disabled={!actionsAvailable}
           onClick={paymentAction.open}
           size="small"
           fullWidth={true}
@@ -91,6 +96,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
             variant="contained"
             color="primary"
             startIcon={<Payment />}
+            disabled={!actionsAvailable}
             onClick={prepaymentAction.open}
             size="small"
             fullWidth={true}
@@ -105,7 +111,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
               color="success"
               startIcon={<ThumbUp />}
               onClick={receiptAction.open}
-              disabled={receiptAction.mutation.isPending}
+              disabled={!actionsAvailable || receiptAction.mutation.isPending}
               size="small"
               fullWidth={true}
             >
@@ -120,6 +126,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
                 variant="contained"
                 color="primary"
                 startIcon={<RateReview />}
+                disabled={!actionsAvailable}
                 onClick={() => setReviewDialogOpen(true)}
                 size="small"
                 fullWidth={true}
@@ -142,6 +149,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
                   variant="text"
                   color="error"
                   startIcon={<Cancel />}
+                  disabled={!actionsAvailable}
                   onClick={() => setCancelDialogOpen(true)}
                   size="small"
                   sx={{ px: 0.5, ...(secondaryAction && { color: "text.secondary" }) }}
@@ -155,6 +163,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
                   variant="text"
                   color="primary"
                   startIcon={<RateReview />}
+                  disabled={!actionsAvailable}
                   onClick={() => setReviewDialogOpen(true)}
                   size="small"
                   sx={{ px: 0.5 }}
@@ -169,6 +178,9 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
       </Stack>
 
       <PaymentDialog
+        actionsAvailable={actionsAvailable}
+        onRetry={retry}
+        retryPending={retryPending}
         open={paymentAction.isOpen}
         onClose={paymentAction.close}
         order={order}
@@ -177,6 +189,9 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
       />
 
       <PaymentDialog
+        actionsAvailable={actionsAvailable}
+        onRetry={retry}
+        retryPending={retryPending}
         open={prepaymentAction.isOpen}
         onClose={prepaymentAction.close}
         order={order}
@@ -245,6 +260,8 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
             </Alert>
           )}
 
+          <OrderRefreshWarning />
+
           {!isReceiptStatusCurrent && (
             <Alert severity="info" sx={{ mt: 2 }}>
               Статус заказа уже обновился. Закройте диалог и проверьте
@@ -264,7 +281,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
             variant="contained"
             color="success"
             disabled={
-              receiptAction.mutation.isPending || !isReceiptStatusCurrent
+              receiptAction.mutation.isPending || !actionsAvailable || !isReceiptStatusCurrent
             }
           >
             Подтвердить получение

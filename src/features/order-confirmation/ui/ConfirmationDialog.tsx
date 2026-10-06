@@ -39,6 +39,9 @@ interface PreOrderConfirmationParams {
 // Юнион тип для всех возможных параметров
 interface BaseConfirmationDialogProps {
   open: boolean;
+  actionsAvailable?: boolean;
+  onRetry?: () => void;
+  retryPending?: boolean;
   onClose: () => void;
   order: ListOrdersModel;
 }
@@ -123,6 +126,9 @@ const getConfirmationConfig = (
 
 export const ConfirmationDialog = ({
   open,
+  actionsAvailable = true,
+  onRetry,
+  retryPending = false,
   onClose,
   order,
   confirmationType,
@@ -149,7 +155,7 @@ export const ConfirmationDialog = ({
   };
 
   const handleConfirm = () => {
-    if (!isExpectedOrderStatus) {
+    if (!actionsAvailable || confirmationMutation.isPending || !isExpectedOrderStatus) {
       return;
     }
 
@@ -210,6 +216,7 @@ export const ConfirmationDialog = ({
       </DialogTitle>
 
       <DialogContent>
+        {!actionsAvailable && <Alert severity="warning" action={onRetry && <Button color="inherit" disabled={retryPending} onClick={onRetry}>Повторить загрузку</Button>}>Не удалось обновить заказы. Подтверждение недоступно до успешной загрузки.</Alert>}
         <Paper variant="outlined" sx={{ p: 2, mb: 2.5, bgcolor: "grey.50" }}>
           <Typography variant="subtitle2" gutterBottom>
             Заказ #{order.orderId}
@@ -275,7 +282,7 @@ export const ConfirmationDialog = ({
           onClick={handleConfirm}
           variant="contained"
           disabled={
-            confirmationMutation.isPending || !isExpectedOrderStatus
+            confirmationMutation.isPending || !actionsAvailable || !isExpectedOrderStatus
           }
           startIcon={confirmationMutation.isPending ? null : <CheckCircle />}
         >

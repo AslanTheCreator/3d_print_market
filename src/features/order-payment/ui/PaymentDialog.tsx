@@ -47,6 +47,9 @@ interface PaymentMutationParams {
 
 interface PaymentDialogProps {
   open: boolean;
+  actionsAvailable?: boolean;
+  onRetry?: () => void;
+  retryPending?: boolean;
   onClose: () => void;
   order: ListOrdersModel;
   paymentType: PaymentType;
@@ -83,6 +86,9 @@ const paymentConfig = {
 
 export const PaymentDialog = ({
   open,
+  actionsAvailable = true,
+  onRetry,
+  retryPending = false,
   onClose,
   order,
   paymentType,
@@ -249,7 +255,7 @@ export const PaymentDialog = ({
   // ──────────────────────────────────────────────────────────────────────────
 
   const handleConfirmPayment = () => {
-    if (!selectedAccountId || !isExpectedOrderStatus) {
+    if (!actionsAvailable || paymentMutation.isPending || !selectedAccountId || !isExpectedOrderStatus) {
       return;
     }
 
@@ -321,6 +327,7 @@ export const PaymentDialog = ({
     hasSelectedAccount &&
     !accountsArePending &&
     !isAccountsError &&
+    actionsAvailable &&
     isExpectedOrderStatus &&
     !paymentMutation.isPending &&
     !isUploadingImage &&
@@ -358,6 +365,7 @@ export const PaymentDialog = ({
       </DialogTitle>
 
       <DialogContent>
+        {!actionsAvailable && <Alert severity="warning" action={onRetry && <Button color="inherit" disabled={retryPending} onClick={onRetry}>Повторить загрузку</Button>}>Не удалось обновить заказы. Подтверждение недоступно до успешной загрузки.</Alert>}
         {/* Информация о заказе */}
         <Paper variant="outlined" sx={{ p: 2, mb: 2.5, bgcolor: "grey.50" }}>
           <Typography variant="subtitle2" gutterBottom>

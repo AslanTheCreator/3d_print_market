@@ -81,6 +81,16 @@ Stage 13: `npx playwright test avatar-replacement avatar-upload-model save-confi
 `dashboard-home.mobile.spec.ts`, полный `npm run test:e2e`, build и HTTP smoke.
 Все записи выполняются на mock API.
 
+Stage 14: `npx playwright test open-forms order-dialog-lifecycle-model order-payment order-details admin --project=chromium`.
+`open-forms.spec.ts` проверяет reconnect → failed refetch → retry с открытой оплатой
+на 393/1280 px, сохранение чека и комментария, запрет записи по устаревшему статусу,
+settlement pending-оплаты, dirty admin-редактор после отказа/невалидных связей,
+Escape/backdrop/крестик при pending cancel/review и сохранение ввода для повтора.
+Быстрое повторное открытие отзыва не сбрасывает новый текст; model spec проверяет
+поздний success и exit старого открытия, включая unmount. Дополнительно выполняются
+`orders.mobile.spec.ts`, полный `npm run test:e2e`, build и HTTP smoke.
+Все записи используют mock API; эти проверки не подтверждают реальный backend.
+
 Stage 12: `product-publication-model.spec.ts` проверяет настоящие mutations с
 QueryClient: синхронный lock при повторном вызове и пересоздании handler, ожидание
 записи/cleanup, повторную проверку readiness, retry после отказа, неизменный snapshot,

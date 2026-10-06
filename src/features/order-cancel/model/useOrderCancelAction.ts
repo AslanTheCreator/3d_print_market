@@ -7,7 +7,7 @@ interface UseOrderCancelActionOptions {
 }
 
 interface OrderCancelActionResult {
-  cancelOrder: (params: OrderCancel) => void;
+  cancelOrder: (params: OrderCancel, onOperationSuccess?: () => void) => Promise<void>;
   isPending: boolean;
 }
 
@@ -17,16 +17,21 @@ export const useOrderCancelAction = ({
   const { showNotification } = useNotification();
   const mutation = useCancelOrder();
 
-  const cancelOrder = (params: OrderCancel) => {
-    mutation.mutate(params, {
-      onSuccess: () => {
-        showNotification("Заказ успешно отменён", "success");
-        onSuccess?.();
-      },
-      onError: () => {
-        showNotification("Не удалось отменить заказ", "error");
-      },
-    });
+  const cancelOrder = async (params: OrderCancel, onOperationSuccess?: () => void) => {
+    try {
+      await mutation.mutateAsync(params, {
+        onSuccess: () => {
+          showNotification("Заказ успешно отменён", "success");
+          onSuccess?.();
+          onOperationSuccess?.();
+        },
+        onError: () => {
+          showNotification("Не удалось отменить заказ", "error");
+        },
+      });
+    } catch {
+      // Ошибка показана уведомлением; caller сохраняет ввод для повтора.
+    }
   };
 
   return {

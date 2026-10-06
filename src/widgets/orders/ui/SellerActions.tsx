@@ -12,6 +12,8 @@ import {
 import { CancelOrderDialog } from "./CancelOrderDialog";
 import ShippingDialog from "./ShippingDialog";
 
+import { useOrderActionsRecovery } from "../model/orderActionsContext";
+
 interface SellerActionsProps {
   order: ListOrdersModel;
   secondaryAction?: React.ReactNode;
@@ -19,6 +21,7 @@ interface SellerActionsProps {
 
 export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) => {
   const [shippingDialogOpen, setShippingDialogOpen] = useState(false);
+  const { actionsAvailable, retry, retryPending } = useOrderActionsRecovery();
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   const confirmationAction = useOrderConfirmationAction();
@@ -34,7 +37,7 @@ export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) =>
           color="primary"
           startIcon={<CheckCircle />}
           onClick={confirmationAction.open}
-          disabled={confirmationAction.mutation.isPending}
+          disabled={!actionsAvailable || confirmationAction.mutation.isPending}
           size="small"
           fullWidth={true}
         >
@@ -52,7 +55,7 @@ export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) =>
             color="primary"
             startIcon={<CheckCircle />}
             onClick={preOrderConfirmationAction.open}
-            disabled={preOrderConfirmationAction.mutation.isPending}
+            disabled={!actionsAvailable || preOrderConfirmationAction.mutation.isPending}
             size="small"
             fullWidth={true}
           >
@@ -67,6 +70,7 @@ export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) =>
               variant="contained"
               color="secondary"
               startIcon={<LocalShipping />}
+              disabled={!actionsAvailable}
               onClick={() => setShippingDialogOpen(true)}
               size="small"
               fullWidth={true}
@@ -87,6 +91,7 @@ export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) =>
               variant="text"
               color="error"
               startIcon={<Cancel />}
+              disabled={!actionsAvailable}
               onClick={() => setCancelDialogOpen(true)}
               size="small"
               sx={{ px: 0.5, ...(secondaryAction && { color: "text.secondary" }) }}
@@ -99,6 +104,9 @@ export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) =>
       </Stack>
 
       <ConfirmationDialog
+        actionsAvailable={actionsAvailable}
+        onRetry={retry}
+        retryPending={retryPending}
         open={confirmationAction.isOpen}
         onClose={confirmationAction.close}
         order={order}
@@ -107,6 +115,9 @@ export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) =>
       />
 
       <ConfirmationDialog
+        actionsAvailable={actionsAvailable}
+        onRetry={retry}
+        retryPending={retryPending}
         open={preOrderConfirmationAction.isOpen}
         onClose={preOrderConfirmationAction.close}
         order={order}

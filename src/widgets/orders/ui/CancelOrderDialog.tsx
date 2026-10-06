@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -22,6 +22,9 @@ import {
 } from "@/entities/order";
 import { useOrderCancelAction } from "@/features/order-cancel";
 import { formatPrice } from "@/shared/lib";
+import { OrderRefreshWarning } from "./OrderRefreshWarning";
+import { useOrderActionsAvailable } from "../model/orderActionsContext";
+import { useOrderDialogLifecycle } from "../model/useOrderDialogLifecycle";
 type UserRole = "seller" | "customer";
 
 interface CancelOrderDialogProps {
@@ -56,34 +59,44 @@ export const CancelOrderDialog = ({
   const [reason, setReason] = useState("");
   const [comment, setComment] = useState("");
   const paymentBreakdown = getOrderPaymentBreakdown(order);
-
-  const handleClose = () => {
+  const actionsAvailable = useOrderActionsAvailable();
+  const lock = useRef(false);
+  const cancelOrderAction = useOrderCancelAction();
+  const lifecycle = useOrderDialogLifecycle(open, () => {
     setReason("");
     setComment("");
+  });
+
+  const handleClose = () => {
+    if (lock.current || cancelOrderAction.isPending) return;
     onClose();
   };
-
-  const cancelOrderAction = useOrderCancelAction({
-    onSuccess: handleClose,
-  });
 
   const handleQuickReasonClick = (quickReason: string) => {
     setReason(quickReason);
   };
 
-  const handleCancel = () => {
-    cancelOrderAction.cancelOrder({
-      orderId: order.orderId,
-      closureReason: reason.trim(),
-      comment: comment.trim(),
-    });
+  const handleCancel = async () => {
+    if (lock.current || !actionsAvailable || reason.trim().length < 3 || !open) return;
+    lock.current = true;
+    const generation = lifecycle.generation;
+    try {
+      await cancelOrderAction.cancelOrder({
+        orderId: order.orderId,
+        closureReason: reason.trim(),
+        comment: comment.trim(),
+      }, () => {
+        if (lifecycle.isCurrent(generation)) onClose();
+      });
+    } finally { lock.current = false; }
   };
 
-  const canCancel = reason.trim().length >= 3 && !cancelOrderAction.isPending;
+  const canCancel = actionsAvailable && reason.trim().length >= 3 && !cancelOrderAction.isPending;
 
   return (
     <Dialog
       open={open}
+      TransitionProps={{ onExited: lifecycle.onExited }}
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
@@ -105,6 +118,7 @@ export const CancelOrderDialog = ({
             onClick={handleClose}
             size="small"
             aria-label="Закрыть окно отмены заказа"
+            disabled={cancelOrderAction.isPending}
           >
             <Close />
           </IconButton>
@@ -112,6 +126,7 @@ export const CancelOrderDialog = ({
       </DialogTitle>
 
       <DialogContent>
+        <OrderRefreshWarning />
         {/* Информация о заказе */}
         <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: "grey.50" }}>
           <Typography variant="subtitle2" gutterBottom>
@@ -164,6 +179,7 @@ export const CancelOrderDialog = ({
               <Chip
                 key={quickReason}
                 label={quickReason}
+                disabled={cancelOrderAction.isPending}
                 onClick={() => handleQuickReasonClick(quickReason)}
                 variant={reason === quickReason ? "filled" : "outlined"}
                 color={reason === quickReason ? "primary" : "default"}

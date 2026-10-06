@@ -16,12 +16,16 @@ export function AdminProductEditor({ session, id }: { session: number | null; id
   const product = useAdminProduct(session, id);
   const agents = useAgents(session);
   const relations = useAdminProductRelations(session, id, !!product.data);
+  const baseline = useRef<{ session: number | null; id: number; editor?: AdminProductEditorData }>({ session, id });
+  if (baseline.current.session !== session || baseline.current.id !== id) baseline.current = { session, id };
   let editor: AdminProductEditorData | undefined;
   let mergeError: unknown;
-  if (product.data && relations.data && !relations.error) {
-    try { editor = mergeAdminProduct(product.data, relations.data); } catch (error) { mergeError = error; }
+  if (product.data && relations.data) {
+    try { editor = mergeAdminProduct(product.data, relations.data); baseline.current.editor = editor; } catch (error) { mergeError = error; }
   }
+  editor ??= baseline.current.editor;
   const owned = !!agents.data?.some((agent) => agent.id === product.data?.participantId);
+  const writesEnabled = !product.error && !agents.error && !relations.error && !mergeError;
   if (!Number.isSafeInteger(id) || id <= 0) return <Alert severity="error">Некорректный ID товара</Alert>;
   if (product.data && product.data.id !== id) return <Alert severity="error">Загруженный товар не соответствует ID страницы. Редактирование недоступно.</Alert>;
   return <Stack spacing={2}>
@@ -29,16 +33,16 @@ export function AdminProductEditor({ session, id }: { session: number | null; id
     {product.data && <><Typography component="h1" variant="h4">{product.data.name}</Typography><Typography color="text.secondary">Товар #{id} · Бот #{product.data.participantId}</Typography>
       {!owned && agents.data && <Alert severity="warning">Владелец не входит в список ботов. Редактирование недоступно.</Alert>}
       {owned && <>
-        <ProductStatusActions product={product.data} session={session} disabled={editing} />
+        <ProductStatusActions product={product.data} session={session} disabled={editing || !!product.error || !!agents.error || (!!relations.data && !writesEnabled)} />
         <RequestFeedback pending={relations.isPending} error={relations.error || mergeError} retry={() => void relations.refetch()} />
         {(relations.error || mergeError) && <Alert severity="warning">Категории и изображения недоступны. Сохранение заблокировано, чтобы не потерять связи товара.</Alert>}
-        {editor && <ProductForm key={id} initial={editor} session={session} onEditing={setEditing} />}
+        {editor && <ProductForm key={`${session}:${id}`} initial={editor} session={session} writesEnabled={writesEnabled} onEditing={setEditing} />}
       </>}
     </>}
   </Stack>;
 }
 const flattenCategories = (items: CategoryModel[], prefix = ""): { id: number; label: string }[] => items.flatMap((item) => [{ id: item.id, label: prefix + item.name }, ...flattenCategories(item.childs ?? [], `${prefix}${item.name} / `)]);
-function ProductForm({ initial, session, onEditing }: { initial: AdminProductEditorData; session: number | null; onEditing: (value: boolean) => void }) {
+function ProductForm({ initial, session, writesEnabled, onEditing }: { initial: AdminProductEditorData; session: number | null; writesEnabled: boolean; onEditing: (value: boolean) => void }) {
   const { product } = initial;
   const form = useForm<AdminProductInput>({ defaultValues: mapAdminProductToInput(initial) });
   const categories = useCategories();
@@ -48,13 +52,15 @@ function ProductForm({ initial, session, onEditing }: { initial: AdminProductEdi
   const [message, setMessage] = useState("");
   const [restorePending, setRestorePending] = useState(false);
   const lock = useRef(false);
+  const canWrite = useRef(writesEnabled);
+  canWrite.current = writesEnabled;
   useEffect(() => { onEditing(form.formState.isDirty || busy); return () => onEditing(false); }, [form.formState.isDirty, busy, onEditing]);
   useUnsavedChanges(form.formState.isDirty || busy);
   async function restore() {
     await adminProductApi.status(product.id, "ACTIVE"); setRestorePending(false);
   }
   async function save(input: AdminProductInput, activate: boolean) {
-    if (lock.current) return;
+    if (lock.current || !canWrite.current) return;
     lock.current = true; setBusy(true); setError(undefined); setMessage("");
     try {
       await adminProductApi.update(product.participantId, product.id, { ...input, availability: "EXTERNAL_PRODUCT" });
@@ -68,8 +74,8 @@ function ProductForm({ initial, session, onEditing }: { initial: AdminProductEdi
   initial.categoryIds.forEach((id) => { if (!options.some((option) => option.id === id)) options.push({ id, label: `Категория #${id}` }); });
   return <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}><Stack component="form" spacing={3} onSubmit={form.handleSubmit((input) => save(input, false))}>
     <RequestFeedback error={error} />{message && <Alert severity="success">{message}</Alert>}
-    {restorePending && <Alert severity="warning" action={<Button disabled={busy} onClick={async () => {
-      if (lock.current) return; lock.current = true; setBusy(true); setError(undefined);
+    {restorePending && <Alert severity="warning" action={<Button disabled={busy || !writesEnabled} onClick={async () => {
+      if (lock.current || !canWrite.current) return; lock.current = true; setBusy(true); setError(undefined);
       try { await restore(); setMessage("Товар восстановлен"); await client.invalidateQueries({ queryKey: adminProductKeys.all(session) }); }
       catch (cause) { setError(cause); } finally { lock.current = false; setBusy(false); }
     }}>Повторить восстановление</Button>}>Изменения сохранены, но восстановление не завершено.</Alert>}
@@ -96,8 +102,8 @@ function ProductForm({ initial, session, onEditing }: { initial: AdminProductEdi
       catch (cause) { setError(cause); } finally { lock.current = false; setBusy(false); }
     }} /></Button>
     <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ position: "sticky", bottom: 0, bgcolor: "background.paper", py: 2 }}>
-      <Button variant="contained" type="submit" disabled={busy}>Сохранить изменения</Button>
-      {product.status === "BLOCKED" && !restorePending && <Button variant="outlined" disabled={busy} onClick={form.handleSubmit((input) => save(input, true))}>Сохранить и восстановить</Button>}
+      <Button variant="contained" type="submit" disabled={busy || !writesEnabled}>Сохранить изменения</Button>
+      {product.status === "BLOCKED" && !restorePending && <Button variant="outlined" disabled={busy || !writesEnabled} onClick={form.handleSubmit((input) => save(input, true))}>Сохранить и восстановить</Button>}
     </Stack>
   </Stack></Paper>;
 }
