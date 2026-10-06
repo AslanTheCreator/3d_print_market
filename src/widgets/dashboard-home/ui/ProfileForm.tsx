@@ -24,7 +24,7 @@ import { useImageUpload, useImageCleanup } from "@/features/image-upload";
 import { useUpdateUser, UserBaseModel } from "@/entities/user";
 import { getImageUrl } from "@/shared/lib";
 import { useNotification } from "@/shared/ui/notification";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { usePrivateScope } from "@/shared/lib/query";
 import { ProfileFormSection } from "./components/ProfileFormSection";
 
@@ -48,20 +48,20 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
   const theme = useTheme();
   const { mutateAsync, isPending } = useUpdateUser();
   const { showNotification } = useNotification();
-  const [hasImageChanged, setHasImageChanged] = useState(false);
-  const [currentImageId, setCurrentImageId] = useState<number | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const savedRef = useRef(false);
+  const savingRef = useRef(false);
   const scope = usePrivateScope();
   const imageCleanup = useImageCleanup("PARTICIPANT");
 
   const {
     imagePreview,
     imageError,
-    imageIds,
+    imageState,
+    getImageState,
     isUploading,
     handleImageChange,
-    resetImageState,
+    removeImage,
   } = useImageUpload("PARTICIPANT");
 
   const existingImage = initialData?.image?.[0];
@@ -79,44 +79,37 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     },
   });
 
-  useEffect(() => {
-    if (imageIds.length > 0) {
-      setCurrentImageId(imageIds[0]);
-    }
-  }, [imageIds]);
-
   const handleImageChangeWrapper = (file: File) => {
-    if (savedRef.current) return;
-    handleImageChange(file);
-    setHasImageChanged(true);
+    if (savedRef.current || savingRef.current) return;
+    void handleImageChange(file);
   };
 
   const handleResetImage = () => {
-    if (savedRef.current) return;
-    resetImageState();
-    setHasImageChanged(true);
-    setCurrentImageId(null);
+    if (savedRef.current || savingRef.current) return;
+    removeImage();
   };
 
-  const isFormChanged = isDirty || hasImageChanged;
+  const isFormChanged = isDirty || imageState.selection.kind !== "unchanged";
   const isLoading = isPending || isUploading;
-  const displayImagePreview = hasImageChanged
-    ? imagePreview
-    : imagePreview || existingImagePreview;
+  const displayImagePreview = imageState.selection.kind === "unchanged"
+    ? existingImagePreview
+    : imagePreview;
 
   const onSubmit = async (data: ProfileFormValues) => {
-    if (savedRef.current || !scope.isCurrent()) return;
+    const avatar = getImageState();
+    if (savedRef.current || savingRef.current || avatar.status === "uploading" || !scope.isCurrent()) return;
+    savingRef.current = true;
     let imageIdToDelete: number | undefined;
     try {
       imageIdToDelete =
-        hasImageChanged && currentImageId === null
+        avatar.selection.kind === "explicitlyRemoved"
           ? (initialData?.imageId ?? existingImage?.id)
           : undefined;
 
       await mutateAsync({
         userData: {
           ...data,
-          imageId: hasImageChanged ? currentImageId : null,
+          imageId: avatar.selection.kind === "uploaded" ? avatar.selection.id : null,
           deadlineSending: 0,
           deadlinePayment: 0,
         },
@@ -129,6 +122,8 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
           : "Не удалось сохранить изменения";
       showNotification(msg, "error");
       return;
+    } finally {
+      savingRef.current = false;
     }
     if (!scope.isCurrent()) return;
     savedRef.current = true;
@@ -191,7 +186,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
         }}
       >
         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-          <Box component="fieldset" disabled={isSaved} sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}>
+          <Box component="fieldset" disabled={isSaved || isPending} sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}>
           <Grid container>
             <Grid
               item

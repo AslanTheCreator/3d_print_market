@@ -71,6 +71,16 @@ detail и собственных товаров только после успе
 cleanup-only retry и клиентский возврат в ранее загруженный каталог после
 delete/extend. Все записи используют mock API; реальный backend не вызывается.
 
+Stage 13: `npx playwright test avatar-replacement avatar-upload-model save-confirmation --project=chromium`.
+`avatar-upload-model.spec.ts` исполняет hook с контролируемыми promises: успешная A
+и отказ B, невалидный файл, reset во время upload, новый выбор/удаление и смена scope.
+`avatar-replacement.spec.ts` проверяет preview и отправленный ID в браузере,
+ошибку/retry сохранения профиля, пустой upload response, отсутствие DELETE при ошибке,
+явное удаление, запрет programmatic submit во время upload и late success после unmount.
+`save-confirmation` сохраняет покрытие PUT/cleanup error/retry. Выполняются также
+`dashboard-home.mobile.spec.ts`, полный `npm run test:e2e`, build и HTTP smoke.
+Все записи выполняются на mock API.
+
 Stage 12: `product-publication-model.spec.ts` проверяет настоящие mutations с
 QueryClient: синхронный lock при повторном вызове и пересоздании handler, ожидание
 записи/cleanup, повторную проверку readiness, retry после отказа, неизменный snapshot,
