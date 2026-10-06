@@ -26,6 +26,7 @@ import { getImageUrl, parsePositiveSafeInteger } from "@/shared/lib";
 import { usePrivateScope } from "@/shared/lib/query";
 import {
   clearProductFormDraft,
+  getProductFormDraftRevision,
   isProductFormDraftEmpty,
   ownsProductFormDraftPreview,
 } from "./productFormDraft";
@@ -35,6 +36,7 @@ import {
   isReadyForProductPrimaryAction,
 } from "./productPublishRequirements";
 import { createProductFormSubmitHandler } from "./productFormSubmit";
+import { createProductFormSubmission } from "./productFormSubmission";
 import {
   normalizeProductFormValues,
   useProductFormDraftState,
@@ -74,6 +76,14 @@ export const useProductForm = ({
   );
   const [isSaved, setIsSaved] = useState(false);
   const savedRef = useRef(false);
+  const [submission] = useState(createProductFormSubmission);
+  const [isSending, setIsSending] = useState(false);
+  const readyForSubmitRef = useRef(false);
+  const uploadingRef = useRef(0);
+  useEffect(() => {
+    submission.activate();
+    return () => submission.dispose();
+  }, [submission]);
   const imageCleanup = useImageCleanup("PRODUCT");
 
   const {
@@ -100,8 +110,8 @@ export const useProductForm = ({
     Boolean(product) &&
     !isEditableAvailability(product?.availability);
   const { showNotification } = useNotification();
-  const { mutate: createProduct, isPending: isCreating } = useCreateProduct();
-  const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct();
+  const { mutateAsync: createProduct, isPending: isCreating } = useCreateProduct();
+  const { mutateAsync: updateProduct, isPending: isUpdating } = useUpdateProduct();
   const imageUploadState = useMultipleImageUpload(
     "PRODUCT",
     PRODUCT_IMAGE_LIMIT,
@@ -134,6 +144,7 @@ export const useProductForm = ({
       formValues,
       imageUploadState,
       reset,
+      isSaved,
     });
 
   useEffect(() => {
@@ -258,7 +269,7 @@ export const useProductForm = ({
 
   const scope = usePrivateScope();
   const resetForm = () => {
-    if (!scope.isCurrent() || savedRef.current) return;
+    if (!scope.isCurrent() || submission.isBlocked() || uploadingRef.current > 0) return;
     if (isEditMode) {
       reset(initialFormValues);
       imageUploadState.resetImages(initialImages);
@@ -276,40 +287,33 @@ export const useProductForm = ({
   };
 
   const finishSavedProduct = () => {
-    if (!scope.isCurrent()) return;
+    if (!submission.isActive() || !scope.isCurrent()) return;
     showNotification("Товар успешно обновлён", "success");
     router.push(PRODUCT_LIST_PATH);
   };
-  const onProductSaved = async (ids: number[]) => {
+  const onProductSaved = async (values: ProductFormData, imageIds: number[], ids: number[]) => {
     savedRef.current = true;
     setIsSaved(true);
+    reset(values);
+    setInitialFormValues(values);
+    setInitialImages(imageIds.map(id => ({ id, preview: imageUploadState.images.find(image => image.id === id)?.preview ?? "" })));
     if (await imageCleanup.cleanup(ids)) finishSavedProduct();
+  };
+  const onProductCreated = (_values: ProductFormData, draftRevision: number) => {
+    savedRef.current = true;
+    setIsSaved(true);
+    if (getProductFormDraftRevision() !== draftRevision) return;
+    clearProductFormDraft(draftRevision);
+    resetDraftImageIds();
+    reset(defaultProductFormValues);
+    imageUploadState.resetImages();
   };
   const retryImageCleanup = async () => {
     if (await imageCleanup.retry()) finishSavedProduct();
   };
 
-  const onSubmit = createProductFormSubmitHandler({
-    createProduct,
-    isCurrentScope: scope.isCurrent,
-    effectiveImageIds,
-    hasSellerAccount,
-    hasSellerSocialNetwork,
-    hasSellerTransfer,
-    imageIdsToDelete,
-    onProductSaved,
-    isEditMode,
-    isProductReadOnly,
-    productId,
-    editTargetId: isEditTargetReady ? product?.id : undefined,
-    resetForm,
-    showNotification,
-    updateProduct,
-    navigateToProductList: () => router.push(PRODUCT_LIST_PATH),
-  });
-
   const hasChanges = isEditMode ? isDirty || hasImageChanges : true;
-  const isPending = isCreating || isUpdating;
+  const isPending = isCreating || isUpdating || isSending;
   const isFormValid =
     !isSaved &&
     isEditTargetReady &&
@@ -317,9 +321,37 @@ export const useProductForm = ({
     isDraftReady &&
     !draftImageError &&
     !imageUploadState.isUploading &&
+    !imageUploadState.hasError &&
+    !isCategoriesLoading &&
+    !categoriesError &&
+    !productError &&
     hasChanges &&
     isReadyForProductPrimaryAction(publishRequirements);
-  const isSubmitting = isPending || imageUploadState.isUploading;
+  readyForSubmitRef.current = isFormValid;
+
+  const onSubmit = createProductFormSubmitHandler({
+    createProduct,
+    isCurrentScope: scope.isCurrent,
+    submission,
+    isReadyForSubmit: () => readyForSubmitRef.current && uploadingRef.current === 0,
+    onBusyChange: setIsSending,
+    effectiveImageIds,
+    hasSellerAccount,
+    hasSellerSocialNetwork,
+    hasSellerTransfer,
+    imageIdsToDelete,
+    onProductSaved,
+    onProductCreated,
+    isEditMode,
+    isProductReadOnly,
+    productId,
+    editTargetId: isEditTargetReady ? product?.id : undefined,
+    showNotification,
+    updateProduct,
+    navigateToProductList: () => router.push(PRODUCT_LIST_PATH),
+  });
+
+  const isSubmitting = isPending || isSaved || imageUploadState.isUploading;
 
   return {
     availability,
@@ -337,7 +369,7 @@ export const useProductForm = ({
     errors,
     handleBack,
     handleFormSubmit: handleSubmit((data) => {
-      if (!savedRef.current) onSubmit(data);
+      if (!savedRef.current) return onSubmit(data);
     }),
     isSaved,
     imageCleanup,
@@ -345,15 +377,19 @@ export const useProductForm = ({
     imageUploadState: {
       ...imageUploadState,
       addImage: async (file: File) => {
-        if (!isDraftReady || draftImageError || savedRef.current) return;
-        await imageUploadState.addImage(file);
+        if (!isDraftReady || draftImageError || submission.isBlocked()) return;
+        uploadingRef.current++;
+        try { await imageUploadState.addImage(file); }
+        finally { uploadingRef.current--; }
       },
       removeImage: (index: number) => {
-        if (!isDraftReady || draftImageError || savedRef.current) return;
+        if (!isDraftReady || draftImageError || submission.isBlocked() || uploadingRef.current > 0) return;
         imageUploadState.removeImage(index);
       },
     },
-    isImageEditingBlocked: isSaved || !isDraftReady || draftImageError,
+    isImageEditingBlocked: isPending || isSaved || !isDraftReady || draftImageError,
+    isEditingBlocked: isPending || isSaved,
+    hasChanges,
     isCategoriesError: Boolean(categoriesError),
     isCategoriesLoading,
     isEditMode,

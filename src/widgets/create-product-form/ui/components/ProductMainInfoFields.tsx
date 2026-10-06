@@ -18,6 +18,7 @@ interface ProductMainInfoFieldsProps {
   control: Control<ProductFormData>;
   errors: FieldErrors<ProductFormData>;
   compactMobile?: boolean;
+  disabled?: boolean;
 }
 
 export const ProductMainInfoFields = ({
@@ -25,6 +26,7 @@ export const ProductMainInfoFields = ({
   control,
   errors,
   compactMobile = false,
+  disabled = false,
 }: ProductMainInfoFieldsProps): React.ReactElement => {
 
   return (
@@ -45,6 +47,7 @@ export const ProductMainInfoFields = ({
           rules={productNameRules}
           render={({ field }) => (
             <TextField
+              disabled={disabled}
               {...field}
               fullWidth
               required
@@ -65,6 +68,7 @@ export const ProductMainInfoFields = ({
           rules={productCategoryRules}
           render={({ field }) => (
             <ProductCategoryPicker
+              disabled={disabled}
               categories={categories}
               value={field.value}
               onChange={field.onChange}
@@ -83,6 +87,7 @@ export const ProductMainInfoFields = ({
           rules={productDescriptionRules}
           render={({ field }) => (
             <TextField
+              disabled={disabled}
               {...field}
               fullWidth
               id="description"

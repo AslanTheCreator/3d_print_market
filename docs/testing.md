@@ -71,6 +71,16 @@ detail и собственных товаров только после успе
 cleanup-only retry и клиентский возврат в ранее загруженный каталог после
 delete/extend. Все записи используют mock API; реальный backend не вызывается.
 
+Stage 12: `product-publication-model.spec.ts` проверяет настоящие mutations с
+QueryClient: синхронный lock при повторном вызове и пересоздании handler, ожидание
+записи/cleanup, повторную проверку readiness, retry после отказа, неизменный snapshot,
+late success/unmount, отмену таймера и защиту новой ревизии черновика.
+`product-publication.mobile.spec.ts` проверяет create/edit с отложенными ответами,
+Enter/programmatic submit, блокировку всех редактирующих controls на mobile/desktop,
+сохранение ввода после отказа, обновление baseline до cleanup и новый экземпляр после
+клиентского перехода. Выполняются также `create-product.mobile.spec.ts` и полный
+`npm run test:e2e`; все записи используют mock API.
+
 - **`npm audit --omit=dev --audit-level=high`** — проверка runtime-зависимостей, обязательная в Frontend CI после `npm ci`.
 - **`npm run lint`** — ESLint для `app` и `src`.
 - **`npm run typecheck`** — `next typegen` и TypeScript.

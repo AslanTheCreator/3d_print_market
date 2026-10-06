@@ -16,7 +16,11 @@ interface CreateProductFormProps {
 export const CreateProductForm = ({
   mode = "create",
   productId,
-}: CreateProductFormProps): React.ReactElement => {
+}: CreateProductFormProps): React.ReactElement => (
+  <ProductForm key={`${mode}:${productId ?? "new"}`} mode={mode} productId={productId} />
+);
+
+const ProductForm = ({ mode, productId }: Required<Pick<CreateProductFormProps, "mode">> & Pick<CreateProductFormProps, "productId">): React.ReactElement => {
   const formState = useProductForm({ mode, productId });
 
   return (

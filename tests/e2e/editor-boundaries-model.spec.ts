@@ -10,6 +10,7 @@ import { ApiError } from "@/shared/lib/errorHandler";
 import { parsePositiveSafeInteger, parseNonNegativeSafeInteger, parseCategoryId } from "@/shared/lib";
 import { defaultProductFormValues } from "@/entities/product/model/form";
 import { createProductFormSubmitHandler } from "@/widgets/create-product-form/model/productFormSubmit";
+import { createProductFormSubmission } from "@/widgets/create-product-form/model/productFormSubmission";
 import { mapAdminProductToInput } from "@/entities/product/model/admin";
 import { adminProductApi } from "@/entities/product/api/adminProductApi";
 import { parseShippingPrice, hasTransferBlockingValidationErrors } from "@/widgets/dashboard-settings/ui/shipping-methods/model";
@@ -53,11 +54,11 @@ test("invalid query and forced refetch never call product API", async () => {
   } finally { productApi.getProductById = original; client.clear(); }
 });
 
-test("submit requires matching loaded target; no invalid edit falls back to create", () => {
+test("submit requires matching loaded target; no invalid edit falls back to create", async () => {
   let writes = 0;
   const form = { ...defaultProductFormValues, name: "Товар", price: "100.25", count: "", categoryIds: [2] };
   for (const [id, target] of [[undefined, undefined], ["bad", undefined], ["0", 0], ["1.5", 1.5], ["Infinity", Infinity], ["9007199254740992", 9007199254740992], ["42", undefined], ["42", 43], ["42", 42]] as const) {
-    createProductFormSubmitHandler({ isCurrentScope: () => true, createProduct: () => { writes++; }, updateProduct: () => { writes++; }, effectiveImageIds: [11], hasSellerAccount: true, hasSellerTransfer: true, hasSellerSocialNetwork: true, imageIdsToDelete: [], onProductSaved: async () => {}, isEditMode: true, isProductReadOnly: false, productId: id, editTargetId: target, resetForm: () => {}, showNotification: () => {}, navigateToProductList: () => {} })(form);
+    await createProductFormSubmitHandler({ isCurrentScope: () => true, submission: createProductFormSubmission(), isReadyForSubmit: () => true, onBusyChange: () => {}, createProduct: async () => { writes++; }, updateProduct: async () => { writes++; }, effectiveImageIds: [11], hasSellerAccount: true, hasSellerTransfer: true, hasSellerSocialNetwork: true, imageIdsToDelete: [], onProductSaved: async () => {}, onProductCreated: () => {}, isEditMode: true, isProductReadOnly: false, productId: id, editTargetId: target, showNotification: () => {}, navigateToProductList: () => {} })(form);
   }
   expect(writes).toBe(1);
 });

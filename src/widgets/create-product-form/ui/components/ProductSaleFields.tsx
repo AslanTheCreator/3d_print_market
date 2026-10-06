@@ -1,4 +1,5 @@
 import type React from "react";
+import { useState } from "react";
 import {
   Box,
   FormControl,
@@ -33,6 +34,7 @@ interface ProductSaleFieldsProps {
   availability: EditableAvailability;
   compactMobile?: boolean;
   isEditMode?: boolean;
+  disabled?: boolean;
 }
 
 export const ProductSaleFields = ({
@@ -42,8 +44,10 @@ export const ProductSaleFields = ({
   availability,
   compactMobile = false,
   isEditMode = false,
+  disabled = false,
 }: ProductSaleFieldsProps): React.ReactElement => {
   const currentSymbol = getReadableCurrencySymbol(currentCurrency);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
 
   return (
     <Box
@@ -66,6 +70,7 @@ export const ProductSaleFields = ({
                 Доступность
               </Typography>
               <ToggleButtonGroup
+                disabled={disabled}
                 exclusive
                 value={field.value}
                 onChange={(_, value: EditableAvailability | null) => {
@@ -115,6 +120,7 @@ export const ProductSaleFields = ({
           rules={productPriceRules}
           render={({ field }) => (
             <TextField
+              disabled={disabled}
               {...field}
               fullWidth
               required
@@ -147,13 +153,17 @@ export const ProductSaleFields = ({
             <FormControl fullWidth required error={!!errors.currency}>
               <InputLabel id="currency-label">Валюта</InputLabel>
               <Select
+                disabled={disabled}
+                open={currencyOpen && !disabled}
+                onOpen={() => { if (!disabled) setCurrencyOpen(true); }}
+                onClose={() => setCurrencyOpen(false)}
                 labelId="currency-label"
                 id="currency"
                 label="Валюта"
                 {...field}
               >
                 {productCurrencies.map((currency) => (
-                  <MenuItem key={currency.code} value={currency.code}>
+                  <MenuItem key={currency.code} value={currency.code} disabled={disabled}>
                     {currency.code} ({getReadableCurrencySymbol(currency.code)})
                   </MenuItem>
                 ))}
@@ -173,6 +183,7 @@ export const ProductSaleFields = ({
           rules={isEditMode ? productEditCountRules : productCountRules}
           render={({ field }) => (
             <TextField
+              disabled={disabled}
               {...field}
               fullWidth
               required={!isEditMode}
@@ -197,6 +208,7 @@ export const ProductSaleFields = ({
             rules={productPrepaymentRules}
             render={({ field }) => (
               <TextField
+                disabled={disabled}
                 {...field}
                 fullWidth
                 required

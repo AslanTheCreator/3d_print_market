@@ -71,6 +71,7 @@ export const MultiImageUpload = ({
 
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
+    if (disabled) return;
 
     if (canAddImage) {
       setIsDragOver(true);

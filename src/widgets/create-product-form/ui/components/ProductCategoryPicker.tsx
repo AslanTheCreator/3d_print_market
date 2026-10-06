@@ -16,6 +16,7 @@ interface ProductCategoryPickerProps {
   onBlur: () => void;
   error?: string;
   compactMobile: boolean;
+  disabled?: boolean;
 }
 
 const categoryPaths = (categories: CategoryModel[], ancestors: string[] = []): Array<{
@@ -26,9 +27,10 @@ const categoryPaths = (categories: CategoryModel[], ancestors: string[] = []): A
 ]);
 
 export const ProductCategoryPicker = ({
-  categories, value, onChange, onBlur, error, compactMobile,
+  categories, value, onChange, onBlur, error, compactMobile, disabled = false,
 }: ProductCategoryPickerProps) => {
   const [open, setOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(false);
   const [selection, setSelection] = useState<number[]>([]);
   const [search, setSearch] = useState("");
   const [selectedOnly, setSelectedOnly] = useState(false);
@@ -51,6 +53,7 @@ export const ProductCategoryPicker = ({
   }, [open]);
 
   const openPicker = () => {
+    if (disabled) return;
     setSelection([...value]);
     setSearch("");
     setSelectedOnly(false);
@@ -60,13 +63,16 @@ export const ProductCategoryPicker = ({
   return (
     <>
       <FormControl
-        fullWidth required error={!!error}
+        fullWidth required error={!!error} disabled={disabled}
         sx={{ display: compactMobile ? { xs: "none", md: "inline-flex" } : "inline-flex" }}
       >
         <InputLabel id="category-label">Категория</InputLabel>
         <Select
           labelId="category-label" id="categoryIds" multiple label="Категория"
-          value={value} onChange={(event) => onChange(event.target.value as number[])}
+          open={desktopOpen && !disabled}
+          onOpen={() => { if (!disabled) setDesktopOpen(true); }}
+          onClose={() => setDesktopOpen(false)}
+          value={value} onChange={(event) => { if (!disabled) onChange(event.target.value as number[]); }}
           onBlur={onBlur} input={<OutlinedInput label="Категория" />}
           renderValue={(selected) => (
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
@@ -75,7 +81,7 @@ export const ProductCategoryPicker = ({
           )}
         >
           {flatCategories.map((category) => (
-            <MenuItem key={category.id} value={category.id}>
+            <MenuItem key={category.id} value={category.id} disabled={disabled}>
               <Checkbox checked={value.includes(category.id)} />
               <Box component="span" sx={{ pl: category.depth * 2, whiteSpace: "normal" }}>{category.name}</Box>
             </MenuItem>
@@ -92,6 +98,7 @@ export const ProductCategoryPicker = ({
               aria-haspopup="dialog" aria-expanded={open} aria-label="Выбрать категории"
               aria-describedby="product-categories-help" aria-invalid={!!error}
               onClick={openPicker} onBlur={onBlur}
+              disabled={disabled}
               sx={{ minHeight: 56, p: 1.5, textAlign: "left", justifyContent: "space-between", gap: 1,
                 borderColor: error ? "error.main" : "divider", color: "text.primary",
                 "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 } }}
@@ -109,7 +116,7 @@ export const ProductCategoryPicker = ({
             </FormHelperText>
           </Box>
           <Dialog
-            open={open} onClose={() => setOpen(false)} fullScreen
+            open={open && !disabled} onClose={() => setOpen(false)} fullScreen
             aria-labelledby="product-category-picker-title"
             TransitionProps={{ onExited: () => {
               const target = window.matchMedia("(min-width: 900px)").matches
@@ -121,12 +128,13 @@ export const ProductCategoryPicker = ({
             <DialogTitle id="product-category-picker-title" sx={{ px: 2, py: 1.5 }}>Категории товара</DialogTitle>
             <Stack spacing={1} sx={{ px: 2, pb: 1 }}>
               <TextField
-                autoFocus fullWidth label="Поиск категорий" value={search}
+                autoFocus fullWidth label="Поиск категорий" value={search} disabled={disabled}
                 onChange={(event) => setSearch(event.target.value)}
                 inputProps={{ enterKeyHint: "search" }}
                 onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }}
               />
               <Button
+                disabled={disabled}
                 aria-pressed={selectedOnly} onClick={() => setSelectedOnly((previous) => !previous)}
                 variant={selectedOnly ? "contained" : "outlined"}
                 sx={{ minHeight: 44, alignSelf: "flex-start" }}
@@ -146,6 +154,7 @@ export const ProductCategoryPicker = ({
                           "&:focus-within": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: -2 },
                           "& .MuiFormControlLabel-label": { minWidth: 0 } }}
                         control={<Checkbox
+                          disabled={disabled}
                           checked={selection.includes(category.id)}
                           inputProps={{ "aria-label": category.name }}
                           sx={{ width: 44, height: 44, flexShrink: 0 }}
@@ -164,7 +173,7 @@ export const ProductCategoryPicker = ({
             </DialogContent>
             <DialogActions sx={{ p: 2, pb: "calc(16px + env(safe-area-inset-bottom))", gap: 1 }}>
               <Button onClick={() => setOpen(false)} sx={{ minHeight: 48 }}>Отмена</Button>
-              <Button variant="contained" onClick={() => { onChange(selection); onBlur(); setOpen(false); }} sx={{ minHeight: 48, flex: 1 }}>Готово</Button>
+              <Button variant="contained" disabled={disabled} onClick={() => { if (!disabled) { onChange(selection); onBlur(); setOpen(false); } }} sx={{ minHeight: 48, flex: 1 }}>Готово</Button>
             </DialogActions>
           </Dialog>
         </>

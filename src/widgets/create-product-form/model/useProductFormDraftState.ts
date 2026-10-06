@@ -35,6 +35,7 @@ interface UseProductFormDraftStateOptions {
   formValues: ProductFormData;
   imageUploadState: UseMultipleImageUploadReturn;
   reset: UseFormReset<ProductFormData>;
+  isSaved: boolean;
 }
 
 export const useProductFormDraftState = ({
@@ -43,6 +44,7 @@ export const useProductFormDraftState = ({
   formValues,
   imageUploadState,
   reset,
+  isSaved,
 }: UseProductFormDraftStateOptions) => {
   const scope = usePrivateScope();
   const restoreRevision = useRef(0);
@@ -133,7 +135,7 @@ export const useProductFormDraftState = ({
   }, [isEditMode, reset, setUploadInitialImages, restoreAttempt, owner, scope]);
 
   useEffect(() => {
-    if (isEditMode || !isDraftReady || owner === undefined || !scope.isCurrent()) {
+    if (isEditMode || isSaved || !isDraftReady || owner === undefined || !scope.isCurrent()) {
       return;
     }
 
@@ -151,6 +153,7 @@ export const useProductFormDraftState = ({
     imageUploadState.imageIds,
     isDraftReady,
     isEditMode,
+    isSaved,
     preservedDraftImageIds.length,
   ]);
 

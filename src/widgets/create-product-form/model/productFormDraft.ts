@@ -15,6 +15,9 @@ const PRODUCT_FORM_CURRENCIES = ["RUB", "USD", "EUR", "GBP", "JPY", "CNY"];
 let memoryProductFormDraft: ProductFormDraft | null = null;
 let hasUnsavedMemoryDraft = false;
 let memoryOwner: number | null = null;
+let draftRevision = 0;
+
+export const getProductFormDraftRevision = () => draftRevision;
 
 export type ProductFormDraftStatus = "empty" | "saved" | "memory" | "error";
 
@@ -167,6 +170,10 @@ export const readProductFormDraft = (owner: number): ProductFormDraft | null => 
 };
 
 export const writeProductFormDraft = (draft: ProductFormDraft, owner: number): ProductFormDraftStatus => {
+  if (memoryOwner !== owner || !memoryProductFormDraft ||
+    JSON.stringify(serializeProductFormDraft(memoryProductFormDraft)) !== JSON.stringify(serializeProductFormDraft(draft))) {
+    draftRevision++;
+  }
   if (memoryOwner !== owner) {
     releaseMemoryPreviews();
     memoryOwner = owner;
@@ -234,7 +241,11 @@ const releaseMemoryPreviews = () => {
 export const ownsProductFormDraftPreview = (preview: string): boolean =>
   memoryProductFormDraft?.images.some((image) => image.preview === preview) ?? false;
 
-export const clearProductFormDraft = (): ProductFormDraftStatus => {
+export const clearProductFormDraft = (expectedRevision?: number): ProductFormDraftStatus => {
+  if (expectedRevision !== undefined && expectedRevision !== draftRevision) {
+    return hasUnsavedMemoryDraft ? "memory" : "saved";
+  }
+  draftRevision++;
   releaseMemoryPreviews();
   const storage = getDraftStorage();
   memoryProductFormDraft = null;

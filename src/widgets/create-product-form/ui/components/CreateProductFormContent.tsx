@@ -72,6 +72,7 @@ export const CreateProductFormContent = ({
 
   return (
     <Box component="form" onSubmit={formState.handleFormSubmit} noValidate aria-label="Форма товара"
+      aria-busy={formState.isPending} data-dirty={formState.hasChanges}
       sx={compactMobile ? {
         pb: { xs: "calc(var(--product-publish-height, 132px) + var(--product-keyboard-offset, 0px) + 16px)", md: 0 },
         "& input, & textarea, & button, & [role=combobox]": {
@@ -89,7 +90,7 @@ export const CreateProductFormContent = ({
             </Button>
           ) : undefined}
         >
-          {formState.imageCleanup.hasError
+          {mode === "create" ? "Товар создан. Переходим к списку товаров." : formState.imageCleanup.hasError
             ? "Товар сохранён, очистка изображений не завершена."
             : "Товар сохранён. Выполняется очистка изображений."}
         </Alert>
@@ -103,7 +104,7 @@ export const CreateProductFormContent = ({
       )}
       <Box
         component="fieldset"
-        disabled={formState.isSaved}
+        disabled={formState.isEditingBlocked}
         sx={{
           border: 0,
           p: 0,
@@ -147,6 +148,7 @@ export const CreateProductFormContent = ({
                 compactMobile={compactMobile}
               />
               <ProductMainInfoFields
+                disabled={formState.isEditingBlocked}
                 control={formState.control}
                 errors={formState.errors}
                 categories={formState.categories}
@@ -170,6 +172,7 @@ export const CreateProductFormContent = ({
                 compactMobile={compactMobile}
               />
               <ProductSaleFields
+                disabled={formState.isEditingBlocked}
                 isEditMode={formState.isEditMode}
                 control={formState.control}
                 errors={formState.errors}
