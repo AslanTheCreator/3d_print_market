@@ -22,7 +22,11 @@ import { useNotification } from "@/shared/ui/notification";
 import type { ImageMetadata } from "@/entities/image";
 import { getImageUrl } from "@/shared/lib";
 import { usePrivateScope } from "@/shared/lib/query";
-import { clearProductFormDraft, isProductFormDraftEmpty } from "./productFormDraft";
+import {
+  clearProductFormDraft,
+  isProductFormDraftEmpty,
+  ownsProductFormDraftPreview,
+} from "./productFormDraft";
 import { PRODUCT_IMAGE_LIMIT } from "./constants";
 import {
   buildProductPublishRequirements,
@@ -45,20 +49,13 @@ const buildInitialImages = (
   imageIds: number[] | undefined,
   productImages: ImageMetadata[] | undefined,
 ): InitialImageUploadState[] =>
-  (productImages ?? [])
-    .map((image, index) => {
-      const preview = getImageUrl(image, "medium");
-
-      if (!preview) {
-        return null;
-      }
-
-      return {
-        id: imageIds?.[index] ?? index,
-        preview,
-      };
-    })
-    .filter((image): image is InitialImageUploadState => image !== null);
+  (imageIds ?? []).map((id) => {
+    const image = productImages?.find((metadata) => metadata.id === id);
+    return {
+      id,
+      preview: image ? getImageUrl(image, "medium") ?? "" : "",
+    };
+  });
 
 export const useProductForm = ({
   mode = "create",
@@ -102,6 +99,7 @@ export const useProductForm = ({
   const imageUploadState = useMultipleImageUpload(
     "PRODUCT",
     PRODUCT_IMAGE_LIMIT,
+    isEditMode ? undefined : ownsProductFormDraftPreview,
   );
   const setUploadInitialImages = imageUploadState.setInitialImages;
 
@@ -312,7 +310,18 @@ export const useProductForm = ({
     errors,
     handleBack,
     handleFormSubmit: handleSubmit(onSubmit),
-    imageUploadState,
+    imageUploadState: {
+      ...imageUploadState,
+      addImage: async (file: File) => {
+        if (!isDraftReady || draftImageError) return;
+        await imageUploadState.addImage(file);
+      },
+      removeImage: (index: number) => {
+        if (!isDraftReady || draftImageError) return;
+        imageUploadState.removeImage(index);
+      },
+    },
+    isImageEditingBlocked: !isDraftReady || draftImageError,
     isCategoriesError: Boolean(categoriesError),
     isCategoriesLoading,
     isEditMode,

@@ -103,6 +103,7 @@ export const CreateProductFormContent = ({
           >
             <MultiImageUpload
               uploadState={formState.imageUploadState}
+              disabled={formState.isImageEditingBlocked}
               maxImages={PRODUCT_IMAGE_LIMIT}
               compactMobile={compactMobile}
             />

@@ -36,10 +36,14 @@ export interface UseMultipleImageUploadReturn {
 export const useMultipleImageUpload = (
   tag: ImageTag,
   maxImages: number = 3,
+  preservePreview?: (preview: string) => boolean,
 ): UseMultipleImageUploadReturn => {
   const [images, setImages] = useState<ImageUploadState[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const imagesRef = useRef<ImageUploadState[]>([]);
+  const preservePreviewRef = useRef(preservePreview);
+  preservePreviewRef.current = preservePreview;
+  const lifecycleRef = useRef(0);
 
   const revokePreviewIfNeeded = useCallback((url: string) => {
     if (url.startsWith("blob:")) {
@@ -65,10 +69,12 @@ export const useMultipleImageUpload = (
   }, [images]);
 
   useEffect(() => {
+    const lifecycle = lifecycleRef;
     return () => {
+      lifecycle.current++;
       imagesRef.current.forEach((img) => {
         // Загруженные фото могут быть восстановлены из черновика при переходе между страницами.
-        if (img.preview && img.id === null) {
+        if (img.preview && !preservePreviewRef.current?.(img.preview)) {
           revokePreviewIfNeeded(img.preview);
         }
       });
@@ -93,6 +99,7 @@ export const useMultipleImageUpload = (
       setUploadError(null);
 
       const preview = createImagePreview(file);
+      const lifecycle = lifecycleRef.current;
       const tempImage: ImageUploadState = {
         file,
         preview,
@@ -107,6 +114,7 @@ export const useMultipleImageUpload = (
 
       try {
         const response = await imageApi.saveImage(file, tag);
+        if (lifecycle !== lifecycleRef.current) return;
         const imageId = response[0];
 
         setImages((prev) => {
@@ -119,6 +127,7 @@ export const useMultipleImageUpload = (
           return next;
         });
       } catch (error) {
+        if (lifecycle !== lifecycleRef.current) return;
         console.error("Ошибка загрузки изображения:", serializeApiError(error));
         setUploadError("Не удалось загрузить изображение");
         setImages((prev) => {
@@ -158,7 +167,7 @@ export const useMultipleImageUpload = (
       setUploadError(null);
       setImages((prev) => {
         prev.forEach((img) => {
-          if (img.preview) {
+          if (img.preview && !nextImages.some((image) => image.preview === img.preview)) {
             revokePreviewIfNeeded(img.preview);
           }
         });

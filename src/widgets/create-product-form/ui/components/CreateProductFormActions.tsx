@@ -368,7 +368,7 @@ export const CreateProductFormActions = ({
           size="large"
           fullWidth
           onClick={handleReset}
-          disabled={isSubmitting || !isDraftReady}
+          disabled={isSubmitting}
           startIcon={<RestartAlt />}
           sx={{
             minHeight: 46,

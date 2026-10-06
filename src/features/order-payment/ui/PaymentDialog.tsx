@@ -240,6 +240,7 @@ export const PaymentDialog = ({
       resetImageState();
     } finally {
       setIsUploadingImage(false);
+      event.target.value = "";
     }
   };
 

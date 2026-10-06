@@ -86,6 +86,10 @@ export const imageApi = {
       `${API_URL}?tag=${tag}`,
       formData,
     );
+    if (!Array.isArray(data) || data.length === 0 ||
+      !data.every((id: unknown) => typeof id === "number" && Number.isSafeInteger(id) && id > 0)) {
+      throw new Error("Invalid image upload response");
+    }
     return data;
   },
   async deleteImages(imageIds: number[], tag: ImageTag): Promise<void> {

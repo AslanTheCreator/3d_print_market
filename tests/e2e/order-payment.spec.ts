@@ -340,6 +340,28 @@ const uploadPaymentProof = async (dialog: Locator) => {
 };
 
 test.describe("order payment flow", () => {
+  test("empty and invalid upload cannot enter payment payload; the same file can be retried", async ({ context, page, baseURL }) => {
+    await authenticate(context, baseURL);
+    const tracker = await mockPaymentApi(page, {
+      orders: [createPreorder({ orderId: 551, status: "AWAITING_PREPAYMENT", sellerId: 99 })],
+      accounts: [createAccount({ id: 901, participantId: 99, username: "Получатель", entityValue: "TEST-ACCOUNT" })],
+      uploadImageId: 9551,
+    });
+    await page.goto("/dashboard/purchase");
+    const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
+    for (const response of [[], [null], [0], [-1], ["9551"], [1.5]]) {
+      await page.route("**/images?tag=ORDER", route => fulfillJson(route, response));
+      await dialog.locator('input[type="file"]').setInputFiles(paymentProofFile);
+      await expect(dialog.getByText("Не удалось загрузить изображение на сервер", { exact: true })).toBeVisible();
+      await expect(dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true })).toBeDisabled();
+      expect(tracker.statusImageIds).toEqual([]);
+    }
+    await page.route("**/images?tag=ORDER", route => fulfillJson(route, [9551]));
+    await uploadPaymentProof(dialog);
+    await dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true }).click();
+    await expect.poll(() => tracker.statusImageIds).toEqual([9551]);
+  });
+
   test("shows quantity-aware preorder amounts, auto-selects one account and deletes an unlinked upload", async ({
     context,
     page,

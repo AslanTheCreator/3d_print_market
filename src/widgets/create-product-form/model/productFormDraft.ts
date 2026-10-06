@@ -231,6 +231,9 @@ const releaseMemoryPreviews = () => {
   }
 };
 
+export const ownsProductFormDraftPreview = (preview: string): boolean =>
+  memoryProductFormDraft?.images.some((image) => image.preview === preview) ?? false;
+
 export const clearProductFormDraft = (): ProductFormDraftStatus => {
   releaseMemoryPreviews();
   const storage = getDraftStorage();

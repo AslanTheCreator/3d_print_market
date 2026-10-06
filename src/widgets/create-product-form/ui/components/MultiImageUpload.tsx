@@ -23,12 +23,14 @@ interface MultiImageUploadProps {
   uploadState: UseMultipleImageUploadReturn;
   maxImages: number;
   compactMobile?: boolean;
+  disabled?: boolean;
 }
 
 export const MultiImageUpload = ({
   uploadState,
   maxImages,
   compactMobile = false,
+  disabled = false,
 }: MultiImageUploadProps) => {
   const theme = useTheme();
   const [isDragOver, setIsDragOver] = useState(false);
@@ -40,6 +42,7 @@ export const MultiImageUpload = ({
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
+    if (disabled) return;
     const availableSlots = Math.max(maxImages - images.length, 0);
     const files = Array.from(event.target.files || []).slice(0, availableSlots);
 
@@ -61,7 +64,7 @@ export const MultiImageUpload = ({
   };
 
   const handleUploadClick = () => {
-    if (canAddImage) {
+    if (canAddImage && !disabled) {
       fileInputRef.current?.click();
     }
   };
@@ -82,6 +85,7 @@ export const MultiImageUpload = ({
   const handleDrop = async (event: React.DragEvent) => {
     event.preventDefault();
     setIsDragOver(false);
+    if (disabled) return;
 
     const availableSlots = Math.max(maxImages - images.length, 0);
     const files = Array.from(event.dataTransfer.files).slice(0, availableSlots);
@@ -108,6 +112,7 @@ export const MultiImageUpload = ({
         type="file"
         accept="image/*"
         multiple
+        disabled={disabled}
         onChange={handleFileSelect}
         style={{ display: "none" }}
       />
@@ -183,6 +188,10 @@ export const MultiImageUpload = ({
                     >
                       {image.error}
                     </Typography>
+                  ) : !image.preview ? (
+                    <Typography variant="caption" sx={{ p: 1.5, textAlign: "center" }}>
+                      Фото #{image.id}: предпросмотр недоступен. Фото сохранено.
+                    </Typography>
                   ) : (
                     <img
                       src={image.preview}
@@ -218,7 +227,7 @@ export const MultiImageUpload = ({
                 <IconButton
                   size="small"
                   onClick={() => removeImage(index)}
-                  disabled={image.isUploading}
+                  disabled={disabled || image.isUploading}
                   aria-label={`Удалить изображение ${index + 1}`}
                   sx={{
                     ...(compactMobile && { width: { xs: 44, md: 30 }, height: { xs: 44, md: 30 } }),
@@ -265,6 +274,7 @@ export const MultiImageUpload = ({
               type="button"
               id="product-images"
               aria-label="Добавить фото"
+              disabled={disabled}
               elevation={0}
               onClick={handleUploadClick}
               onDragOver={handleDragOver}

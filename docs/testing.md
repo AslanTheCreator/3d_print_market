@@ -501,6 +501,15 @@ regressions, но не является production acceptance.
 
 ## Владение приватными данными
 
+Stage 09: `npx playwright test image-identity order-payment private-data-model --project=chromium`
+и `npx playwright test create-product.mobile --project=mobile-chromium`.
+`image-identity.spec.ts` проверяет пропуски первой/средней metadata, точные image IDs
+в PUT/DELETE, блокировку upload при failed/pending restore, retry, очистку с поздним
+restore, пустые/невалидные upload-ответы и владение blob URL при edit/create unmount.
+`order-payment.spec.ts` также проверяет отказ невалидного upload и повтор того же файла
+с единственным валидным ID в payment payload. API подменён; реальные файлы и платежи
+на backend не создаются.
+
 `private-data-model.spec.ts` исполняет lifecycle subscription, настоящие TanStack
 mutations и hooks с управляемыми promises: logout/expiry/A → B, сохранение scope
 при refresh, поздний GET, optimistic rollback, ручной refresh корзины и запрет
