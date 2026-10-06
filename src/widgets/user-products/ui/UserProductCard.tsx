@@ -52,6 +52,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
   id,
   name,
   price,
+  currency,
   prepaymentAmount,
   categories,
   image,
@@ -264,6 +265,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
 
             <ProductPriceDisplay
               price={price}
+              currency={currency}
               prepaymentAmount={prepaymentAmount}
               availability={availability}
               rating={sellerRating}

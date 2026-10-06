@@ -29,6 +29,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   id,
   name,
   price,
+  currency,
   prepaymentAmount,
   categories,
   image,
@@ -202,6 +203,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <Box sx={{ mt: 0.75 }}>
             <ProductPriceDisplay
               price={price}
+              currency={currency}
               prepaymentAmount={prepaymentAmount}
               availability={availability}
               rating={sellerRating}

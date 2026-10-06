@@ -4,10 +4,11 @@ import React from "react";
 import { Typography, Stack } from "@mui/material";
 import { Star } from "@mui/icons-material";
 import { formatPrice } from "@/shared/lib";
-import type { Availability } from "../model/types";
+import type { Availability, Product } from "../model/types";
 
 interface ProductPriceDisplayProps {
   price: number;
+  currency: Product["currency"];
   prepaymentAmount: number;
   availability: Availability;
   rating?: number;
@@ -16,6 +17,7 @@ interface ProductPriceDisplayProps {
 
 export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
   price,
+  currency,
   prepaymentAmount,
   availability,
   rating,
@@ -52,7 +54,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
               lineHeight: 1.2,
             }}
           >
-            {formatPrice(price)} ₽
+            {formatPrice(price, currency)}
           </Typography>
           {/* Цена предзаказа */}
           <Typography
@@ -63,7 +65,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
               fontWeight: 600,
             }}
           >
-            Предзаказ: {formatPrice(prepaymentAmount)} ₽
+            Предзаказ: {formatPrice(prepaymentAmount, currency)}
           </Typography>
         </Stack>
       ) : (
@@ -76,7 +78,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
               lineHeight: 1.2,
             }}
           >
-            {formatPrice(price)} ₽
+            {formatPrice(price, currency)}
           </Typography>
 
           {/* Пустая строка-заглушка */}

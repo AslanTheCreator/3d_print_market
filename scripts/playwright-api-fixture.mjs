@@ -123,6 +123,22 @@ const server = createServer((request, response) => {
     return;
   }
 
+  const financialProductIndex = Number(url.pathname.match(/^\/product\/(91[0-5])$/)?.[1]) - 910;
+  if (request.method === "GET" && Number.isInteger(financialProductIndex)) {
+    sendJson(response, 200, {
+      ...product,
+      id: 910 + financialProductIndex,
+      name: `Финансовый товар ${910 + financialProductIndex}`,
+      price: 1250.75,
+      prepaymentAmount: financialProductIndex % 2 ? 250.25 : 0,
+      currency: ["RUB", "USD", "EUR"][Math.floor(financialProductIndex / 2)],
+      availability: financialProductIndex % 2 ? "PREORDER" : "PURCHASABLE",
+      imageIds: [],
+      reviews: [],
+    });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/images/metadata") {
     const ids = (url.searchParams.get("ids") ?? "")
       .split(",")

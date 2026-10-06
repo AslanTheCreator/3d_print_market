@@ -9,6 +9,7 @@ import {
 const scenarios = [
   { name: "regular order", availability: "PURCHASABLE", count: 3, prepaymentAmount: 0, totalPrice: 3_600 },
   { name: "single preorder", availability: "PREORDER", count: 1, prepaymentAmount: 250, totalPrice: 750 },
+  { name: "fractional server amounts remain unchanged for multiple units", availability: "PREORDER", count: 3, prepaymentAmount: 750.75, totalPrice: 3001.5 },
   { name: "preorder quantity does not multiply the server amount", availability: "PREORDER", count: 3, prepaymentAmount: 500, totalPrice: 1_500 },
   { name: "external product with prepayment", availability: "EXTERNAL_PRODUCT", count: 3, prepaymentAmount: 700, totalPrice: 2_300 },
   { name: "external product without prepayment despite a stale product amount", availability: "EXTERNAL_PRODUCT", count: 2, prepaymentAmount: 0, totalPrice: 2_000 },
