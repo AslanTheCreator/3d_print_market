@@ -26,7 +26,7 @@ export function ProductDetailsWidget({
 }: ProductDetailsWidgetProps) {
   const router = useRouter();
 
-  const { productCard, allImages, isError } = useProductDetails({
+  const { productCard, allImages, isError, isNotFound } = useProductDetails({
     productId,
     initialProduct,
     initialDataUpdatedAt,
@@ -38,9 +38,9 @@ export function ProductDetailsWidget({
       <Container maxWidth="lg" sx={{ pt: { xs: 1, sm: 2, md: 3 } }}>
         <ErrorState
           type="products"
-          title="Не удалось открыть товар"
-          description="Товар не найден, был удален или временно недоступен. Попробуйте обновить страницу или вернуться к просмотру каталога."
-          onRetry={() => router.refresh()}
+          title={isNotFound ? "Товар не найден" : "Не удалось открыть товар"}
+          description={isNotFound ? "Товар больше недоступен. Вернитесь к просмотру каталога." : "Не удалось загрузить товар. Попробуйте обновить страницу или вернуться к просмотру каталога."}
+          onRetry={isNotFound ? undefined : () => router.refresh()}
           retryText="Обновить"
           actions={
             <Stack

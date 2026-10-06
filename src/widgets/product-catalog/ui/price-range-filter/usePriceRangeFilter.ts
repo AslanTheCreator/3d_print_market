@@ -35,6 +35,8 @@ export const usePriceRangeFilter = ({
     [value?.maxPrice, value?.minPrice],
   );
   const isOpen = surface !== null;
+  const minPriceError = minPriceInput.trim() !== "" && parseInputValue(minPriceInput) === undefined ? "Введите конечную неотрицательную цену" : undefined;
+  const maxPriceError = maxPriceInput.trim() !== "" && parseInputValue(maxPriceInput) === undefined ? "Введите конечную неотрицательную цену" : undefined;
   const triggerLabel = useMemo(
     () => (hasActiveValue ? formatDesktopRangeLabel(value) : "Цена, ₽"),
     [hasActiveValue, value],
@@ -172,6 +174,7 @@ export const usePriceRangeFilter = ({
   };
 
   const handleApply = () => {
+    if (minPriceError || maxPriceError) return;
     let minPrice = parseInputValue(minPriceInput);
     let maxPrice = parseInputValue(maxPriceInput);
 
@@ -233,6 +236,8 @@ export const usePriceRangeFilter = ({
     hasActiveValue,
     isOpen,
     maxPriceInput,
+    minPriceError,
+    maxPriceError,
     minPriceInput,
     popoverPaperRef,
     setMaxPriceInput,

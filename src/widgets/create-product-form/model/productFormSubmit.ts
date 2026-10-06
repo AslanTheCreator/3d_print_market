@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { parsePositiveSafeInteger } from "@/shared/lib";
 import {
   type ProductFormData,
   mapFormDataToCreateModel,
@@ -28,6 +29,7 @@ interface CreateProductFormSubmitHandlerParams {
   isEditMode: boolean;
   isProductReadOnly: boolean;
   productId: string | undefined;
+  editTargetId: number | undefined;
   resetForm: () => void;
   showNotification: ShowNotification;
   updateProduct: ReturnType<typeof useUpdateProduct>["mutate"];
@@ -46,6 +48,7 @@ export const createProductFormSubmitHandler = ({
   isEditMode,
   isProductReadOnly,
   productId,
+  editTargetId,
   resetForm,
   showNotification,
   updateProduct,
@@ -53,6 +56,11 @@ export const createProductFormSubmitHandler = ({
 }: CreateProductFormSubmitHandlerParams) => {
   return (data: ProductFormData) => {
     if (!isCurrentScope()) return;
+    const validProductId = parsePositiveSafeInteger(productId);
+    if (isEditMode && (validProductId === null || editTargetId !== validProductId)) {
+      showNotification("Сначала загрузите редактируемый товар по корректному адресу", "error");
+      return;
+    }
     if (isProductReadOnly) {
       showNotification(
         "Товар управляется внешним источником и недоступен для редактирования",
@@ -85,20 +93,20 @@ export const createProductFormSubmitHandler = ({
       return;
     }
 
-    const productData = mapFormDataToCreateModel(data, effectiveImageIds);
+    const productData = mapFormDataToCreateModel(data, effectiveImageIds, isEditMode ? "edit" : "create");
 
     if (!productData) {
       showNotification(
-        "Товары с внешней покупкой нельзя создавать или редактировать",
+        "Проверьте количество, цену и предоплату товара",
         "error",
       );
       return;
     }
 
-    if (isEditMode && productId) {
+    if (isEditMode && validProductId !== null) {
       updateProduct(
         {
-          productId: Number(productId),
+          productId: validProductId,
           data: productData,
         },
         {

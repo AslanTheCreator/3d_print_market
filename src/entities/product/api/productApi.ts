@@ -1,6 +1,8 @@
 import { ProductCreateModel } from "../model/types";
 import { attachImages, imageApi } from "@/entities/image/@x/product";
 import { authClient, publicClient } from "@/shared/api";
+import { ApiError } from "@/shared/lib/errorHandler";
+import { ProductNotFoundError } from "../lib/ProductNotFoundError";
 import { buildProductRequest } from "../lib/buildProductRequest";
 import type { FetchProductsParams } from "../model/productRequest";
 import type { Product, ProductDetail, ProductDto } from "../model/types";
@@ -76,7 +78,10 @@ export const productApi = {
   getProductById: async (id: number): Promise<ProductDetail> => {
     const { data } = await publicClient.get<ProductDetail>(
       `${API_URL_PRODUCT}/${id}`,
-    );
+    ).catch((error: unknown) => {
+      if (error instanceof ApiError && error.statusCode === 404) throw new ProductNotFoundError();
+      throw error;
+    });
     const images = await imageApi.getImageMetadata(data.imageIds);
 
     return { ...data, image: images };

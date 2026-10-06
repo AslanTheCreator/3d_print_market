@@ -15,6 +15,7 @@ import {
 import { Controller, type Control, type FieldErrors } from "react-hook-form";
 import {
   productCountRules,
+  productEditCountRules,
   productCurrencies,
   productCurrencyRules,
   productPrepaymentRules,
@@ -31,6 +32,7 @@ interface ProductSaleFieldsProps {
   errors: FieldErrors<ProductFormData>;
   availability: EditableAvailability;
   compactMobile?: boolean;
+  isEditMode?: boolean;
 }
 
 export const ProductSaleFields = ({
@@ -39,6 +41,7 @@ export const ProductSaleFields = ({
   errors,
   availability,
   compactMobile = false,
+  isEditMode = false,
 }: ProductSaleFieldsProps): React.ReactElement => {
   const currentSymbol = getReadableCurrencySymbol(currentCurrency);
 
@@ -167,18 +170,18 @@ export const ProductSaleFields = ({
         <Controller
           name="count"
           control={control}
-          rules={productCountRules}
+          rules={isEditMode ? productEditCountRules : productCountRules}
           render={({ field }) => (
             <TextField
               {...field}
               fullWidth
-              required
+              required={!isEditMode}
               id="count"
               label="Количество"
               placeholder="1"
               error={!!errors.count}
               helperText={
-                errors.count?.message ?? "Сколько единиц доступно."
+                errors.count?.message ?? (isEditMode ? "0 — нет в наличии. Пустое поле — без ограничения количества." : "Сколько единиц доступно.")
               }
               inputProps={{ inputMode: "numeric" }}
             />

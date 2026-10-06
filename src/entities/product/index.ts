@@ -17,6 +17,8 @@ export {
   mapProductDetailToFormData,
   productCategoryRules,
   productCountRules,
+  productEditCountRules,
+  validateProductCount,
   productCurrencies,
   productCurrencyRules,
   productDescriptionRules,
@@ -31,9 +33,10 @@ export {
 } from "./lib/productExpirationUtils";
 
 export { productApi } from "./api/productApi";
+export { ProductNotFoundError } from "./lib/ProductNotFoundError";
 export { buildProductRequest } from "./lib/buildProductRequest";
 export * from "./model";
 export { adminProductApi } from "./api/adminProductApi";
 export { adminProductKeys, useAdminProductLists, useAdminProduct, useAdminProductRelations } from "./model/adminQueries";
-export { mergeAdminProduct } from "./model/admin";
+export { mergeAdminProduct, mapAdminProductToInput } from "./model/admin";
 export type { AdminProductDto, AdminProductInput, AdminProductEditorData } from "./model/admin";

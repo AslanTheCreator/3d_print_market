@@ -8,6 +8,8 @@ interface PriceRangeDesktopPanelProps {
   popoverPaperRef: React.RefObject<HTMLDivElement | null>;
   minPriceInput: string;
   maxPriceInput: string;
+  minPriceError?: string;
+  maxPriceError?: string;
   onMinPriceChange: (value: string) => void;
   onMaxPriceChange: (value: string) => void;
   onApply: () => void;
@@ -24,6 +26,8 @@ export const PriceRangeDesktopPanel = ({
   popoverPaperRef,
   minPriceInput,
   maxPriceInput,
+  minPriceError,
+  maxPriceError,
   onMinPriceChange,
   onMaxPriceChange,
   onApply,
@@ -83,12 +87,14 @@ export const PriceRangeDesktopPanel = ({
               <PriceInput
                 label="От"
                 value={minPriceInput}
+                error={minPriceError}
                 onChange={onMinPriceChange}
                 onSubmit={onApply}
               />
               <PriceInput
                 label="До"
                 value={maxPriceInput}
+                error={maxPriceError}
                 onChange={onMaxPriceChange}
                 onSubmit={onApply}
               />

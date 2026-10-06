@@ -2,16 +2,17 @@ import { formatPrice } from "@/shared/lib";
 import type { PriceRange } from "@/entities/product";
 
 export const normalizeInputValue = (value: string): string =>
-  value.replace(/\D/g, "");
+  value.replace(/\s/g, "").replace(/,/g, ".");
 
 export const parseInputValue = (value: string): number | undefined => {
   const normalized = normalizeInputValue(value);
 
-  if (!normalized) {
+  if (!/^\d+(\.\d*)?$/.test(normalized)) {
     return undefined;
   }
 
-  return Number(normalized);
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : undefined;
 };
 
 export const formatInputValue = (value?: number): string => {

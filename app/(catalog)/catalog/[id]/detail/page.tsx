@@ -1,6 +1,8 @@
 import { cache } from "react";
 import type { Metadata } from "next";
-import { productApi } from "@/entities/product/server";
+import { notFound } from "next/navigation";
+import { productApi, ProductNotFoundError } from "@/entities/product/server";
+import { parsePositiveSafeInteger } from "@/shared/lib";
 import { SITE_INFO } from "@/shared/config";
 import type { ProductDetail } from "@/entities/product";
 import { ProductDetailsWidget } from "@/widgets/product-details";
@@ -12,9 +14,9 @@ interface ProductDetailPageProps {
 }
 
 const getProductDetails = cache(async (id: string): Promise<ProductDetail> => {
-  const productId = Number(id);
+  const productId = parsePositiveSafeInteger(id);
 
-  if (!Number.isInteger(productId) || productId <= 0) {
+  if (productId === null) {
     throw new Error("Invalid product id");
   }
 
@@ -51,6 +53,10 @@ export const generateMetadata = async ({
   const { id } = await params;
   const canonicalPath = getProductCanonicalPath(id);
 
+  if (parsePositiveSafeInteger(id) === null) {
+    return { title: "Товар не найден", robots: { index: false, follow: false } };
+  }
+
   try {
     const product = await getProductDetails(id);
     const description = getProductMetadataDescription(product);
@@ -70,9 +76,9 @@ export const generateMetadata = async ({
         type: "website",
       },
     };
-  } catch {
+  } catch (error) {
     return {
-      title: "Товар не найден",
+      title: error instanceof ProductNotFoundError ? "Товар не найден" : "Товар временно недоступен",
       alternates: {
         canonical: canonicalPath,
       },
@@ -90,13 +96,14 @@ const getInitialProduct = async (
   product: ProductDetail | undefined;
   hasError: boolean;
   fetchedAt: number;
+  isNotFound: boolean;
 }> => {
   try {
     const product = await getProductDetails(id);
 
-    return { product, hasError: false, fetchedAt: Date.now() };
-  } catch {
-    return { product: undefined, hasError: true, fetchedAt: Date.now() };
+    return { product, hasError: false, isNotFound: false, fetchedAt: Date.now() };
+  } catch (error) {
+    return { product: undefined, hasError: true, isNotFound: error instanceof ProductNotFoundError, fetchedAt: Date.now() };
   }
 };
 
@@ -104,7 +111,9 @@ export default async function ProductDetailPage({
   params,
 }: ProductDetailPageProps) {
   const { id } = await params;
-  const { product, hasError, fetchedAt } = await getInitialProduct(id);
+  if (parsePositiveSafeInteger(id) === null) notFound();
+  const { product, hasError, fetchedAt, isNotFound } = await getInitialProduct(id);
+  if (isNotFound) notFound();
 
   return (
     <ProductDetailsWidget

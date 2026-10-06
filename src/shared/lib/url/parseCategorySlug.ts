@@ -1,11 +1,12 @@
+import { parsePositiveSafeInteger } from "./parseInteger";
+
 /**
  * Извлекает ID категории из slug
  * @example "123-electronics" -> 123
  */
 export const parseCategoryId = (slug: string): number | null => {
   const categoryIdString = slug.split("-")[0];
-  const categoryId = parseInt(categoryIdString, 10);
-  return isNaN(categoryId) ? null : categoryId;
+  return parsePositiveSafeInteger(categoryIdString);
 };
 
 /**

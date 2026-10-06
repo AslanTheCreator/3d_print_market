@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useProductById } from "./useProductQueries";
+import { ProductNotFoundError } from "../lib/ProductNotFoundError";
 import { getImageUrl } from "@/shared/lib";
 import type { ProductDetail } from "./types";
 import type { ImageGalleryImage } from "@/shared/ui/image-gallery";
@@ -17,6 +18,7 @@ interface UseProductDetailsReturn {
   allImages: ImageGalleryImage[];
   isError: boolean;
   error: Error | null;
+  isNotFound: boolean;
 }
 
 export const useProductDetails = ({
@@ -73,5 +75,6 @@ export const useProductDetails = ({
     allImages,
     error,
     isError: initialError || isError,
+    isNotFound: error instanceof ProductNotFoundError,
   };
 };

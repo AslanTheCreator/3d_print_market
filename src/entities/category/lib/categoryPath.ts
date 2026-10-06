@@ -1,4 +1,4 @@
-import { extractLastCategoryId, normalizeSlugParam } from "@/shared/lib";
+import { extractLastCategoryId, normalizeSlugParam, parseCategoryId } from "@/shared/lib";
 import type { CategoryModel } from "../model/types";
 import type { CategoryPath } from "../model/types";
 import { createBreadcrumbs, generateCategoryTitle } from "./createBreadcrumbs";
@@ -24,7 +24,7 @@ export const getCategoryPathFromSlugs = (
 ): CategoryPath | null => {
   const normalizedSlugs = normalizeSlugParam(slugs);
 
-  if (normalizedSlugs.length === 0) return null;
+  if (normalizedSlugs.length === 0 || normalizedSlugs.some(slug => parseCategoryId(slug) === null)) return null;
 
   const categoryId = extractLastCategoryId(normalizedSlugs);
 

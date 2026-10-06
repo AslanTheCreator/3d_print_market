@@ -1,5 +1,6 @@
 import { cache } from "react";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import {
   categoryApi,
   getCategoryPathFromSlugs,
@@ -42,6 +43,7 @@ const getCategoryMetadataDescription = (categoryPath: CategoryPath): string =>
 const getCategoryPath = cache(
   async (slugKey: string): Promise<CategoryPath | null> => {
     const slugs = slugKey.split("/").filter(Boolean);
+    if (!getCategoryPathFromSlugs(slugs)) return null;
 
     try {
       const categories = await categoryApi.getCategories();
@@ -126,6 +128,7 @@ export const generateMetadata = async ({
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
   const categoryPath = await getCategoryPath(getSlugKey(slug));
+  if (!categoryPath) notFound();
   const { products, hasError, fetchedAt } =
     await getInitialProducts(categoryPath);
 

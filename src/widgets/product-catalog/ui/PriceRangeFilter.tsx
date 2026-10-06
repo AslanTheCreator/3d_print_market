@@ -47,6 +47,8 @@ export const PriceRangeFilter = ({
         <PriceRangeMobileDrawer
           open={filter.isOpen}
           minPriceInput={filter.minPriceInput}
+          minPriceError={filter.minPriceError}
+          maxPriceError={filter.maxPriceError}
           maxPriceInput={filter.maxPriceInput}
           onMinPriceChange={filter.setMinPriceInput}
           onMaxPriceChange={filter.setMaxPriceInput}
@@ -62,6 +64,8 @@ export const PriceRangeFilter = ({
           anchorEl={filter.triggerWrapperRef.current}
           popoverPaperRef={filter.popoverPaperRef}
           minPriceInput={filter.minPriceInput}
+          minPriceError={filter.minPriceError}
+          maxPriceError={filter.maxPriceError}
           maxPriceInput={filter.maxPriceInput}
           onMinPriceChange={filter.setMinPriceInput}
           onMaxPriceChange={filter.setMaxPriceInput}

@@ -507,6 +507,25 @@ regressions, но не является production acceptance.
 
 Результат staging acceptance должен быть привязан к Git SHA и immutable image digest. Без этой связи локальный или CI-прогон не является доказательством готовности конкретного production artifact.
 
+## Границы редактора
+
+Stage 11 проверяется `product-form-mapping`, `product-contract-v129`,
+`editor-boundaries-model`, `editor-boundaries` и `route-boundaries` specs.
+Они покрывают edit count 0/null/положительный, nullable admin prepayment → 0,
+дробные и невалидные деньги/счётчики, loading/missing/mismatched edit target,
+отсутствие неправильных GET/PUT и нормализацию admin page/agent.
+`route-boundaries` проверяет SSR без JavaScript, metadata/noindex и фактический
+HTTP status; 200 допустим для streamed not-found, 404 до начала потока.
+Временный core/metadata отказ проверяется отдельно от отсутствующего товара.
+
+SSR fixture содержит товары 920 (core 404), 921 (503), 922 (metadata 404),
+923 (успех без изображений); `/__test/requests` предоставляет счётчики запросов
+только тестового сервера. HTTP smoke использует успешный fixture product 901.
+При внешнем `TEST_BASE_URL` для route specs нужно дополнительно задать
+`PLAYWRIGHT_FIXTURE_API_URL` на этот локальный fixture; иначе они пропускаются.
+Проверки этапа: lint, typecheck, architecture:check, build, HTTP smoke и указанные
+specs; admin/dashboard/auth regression выполняется по общей матрице выше.
+
 ## Documentation-only
 
 Если менялись только Markdown-файлы, достаточно проверить diff, ссылки и соответствие коду. Полный test suite не требуется.

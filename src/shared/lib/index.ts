@@ -1,4 +1,5 @@
 export { formatPrice } from "./utils/formatPrice";
+export { parsePositiveSafeInteger, parseNonNegativeSafeInteger } from "./url/parseInteger";
 export { createImagePreview, revokeImagePreview } from "./utils/fileUtils";
 export { validateImage } from "./validation/imageValidation";
 export { tokenStorage } from "./token/tokenStorage";

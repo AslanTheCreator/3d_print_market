@@ -4,6 +4,9 @@ import {
   isEditableAvailability,
   mapFormDataToCreateModel,
   mapProductDetailToFormData,
+  validateProductCount,
+  productPriceRules,
+  productPrepaymentRules,
 } from "@/entities/product/model/form";
 import type {
   ProductCreateModel,
@@ -108,4 +111,32 @@ test("new product mapping keeps the existing contract defaults", () => {
     externalUrl: "",
     prepaymentAmount: 0,
   });
+});
+
+for (const count of [0, null, 5]) {
+  test(`edit round-trip preserves count ${count}`, () => {
+    const form = mapProductDetailToFormData({ ...externalProduct, availability: "PURCHASABLE", count })!;
+    expect(form.count).toBe(count === null ? "" : String(count));
+    expect(validateProductCount(form.count, "edit")).toBe(true);
+    expect(mapFormDataToCreateModel({ ...form, name: "Изменённое имя" }, [101], "edit")?.count).toBe(count);
+    if (count === 0 || count === null) expect(mapFormDataToCreateModel(form, [101], "create")).toBeNull();
+  });
+}
+
+test("money and counters reject non-finite, malformed and unsafe values before payload", () => {
+  const form = { ...defaultProductFormValues, categoryIds: [3], name: "Товар", count: "2", price: "1250.75", availability: "PREORDER" as const, prepaymentAmount: "250.25" };
+  expect(mapFormDataToCreateModel(form, [101])).toMatchObject({ price: 1250.75, prepaymentAmount: 250.25, count: 2 });
+  const priceValidate = productPriceRules.validate as (value: string) => unknown;
+  const prepayValidate = productPrepaymentRules.validate as (value: string) => unknown;
+  for (const value of ["9".repeat(400), "NaN", "Infinity", "12wrong", "-1"]) {
+    expect(priceValidate(value)).not.toBe(true);
+    expect(prepayValidate(value)).not.toBe(true);
+    expect(mapFormDataToCreateModel({ ...form, price: value }, [101])).toBeNull();
+    expect(mapFormDataToCreateModel({ ...form, prepaymentAmount: value }, [101])).toBeNull();
+    expect(validateProductCount(value, "edit")).not.toBe(true);
+  }
+  for (const count of ["1.5", "9007199254740992"]) {
+    expect(mapFormDataToCreateModel({ ...form, count }, [101], "edit")).toBeNull();
+  }
+  expect(validateProductCount("1000000")).toBe(true);
 });

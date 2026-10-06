@@ -13,6 +13,8 @@ interface PriceRangeMobileDrawerProps {
   open: boolean;
   minPriceInput: string;
   maxPriceInput: string;
+  minPriceError?: string;
+  maxPriceError?: string;
   onMinPriceChange: (value: string) => void;
   onMaxPriceChange: (value: string) => void;
   onApply: () => void;
@@ -24,6 +26,8 @@ export const PriceRangeMobileDrawer = ({
   open,
   minPriceInput,
   maxPriceInput,
+  minPriceError,
+  maxPriceError,
   onMinPriceChange,
   onMaxPriceChange,
   onApply,
@@ -84,6 +88,7 @@ export const PriceRangeMobileDrawer = ({
           <PriceInput
             label="От"
             value={minPriceInput}
+            error={minPriceError}
             onChange={onMinPriceChange}
             onSubmit={onApply}
             compact
@@ -91,6 +96,7 @@ export const PriceRangeMobileDrawer = ({
           <PriceInput
             label="До"
             value={maxPriceInput}
+            error={maxPriceError}
             onChange={onMaxPriceChange}
             onSubmit={onApply}
             compact

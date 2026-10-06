@@ -1,4 +1,6 @@
 import { usePrivateScope } from "@/shared/lib/query";
+import { parsePositiveSafeInteger } from "@/shared/lib";
+import { ProductNotFoundError } from "../lib/ProductNotFoundError";
 import { useQuery } from "@tanstack/react-query";
 import { productApi } from "../api/productApi";
 import { productKeys } from "./queryKeys";
@@ -27,17 +29,19 @@ interface ProductNameSuggestionsOptions {
 }
 
 export const useProductById = (id?: string, options?: ProductByIdOptions) => {
-  const productId = id ? Number(id) : 0;
-  const isProductIdValid = Number.isFinite(productId) && productId > 0;
+  const productId = parsePositiveSafeInteger(id);
 
   return useQuery<ProductDetail>({
-    queryKey: productKeys.detail(productId),
-    queryFn: () => productApi.getProductById(productId),
-    enabled: (options?.enabled ?? true) && isProductIdValid,
+    queryKey: productKeys.detail(productId ?? 0),
+    queryFn: () => {
+      if (productId === null) throw new Error("Некорректный ID товара");
+      return productApi.getProductById(productId);
+    },
+    enabled: (options?.enabled ?? true) && productId !== null,
     initialData: options?.initialProduct,
     initialDataUpdatedAt: options?.initialDataUpdatedAt,
     staleTime: options?.staleTime ?? 5 * 60 * 1000,
-    retry: 2,
+    retry: (failureCount, error) => !(error instanceof ProductNotFoundError) && productId !== null && failureCount < 2,
   });
 };
 

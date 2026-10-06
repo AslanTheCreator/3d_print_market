@@ -3,7 +3,7 @@ import { categories, fulfillJson, image, orderFixture, png } from "./mobileAccou
 
 export const adminProductFixture = (id = 101, participantId = 2) => ({
   id, participantId, name: `Фигурка дракона ${id}`, description: "Описание товара", price: 4000,
-  prepaymentAmount: 1000, count: 0 as number | null, currency: "RUB", originality: "Оригинал",
+  prepaymentAmount: 1000 as number | null, count: 0 as number | null, currency: "RUB", originality: "Оригинал",
   availability: "EXTERNAL_PRODUCT", externalUrl: "https://t.me/example/123", status: "ACTIVE", createdAt: "2026-09-29T10:00:00Z", expirationDate: "2026-10-29T10:00:00Z",
 });
 export const adminOrderFixture = (id = 201, status = "BOOKED", prepayment = 2000) => ({

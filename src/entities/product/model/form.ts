@@ -58,26 +58,23 @@ export const productNameRules: RegisterOptions<ProductFormData, "name"> = {
   },
 };
 
+export const validateProductCount = (value: string, mode: "create" | "edit" = "create"): true | string => {
+  if (mode === "edit" && value.trim() === "") return true;
+  if (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value))) return "Введите безопасное целое число";
+  if (Number(value) < (mode === "edit" ? 0 : 1)) return mode === "edit" ? "Количество не может быть отрицательным" : "Количество должно быть больше 0";
+  return true;
+};
+
 export const productCountRules: RegisterOptions<ProductFormData, "count"> = {
   required: "Введите количество товара",
-  pattern: {
-    value: /^\d+$/,
-    message: "Количество должно быть целым числом",
-  },
-  validate: (value) => {
-    const numValue = parseInt(value, 10);
-    if (isNaN(numValue)) {
-      return "Введите корректное число";
-    }
-    if (numValue < 1) {
-      return "Количество должно быть больше 0";
-    }
-    if (numValue > 999999) {
-      return "Максимальное количество: 999999";
-    }
-    return true;
-  },
+  validate: value => validateProductCount(value),
 };
+
+export const productEditCountRules: RegisterOptions<ProductFormData, "count"> = {
+  validate: value => validateProductCount(value, "edit"),
+};
+
+const isPositiveMoney = (value: string) => /^\d+(\.\d{1,2})?$/.test(value) && Number.isFinite(Number(value)) && Number(value) > 0;
 
 export const productPriceRules: RegisterOptions<ProductFormData, "price"> = {
   required: "Введите цену товара",
@@ -86,7 +83,7 @@ export const productPriceRules: RegisterOptions<ProductFormData, "price"> = {
     message: "Введите корректную цену",
   },
   validate: (value) =>
-    parseFloat(value) > 0 || "Цена должна быть больше нуля",
+    isPositiveMoney(value) || "Введите конечную цену больше нуля",
 };
 
 export const productCurrencyRules: RegisterOptions<
@@ -106,7 +103,7 @@ export const productPrepaymentRules: RegisterOptions<
     message: "Введите корректную сумму",
   },
   validate: (value) =>
-    parseFloat(value) > 0 || "Сумма должна быть больше нуля",
+    isPositiveMoney(value) || "Введите конечную сумму больше нуля",
 };
 
 export const productDescriptionRules: RegisterOptions<
@@ -125,22 +122,25 @@ export const productDescriptionRules: RegisterOptions<
 export const mapFormDataToCreateModel = (
   formData: ProductFormData,
   imageIds: number[],
+  mode: "create" | "edit" = "create",
 ): ProductCreateModel | null => {
-  if (!isEditableAvailability(formData.availability)) {
+  if (!isEditableAvailability(formData.availability) ||
+      validateProductCount(formData.count, mode) !== true || !isPositiveMoney(formData.price) ||
+      (formData.availability === "PREORDER" && !isPositiveMoney(formData.prepaymentAmount))) {
     return null;
   }
 
   return {
-    count: parseInt(formData.count, 10) || null,
+    count: formData.count.trim() === "" ? null : Number(formData.count),
     categoryIds: formData.categoryIds,
     name: formData.name.trim(),
     imageIds,
-    price: parseFloat(formData.price),
+    price: Number(formData.price),
     currency: formData.currency,
     description: formData.description.trim(),
     availability: formData.availability,
     prepaymentAmount: formData.availability === "PREORDER"
-      ? parseFloat(formData.prepaymentAmount)
+      ? Number(formData.prepaymentAmount)
       : 0,
     originality: formData.originality,
     externalUrl: formData.externalUrl,
@@ -170,7 +170,7 @@ export const mapProductDetailToFormData = (
       product.availability === "PREORDER" && product.prepaymentAmount > 0
         ? String(product.prepaymentAmount)
         : "",
-    count: product.count !== null && product.count > 0 ? String(product.count) : "",
+    count: product.count === null ? "" : String(product.count),
     originality: product.originality,
     externalUrl: product.externalUrl ?? "",
   };

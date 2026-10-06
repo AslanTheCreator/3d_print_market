@@ -24,6 +24,7 @@ import {
   getShippingStatusText,
   hasTransferBlockingValidationErrors,
   hasTransferChanges,
+  parseShippingPrice,
   type TransferFormData,
   type TransferFormItem,
 } from "./model";
@@ -144,6 +145,7 @@ export const useShippingMethodsForm = ({
 
   const onSubmit = useCallback(
     async (data: TransferFormData) => {
+      if (hasTransferBlockingValidationErrors(data.items)) return;
       const operations: SettingsOperation[] = [];
 
       for (const [method, formItem] of Object.entries(data.items)) {
@@ -151,7 +153,7 @@ export const useShippingMethodsForm = ({
         const isFree = FREE_METHODS.has(method as ShippingMethod);
         const input: TransferInput = {
           sending: method as ShippingMethod,
-          price: isFree ? 0 : formItem.price,
+          price: isFree ? 0 : parseShippingPrice(formItem.price) ?? 0,
           currency: formItem.currency,
         };
 

@@ -5,7 +5,7 @@ const publicRoutes = [
   "/checkout",
   "/favorites",
   "/catalog/category/32-test",
-  "/catalog/1/detail",
+  "/catalog/901/detail",
 ];
 
 const protectedRoutes = [

@@ -1,4 +1,5 @@
 import type React from "react";
+import { useId } from "react";
 import { Box, InputBase, Typography } from "@mui/material";
 import { normalizeInputValue } from "./model";
 
@@ -8,6 +9,7 @@ interface PriceInputProps {
   onChange: (value: string) => void;
   onSubmit: () => void;
   compact?: boolean;
+  error?: string;
 }
 
 export const PriceInput = ({
@@ -16,7 +18,9 @@ export const PriceInput = ({
   onChange,
   onSubmit,
   compact = false,
+  error,
 }: PriceInputProps): React.ReactElement => {
+  const errorId = useId();
   return (
     <Box sx={{ flex: 1, minWidth: 0 }}>
       <Typography
@@ -60,8 +64,10 @@ export const PriceInput = ({
           }}
           placeholder="0"
           inputProps={{
-            inputMode: "numeric",
+            inputMode: "decimal",
             "aria-label": label,
+            "aria-invalid": Boolean(error),
+            "aria-describedby": error ? errorId : undefined,
           }}
           sx={{
             width: "100%",
@@ -72,6 +78,7 @@ export const PriceInput = ({
           }}
         />
       </Box>
+      {error && <Typography id={errorId} variant="caption" color="error">{error}</Typography>}
     </Box>
   );
 };

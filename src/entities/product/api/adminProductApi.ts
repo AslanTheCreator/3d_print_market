@@ -13,6 +13,10 @@ export const adminProductApi = {
     return (await publicClient.get<ProductDetailDto>(`/product/${id}`, { signal })).data;
   },
   async update(agentId: number, id: number, input: AdminProductInput) {
+    if (!Number.isFinite(input.price) || !Number.isFinite(input.prepaymentAmount) ||
+        (input.count !== null && (!Number.isSafeInteger(input.count) || input.count < 0))) {
+      throw new Error("Некорректные числовые значения товара");
+    }
     await authClient.put(`/admin/actions/agents/${agentId}/products/${id}`, input);
   },
   async status(id: number, productStatus: "ACTIVE" | "BLOCKED") {

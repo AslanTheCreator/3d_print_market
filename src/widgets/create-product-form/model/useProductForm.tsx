@@ -11,6 +11,7 @@ import {
   useCreateProduct,
   useProductById,
   useUpdateProduct,
+  ProductNotFoundError,
 } from "@/entities/product";
 import { useCategories } from "@/entities/category";
 import { useCurrentUser } from "@/entities/user";
@@ -21,7 +22,7 @@ import {
 } from "@/features/image-upload";
 import { useNotification } from "@/shared/ui/notification";
 import type { ImageMetadata } from "@/entities/image";
-import { getImageUrl } from "@/shared/lib";
+import { getImageUrl, parsePositiveSafeInteger } from "@/shared/lib";
 import { usePrivateScope } from "@/shared/lib/query";
 import {
   clearProductFormDraft,
@@ -64,6 +65,7 @@ export const useProductForm = ({
 }: UseProductFormOptions = {}) => {
   const router = useRouter();
   const isEditMode = mode === "edit";
+  const validProductId = parsePositiveSafeInteger(productId);
   const initializedProductIdRef = useRef<string | null>(null);
   const [initialFormValues, setInitialFormValues] =
     useState<ProductFormData>(defaultProductFormValues);
@@ -176,7 +178,7 @@ export const useProductForm = ({
   }, [imageUploadState.isUploading]);
 
   useEffect(() => {
-    if (!isEditMode || !productId || !product) {
+    if (!isEditMode || !productId || !product || product.id !== validProductId) {
       return;
     }
 
@@ -197,7 +199,9 @@ export const useProductForm = ({
     setInitialImages(nextImages);
     reset(nextFormValues);
     setUploadInitialImages(nextImages);
-  }, [isEditMode, product, productId, reset, setUploadInitialImages]);
+  }, [isEditMode, product, productId, validProductId, reset, setUploadInitialImages]);
+
+  const isEditTargetReady = !isEditMode || (validProductId !== null && product?.id === validProductId && initializedProductIdRef.current === productId);
 
   const availability = watch("availability");
   const currentCurrency = watch("currency");
@@ -219,6 +223,7 @@ export const useProductForm = ({
     name,
     price,
     count,
+    isEditMode,
     hasSellerTransfer,
     hasSellerAccount,
     hasSellerSocialNetwork,
@@ -296,6 +301,7 @@ export const useProductForm = ({
     isEditMode,
     isProductReadOnly,
     productId,
+    editTargetId: isEditTargetReady ? product?.id : undefined,
     resetForm,
     showNotification,
     updateProduct,
@@ -306,6 +312,7 @@ export const useProductForm = ({
   const isPending = isCreating || isUpdating;
   const isFormValid =
     !isSaved &&
+    isEditTargetReady &&
     !isProductReadOnly &&
     isDraftReady &&
     !draftImageError &&
@@ -353,8 +360,10 @@ export const useProductForm = ({
     isFormValid,
     isPending,
     isProductReadOnly,
-    isProductError: isEditMode && Boolean(productError),
-    isProductLoading: isEditMode && isProductLoading,
+    isEditTargetInvalid: isEditMode && validProductId === null,
+    isProductNotFound: isEditMode && productError instanceof ProductNotFoundError,
+    isProductError: isEditMode && (Boolean(productError) || (!isProductLoading && (!product || product.id !== validProductId))),
+    isProductLoading: isEditMode && (isProductLoading || (!!product && product.id === validProductId && !isProductReadOnly && !isEditTargetReady)),
     isSubmitting,
     publishRequirements,
     resetForm,

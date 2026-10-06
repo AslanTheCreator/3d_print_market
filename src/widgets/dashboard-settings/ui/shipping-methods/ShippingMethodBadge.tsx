@@ -1,7 +1,7 @@
 import type React from "react";
 import { Chip } from "@mui/material";
 import type { ShippingMethod } from "@/entities/transfer";
-import { FREE_METHODS, type TransferFormItem } from "./model";
+import { FREE_METHODS, parseShippingPrice, type TransferFormItem } from "./model";
 
 interface ShippingMethodBadgeProps {
   currencyLabels: Record<string, string>;
@@ -22,11 +22,12 @@ export const ShippingMethodBadge = ({
     return <Chip size="small" label="Бесплатно" color="success" />;
   }
 
-  if (item.price > 0) {
+  const price = parseShippingPrice(item.price);
+  if (price !== null && price > 0) {
     return (
       <Chip
         size="small"
-        label={`${item.price} ${({ RUB: "₽", USD: "$", EUR: "€" } as Record<string, string>)[item.currency] ?? currencyLabels[item.currency] ?? item.currency}`}
+        label={`${price} ${({ RUB: "₽", USD: "$", EUR: "€" } as Record<string, string>)[item.currency] ?? currencyLabels[item.currency] ?? item.currency}`}
         color="primary"
         variant="outlined"
       />

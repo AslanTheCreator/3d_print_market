@@ -19,6 +19,7 @@ interface BuildProductPublishRequirementsParams {
   name: string;
   price: string;
   count: string;
+  isEditMode?: boolean;
   hasSellerTransfer: boolean;
   hasSellerAccount: boolean;
   hasSellerSocialNetwork: boolean;
@@ -32,6 +33,7 @@ export const buildProductPublishRequirements = ({
   name,
   price,
   count,
+  isEditMode = false,
   hasSellerTransfer,
   hasSellerAccount,
   hasSellerSocialNetwork,
@@ -42,7 +44,7 @@ export const buildProductPublishRequirements = ({
   hasCategories: categoryIds.length > 0,
   hasName: name.trim().length > 0,
   hasPrice: price.trim().length > 0,
-  hasCount: count.trim().length > 0,
+  hasCount: isEditMode || count.trim().length > 0,
   hasSellerTransfer,
   hasSellerAccount,
   hasSellerSocialNetwork,

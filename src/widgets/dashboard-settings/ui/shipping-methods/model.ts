@@ -4,7 +4,7 @@ import type { ShippingMethod, Transfer } from "@/entities/transfer";
 
 export interface TransferFormItem {
   enabled: boolean;
-  price: number;
+  price: number | string;
   currency: Currency;
 }
 
@@ -18,6 +18,12 @@ export const REQUIRED_PRICE_METHODS = new Set<ShippingMethod>([
   "RUSSIAN_POST",
 ]);
 export const DEFAULT_CURRENCY: Currency = "RUB";
+
+export const parseShippingPrice = (value: number | string): number | null => {
+  if (typeof value === "string" && !/^\d+(\.\d*)?$/.test(value)) return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : null;
+};
 
 export function buildDefaultValues(
   methods: DictionaryItem[],
@@ -94,7 +100,7 @@ export function hasTransferChanges(
 
     if (wasEnabled && nowEnabled) {
       const isFree = FREE_METHODS.has(method as ShippingMethod);
-      if (!isFree && previous.price !== formItem.price) {
+      if (!isFree && previous.price !== parseShippingPrice(formItem.price)) {
         return true;
       }
       if (previous.currency !== formItem.currency) {
@@ -118,12 +124,13 @@ export function hasTransferBlockingValidationErrors(
 
     const shippingMethod = method as ShippingMethod;
     const requiresPrice = REQUIRED_PRICE_METHODS.has(shippingMethod);
+    const price = parseShippingPrice(formItem.price);
 
     if (!formItem.currency) {
       return true;
     }
 
-    if (requiresPrice && formItem.price <= 0) {
+    if (!FREE_METHODS.has(shippingMethod) && (price === null || (requiresPrice && price <= 0))) {
       return true;
     }
 

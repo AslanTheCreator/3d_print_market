@@ -6,7 +6,7 @@ export interface AdminProductDto {
   name: string;
   description: string;
   price: number;
-  prepaymentAmount: number;
+  prepaymentAmount: number | null;
   count: number | null;
   currency: ProductDetailDto["currency"];
   originality: string;
@@ -24,6 +24,14 @@ export interface AdminProductEditorData {
   product: AdminProductDto;
   categoryIds: number[];
   imageIds: number[];
+}
+export function mapAdminProductToInput({ product, categoryIds, imageIds }: AdminProductEditorData): AdminProductInput {
+  return {
+    name: product.name, description: product.description, price: product.price,
+    prepaymentAmount: product.prepaymentAmount ?? 0, count: product.count,
+    currency: product.currency, originality: product.originality,
+    availability: "EXTERNAL_PRODUCT", externalUrl: product.externalUrl ?? "", categoryIds, imageIds,
+  };
 }
 export function mergeAdminProduct(product: AdminProductDto, relations: ProductDetailDto): AdminProductEditorData {
   if (product.id !== relations.id || product.participantId !== relations.participantId ||

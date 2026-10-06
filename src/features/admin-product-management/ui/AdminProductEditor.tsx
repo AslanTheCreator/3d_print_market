@@ -6,7 +6,7 @@ import { Alert, Button, Checkbox, FormControlLabel, MenuItem, Paper, Stack, Text
 import { useAgents } from "@/entities/agent";
 import { useCategories, type CategoryModel } from "@/entities/category";
 import { AdminImages, imageApi } from "@/entities/image";
-import { adminProductApi, adminProductKeys, mergeAdminProduct, productCurrencies, useAdminProduct, useAdminProductRelations, type AdminProductEditorData, type AdminProductInput } from "@/entities/product";
+import { adminProductApi, adminProductKeys, mergeAdminProduct, mapAdminProductToInput, productCurrencies, useAdminProduct, useAdminProductRelations, type AdminProductEditorData, type AdminProductInput } from "@/entities/product";
 import { RequestFeedback } from "@/shared/ui/request-feedback";
 import { useUnsavedChanges } from "@/shared/lib";
 import { ProductStatusActions } from "./ProductStatusActions";
@@ -23,6 +23,7 @@ export function AdminProductEditor({ session, id }: { session: number | null; id
   }
   const owned = !!agents.data?.some((agent) => agent.id === product.data?.participantId);
   if (!Number.isSafeInteger(id) || id <= 0) return <Alert severity="error">Некорректный ID товара</Alert>;
+  if (product.data && product.data.id !== id) return <Alert severity="error">Загруженный товар не соответствует ID страницы. Редактирование недоступно.</Alert>;
   return <Stack spacing={2}>
     <RequestFeedback pending={product.isPending || agents.isPending} error={product.error || agents.error} retry={() => { void product.refetch(); void agents.refetch(); }} />
     {product.data && <><Typography component="h1" variant="h4">{product.data.name}</Typography><Typography color="text.secondary">Товар #{id} · Бот #{product.data.participantId}</Typography>
@@ -39,11 +40,7 @@ export function AdminProductEditor({ session, id }: { session: number | null; id
 const flattenCategories = (items: CategoryModel[], prefix = ""): { id: number; label: string }[] => items.flatMap((item) => [{ id: item.id, label: prefix + item.name }, ...flattenCategories(item.childs ?? [], `${prefix}${item.name} / `)]);
 function ProductForm({ initial, session, onEditing }: { initial: AdminProductEditorData; session: number | null; onEditing: (value: boolean) => void }) {
   const { product } = initial;
-  const form = useForm<AdminProductInput>({ defaultValues: {
-    name: product.name, description: product.description, price: product.price, prepaymentAmount: product.prepaymentAmount,
-    count: product.count, currency: product.currency, originality: product.originality, availability: "EXTERNAL_PRODUCT",
-    externalUrl: product.externalUrl ?? "", categoryIds: initial.categoryIds, imageIds: initial.imageIds,
-  } });
+  const form = useForm<AdminProductInput>({ defaultValues: mapAdminProductToInput(initial) });
   const categories = useCategories();
   const client = useQueryClient();
   const [busy, setBusy] = useState(false);
@@ -82,11 +79,11 @@ function ProductForm({ initial, session, onEditing }: { initial: AdminProductEdi
     <Controller name="categoryIds" control={form.control} render={({ field }) => <TextField select label="Категории" {...field} SelectProps={{ multiple: true }} disabled={busy || !categories.data}>{options.map((item) => <MenuItem key={item.id} value={item.id}>{item.label}</MenuItem>)}</TextField>} />
     <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
       {(["price", "prepaymentAmount"] as const).map((name) => <Controller key={name} name={name} control={form.control} rules={{ validate: (value) => Number.isFinite(value) || "Введите число" }} render={({ field, fieldState }) => <TextField {...field} fullWidth type="number" inputProps={{ step: "any" }} label={name === "price" ? "Цена" : "Предоплата"} disabled={busy}
-        error={!!fieldState.error} helperText={fieldState.error?.message} onChange={(event) => field.onChange(event.target.value === "" ? "" : Number(event.target.value))} />} />)}
+        error={!!fieldState.error} helperText={fieldState.error?.message ?? (name === "prepaymentAmount" && field.value === 0 ? "Без предоплаты" : undefined)} onChange={(event) => field.onChange(event.target.value === "" ? "" : Number(event.target.value))} />} />)}
       <Controller name="currency" control={form.control} render={({ field }) => <TextField {...field} select label="Валюта" disabled={busy} sx={{ minWidth: 110 }}>{productCurrencies.map((currency) => <MenuItem key={currency.code} value={currency.code}>{currency.code}</MenuItem>)}</TextField>} />
     </Stack>
     <FormControlLabel control={<Checkbox checked={form.watch("count") === null} disabled={busy} onChange={(_, checked) => form.setValue("count", checked ? null : 0, { shouldDirty: true })} />} label="Без ограничения количества" />
-    {form.watch("count") !== null && <Controller name="count" control={form.control} rules={{ validate: (value) => value === null || Number.isInteger(value) || "Введите целое число" }} render={({ field, fieldState }) => <TextField {...field} type="number" label="Остаток" disabled={busy} error={!!fieldState.error} helperText={fieldState.error?.message}
+    {form.watch("count") !== null && <Controller name="count" control={form.control} rules={{ validate: (value) => value === null || (Number.isSafeInteger(value) && value >= 0) || "Введите безопасное неотрицательное целое число" }} render={({ field, fieldState }) => <TextField {...field} type="number" label="Остаток" disabled={busy} error={!!fieldState.error} helperText={fieldState.error?.message}
       onChange={(event) => field.onChange(event.target.value === "" ? "" : Number(event.target.value))} />} />}
     <TextField label="Оригинальность" {...form.register("originality")} disabled={busy} />
     <TextField label="Внешняя ссылка" {...form.register("externalUrl", { validate: (value) => !!value.trim() || "Укажите внешнюю ссылку" })} disabled={busy} error={!!form.formState.errors.externalUrl} helperText={form.formState.errors.externalUrl?.message} />

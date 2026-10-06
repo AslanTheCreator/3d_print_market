@@ -49,6 +49,13 @@ docs/         документация
 
 Корневой `app/` отвечает за маршрутизацию. Route-файлы должны оставаться тонкими: получать параметры, настраивать metadata и собирать нижние слои.
 
+Product detail, seller edit и admin product/agent routes проверяют положительный
+safe integer до загрузки. Category route проверяет ID каждого slug. Неверный
+синтаксис вызывает `notFound()` вне catch; временная ошибка загрузки остаётся
+ошибкой с retry. Для admin pagination неверный page нормализуется в 0,
+невалидный agent filter исключается. SSR not-found добавляет `noindex`;
+после начала streaming ответ может иметь HTTP 200 вместо 404.
+
 Асинхронные route-сегменты с серверной загрузкой данных используют локальный
 `loading.tsx`, который делегирует отображение skeleton соответствующему widget.
 Главная страница изолирована в route group `app/(home)/`, чтобы её fallback не

@@ -86,6 +86,7 @@ const sendJson = (response, status, body) => {
   response.end(JSON.stringify(body));
 };
 
+const requestCounts = {};
 const server = createServer((request, response) => {
   if (!request.url) {
     sendJson(response, 400, { error: "Missing request URL" });
@@ -99,6 +100,12 @@ const server = createServer((request, response) => {
   }
 
   const url = new URL(request.url, `http://127.0.0.1:${port}`);
+
+  if (request.method === "GET" && url.pathname === "/__test/requests") {
+    sendJson(response, 200, requestCounts);
+    return;
+  }
+  requestCounts[url.pathname] = (requestCounts[url.pathname] ?? 0) + 1;
 
   if (request.method === "GET" && url.pathname === "/health") {
     sendJson(response, 200, { status: "ok" });
@@ -123,6 +130,15 @@ const server = createServer((request, response) => {
     return;
   }
 
+  if (request.method === "GET" && ["/product/920", "/product/921"].includes(url.pathname)) {
+    sendJson(response, url.pathname.endsWith("920") ? 404 : 503, { message: "Fixture failure" });
+    return;
+  }
+  if (request.method === "GET" && ["/product/922", "/product/923"].includes(url.pathname)) {
+    sendJson(response, 200, { ...product, id: Number(url.pathname.split("/").at(-1)), imageIds: url.pathname.endsWith("922") ? [9991] : [] });
+    return;
+  }
+
   const financialProductIndex = Number(url.pathname.match(/^\/product\/(91[0-5])$/)?.[1]) - 910;
   if (request.method === "GET" && Number.isInteger(financialProductIndex)) {
     sendJson(response, 200, {
@@ -140,6 +156,10 @@ const server = createServer((request, response) => {
   }
 
   if (request.method === "GET" && url.pathname === "/images/metadata") {
+    if (url.searchParams.get("ids") === "9991") {
+      sendJson(response, 404, { message: "Metadata missing" });
+      return;
+    }
     const ids = (url.searchParams.get("ids") ?? "")
       .split(",")
       .map(Number)

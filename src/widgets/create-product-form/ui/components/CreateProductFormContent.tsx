@@ -28,6 +28,10 @@ export const CreateProductFormContent = ({
   const theme = useTheme();
   const compactMobile = mode === "create";
 
+  if (formState.isEditTargetInvalid || formState.isProductNotFound) {
+    return <Alert severity="error">{formState.isProductNotFound ? "Товар не найден" : "Некорректный ID товара"}</Alert>;
+  }
+
   if (formState.isProductLoading) {
     return (
       <CreateProductFormLoadingState isEditMode={formState.isEditMode} />
@@ -166,6 +170,7 @@ export const CreateProductFormContent = ({
                 compactMobile={compactMobile}
               />
               <ProductSaleFields
+                isEditMode={formState.isEditMode}
                 control={formState.control}
                 errors={formState.errors}
                 availability={formState.availability}

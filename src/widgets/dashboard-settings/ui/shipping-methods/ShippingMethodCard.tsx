@@ -10,6 +10,7 @@ import {
   DEFAULT_CURRENCY,
   FREE_METHODS,
   REQUIRED_PRICE_METHODS,
+  parseShippingPrice,
   type TransferFormData,
   type TransferFormItem,
 } from "./model";
@@ -90,11 +91,13 @@ export const ShippingMethodCard = ({
                   control={control}
                   rules={{
                     validate: (value) => {
-                      if (!isEnabled || !isRequiredPrice) {
+                      if (!isEnabled) {
                         return true;
                       }
 
-                      return value > 0 || "Укажите стоимость доставки";
+                      const price = parseShippingPrice(value);
+                      if (price === null) return "Введите конечную неотрицательную стоимость";
+                      return !isRequiredPrice || price > 0 || "Укажите стоимость доставки";
                     },
                   }}
                   render={({ field: priceField }) => (
@@ -107,19 +110,10 @@ export const ShippingMethodCard = ({
                       }
                       onChange={(event) => {
                         onMarkUnsaved();
-                        const raw = event.target.value;
-
-                        if (raw !== "" && !/^\d+$/.test(raw)) {
-                          return;
-                        }
-
-                        const cleaned = raw.replace(/^0+(\d)/, "$1");
-                        priceField.onChange(
-                          cleaned === "" ? 0 : Number(cleaned),
-                        );
+                        priceField.onChange(event.target.value === "" ? 0 : event.target.value);
                       }}
                       type="text"
-                      inputMode="numeric"
+                      inputMode="decimal"
                       disabled={disabled}
                       fullWidth
                       label="Стоимость доставки"

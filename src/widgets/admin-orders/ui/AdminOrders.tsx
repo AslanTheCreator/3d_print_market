@@ -31,7 +31,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { RequestFeedback } from "@/shared/ui/request-feedback";
-import { useUrlState, formatDateTime } from "@/shared/lib";
+import { useUrlState, formatDateTime, parsePositiveSafeInteger, parseNonNegativeSafeInteger } from "@/shared/lib";
 import { AdminOrderDetail } from "./AdminOrderDetail";
 
 export function AdminOrders({ agentId }: { agentId?: number }) {
@@ -44,8 +44,8 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
   const status = adminOrderStatuses.includes(statusParam as OrderStatus)
     ? (statusParam as OrderStatus)
     : undefined;
-  const page = Math.max(0, Math.floor(Number(params.get("page")) || 0));
-  const selectedAgent = agentId ?? (Number(params.get("agent")) || undefined);
+  const page = parseNonNegativeSafeInteger(params.get("page")) ?? 0;
+  const selectedAgent = parsePositiveSafeInteger(agentId ?? params.get("agent")) ?? undefined;
   const query = useAdminOrders(sessionKey, {
     agentId: selectedAgent,
     status,

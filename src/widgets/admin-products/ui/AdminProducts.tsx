@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ProductStatusActions } from "@/features/admin-product-management";
 import { Alert, Box, Button, Chip, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { RequestFeedback } from "@/shared/ui/request-feedback";
-import { useUrlState } from "@/shared/lib";
+import { useUrlState, parsePositiveSafeInteger, parseNonNegativeSafeInteger } from "@/shared/lib";
 
 const statuses: Record<string, string> = { ACTIVE: "Активные", BLOCKED: "Заблокированные", TIME_EXPIRED: "Истёкшие", DELETED: "Удалённые" };
 const statusLabels: Record<string, string> = { ACTIVE: "Активен", BLOCKED: "Заблокирован", TIME_EXPIRED: "Истёк", DELETED: "Удалён" };
@@ -24,12 +24,12 @@ export function AdminProducts({ agentId }: { agentId?: number }) {
   const desktop = useMediaQuery(useTheme().breakpoints.up("md"));
   const agents = useAgents(sessionKey);
   const { params, set, currentUrl } = useUrlState();
-  const selected = agentId ?? (Number(params.get("agent")) || undefined);
+  const selected = parsePositiveSafeInteger(agentId ?? params.get("agent")) ?? undefined;
   const ids = (agents.data ?? []).filter((agent) => !selected || agent.id === selected).map((agent) => agent.id);
   const lists = useAdminProductLists(sessionKey, ids);
   const search = params.get("q") ?? "";
   const status = params.get("status") ?? "ACTIVE";
-  const page = Math.max(0, Math.floor(Number(params.get("page")) || 0));
+  const page = parseNonNegativeSafeInteger(params.get("page")) ?? 0;
   const products = lists.flatMap((list) => list.data ?? []).filter((item) => (!status || item.status === status) && `${item.id} ${item.name}`.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id - a.id);
   const pageCount = Math.max(1, Math.ceil(products.length / 20));
