@@ -4,6 +4,7 @@ import { cartApi } from "../api/cartApi";
 import { useCartQuantityStore } from "./cartQuantityStore";
 import { cartKeys } from "./queryKeys";
 import { ProductBasket } from "./types";
+import { type ApiError, isApiCancellation, transformToApiError } from "@/shared/lib/errorHandler";
 
 const toServerQuantityItems = (cart: ProductBasket[]) =>
   cart.map((item) => ({
@@ -119,7 +120,11 @@ export const useUpdateCartQuantity = (
   });
 };
 
-export const useRemoveFromCart = () => {
+export interface RemoveFromCartOptions {
+  onError?: (error: ApiError, productId: number) => void;
+}
+
+export const useRemoveFromCart = (options?: RemoveFromCartOptions) => {
   const scope = usePrivateScope();
   const queryClient = useQueryClient();
 
@@ -142,16 +147,17 @@ export const useRemoveFromCart = () => {
 
       return { previousCart };
     },
-    onError: (_err, _variables, context) => {
+    onError: (error, productId, context) => {
       if (context?.previousCart) {
         queryClient.setQueryData<ProductBasket[]>(
           scope.key(cartKeys.all),
           context.previousCart,
         );
       }
+      if (!isApiCancellation(error)) options?.onError?.(transformToApiError(error), productId);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: scope.key(cartKeys.all) });
+      return queryClient.invalidateQueries({ queryKey: scope.key(cartKeys.all) });
     },
   });
 };

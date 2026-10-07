@@ -71,7 +71,9 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     },
   });
 
-  const { handleRemoveItem, removingItemIds } = useCartItemRemoval();
+  const { handleRemoveItem, removingItemIds } = useCartItemRemoval({
+    onError: (error) => showNotification(`Не удалось удалить товар из корзины: ${error.message}`, "error"),
+  });
 
   const {
     inCart,

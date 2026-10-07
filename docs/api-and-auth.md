@@ -296,6 +296,16 @@ Zustand используется для session state в `entities/session` и �
 
 `usePrivateMutation` проверяет владельца перед отправкой и settlement callbacks. Ручные cache writes используют захваченный scope; корзина дополнительно проверяет его после каждого ожидания перед записью общей проекции. Очередь подтверждающих чтений разделена по scope. Количества больше не восстанавливаются из localStorage: после reload источником служит GET корзины.
 
+Toggle избранного откатывает только свою позицию, если её revision не заменена
+новой операцией. Добавление берёт типизированные pages каталога; итоговая
+invalidation списка выполняется после последней pending mutation текущего scope,
+включая отказ. `useAddToFavorites` / `useRemoveFromFavorites` принимают `onError`
+с нормализованным `ApiError`; feature показывает одно уведомление об отказе.
+`useRemoveFromCart` / `useCartItemRemoval` передают `onError(error, productId)`
+на уровень feature/widget. Успешное контрольное чтение корзины не скрывает
+ошибку DELETE; pending удаления очищается по завершении каждой операции.
+Cancellation и callbacks завершённого scope не показывают уведомлений.
+
 Черновик товара содержит `owner` — ID подтверждённого `/participant`. Восстановление ждёт профиль текущего scope; legacy и чужой owner не принимаются, включая reload. При logout/смене аккаунта очищаются память и storage, а принадлежащие memory draft blob URL освобождаются без DELETE серверных изображений. Отказ storage не позволяет восстановить чужой черновик; refresh того же аккаунта его не очищает.
 
 Изображения редактора сохраняют исходные `imageIds` независимо от полноты metadata;

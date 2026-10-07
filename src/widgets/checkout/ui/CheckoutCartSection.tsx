@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { Box, Checkbox, Paper, Stack, Typography, alpha, useTheme } from "@mui/material";
 import { useCartItemRemoval } from "@/entities/cart";
+import { useNotification } from "@/shared/ui/notification";
 import type { Transfer } from "@/entities/transfer";
 import type { SellerCheckoutGroup } from "../model/types";
 import { CheckoutSellerGroupCard } from "./CheckoutSellerGroupCard";
@@ -29,7 +30,10 @@ export const CheckoutCartSection = ({
   onRetryDelivery,
 }: CheckoutCartSectionProps) => {
   const theme = useTheme();
-  const { handleRemoveItem, removingItemIds } = useCartItemRemoval();
+  const { showNotification } = useNotification();
+  const { handleRemoveItem, removingItemIds } = useCartItemRemoval({
+    onError: (error) => showNotification(`Не удалось удалить товар из корзины: ${error.message}`, "error"),
+  });
   const totalItemsCount = sellerGroups.reduce(
     (total, group) => total + group.items.length,
     0,

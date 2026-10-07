@@ -3,11 +3,17 @@ import {
   useAddToFavorites,
   useRemoveFromFavorites,
 } from "@/entities/favorite";
+import { useNotification } from "@/shared/ui/notification";
+import type { ApiError } from "@/shared/lib/errorHandler";
 
 // Хук для переключения состояния избранного (добавить/удалить)
 export const useToggleFavorite = (isAuthenticated: boolean) => {
-  const addToFavorites = useAddToFavorites();
-  const removeFromFavorites = useRemoveFromFavorites();
+  const { showNotification } = useNotification();
+  const onError = (error: ApiError) => {
+    showNotification(`Не удалось изменить избранное: ${error.message}`, "error");
+  };
+  const addToFavorites = useAddToFavorites({ onError });
+  const removeFromFavorites = useRemoveFromFavorites({ onError });
   const { data: favorites = [] } = useFavoritesProducts(isAuthenticated);
 
   const toggleFavorite = (productId: number) => {

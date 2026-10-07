@@ -1,83 +1,78 @@
 import { usePrivateScope, usePrivateMutation } from "@/shared/lib/query";
-import { useQueryClient } from "@tanstack/react-query";
+import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
 import type { Product } from "@/entities/product/@x/favorite";
 import { favoriteProductKeys } from "@/entities/product/@x/favorite";
 import { favoritesApi } from "../api/favoritesApi";
 import { favoritesKeys } from "./queryKeys";
+import { type ApiError, isApiCancellation, transformToApiError } from "@/shared/lib/errorHandler";
+
+interface FavoritesMutationOptions {
+  onError?: (error: ApiError) => void;
+}
+
+const revisions = new WeakMap<AbortSignal, Map<number, symbol>>();
+
+const useFavoriteMutation = (adding: boolean, options?: FavoritesMutationOptions) => {
+  const scope = usePrivateScope();
+  const queryClient = useQueryClient();
+  const queryKey = scope.key(favoritesKeys.lists());
+  const mutationKey = [...queryKey, "toggle"];
+  let itemRevisions = revisions.get(scope.signal);
+  if (!itemRevisions) {
+    itemRevisions = new Map();
+    revisions.set(scope.signal, itemRevisions);
+  }
+  const currentRevisions = itemRevisions;
+
+  return usePrivateMutation({
+    mutationKey,
+    mutationFn: adding ? favoritesApi.addToFavorites : favoritesApi.removeFromFavorites,
+    onMutate: async (productId: number) => {
+      await queryClient.cancelQueries({ queryKey });
+      if (!scope.isCurrent()) throw new Error("Session ended");
+      const revision = Symbol();
+      currentRevisions.set(productId, revision);
+      const previousItem = queryClient.getQueryData<Product[]>(queryKey)
+        ?.find(product => product.id === productId);
+      const productData = adding ? queryClient
+        .getQueriesData<InfiniteData<Product[]>>({ queryKey: favoriteProductKeys.lists() })
+        .flatMap(([, data]) => data?.pages.flat() ?? [])
+        .find(product => product.id === productId) : undefined;
+
+      queryClient.setQueryData<Product[]>(queryKey, old => {
+        if (adding) {
+          if (!productData || old?.some(product => product.id === productId)) return old;
+          return [...(old ?? []), productData];
+        }
+        return old?.filter(product => product.id !== productId);
+      });
+      return { previousItem, revision };
+    },
+    onError: (error, productId, context) => {
+      if (context && currentRevisions.get(productId) === context.revision) {
+        queryClient.setQueryData<Product[]>(queryKey, old => {
+          const otherItems = old?.filter(product => product.id !== productId);
+          return context.previousItem
+            ? [...(otherItems ?? []), context.previousItem]
+            : otherItems;
+        });
+      }
+      if (!isApiCancellation(error)) options?.onError?.(transformToApiError(error));
+    },
+    onSettled: () => {
+      // Последняя операция сверяет весь список; ранний GET не затирает соседний optimistic toggle.
+      if (queryClient.isMutating({ mutationKey }) === 1) {
+        currentRevisions.clear();
+        return queryClient.invalidateQueries({ queryKey });
+      }
+    },
+  });
+};
 
 // Хук для добавления товара в избранное
-export const useAddToFavorites = () => {
-  const scope = usePrivateScope();
-  const queryClient = useQueryClient();
-
-  return usePrivateMutation({
-    mutationFn: favoritesApi.addToFavorites,
-    onMutate: async (productId: number) => {
-      await queryClient.cancelQueries({ queryKey: scope.key(favoritesKeys.lists()) });
-      if (!scope.isCurrent()) throw new Error("Session ended");
-      const previousFavorites = queryClient.getQueryData<Product[]>(
-        scope.key(favoritesKeys.lists()),
-      );
-
-      const productData = queryClient
-        .getQueryCache()
-        .findAll({ queryKey: favoriteProductKeys.lists() })
-        .flatMap((query) => (query.state.data as Product[]) || [])
-        .find((product) => product.id === productId);
-
-      if (productData && previousFavorites) {
-        queryClient.setQueryData<Product[]>(scope.key(favoritesKeys.lists()), (old) =>
-          old ? [...old, productData] : [productData],
-        );
-      }
-
-      return { previousFavorites };
-    },
-    onError: (error, productId, context) => {
-      if (context?.previousFavorites) {
-        queryClient.setQueryData(
-          scope.key(favoritesKeys.lists()),
-          context.previousFavorites,
-        );
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: scope.key(favoritesKeys.lists()) });
-    },
-  });
-};
+export const useAddToFavorites = (options?: FavoritesMutationOptions) =>
+  useFavoriteMutation(true, options);
 
 // Хук для удаления товара из избранного
-export const useRemoveFromFavorites = () => {
-  const scope = usePrivateScope();
-  const queryClient = useQueryClient();
-
-  return usePrivateMutation({
-    mutationFn: favoritesApi.removeFromFavorites,
-    onMutate: async (productId: number) => {
-      await queryClient.cancelQueries({ queryKey: scope.key(favoritesKeys.lists()) });
-      if (!scope.isCurrent()) throw new Error("Session ended");
-      const previousFavorites = queryClient.getQueryData<Product[]>(
-        scope.key(favoritesKeys.lists()),
-      );
-      if (previousFavorites) {
-        queryClient.setQueryData<Product[]>(
-          scope.key(favoritesKeys.lists()),
-          (old) => old?.filter((product) => product.id !== productId) || [],
-        );
-      }
-      return { previousFavorites };
-    },
-    onError: (error, productId, context) => {
-      if (context?.previousFavorites) {
-        queryClient.setQueryData(
-          scope.key(favoritesKeys.lists()),
-          context.previousFavorites,
-        );
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: scope.key(favoritesKeys.lists()) });
-    },
-  });
-};
+export const useRemoveFromFavorites = (options?: FavoritesMutationOptions) =>
+  useFavoriteMutation(false, options);

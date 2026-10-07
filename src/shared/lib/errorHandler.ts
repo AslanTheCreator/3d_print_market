@@ -77,6 +77,13 @@ export class ApiError extends Error {
   }
 }
 
+export function isApiCancellation(error: unknown): boolean {
+  if (error instanceof ApiError) {
+    return error.code === "ERR_CANCELED" || isApiCancellation(error.originalError);
+  }
+  return axios.isCancel(error) || (error instanceof Error && error.name === "AbortError");
+}
+
 /**
  * Коды ошибок от бэкенда для type-safe проверок
  */

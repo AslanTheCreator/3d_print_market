@@ -59,6 +59,19 @@ build, HTTP smoke и регрессия общего кабинета/auth. Вс
 
 ## Команды
 
+Stage 18: `npx playwright test list-mutations private-data-model cart-quantity-store-model --project=chromium`.
+`list-mutations-model.spec.ts` исполняет настоящие entity hooks и TanStack
+mutations с управляемыми promises: A fail после B success, rollback своей
+позиции/revision, optimistic add из следующей infinite page без дублей,
+refetch после последней операции, нормализация ошибок и тишина при cancellation
+или завершении scope. Проверяются DELETE failure + успешный GET корзины,
+повтор удаления и синхронный lock быстрых вызовов.
+`list-mutations.spec.ts` проверяет optimistic иконку при pending POST,
+ошибку DELETE после unmount карточки избранного, один alert и успешный retry,
+удаление корзины из каталога и checkout с успешным контрольным чтением.
+Обязательны lint, typecheck, architecture:check, build и HTTP smoke.
+Все записи используют mock API; реальный backend не проверяется.
+
 Stage 16: `npx playwright test infinite-recovery-model read-recovery route-boundaries product-search-session core-images --project=chromium`.
 `infinite-recovery-model.spec.ts` исполняет настоящий InfiniteQueryObserver,
 entity hook и effect автозагрузки с видимым sentinel: `retry:false` и один retry,
