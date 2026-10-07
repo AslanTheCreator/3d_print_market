@@ -59,6 +59,20 @@ build, HTTP smoke и регрессия общего кабинета/auth. Вс
 
 ## Команды
 
+Stage 25: `npx playwright test image-sizing --project=chromium` и
+`npx playwright test mobile-rendering.mobile --project=mobile-chromium`.
+`image-sizing.spec.ts` проверяет clientWidth/currentSrc/transfer, соответствие
+`sizes` реальной сетке и достаточное разрешение при DPR 1/2 на 393/600/900/1376/1504 px,
+границах auto-fill и после max-width. Для настоящего Next image optimizer локальный
+SSR fixture перед запуском приложения создаёт временный
+`public/__playwright-image-sizing.png` (1200×1200); файл игнорируется Git и удаляется
+при штатном shutdown fixture. При внешнем `TEST_BASE_URL` нужен этот же fixture asset.
+Логотип сравнивается с исходным SVG при 44/88 px, сохраняются PNG и JSON attachments;
+mobile rendering проверяет cold loading, CLS/hydration, art direction и SSR без JS.
+Замеры до/после и ограничения описаны в [отчёте B34](./frontend-audit/25-image-sizing.md).
+Обязательны lint, typecheck, architecture:check, build, HTTP smoke и, перед
+завершением серии, полный `npm run test:e2e`.
+
 Stage 24: `npx playwright test product-reviews financial-display --project=chromium`
 и `npx playwright test mobile-rendering.mobile --project=mobile-chromium --grep "product state survives"`.
 SSR fixture `/product/925` содержит пять длинных отзывов с ISO, пустой и невалидной
@@ -578,7 +592,8 @@ npm run test:e2e
   с SSR fixture проверяет именованную ссылку на главную и загрузку mobile logo
   без привязки к generated hash, затем навигацию, skeleton и его геометрию;
 - проверки холодной загрузки шапки в `mobile-rendering.mobile.spec.ts` ожидают
-  `logo.svg` на мобильных и `logo-desktop.webp` на десктопе, без загрузки
+  lossless `logo-mobile*.webp` (44/88/132 px для DPR 1/2/3) на мобильных
+  и `logo-desktop.webp` на десктопе, без загрузки
   логотипа другого варианта шапки;
 - Lab CLS вычисляется через `PerformanceObserver` по session-window алгоритму;
   CI gate — `≤0.1`. LCP и transfer size сохраняются как диагностика, но пока

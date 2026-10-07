@@ -1,10 +1,23 @@
 import { createServer } from "node:http";
+import { unlink } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import sharp from "sharp";
 
 const port = Number(process.env.PORT ?? process.env.PLAYWRIGHT_FIXTURE_API_PORT);
 
 if (!Number.isInteger(port) || port <= 0) {
   throw new Error("A positive fixture API PORT is required");
 }
+
+// Raster fixture exists before Next starts, so its real optimizer handles srcset.
+const sizingImagePath = new URL("../public/__playwright-image-sizing.png", import.meta.url);
+await sharp(Buffer.from([
+  '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200">',
+  '<defs><pattern id="p" width="37" height="41" patternUnits="userSpaceOnUse">',
+  '<rect width="37" height="41" fill="#ef4284"/><circle cx="18" cy="20" r="14" fill="#4c3351"/>',
+  '<path d="M0 0L37 41M0 41L37 0" stroke="#b9dbdd" stroke-width="2"/>',
+  '</pattern></defs><rect width="1200" height="1200" fill="url(#p)"/></svg>',
+].join(""))).png().toFile(fileURLToPath(sizingImagePath));
 
 const corsHeaders = {
   "access-control-allow-origin": "*",
@@ -224,7 +237,10 @@ server.listen(port, "127.0.0.1", () => {
 });
 
 const shutdown = () => {
-  server.close(() => process.exit(0));
+  server.close(async () => {
+    await unlink(sizingImagePath).catch(() => {});
+    process.exit(0);
+  });
 };
 
 process.on("SIGINT", shutdown);

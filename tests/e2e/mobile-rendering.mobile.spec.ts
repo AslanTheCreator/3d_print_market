@@ -303,7 +303,7 @@ test("mobile streamed SSR fallback exposes progressive navigation without JavaSc
     await expect(mobileBrandImage).toBeVisible();
     await expect(mobileBrandImage).toHaveAttribute(
       "src",
-      /\/logo(?:\.[^/]+)?\.svg(?:\?|$)/i,
+      /(?:\/|%2F)logo-mobile(?:\.[^/?&]+)?\.webp(?:[?&]|$)/i,
     );
     await expect
       .poll(() =>
@@ -406,12 +406,12 @@ test("cold mobile hydration stays stable and loads one compact brand", async ({
   );
 
   expect(metrics.cls).toBeLessThanOrEqual(0.1);
-  expect(currentLogoSource).toMatch(/\/logo\.[^/]*\.svg(?:\?|$)/i);
+  expect(currentLogoSource).toMatch(/\/logo-mobile(?:-44|-88)?\.[^/?&]*\.webp(?:[?&]|$)/i);
   expect(decodedRequests.some((url) => url.includes("logo-desktop"))).toBe(
     false,
   );
   expect(
-    decodedRequests.some((url) => /\/logo\.[^/]*\.svg(?:\?|$)/i.test(url)),
+    decodedRequests.some((url) => /\/logo-mobile(?:-44|-88)?\.[^/?&]*\.webp(?:[?&]|$)/i.test(url)),
   ).toBe(true);
   expect(
     decodedRequests.some((url) => url.includes("site.") && url.includes(".png")),
@@ -422,7 +422,7 @@ test("cold mobile hydration stays stable and loads one compact brand", async ({
 test("cold desktop art direction does not load compact-only assets", async ({
   browser,
   baseURL,
-}) => {
+}, testInfo) => {
   const context = await browser.newContext({
     ...devices["Desktop Chrome"],
     viewport: { width: 900, height: 800 },
@@ -436,6 +436,9 @@ test("cold desktop art direction does not load compact-only assets", async ({
 
     await page.goto(`${baseURL}/about`, { waitUntil: "load" });
     await waitForStableFrame(page);
+    const metrics = await getPerformanceMetrics(page);
+    await attachPerformanceMetrics(testInfo, "about-desktop-performance.json", metrics);
+    expect(metrics.cls).toBeLessThanOrEqual(0.1);
 
     const decodedRequests = requestedUrls.map((url) => decodeURIComponent(url));
     const currentLogoSource = decodeURIComponent(
@@ -450,7 +453,7 @@ test("cold desktop art direction does not load compact-only assets", async ({
     ).toBe(true);
     expect(
       decodedRequests.some((url) =>
-        /\/logo\.[^/]*\.svg(?:\?|$)/i.test(url),
+        /\/logo-mobile(?:-44|-88)?\.[^/?&]*\.webp(?:[?&]|$)/i.test(url),
       ),
     ).toBe(false);
     expect(

@@ -19,6 +19,7 @@ import type { Product } from "../model/types";
 import { getImageUrl } from "@/shared/lib";
 import { ImageFallback } from "@/shared/ui/image-fallback";
 import { ProductPriceDisplay } from "./ProductPriceDisplay";
+import { PRODUCT_CARD_IMAGE_SIZES } from "../lib/productCardImageSizes";
 
 interface ProductCardProps extends Product {
   actions?: React.ReactNode;
@@ -118,7 +119,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 alt={name}
                 src={imageSrc}
                 fill
-                sizes="(max-width: 600px) 50vw, 33vw"
+                sizes={PRODUCT_CARD_IMAGE_SIZES}
                 loading="lazy"
                 className="product-card-image"
                 style={{

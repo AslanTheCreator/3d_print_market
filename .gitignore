@@ -41,6 +41,7 @@ pnpm-debug.log*
 # test artifacts
 playwright-report/
 test-results/
+/public/__playwright-image-sizing.png
 
 # docker
 docker-compose.override.yml

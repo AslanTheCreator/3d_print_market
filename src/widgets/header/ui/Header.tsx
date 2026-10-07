@@ -16,7 +16,9 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SearchIcon from "@mui/icons-material/Search";
-import Logo from "@/shared/assets/logo/logo.svg";
+import Logo from "@/shared/assets/logo/logo-mobile.webp";
+import Logo44 from "@/shared/assets/logo/logo-mobile-44.webp";
+import Logo88 from "@/shared/assets/logo/logo-mobile-88.webp";
 import { LAYOUT } from "@/shared/config";
 import { HeaderActions } from "./HeaderActions";
 import { HeaderLogo } from "./HeaderLogo";
@@ -52,6 +54,21 @@ const mobileLogoSx = {
   height: 44,
   borderRadius: 1.5,
 } as const;
+
+const MobileLogoImage = () => (
+  <picture>
+    <source srcSet={`${Logo44.src} 1x, ${Logo88.src} 2x, ${Logo.src} 3x`} type="image/webp" />
+    <Image
+      src={Logo}
+      alt=""
+      aria-hidden
+      width={44}
+      height={44}
+      unoptimized
+      style={{ display: "block", width: 44, height: 44, objectFit: "contain" }}
+    />
+  </picture>
+);
 
 const SearchFallback = () => (
   <Box sx={{ minHeight: 58, display: "grid", placeItems: "center" }}>
@@ -127,15 +144,7 @@ export const Header = ({
                   flex: "0 0 44px",
                 }}
               >
-                <Image
-                  src={Logo}
-                  alt=""
-                  aria-hidden
-                  width={44}
-                  height={44}
-                  sizes="44px"
-                  style={{ width: 44, height: 44, objectFit: "contain" }}
-                />
+                <MobileLogoImage />
               </ButtonBase>
 
               <ButtonBase
@@ -198,15 +207,7 @@ export const Header = ({
                   aria-label="Figurzilla — главная страница"
                   sx={{ ...mobileLogoSx, justifySelf: "start" }}
                 >
-                  <Image
-                    src={Logo}
-                    alt=""
-                    aria-hidden
-                    width={44}
-                    height={44}
-                    sizes="44px"
-                    style={{ width: 44, height: 44, objectFit: "contain" }}
-                  />
+                  <MobileLogoImage />
                 </ButtonBase>
               ) : (
                 <Typography
