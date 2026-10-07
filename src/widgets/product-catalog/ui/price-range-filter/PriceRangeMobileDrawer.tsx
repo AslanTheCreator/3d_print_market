@@ -11,6 +11,9 @@ import { PriceInput } from "./PriceInput";
 
 interface PriceRangeMobileDrawerProps {
   open: boolean;
+  surfaceId: string;
+  minPricePlaceholder: string;
+  maxPricePlaceholder: string;
   minPriceInput: string;
   maxPriceInput: string;
   minPriceError?: string;
@@ -24,6 +27,9 @@ interface PriceRangeMobileDrawerProps {
 
 export const PriceRangeMobileDrawer = ({
   open,
+  surfaceId,
+  minPricePlaceholder,
+  maxPricePlaceholder,
   minPriceInput,
   maxPriceInput,
   minPriceError,
@@ -39,14 +45,16 @@ export const PriceRangeMobileDrawer = ({
       anchor="bottom"
       open={open}
       onClose={onClose}
+      PaperProps={{ id: surfaceId, role: "dialog", "aria-modal": true, "aria-label": "Цена" }}
       ModalProps={{
         keepMounted: true,
       }}
       sx={{
         "& .MuiDrawer-paper": {
-          height: "189.2px",
+          height: "auto",
+          maxHeight: "100dvh",
           boxSizing: "border-box",
-          overflow: "hidden",
+          overflowY: "auto",
           borderRadius: "24px 24px 0 0",
           px: 2,
           pt: 1.25,
@@ -54,8 +62,8 @@ export const PriceRangeMobileDrawer = ({
         },
       }}
     >
-      <Stack spacing={1.25}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
+      <Stack spacing={1.25} sx={{ flexShrink: 0 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ flexWrap: "wrap" }}>
           <Typography variant="h5" fontWeight={700}>
             Цена
           </Typography>
@@ -65,9 +73,10 @@ export const PriceRangeMobileDrawer = ({
               onClick={onReset}
               sx={{
                 minWidth: 0,
+                minHeight: 44,
                 px: 0.75,
                 color: "text.secondary",
-                fontSize: 14,
+                fontSize: "0.875rem",
                 fontWeight: 600,
                 textDecoration: "underline",
                 textDecorationStyle: "dashed",
@@ -78,7 +87,7 @@ export const PriceRangeMobileDrawer = ({
               Сбросить
             </Button>
 
-            <IconButton onClick={onClose} aria-label="Закрыть">
+            <IconButton onClick={onClose} aria-label="Закрыть" sx={{ width: 44, height: 44 }}>
               <CloseIcon />
             </IconButton>
           </Stack>
@@ -87,6 +96,8 @@ export const PriceRangeMobileDrawer = ({
         <Stack direction="row" spacing={1.25}>
           <PriceInput
             label="От"
+            autoFocus
+            placeholder={minPricePlaceholder}
             value={minPriceInput}
             error={minPriceError}
             onChange={onMinPriceChange}
@@ -95,6 +106,7 @@ export const PriceRangeMobileDrawer = ({
           />
           <PriceInput
             label="До"
+            placeholder={maxPricePlaceholder}
             value={maxPriceInput}
             error={maxPriceError}
             onChange={onMaxPriceChange}
@@ -110,7 +122,7 @@ export const PriceRangeMobileDrawer = ({
             minHeight: 44,
             borderRadius: 2.5,
             color: "common.white",
-            fontSize: 15,
+            fontSize: "0.9375rem",
             fontWeight: 700,
             textTransform: "none",
             background: (theme) =>

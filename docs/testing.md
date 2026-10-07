@@ -59,6 +59,17 @@ build, HTTP smoke и регрессия общего кабинета/auth. Вс
 
 ## Команды
 
+Stage 22: `npx playwright test catalog-filter-empty accessibility-interactions read-recovery --project=chromium`.
+`catalog-filter-empty.spec.ts` проверяет полный и односторонние диапазоны,
+повторное открытие без подстановки доступных границ, Apply/cancel/reset,
+конечность чисел, Tab/Shift+Tab/Escape и возврат фокуса. Mobile-поверхность
+проверяется на 320 px, коротком viewport и при увеличении текста до 200%:
+именованный dialog, прокрутка и достижимость полей/действий.
+Пустые поиск/категория имеют контекст и работающий сброс/переход; нейтральный
+текст не утверждает отсутствие предзаказов. Loading/error не становятся empty,
+ведущая карточка главной сохраняется. Обязательны lint, typecheck,
+architecture:check, build и HTTP smoke. API подменены.
+
 Stage 20: `npx playwright test search-input admin --project=chromium`.
 `search-input-model.spec.ts` исполняет исходные hooks с управляемыми snapshots,
 React effects и таймерами: delayed/out-of-order URL acknowledgements, быстрый ввод,

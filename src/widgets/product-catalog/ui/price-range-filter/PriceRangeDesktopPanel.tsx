@@ -1,11 +1,13 @@
 import type React from "react";
-import { Box, Button, Paper, Popper, Stack } from "@mui/material";
+import { Button, Popover, Stack } from "@mui/material";
 import { PriceInput } from "./PriceInput";
 
 interface PriceRangeDesktopPanelProps {
   open: boolean;
   anchorEl: HTMLElement | null;
-  popoverPaperRef: React.RefObject<HTMLDivElement | null>;
+  surfaceId: string;
+  minPricePlaceholder: string;
+  maxPricePlaceholder: string;
   minPriceInput: string;
   maxPriceInput: string;
   minPriceError?: string;
@@ -14,16 +16,15 @@ interface PriceRangeDesktopPanelProps {
   onMaxPriceChange: (value: string) => void;
   onApply: () => void;
   onReset: () => void;
-  onMouseEnter: () => void;
-  onMouseLeave: (event: React.MouseEvent<HTMLElement>) => void;
-  onFocus: () => void;
-  onBlur: (event: React.FocusEvent<HTMLElement>) => void;
+  onClose: () => void;
 }
 
 export const PriceRangeDesktopPanel = ({
   open,
   anchorEl,
-  popoverPaperRef,
+  surfaceId,
+  minPricePlaceholder,
+  maxPricePlaceholder,
   minPriceInput,
   maxPriceInput,
   minPriceError,
@@ -32,118 +33,94 @@ export const PriceRangeDesktopPanel = ({
   onMaxPriceChange,
   onApply,
   onReset,
-  onMouseEnter,
-  onMouseLeave,
-  onFocus,
-  onBlur,
+  onClose,
 }: PriceRangeDesktopPanelProps): React.ReactElement => {
   return (
-    <Popper
+    <Popover
       open={open}
       anchorEl={anchorEl}
-      placement="bottom-start"
-      sx={{ zIndex: (theme) => theme.zIndex.modal }}
-      modifiers={[
-        {
-          name: "offset",
-          options: {
-            offset: [0, 8],
-          },
+      onClose={onClose}
+      anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+      PaperProps={{
+        id: surfaceId,
+        role: "dialog",
+        "aria-label": "Цена",
+        "aria-modal": true,
+        sx: {
+          mt: 1,
+          p: 2,
+          width: 372,
+          maxWidth: "calc(100vw - 32px)",
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: "#e1e6ef",
+          boxShadow: "0 18px 46px rgba(20, 24, 40, 0.14)",
         },
-      ]}
+      }}
     >
-      <Box
-        ref={popoverPaperRef}
-        tabIndex={-1}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        sx={{
-          position: "relative",
-          display: "inline-block",
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            top: -8,
-            left: 0,
-            right: 0,
-            height: 8,
-          },
-        }}
-      >
-        <Paper
-          sx={{
-            p: 2,
-            width: 372,
-            borderRadius: 3,
-            border: "1px solid",
-            borderColor: "#e1e6ef",
-            boxShadow: "0 18px 46px rgba(20, 24, 40, 0.14)",
-          }}
-        >
-          <Stack spacing={2}>
-            <Stack direction="row" spacing={1.5}>
-              <PriceInput
-                label="От"
-                value={minPriceInput}
-                error={minPriceError}
-                onChange={onMinPriceChange}
-                onSubmit={onApply}
-              />
-              <PriceInput
-                label="До"
-                value={maxPriceInput}
-                error={maxPriceError}
-                onChange={onMaxPriceChange}
-                onSubmit={onApply}
-              />
-            </Stack>
+      <Stack spacing={2}>
+        <Stack direction="row" spacing={1.5}>
+          <PriceInput
+            label="От"
+            autoFocus
+            placeholder={minPricePlaceholder}
+            value={minPriceInput}
+            error={minPriceError}
+            onChange={onMinPriceChange}
+            onSubmit={onApply}
+          />
+          <PriceInput
+            label="До"
+            placeholder={maxPricePlaceholder}
+            value={maxPriceInput}
+            error={maxPriceError}
+            onChange={onMaxPriceChange}
+            onSubmit={onApply}
+          />
+        </Stack>
 
-            <Stack direction="row" spacing={1.5}>
-              <Button
-                fullWidth
-                onClick={onReset}
-                sx={{
-                  minHeight: 44,
-                  borderRadius: 2.5,
-                  bgcolor: "#eef1f5",
-                  color: "text.primary",
-                  fontSize: 16,
-                  fontWeight: 700,
-                  textTransform: "none",
-                  "&:hover": {
-                    bgcolor: "#e4e8ef",
-                  },
-                }}
-              >
-                Сбросить
-              </Button>
+        <Stack direction="row" spacing={1.5}>
+          <Button
+            fullWidth
+            onClick={onReset}
+            sx={{
+              minHeight: 44,
+              borderRadius: 2.5,
+              bgcolor: "#eef1f5",
+              color: "text.primary",
+              fontSize: 16,
+              fontWeight: 700,
+              textTransform: "none",
+              "&:hover": {
+                bgcolor: "#e4e8ef",
+              },
+            }}
+          >
+            Сбросить
+          </Button>
 
-              <Button
-                fullWidth
-                onClick={onApply}
-                sx={{
-                  minHeight: 44,
-                  borderRadius: 2.5,
-                  color: "common.white",
-                  fontSize: 16,
-                  fontWeight: 700,
-                  textTransform: "none",
-                  background: (theme) =>
-                    `linear-gradient(90deg, ${theme.palette.primary.dark} 0%, ${theme.palette.accent.primary} 100%)`,
-                  "&:hover": {
-                    background: (theme) =>
-                      `linear-gradient(90deg, ${theme.palette.accent.primary} 0%, ${theme.palette.accent.primary} 100%)`,
-                  },
-                }}
-              >
-                Готово
-              </Button>
-            </Stack>
-          </Stack>
-        </Paper>
-      </Box>
-    </Popper>
+          <Button
+            fullWidth
+            onClick={onApply}
+            sx={{
+              minHeight: 44,
+              borderRadius: 2.5,
+              color: "common.white",
+              fontSize: 16,
+              fontWeight: 700,
+              textTransform: "none",
+              background: (theme) =>
+                `linear-gradient(90deg, ${theme.palette.primary.dark} 0%, ${theme.palette.accent.primary} 100%)`,
+              "&:hover": {
+                background: (theme) =>
+                  `linear-gradient(90deg, ${theme.palette.accent.primary} 0%, ${theme.palette.accent.primary} 100%)`,
+              },
+            }}
+          >
+            Готово
+          </Button>
+        </Stack>
+      </Stack>
+    </Popover>
   );
 };

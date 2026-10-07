@@ -35,17 +35,17 @@ export const PriceRangeFilter = ({
         label={filter.triggerLabel}
         hasActiveValue={filter.hasActiveValue}
         isOpen={filter.isOpen}
+        surfaceId={filter.surfaceId}
         onClick={filter.handleTriggerClick}
         onClearIndicatorClick={filter.handleClearIndicatorClick}
-        onMouseEnter={filter.handleTriggerMouseEnter}
-        onMouseLeave={filter.handleTriggerMouseLeave}
-        onFocus={filter.handleTriggerFocus}
-        onBlur={filter.handleTriggerBlur}
       />
 
       {filter.surface === "mobile" ? (
         <PriceRangeMobileDrawer
           open={filter.isOpen}
+          surfaceId={filter.surfaceId}
+          minPricePlaceholder={filter.minPricePlaceholder}
+          maxPricePlaceholder={filter.maxPricePlaceholder}
           minPriceInput={filter.minPriceInput}
           minPriceError={filter.minPriceError}
           maxPriceError={filter.maxPriceError}
@@ -54,15 +54,17 @@ export const PriceRangeFilter = ({
           onMaxPriceChange={filter.setMaxPriceInput}
           onApply={filter.handleApply}
           onReset={filter.handleReset}
-          onClose={filter.handleMobileClose}
+          onClose={filter.handleClose}
         />
       ) : null}
 
       {filter.surface === "desktop" ? (
         <PriceRangeDesktopPanel
           open={filter.isOpen}
+          surfaceId={filter.surfaceId}
+          minPricePlaceholder={filter.minPricePlaceholder}
+          maxPricePlaceholder={filter.maxPricePlaceholder}
           anchorEl={filter.triggerWrapperRef.current}
-          popoverPaperRef={filter.popoverPaperRef}
           minPriceInput={filter.minPriceInput}
           minPriceError={filter.minPriceError}
           maxPriceError={filter.maxPriceError}
@@ -71,10 +73,7 @@ export const PriceRangeFilter = ({
           onMaxPriceChange={filter.setMaxPriceInput}
           onApply={filter.handleApply}
           onReset={filter.handleReset}
-          onMouseEnter={filter.handlePopoverMouseEnter}
-          onMouseLeave={filter.handlePopoverMouseLeave}
-          onFocus={filter.handlePopoverFocus}
-          onBlur={filter.handlePopoverBlur}
+          onClose={filter.handleClose}
         />
       ) : null}
     </>

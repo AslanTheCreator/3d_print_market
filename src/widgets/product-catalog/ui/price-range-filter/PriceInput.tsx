@@ -10,6 +10,8 @@ interface PriceInputProps {
   onSubmit: () => void;
   compact?: boolean;
   error?: string;
+  placeholder?: string;
+  autoFocus?: boolean;
 }
 
 export const PriceInput = ({
@@ -19,6 +21,8 @@ export const PriceInput = ({
   onSubmit,
   compact = false,
   error,
+  placeholder = "Не задано",
+  autoFocus,
 }: PriceInputProps): React.ReactElement => {
   const errorId = useId();
   return (
@@ -36,7 +40,6 @@ export const PriceInput = ({
           px: compact ? 1.5 : 2,
           py: compact ? 0.875 : 1.5,
           minHeight: 44,
-          height: compact ? 44 : "auto",
           boxSizing: "border-box",
           display: "flex",
           alignItems: "center",
@@ -54,6 +57,7 @@ export const PriceInput = ({
         }}
       >
         <InputBase
+          autoFocus={autoFocus}
           value={value}
           onChange={(event) => onChange(normalizeInputValue(event.target.value))}
           onKeyDown={(event) => {
@@ -62,7 +66,7 @@ export const PriceInput = ({
               onSubmit();
             }
           }}
-          placeholder="0"
+          placeholder={placeholder}
           inputProps={{
             inputMode: "decimal",
             "aria-label": label,
@@ -72,7 +76,7 @@ export const PriceInput = ({
           sx={{
             width: "100%",
             height: "100%",
-            fontSize: compact ? 14 : 16,
+            fontSize: compact ? "0.875rem" : "1rem",
             fontWeight: 500,
             lineHeight: 1.2,
           }}

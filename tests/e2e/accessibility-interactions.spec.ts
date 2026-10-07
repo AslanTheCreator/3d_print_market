@@ -158,9 +158,7 @@ test("price filter clear action is a separate keyboard button", async ({
   await page.keyboard.press("Space");
 
   await expect(trigger).toContainText("100");
-  const clear = page.getByRole("button", {
-    name: "Сбросить фильтр цены",
-  });
+  const clear = page.getByLabel("Сбросить фильтр цены", { exact: true });
   await expect(clear).toBeVisible();
   await expectNoNestedButtons(page);
 

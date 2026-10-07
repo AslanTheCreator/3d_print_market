@@ -24,6 +24,12 @@ interface ProductCatalogProps {
   onRetry?: () => void;
   isRetrying?: boolean;
   skeletonCount?: number;
+  emptyState?: {
+    title?: string;
+    description: string;
+    actionLabel: string;
+    onAction: () => void;
+  };
 }
 
 export const ProductCatalog: React.FC<ProductCatalogProps> = ({
@@ -34,6 +40,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   onRetry,
   isRetrying,
   skeletonCount = 12,
+  emptyState,
 }) => {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
@@ -70,10 +77,10 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
     return (
       <EmptyCatalogState
         type="empty"
-        title="Товары не найдены"
-        description="К сожалению, сейчас нет доступных предзаказов. Попробуйте вернуться позже или обновить страницу."
-        actionLabel="Обновить"
-        onAction={onRetry}
+        title={emptyState?.title ?? "Товары не найдены"}
+        description={emptyState?.description ?? "Сейчас нет доступных товаров. Попробуйте обновить каталог позже."}
+        actionLabel={emptyState?.actionLabel ?? "Обновить"}
+        onAction={emptyState?.onAction ?? onRetry}
       />
     );
   }

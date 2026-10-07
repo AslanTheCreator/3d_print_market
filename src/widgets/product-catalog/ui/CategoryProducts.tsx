@@ -193,6 +193,15 @@ export const CategoryProducts = ({
         <ProductCatalog
           products={products}
           isLoading={isCatalogLoading}
+          emptyState={priceRange ? {
+            description: "В этой категории нет товаров по выбранной цене. Измените или сбросьте фильтр цены.",
+            actionLabel: "Сбросить фильтр цены",
+            onAction: () => setPriceRange(undefined),
+          } : {
+            description: "В этой категории пока нет доступных товаров. Посмотрите товары на главной странице.",
+            actionLabel: "На главную",
+            onAction: () => router.push("/"),
+          }}
           isError={hasError && !isFetchNextPageError}
           isRetrying={isFetching}
           onRetry={handleRetry}

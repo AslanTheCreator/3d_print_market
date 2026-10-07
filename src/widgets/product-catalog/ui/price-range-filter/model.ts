@@ -20,7 +20,14 @@ export const formatInputValue = (value?: number): string => {
     return "";
   }
 
-  return formatPrice(value);
+  const [mantissa, exponent] = String(value).split("e");
+  if (exponent === undefined) return mantissa;
+  const [integer, fraction = ""] = mantissa.split(".");
+  const digits = integer + fraction;
+  const position = integer.length + Number(exponent);
+  if (position <= 0) return `0.${"0".repeat(-position)}${digits}`;
+  if (position >= digits.length) return digits + "0".repeat(position - digits.length);
+  return `${digits.slice(0, position)}.${digits.slice(position)}`;
 };
 
 export const formatDesktopRangeLabel = (value?: PriceRange): string => {

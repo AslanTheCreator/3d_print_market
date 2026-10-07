@@ -9,12 +9,9 @@ interface PriceRangeTriggerProps {
   label: string;
   hasActiveValue: boolean;
   isOpen: boolean;
+  surfaceId: string;
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onClearIndicatorClick: (event: React.MouseEvent<HTMLElement>) => void;
-  onMouseEnter: () => void;
-  onMouseLeave: (event: React.MouseEvent<HTMLElement>) => void;
-  onFocus: (event: React.FocusEvent<HTMLElement>) => void;
-  onBlur: (event: React.FocusEvent<HTMLElement>) => void;
 }
 
 export const PriceRangeTrigger = ({
@@ -23,18 +20,13 @@ export const PriceRangeTrigger = ({
   label,
   hasActiveValue,
   isOpen,
+  surfaceId,
   onClick,
   onClearIndicatorClick,
-  onMouseEnter,
-  onMouseLeave,
-  onFocus,
-  onBlur,
 }: PriceRangeTriggerProps): React.ReactElement => {
   return (
     <Box
       ref={wrapperRef}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
       sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
     >
       <Button
@@ -42,9 +34,9 @@ export const PriceRangeTrigger = ({
         data-testid="price-range-trigger"
         ref={triggerRef}
         onClick={onClick}
-        onFocus={onFocus}
-        onBlur={onBlur}
         aria-expanded={isOpen}
+        aria-haspopup="dialog"
+        aria-controls={isOpen ? surfaceId : undefined}
         endIcon={
           <ExpandMoreIcon
             sx={{
@@ -55,6 +47,7 @@ export const PriceRangeTrigger = ({
         }
         sx={{
           minWidth: 0,
+          minHeight: 44,
           px: 2,
           py: 1.25,
           borderRadius: 3,
@@ -102,8 +95,6 @@ export const PriceRangeTrigger = ({
           type="button"
           aria-label="Сбросить фильтр цены"
           onClick={onClearIndicatorClick}
-          onFocus={onFocus}
-          onBlur={onBlur}
           sx={{
             width: 44,
             height: 44,

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Box, Container, Typography } from "@mui/material";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useProductsInfinite } from "@/entities/product";
 import { useAuth } from "@/entities/session";
 import {
@@ -16,6 +16,7 @@ import { ProductCatalog } from "./ProductCatalog";
 import { SEARCH_PRODUCTS_PAGE_SIZE } from "../model/pageSizes";
 
 export const SearchProducts = () => {
+  const router = useRouter();
   const { isInitialized, sessionKey } = useAuth();
   const searchParams = useSearchParams();
   const query = searchParams?.get("query") || "";
@@ -106,6 +107,15 @@ export const SearchProducts = () => {
         >
           <ProductCatalog
             products={products}
+            emptyState={priceRange ? {
+              description: "По выбранной цене товары не найдены. Измените или сбросьте фильтр цены.",
+              actionLabel: "Сбросить фильтр цены",
+              onAction: () => setPriceRange(undefined),
+            } : query ? {
+              description: "По вашему запросу товары не найдены. Измените запрос или сбросьте поиск.",
+              actionLabel: "Сбросить поиск",
+              onAction: () => router.push("/catalog/search"),
+            } : undefined}
             isError={isError && !isFetchNextPageError}
             isRetrying={isFetching}
             isLoading={isLoading || !isInitialized}
