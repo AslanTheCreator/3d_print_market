@@ -142,6 +142,7 @@ export const MobileBottomNavigation = () => {
                 item.kind === "categories" ? categoriesTriggerRef : undefined
               }
               component={Link}
+              data-navigation-overlay={item.kind === "categories" ? "true" : undefined}
               href={href}
               onClick={
                 item.kind === "categories" ? handleCategoriesClick : undefined

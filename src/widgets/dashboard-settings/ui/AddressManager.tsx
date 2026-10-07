@@ -24,6 +24,7 @@ import {
 import { useNotification } from "@/shared/ui/notification";
 import { useSettingsPanel } from "../model/SettingsPanelContext";
 import { Address } from "@/entities/address";
+import { useUnsavedChanges } from "@/shared/lib";
 
 type ViewMode = "list" | "add" | "edit";
 
@@ -44,7 +45,8 @@ export const AddressManager: React.FC = () => {
   const { showNotification } = useNotification();
 
   const [dirty, setDirty] = useState(false);
-  useSettingsPanel(dirty);
+  useSettingsPanel(dirty, isCreating || isUpdating);
+  const { confirmLeave } = useUnsavedChanges(dirty, isCreating || isUpdating);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [addressToEdit, setAddressToEdit] = useState<Address | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -53,6 +55,7 @@ export const AddressManager: React.FC = () => {
   const handleCreate = async (data: AddressInput) => {
     try {
       await createAddress(data);
+      setDirty(false);
       setViewMode("list");
       showNotification("Адрес успешно добавлен", "success");
     } catch (error) {
@@ -66,6 +69,7 @@ export const AddressManager: React.FC = () => {
 
     try {
       await updateAddress({ id: addressToEdit.id, input: data });
+      setDirty(false);
       setAddressToEdit(null);
       setViewMode("list");
       showNotification("Адрес успешно обновлён", "success");
@@ -76,8 +80,11 @@ export const AddressManager: React.FC = () => {
   };
 
   const handleCancel = () => {
+    if (!confirmLeave()) return false;
+    setDirty(false);
     setAddressToEdit(null);
     setViewMode("list");
+    return true;
   };
 
   const handleAddNewAddress = () => {
@@ -188,6 +195,7 @@ export const AddressManager: React.FC = () => {
 
         {viewMode === "edit" && addressToEdit && (
           <AddressForm
+            onDirtyChange={setDirty}
             key={`edit-address-${addressToEdit.id}`}
             initialData={addressToEdit}
             onSubmit={handleUpdate}

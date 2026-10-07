@@ -76,7 +76,7 @@ for (const invalid of ["file", "response"] as const) test(`invalid ${invalid} ke
   expect(state.uploads).toBe(invalid === "file" ? 0 : 1);
 });
 
-test("pending upload blocks programmatic submit and unmounted form ignores its late success", async ({ page, baseURL }) => {
+test("pending upload blocks programmatic submit and Back; confirmed discard resets the editor", async ({ page, baseURL }) => {
   const state = await setup(page, baseURL);
   let release!: () => void;
   const gate = new Promise<void>(done => { release = done; });
@@ -92,9 +92,15 @@ test("pending upload blocks programmatic submit and unmounted form ignores its l
     await page.locator("form").filter({ has: page.getByRole("textbox", { name: "Логин", exact: true }) })
       .evaluate(form => (form as HTMLFormElement).requestSubmit());
     await page.getByRole("button", { name: "Назад", exact: true }).click();
-    await page.getByRole("button", { name: "Редактировать профиль", exact: true }).first().click();
+    await expect(page.getByRole("heading", { name: "Редактирование профиля", exact: true })).toBeVisible();
+    await expect(preview(page)).toHaveAttribute("src", image.mediumUrl);
+    expect(state.writes).toEqual([]);
     const response = page.waitForResponse(value => value.request().method() === "POST" && value.url().includes("/images?"));
     release(); await response;
+    await expect(preview(page)).toHaveAttribute("src", /^blob:/);
+    page.once("dialog", dialog => dialog.accept());
+    await page.getByRole("button", { name: "Назад", exact: true }).click();
+    await page.getByRole("button", { name: "Редактировать профиль", exact: true }).first().click();
     await expect(preview(page)).toHaveAttribute("src", image.mediumUrl);
     await expect(save(page)).toBeDisabled();
     expect(state.writes).toEqual([]);

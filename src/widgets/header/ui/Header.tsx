@@ -3,7 +3,7 @@
 import React, { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useGuardedRouter } from "@/shared/lib";
 import {
   Box,
   ButtonBase,
@@ -64,7 +64,7 @@ export const Header = ({
   mobileAction,
 }: HeaderProps) => {
   const theme = useTheme();
-  const router = useRouter();
+  const router = useGuardedRouter();
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const { mode, parentLabel } = mobileConfig;
   const backFallback = mobileConfig.backFallback ?? "/";

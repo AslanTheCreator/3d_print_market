@@ -242,6 +242,7 @@ test("dashboard adapts through all breakpoints without losing the editing form",
     await page.setViewportSize({ width, height: 727 });
     await expect(login).toHaveValue("updated-mobile-user");
   }
+  page.once("dialog", dialog => dialog.accept());
   await page.getByRole("button", { name: "Назад", exact: true }).click();
   await expect(accountNavigation(page)).toBeVisible();
   expect(state.writes).toEqual([]);

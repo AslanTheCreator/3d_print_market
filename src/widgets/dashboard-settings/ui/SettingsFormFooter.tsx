@@ -13,7 +13,7 @@ export const SettingsFormFooter = ({ canSubmit, hasBlockingValidationErrors, has
   needsRefresh: boolean;
   onRetry: () => void;
 }) => {
-  const { active } = useSettingsPanel(hasChanges || needsRefresh || isPending);
+  const { active } = useSettingsPanel(hasChanges || needsRefresh || isPending, isPending);
   const floating = hasChanges || needsRefresh || isPending;
   const barRef = useSettingsSaveBar(active && floating);
   const errorRef = useRef<HTMLDivElement>(null);

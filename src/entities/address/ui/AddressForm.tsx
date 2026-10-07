@@ -18,7 +18,7 @@ import {
 
 interface AddressFormProps {
   onSubmit: (data: AddressInput) => void | Promise<void>;
-  onCancel: () => void;
+  onCancel: () => void | boolean;
   compact?: boolean;
   onDirtyChange?: (dirty: boolean) => void;
   isLoading?: boolean;
@@ -71,8 +71,8 @@ export const AddressForm: React.FC<AddressFormProps> = ({
   };
 
   const handleCancel = () => {
+    if (onCancel() === false) return;
     reset();
-    onCancel();
   };
 
   return (

@@ -24,6 +24,7 @@ import {
 } from "@mui/icons-material";
 import { useChangePassword } from "@/entities/user";
 import { useNotification } from "@/shared/ui/notification";
+import { useUnsavedChanges } from "@/shared/lib";
 
 interface PasswordFormData {
   oldPassword: string;
@@ -55,6 +56,7 @@ export const ChangePasswordForm: React.FC = () => {
   });
 
   const newPassword = watch("newPassword");
+  useUnsavedChanges(isDirty, isPending);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const onSubmit = (data: PasswordFormData) => {

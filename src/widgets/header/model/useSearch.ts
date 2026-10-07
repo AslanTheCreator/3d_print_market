@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import type { KeyboardEvent } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useGuardedRouter } from "@/shared/lib";
 import { useProductNameSuggestions } from "@/entities/product";
 
 const SEARCH_SUGGESTION_MIN_LENGTH = 2;
@@ -33,7 +34,7 @@ export const useSearch = (
   options: UseSearchOptions = {},
 ): UseSearchReturn => {
   const { onNavigate } = options;
-  const router = useRouter();
+  const router = useGuardedRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const urlSearchQuery =
@@ -97,7 +98,7 @@ export const useSearch = (
       if (!trimmedQuery) return;
 
       const encodedQuery = encodeURIComponent(trimmedQuery);
-      router.push(`/catalog/search?query=${encodedQuery}`);
+      if (!router.push(`/catalog/search?query=${encodedQuery}`)) return;
       setSearchQuery(trimmedQuery);
       setDebouncedSearchQuery(trimmedQuery);
       setIsSearchFocused(false);

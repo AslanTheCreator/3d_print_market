@@ -289,7 +289,7 @@ test.describe("address management", () => {
     await expect(
       page.getByText("Санкт-Петербург, Россия", { exact: true }),
     ).toBeVisible();
-    await expect(page.getByText("Индекс: 191025", { exact: true })).toBeVisible();
+    await expect(page.getByText("Индекс: 191025", { exact: true }).filter({ visible: true })).toBeVisible();
   });
 
   test("keeps edited values after a failed update and retries successfully", async ({
@@ -332,6 +332,6 @@ test.describe("address management", () => {
       page.getByText("улица Баумана 7, кв. 12", { exact: true }),
     ).toBeVisible();
     await expect(page.getByText("Казань, Россия", { exact: true })).toBeVisible();
-    await expect(page.getByText("Индекс: 420111", { exact: true })).toBeVisible();
+    await expect(page.getByText("Индекс: 420111", { exact: true }).filter({ visible: true })).toBeVisible();
   });
 });

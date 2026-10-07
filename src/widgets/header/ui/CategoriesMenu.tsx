@@ -14,7 +14,7 @@ import {
   Alert,
   IconButton,
 } from "@mui/material";
-import { useRouter } from "next/navigation";
+import { useGuardedRouter } from "@/shared/lib";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -49,7 +49,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
   parentSlugs = [],
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const router = useRouter();
+  const router = useGuardedRouter();
   const hasChildren = category.childs?.length > 0;
 
   const currentSlug = getCategorySlug(category);
@@ -61,7 +61,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
     if (hasChildren) {
       setIsExpanded((prev) => !prev);
     } else {
-      router.replace(categoryPath);
+      if (!router.replace(categoryPath)) return;
       onClose();
     }
   };

@@ -29,6 +29,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useAuthStore } from "@/entities/session";
+import { confirmDiscardChanges } from "@/shared/lib";
 
 interface AccountDestination {
   label: string;
@@ -108,6 +109,7 @@ export const MobileAccountMenu = ({
   }, [isDesktop, onClose, open]);
 
   const handleLogout = () => {
+    if (!confirmDiscardChanges()) return;
     try {
       setIsLoggingOut(true);
       logout();

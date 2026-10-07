@@ -23,7 +23,7 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { useImageUpload, useImageCleanup } from "@/features/image-upload";
 import { useUpdateUser, UserBaseModel } from "@/entities/user";
 import { ImageMetadataFeedback, useImageMetadataQuery } from "@/entities/image";
-import { getImageUrl } from "@/shared/lib";
+import { getImageUrl, useUnsavedChanges } from "@/shared/lib";
 import { useNotification } from "@/shared/ui/notification";
 import { useState, useRef } from "react";
 import { usePrivateScope } from "@/shared/lib/query";
@@ -93,6 +93,8 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
 
   const isFormChanged = isDirty || imageState.selection.kind !== "unchanged";
   const isLoading = isPending || isUploading;
+  const { confirmLeave, markSaved } = useUnsavedChanges(!isSaved && isFormChanged, isLoading || imageCleanup.isCleaning);
+  const handleBack = () => { if (confirmLeave()) onBack(); };
   const displayImagePreview = imageState.selection.kind === "unchanged"
     ? existingImagePreview
     : imagePreview;
@@ -129,6 +131,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     }
     if (!scope.isCurrent()) return;
     savedRef.current = true;
+    markSaved();
     setIsSaved(true);
     if (await imageCleanup.cleanup(imageIdToDelete === undefined ? [] : [imageIdToDelete])) {
       showNotification("Профиль успешно обновлён", "success");
@@ -162,7 +165,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
       <PageHeader
         title="Редактирование профиля"
         icon={<ManageAccountsRounded />}
-        onBack={onBack}
+        onBack={handleBack}
       />
 
       {isSaved && (

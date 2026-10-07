@@ -48,6 +48,13 @@ for (const edit of [false, true]) test(`${edit ? "edit" : "create"} locks fields
     await page.keyboard.press("Enter");
     expect(writes).toHaveLength(1);
     expect(writes[0]).toMatchObject({ name: "Snapshot товара", price: 1250.75, prepaymentAmount: 250.25, categoryIds: [2], imageIds: [77, 88] });
+    if (edit) {
+      const url = page.url();
+      await page.getByRole("button", { name: "К товарам", exact: true }).click();
+      await page.getByTestId("site-header").getByRole("link", { name: "Избранное", exact: true }).click();
+      await expect(page).toHaveURL(url);
+      await expect(name).toHaveValue("Snapshot товара");
+    }
     release();
     await expect(name).toBeEnabled();
     await expect(name).toHaveValue("Snapshot товара");

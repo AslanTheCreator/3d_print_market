@@ -24,6 +24,7 @@ import { PaymentAccountsWidget } from "./PaymentAccountsWidget";
 import { SocialNetworksFormWidget } from "./SocialNetworksFormWidget";
 import { SettingsPanelContext } from "../model/SettingsPanelContext";
 import { SettingsPanelSkeleton } from "./SettingsPanelSkeleton";
+import { useUnsavedChanges } from "@/shared/lib";
 
 const TAB_KEYS = ["address", "shipping", "payment", "contacts"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
@@ -130,12 +131,7 @@ function SettingsContent() {
     setDirtyTabs((previous) => previous[index] === dirty ? previous : { ...previous, [index]: dirty });
   }, []);
   const hasDraft = Object.values(dirtyTabs).some(Boolean);
-  React.useEffect(() => {
-    if (!hasDraft) return;
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [hasDraft]);
+  useUnsavedChanges(hasDraft);
 
   React.useEffect(() => {
     const urlTab = searchParams.get("tab") as TabKey | null;

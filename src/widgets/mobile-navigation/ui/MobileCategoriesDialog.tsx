@@ -27,7 +27,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent, KeyboardEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useGuardedRouter } from "@/shared/lib";
 import {
   buildCategoryPath,
   getCategoryIcon,
@@ -576,7 +577,7 @@ const MobileCategoriesDialogContent = ({
 };
 
 export const MobileCategoriesDialog = (props: MobileCategoriesDialogProps) => {
-  const router = useRouter();
+  const router = useGuardedRouter();
 
   return (
     <Suspense fallback={null}>

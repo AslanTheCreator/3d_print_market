@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { useRouter } from "next/navigation";
 import {
   type ProductFormData,
   defaultProductFormValues,
@@ -22,7 +21,7 @@ import {
 } from "@/features/image-upload";
 import { useNotification } from "@/shared/ui/notification";
 import type { ImageMetadata } from "@/entities/image";
-import { getImageUrl, parsePositiveSafeInteger } from "@/shared/lib";
+import { getImageUrl, parsePositiveSafeInteger, useGuardedRouter, useUnsavedChanges } from "@/shared/lib";
 import { usePrivateScope } from "@/shared/lib/query";
 import {
   clearProductFormDraft,
@@ -65,7 +64,7 @@ export const useProductForm = ({
   mode = "create",
   productId,
 }: UseProductFormOptions = {}) => {
-  const router = useRouter();
+  const router = useGuardedRouter();
   const isEditMode = mode === "edit";
   const validProductId = parsePositiveSafeInteger(productId);
   const initializedProductIdRef = useRef<string | null>(null);
@@ -156,39 +155,6 @@ export const useProductForm = ({
   }, [isEditMode, refetchCurrentUser]);
 
   useEffect(() => {
-    if (!imageUploadState.isUploading) {
-      return;
-    }
-
-    const preventNavigationWhileUploading = (event: MouseEvent) => {
-      const target = event.target;
-
-      if (!(target instanceof Element)) {
-        return;
-      }
-
-      const link = target.closest("a[href]");
-
-      if (!link) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-    };
-
-    document.addEventListener("click", preventNavigationWhileUploading, true);
-
-    return () => {
-      document.removeEventListener(
-        "click",
-        preventNavigationWhileUploading,
-        true,
-      );
-    };
-  }, [imageUploadState.isUploading]);
-
-  useEffect(() => {
     if (!isEditMode || !productId || !product || product.id !== validProductId) {
       return;
     }
@@ -255,6 +221,11 @@ export const useProductForm = ({
     );
   }, [imageUploadState.imageIds, initialImages]);
 
+  const { markSaved } = useUnsavedChanges(
+    !isSaved && isEditMode && (isDirty || hasImageChanges),
+    imageUploadState.isUploading || (isEditMode && (isUpdating || isSending || imageCleanup.isCleaning)),
+  );
+
   const imageIdsToDelete = useMemo(() => {
     if (!isEditMode) {
       return [];
@@ -288,11 +259,13 @@ export const useProductForm = ({
 
   const finishSavedProduct = () => {
     if (!submission.isActive() || !scope.isCurrent()) return;
+    markSaved();
     showNotification("Товар успешно обновлён", "success");
     router.push(PRODUCT_LIST_PATH);
   };
   const onProductSaved = async (values: ProductFormData, imageIds: number[], ids: number[]) => {
     savedRef.current = true;
+    markSaved();
     setIsSaved(true);
     reset(values);
     setInitialFormValues(values);
@@ -301,6 +274,7 @@ export const useProductForm = ({
   };
   const onProductCreated = (_values: ProductFormData, draftRevision: number) => {
     savedRef.current = true;
+    markSaved();
     setIsSaved(true);
     if (getProductFormDraftRevision() !== draftRevision) return;
     clearProductFormDraft(draftRevision);

@@ -131,6 +131,7 @@ test("create draft owns successful blobs across unmount and releases them on cle
 });
 
 test("edit unmount releases successful blobs without deleting server images", async ({ page, baseURL }) => {
+  page.on("dialog", dialog => dialog.accept());
   await setupMobileAccount(page, baseURL);
   await trackBlobs(page);
   const deletes: string[] = [];

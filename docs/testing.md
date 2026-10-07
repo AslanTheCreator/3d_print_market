@@ -580,6 +580,26 @@ SSR fixture содержит товары 920 (core 404), 921 (503), 922 (metada
 Проверки этапа: lint, typecheck, architecture:check, build, HTTP smoke и указанные
 specs; admin/dashboard/auth regression выполняется по общей матрице выше.
 
+## Уход из dirty-форм
+
+Stage 17: `unsaved-changes.spec.ts` проверяет add/edit адреса, профиль,
+настройки, пароль и edit товара на mock API: Link header/bottom navigation,
+локальный Back/Cancel, браузерные Back/Forward и reload, accept/cancel,
+сохранение ввода/фото/URL, image-only dirty, блокировку upload/save и отсутствие
+предупреждения после сохранения, программный поиск из header и закрытие
+категорий без потери формы. `image-identity.spec.ts` явно подтверждает уход
+для проверки освобождения blob URL edit; `product-publication.mobile.spec.ts`
+дополнительно проверяет Back/Link при pending edit, `dashboard-home.mobile.spec.ts`
+подтверждает отмену правок перед повторным открытием профиля. Проверяется отсутствие чувствительного ввода
+в localStorage, sessionStorage и history state. Сценарии профиля и товара
+покрывают мобильную геометрию; полный e2e включает существующие mobile specs.
+`avatar-replacement.spec.ts` проверяет блокировку Back во время upload и
+подтверждённый discard после завершения; прежний Back с pending больше не
+размонтирует редактор. Проверки поздних upload/reset/смены scope остаются
+в `avatar-upload-model.spec.ts`.
+После этапа обязательны lint, typecheck, architecture:check, build,
+HTTP smoke на запущенном приложении и полный `npm run test:e2e`.
+
 ## Documentation-only
 
 Если менялись только Markdown-файлы, достаточно проверить diff, ссылки и соответствие коду. Полный test suite не требуется.

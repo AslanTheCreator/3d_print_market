@@ -13,6 +13,7 @@ import {
 import { Logout as LogoutIcon } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/entities/session";
+import { confirmDiscardChanges } from "@/shared/lib";
 
 export const LogoutButton: React.FC = () => {
   const router = useRouter();
@@ -21,6 +22,7 @@ export const LogoutButton: React.FC = () => {
   const logout = useAuthStore((state) => state.logout);
 
   const handleLogout = async () => {
+    if (!confirmDiscardChanges()) return;
     try {
       setIsLoading(true);
       logout();

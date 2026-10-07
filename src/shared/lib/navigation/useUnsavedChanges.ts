@@ -1,17 +1,23 @@
 "use client";
-import { useEffect } from "react";
+import { useLayoutEffect, useRef } from "react";
+import { confirmFormLeave, installUnsavedChangesGuard, registerUnsavedForm } from "./unsavedChangesGuard";
 
-const dirtyForms = new Set<symbol>();
-export const confirmDiscardChanges = () => dirtyForms.size === 0 || window.confirm("Есть несохранённые изменения. Покинуть форму?");
+export { confirmDiscardChanges } from "./unsavedChangesGuard";
+
+export function useUnsavedChangesNavigation() {
+  useLayoutEffect(() => installUnsavedChangesGuard(), []);
+}
 
 // Нативные ссылки и Back/Forward защищают черновики без сохранения данных в браузере.
-export function useUnsavedChanges(dirty: boolean) {
-  useEffect(() => {
-    if (!dirty) return;
-    const key = Symbol();
-    dirtyForms.add(key);
-    const beforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
-    window.addEventListener("beforeunload", beforeUnload);
-    return () => { dirtyForms.delete(key); window.removeEventListener("beforeunload", beforeUnload); };
-  }, [dirty]);
+export function useUnsavedChanges(dirty: boolean, pending = false) {
+  const state = useRef({ dirty, pending });
+  useLayoutEffect(() => {
+    state.current.dirty = dirty;
+    state.current.pending = pending;
+  }, [dirty, pending]);
+  useLayoutEffect(() => registerUnsavedForm(state.current), []);
+  return {
+    confirmLeave: () => confirmFormLeave(state.current),
+    markSaved: () => { state.current.dirty = false; state.current.pending = false; },
+  };
 }
