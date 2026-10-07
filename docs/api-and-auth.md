@@ -150,6 +150,11 @@ Login/register сохраняют `redirect` при переключении ф�
 Некорректный адрес заменяется `/`. Auth routes используют `Suspense` для чтения
 query-параметров через `useSearchParams`.
 
+Гостевые `add-to-cart` и `toggle-favorite` передают в `AuthRequiredDialog`
+callback входа: текущие pathname/query берутся при нажатии «Войти» и проходят
+`getAuthSwitchPath`. После login либо register/verify пользователь возвращается
+на исходную страницу; добавление товара автоматически не повторяется.
+
 Дополнительные открытые ограничения:
 
 - server guards определяют auth только по наличию cookie и не подтверждают backend session.

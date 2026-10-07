@@ -59,6 +59,14 @@ build, HTTP smoke и регрессия общего кабинета/auth. Вс
 
 ## Команды
 
+Stage 19: `npx playwright test auth-return-path --project=chromium`.
+Spec проверяет гостевые cart/favorite из каталога и деталей товара на 393/1280 px:
+отмена диалога, login/register с переключением форм, возврат на исходный route/query
+и отсутствие автоматической записи. Sanitizer и браузерный вход отклоняют внешние,
+protocol-relative и auth-loop redirect. Сохраняется покрытие checkout/favorites.
+Обязательны lint, typecheck, architecture:check, build и HTTP smoke.
+API подменяются; реальный backend не проверяется.
+
 Stage 18: `npx playwright test list-mutations private-data-model cart-quantity-store-model --project=chromium`.
 `list-mutations-model.spec.ts` исполняет настоящие entity hooks и TanStack
 mutations с управляемыми promises: A fail после B success, rollback своей

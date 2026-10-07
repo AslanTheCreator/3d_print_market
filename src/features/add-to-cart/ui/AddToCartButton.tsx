@@ -10,7 +10,7 @@ import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useRouter } from "next/navigation";
 import { useCartItemRemoval, useCartQuantity } from "@/entities/cart";
-import { useAuth } from "@/entities/session";
+import { getAuthSwitchPath, useAuth } from "@/entities/session";
 import { useAuthRequired } from "@/shared/hooks";
 import { AuthRequiredDialog } from "@/shared/ui/auth-required-dialog";
 import { CartCounter } from "@/shared/ui/cart-counter";
@@ -338,6 +338,10 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       <AuthRequiredDialog
         open={isOpen}
         onClose={hideDialog}
+        onLogin={() => router.push(getAuthSwitchPath(
+          "/auth/login",
+          `${window.location.pathname}${window.location.search}`,
+        ))}
         productName={dialogProductName}
       />
     </>

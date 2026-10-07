@@ -109,6 +109,10 @@ app layer находится в корневом `app/`, вне `src`.
 - доменная модель, API, query hooks — `src/entities/<slice>`;
 - общая утилита или нейтральный UI — `src/shared`.
 
+`shared/ui/AuthRequiredDialog` получает обязательный `onLogin` от вызывающей
+feature и не выбирает auth route. Политика возврата описана в
+[api-and-auth.md](./api-and-auth.md#текущий-auth-flow).
+
 Доменные DTO размещаются в `model` соответствующих entities. `entities/image`
 владеет image DTO, API, query hooks и связыванием изображений с доменными
 данными. Core DTO профиля, заказов и собственных товаров кэшируются отдельно;

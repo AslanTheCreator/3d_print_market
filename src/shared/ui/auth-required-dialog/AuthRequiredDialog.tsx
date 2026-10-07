@@ -11,25 +11,25 @@ import {
   alpha,
 } from "@mui/material";
 import { Close as CloseIcon, Login, LockOutlined } from "@mui/icons-material";
-import { useRouter } from "next/navigation";
 
 interface AuthRequiredDialogProps {
   open: boolean;
   onClose: () => void;
+  onLogin: () => void;
   productName?: string;
 }
 
 export const AuthRequiredDialog: React.FC<AuthRequiredDialogProps> = ({
   open,
   onClose,
+  onLogin,
   productName,
 }) => {
   const theme = useTheme();
-  const router = useRouter();
 
   const handleLogin = () => {
     onClose();
-    router.push("/auth/login");
+    onLogin();
   };
 
   const handleClose = () => {

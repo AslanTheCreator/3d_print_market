@@ -10,7 +10,8 @@ import {
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
-import { useAuth } from "@/entities/session";
+import { useRouter } from "next/navigation";
+import { getAuthSwitchPath, useAuth } from "@/entities/session";
 import { useAuthRequired } from "@/shared/hooks";
 import { AuthRequiredDialog } from "@/shared/ui/auth-required-dialog";
 import { useToggleFavorite } from "../model/useToggleFavorite";
@@ -37,6 +38,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   variant = "default",
 }) => {
   const theme = useTheme();
+  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { toggleFavorite, isLoading } = useToggleFavorite(isAuthenticated);
   const isCardVariant = variant === "default";
@@ -341,6 +343,10 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       <AuthRequiredDialog
         open={isOpen}
         onClose={hideDialog}
+        onLogin={() => router.push(getAuthSwitchPath(
+          "/auth/login",
+          `${window.location.pathname}${window.location.search}`,
+        ))}
         productName={dialogProductName}
       />
     </>
