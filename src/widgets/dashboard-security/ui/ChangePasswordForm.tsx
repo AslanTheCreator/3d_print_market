@@ -141,9 +141,10 @@ export const ChangePasswordForm: React.FC = () => {
             rules={{
               required: "Введите текущий пароль",
             }}
-            render={({ field }) => (
+            render={({ field: { ref, ...field } }) => (
               <TextField
                 {...field}
+                inputRef={ref}
                 autoComplete="current-password"
                 label="Текущий пароль"
                 type={showOldPassword ? "text" : "password"}
@@ -190,9 +191,10 @@ export const ChangePasswordForm: React.FC = () => {
                 value !== watch("oldPassword") ||
                 "Новый пароль должен отличаться от текущего",
             }}
-            render={({ field }) => (
+            render={({ field: { ref, ...field } }) => (
               <TextField
                 {...field}
+                inputRef={ref}
                 autoComplete="new-password"
                 label="Новый пароль"
                 type={showNewPassword ? "text" : "password"}
@@ -266,9 +268,10 @@ export const ChangePasswordForm: React.FC = () => {
               validate: (value) =>
                 value === newPassword || "Пароли не совпадают",
             }}
-            render={({ field }) => (
+            render={({ field: { ref, ...field } }) => (
               <TextField
                 {...field}
+                inputRef={ref}
                 autoComplete="new-password"
                 label="Повторите пароль"
                 type={showConfirmPassword ? "text" : "password"}

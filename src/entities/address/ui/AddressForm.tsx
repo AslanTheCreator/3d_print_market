@@ -97,9 +97,10 @@ export const AddressForm: React.FC<AddressFormProps> = ({
                 message: `Страна должна содержать минимум ${ADDRESS_VALIDATION.COUNTRY_MIN_LENGTH} символа`,
               },
             }}
-            render={({ field }) => (
+            render={({ field: { ref, ...field } }) => (
               <TextField
                 {...field}
+                inputRef={ref}
                 fullWidth
                 autoComplete="country-name"
                 label="Страна"
@@ -124,9 +125,10 @@ export const AddressForm: React.FC<AddressFormProps> = ({
                 message: `Город должен содержать минимум ${ADDRESS_VALIDATION.CITY_MIN_LENGTH} символа`,
               },
             }}
-            render={({ field }) => (
+            render={({ field: { ref, ...field } }) => (
               <TextField
                 {...field}
+                inputRef={ref}
                 fullWidth
                 autoComplete="address-level2"
                 label="Город"
@@ -151,9 +153,10 @@ export const AddressForm: React.FC<AddressFormProps> = ({
                 message: `Улица должна содержать минимум ${ADDRESS_VALIDATION.STREET_MIN_LENGTH} символа`,
               },
             }}
-            render={({ field }) => (
+            render={({ field: { ref, ...field } }) => (
               <TextField
                 {...field}
+                inputRef={ref}
                 fullWidth
                 autoComplete="address-line1"
                 label="Улица"
@@ -179,9 +182,10 @@ export const AddressForm: React.FC<AddressFormProps> = ({
                 message: "Некорректный формат номера дома",
               },
             }}
-            render={({ field }) => (
+            render={({ field: { ref, ...field } }) => (
               <TextField
                 {...field}
+                inputRef={ref}
                 fullWidth
                 label={compact ? "Дом" : "Номер дома"}
                 placeholder="12А"
@@ -205,9 +209,10 @@ export const AddressForm: React.FC<AddressFormProps> = ({
                 message: "Некорректный формат квартиры",
               },
             }}
-            render={({ field }) => (
+            render={({ field: { ref, ...field } }) => (
               <TextField
                 {...field}
+                inputRef={ref}
                 fullWidth
                 label={compact ? "Квартира" : "Номер квартиры"}
                 placeholder="45 (необязательно)"
@@ -236,9 +241,10 @@ export const AddressForm: React.FC<AddressFormProps> = ({
                 message: `Индекс должен содержать ${ADDRESS_VALIDATION.INDEX_LENGTH} цифр`,
               },
             }}
-            render={({ field: { onChange, value, ...field } }) => (
+            render={({ field: { ref, onChange, value, ...field } }) => (
               <TextField
                 {...field}
+                inputRef={ref}
                 value={value || ""}
                 onChange={(e) => {
                   const val = e.target.value;

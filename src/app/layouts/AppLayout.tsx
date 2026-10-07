@@ -46,7 +46,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       aria-expanded={isAccountMenuOpen}
       aria-controls="mobile-account-menu"
       onClick={() => setIsAccountMenuOpen(true)}
-      sx={{ color: "common.white" }}
+      sx={{ color: "secondary.contrastText" }}
     >
       <MenuRoundedIcon />
     </IconButton>

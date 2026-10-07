@@ -248,9 +248,10 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                       message: "Только латинские буквы, цифры и символы _.-",
                     },
                   }}
-                  render={({ field }) => (
+                  render={({ field: { ref, ...field } }) => (
                     <TextField
                       {...field}
+                      inputRef={ref}
                       fullWidth
                       label="Логин"
                       placeholder="misterBob"
@@ -269,9 +270,10 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                     minLength: { value: 2, message: "Минимум 2 символа" },
                     maxLength: { value: 100, message: "Максимум 100 символов" },
                   }}
-                  render={({ field }) => (
+                  render={({ field: { ref, ...field } }) => (
                     <TextField
                       {...field}
+                      inputRef={ref}
                       fullWidth
                       label="Имя и фамилия"
                       placeholder="Иван Иванов"
@@ -292,9 +294,10 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                       message: "Некорректный номер телефона",
                     },
                   }}
-                  render={({ field }) => (
+                  render={({ field: { ref, ...field } }) => (
                     <TextField
                       {...field}
+                      inputRef={ref}
                       fullWidth
                       label="Телефон"
                       placeholder="+7 (999) 123-45-67"

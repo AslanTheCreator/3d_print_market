@@ -308,25 +308,20 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
               </Stack>
             </Tooltip>
           </Stack>
-
-          {expirationStatus.shouldShowExtendButton && !isExternallyManaged && (
-            <Box
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-              }}
-            >
-              <ExtendProductButton
-                productId={id}
-                productName={name}
-                currentExpirationDate={expirationDate}
-                variant="icon"
-                size="small"
-              />
-            </Box>
-          )}
         </CardContent>
       </Link>
+
+      {expirationStatus.shouldShowExtendButton && !isExternallyManaged && (
+        <Box sx={{ px: { xs: 1, sm: 1.5 }, pb: 1 }}>
+          <ExtendProductButton
+            productId={id}
+            productName={name}
+            currentExpirationDate={expirationDate}
+            variant="icon"
+            size="small"
+          />
+        </Box>
+      )}
 
       {!isExternallyManaged && (
         <>

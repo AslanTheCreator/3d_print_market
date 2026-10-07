@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -216,6 +216,10 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
       onClose,
       onSuccess,
     });
+  const formId = useId();
+  const ratingLabelId = `${formId}-rating-label`;
+  const ratingErrorId = `${formId}-rating-error`;
+  const commentId = `${formId}-comment`;
 
   const {
     control,
@@ -285,7 +289,12 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
 
               {/* Рейтинг */}
               <Box>
-                <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                <Typography
+                  id={ratingLabelId}
+                  variant="subtitle2"
+                  fontWeight={600}
+                  gutterBottom
+                >
                   Ваша оценка
                 </Typography>
 
@@ -296,6 +305,12 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
                   render={({ field }) => (
                     <Stack spacing={1}>
                       <Rating
+                        name={`${formId}-rating`}
+                        role="radiogroup"
+                        aria-labelledby={ratingLabelId}
+                        aria-describedby={errors.rating ? ratingErrorId : undefined}
+                        aria-invalid={!!errors.rating}
+                        onBlur={field.onBlur}
                         disabled={isPending}
                         value={field.value}
                         onChange={(_, newValue) => {
@@ -337,7 +352,11 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
 
                       {/* Ошибка валидации */}
                       {errors.rating && (
-                        <Typography variant="caption" color="error">
+                        <Typography
+                          id={ratingErrorId}
+                          variant="caption"
+                          color="error"
+                        >
                           {errors.rating.message}
                         </Typography>
                       )}
@@ -348,7 +367,14 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
 
               {/* Комментарий */}
               <Box>
-                <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                <Typography
+                  component="label"
+                  htmlFor={commentId}
+                  variant="subtitle2"
+                  fontWeight={600}
+                  gutterBottom
+                  sx={{ display: "block" }}
+                >
                   Комментарий
                 </Typography>
 
@@ -356,9 +382,11 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
                   name="comment"
                   control={control}
                   rules={REVIEW_FORM_RULES.comment}
-                  render={({ field }) => (
+                  render={({ field: { ref, ...field } }) => (
                     <TextField
                       {...field}
+                      id={commentId}
+                      inputRef={ref}
                       fullWidth
                       multiline
                       rows={3}

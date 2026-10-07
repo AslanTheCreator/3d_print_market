@@ -59,6 +59,19 @@ build, HTTP smoke и регрессия общего кабинета/auth. Вс
 
 ## Команды
 
+Stage 23: `npx playwright test controls-focus accessibility-authenticated-controls accessibility-interactions open-forms save-confirmation --project=chromium`
+и `npx playwright test accessibility-touch-targets.mobile --project=mobile-chromium`.
+`controls-focus.spec.ts` проверяет фокус первого ошибочного native input в формах
+пароля, профиля и обычного/компактного адреса, keyboard submit, переключение
+видимости пароля и сохранение autocomplete hints. Отзыв имеет связанные видимые
+подписи textarea/группы рейтинга и описания ошибок; отправка работает с клавиатуры.
+Продление и ссылка товара имеют отдельные Tab stops без button внутри anchor:
+Enter/Space дают один POST без перехода, Ctrl+click открывает ссылку в новой вкладке.
+Для меню кабинета измеряются computed contrast значимой иконки (≥3:1), видимый
+focus и target ≥44×44 px в normal/focus/hover. Обязательны lint, typecheck,
+architecture:check, build, HTTP smoke и общая e2e-регрессия order UI.
+API подменены; реальный backend и autofill менеджером паролей не проверяются.
+
 Stage 22: `npx playwright test catalog-filter-empty accessibility-interactions read-recovery --project=chromium`.
 `catalog-filter-empty.spec.ts` проверяет полный и односторонние диапазоны,
 повторное открытие без подстановки доступных границ, Apply/cancel/reset,
