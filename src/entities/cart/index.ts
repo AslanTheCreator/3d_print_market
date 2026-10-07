@@ -19,6 +19,7 @@ export type {
 } from "./model/useCartMutations";
 
 export { useCartQuantityStore } from "./model/cartQuantityStore";
+export { bindCartQuantityProjection } from "./model/cartQuantityProjection";
 export type {
   CartQuantityItem,
   CartQuantityState,

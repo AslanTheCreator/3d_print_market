@@ -556,6 +556,51 @@ test("keeps an optimistic catalog quantity when navigating to checkout", async (
   ).toBeVisible();
 });
 
+test("40 catalog cards share confirmed quantities through rollback, stock limits and logout", async ({ context, page, baseURL }) => {
+  test.setTimeout(90_000);
+  await authenticate(context, baseURL);
+  const controller = await setupCheckoutApi(page, Array.from({ length: 40 }, (_, i) => createCartItem({
+    id: i + 1, name: `Stage 21 товар ${i + 1}`, count: 2, availableCount: 3, enoughStock: true,
+  })));
+  await page.route("**/products/find", route => {
+    if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+    const request = route.request().postDataJSON();
+    return fulfillJson(route, request.pageable.lastId ? [] : controller.cartItems.map(item => item.product));
+  });
+  await page.route("**/favorites/find", route => fulfillJson(route, []));
+  await page.route("**/participant", route => fulfillJson(route, {
+    id: 999, login: "stock-buyer", fullName: "Покупатель", mail: "buyer@example.test",
+    imageId: null, status: "ACTIVE", sellerStatus: "DEFAULT", addresses: [], accounts: [], transfers: [], socialNetworks: [],
+  }));
+  await page.goto("/catalog/search?query=stage21");
+  await expect(page.getByRole("button", { name: /^Увеличить количество Stage 21 товар / })).toHaveCount(40, { timeout: 15_000 });
+  const card = (id: number) => page.getByText(`Stage 21 товар ${id}`, { exact: true })
+    .locator("xpath=ancestor::*[contains(@class, 'MuiCard-root')]");
+  for (const id of [1, 20, 40]) await expect(card(id).getByText("2", { exact: true })).toBeVisible();
+  expect(controller.basketFindRequests).toBe(1);
+  expect(await page.evaluate(() => localStorage.getItem("cart-quantity-storage"))).toBeNull();
+  controller.putMode = "failure";
+  await card(1).getByRole("button", { name: "Увеличить количество Stage 21 товар 1", exact: true }).click();
+  await expect.poll(() => controller.putRequests.length).toBe(1);
+  await expect(page.getByText("Не удалось сохранить количество. Восстановлено предыдущее значение", { exact: true })).toBeVisible();
+  await expect(card(1).getByText("2", { exact: true })).toBeVisible();
+  await expect.poll(() => controller.basketFindRequests).toBe(2);
+  controller.putMode = "success";
+  await card(1).getByRole("button", { name: "Увеличить количество Stage 21 товар 1", exact: true }).click();
+  await expect.poll(() => controller.basketFindRequests).toBe(3);
+  await expect(card(1).getByText("3", { exact: true })).toBeVisible();
+  await expect(card(1).getByRole("button", { name: "Увеличить количество Stage 21 товар 1", exact: true })).toBeDisabled();
+  await expect(card(20).getByText("2", { exact: true })).toBeVisible();
+  await page.getByTestId("site-header").getByRole("link", { name: "Профиль", exact: true }).click();
+  await page.getByRole("button", { name: "Выход", exact: true }).click();
+  await expect(page).toHaveURL(/\/auth\/login/);
+  await page.getByTestId("site-header").getByRole("combobox").fill("stage21");
+  await page.getByTestId("site-header").getByRole("combobox").press("Enter");
+  await expect(page).toHaveURL(/\/catalog\/search/);
+  await expect(page.getByRole("button", { name: /^Увеличить количество Stage 21 товар / })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Купить", exact: true })).toHaveCount(40);
+});
+
 test("rolls back a failed PUT and retries failed stock validation", async ({
   context,
   page,

@@ -158,6 +158,14 @@ Server state хранится в TanStack Query. Zustand используетс�
 
 Подтверждённое исключение — `cartQuantityStore`: он хранит optimistic projection количества, revisions, sync status и последнее подтверждённое значение, синхронизируясь с cart query. Источником истины об актуальной корзине и остатках остаётся backend/TanStack Query; Zustand не должен превращаться во второй независимый cache.
 
+`PrivateDataBoundary` подключает единственный `bindCartQuantityProjection` на scope:
+он применяет успешные обновления cart query, включая ручные контрольные чтения.
+Читающий `useCartProducts` не выполняет reconciliation. `useCartChecks` возвращает
+только membership и число позиций; неиспользуемые totals удалены из public API.
+Membership index разделяется consumers одного snapshot, а reconciliation один раз
+индексирует локальные quantities. Идентичное подтверждение не меняет store;
+pending revisions сохраняются, а `needsValidation` требует нового подтверждения.
+
 ## Импорты
 
 Алиасы из `tsconfig.json`:

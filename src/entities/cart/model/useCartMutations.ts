@@ -6,12 +6,6 @@ import { cartKeys } from "./queryKeys";
 import { ProductBasket } from "./types";
 import { type ApiError, isApiCancellation, transformToApiError } from "@/shared/lib/errorHandler";
 
-const toServerQuantityItems = (cart: ProductBasket[]) =>
-  cart.map((item) => ({
-    productId: item.product.id,
-    count: item.count,
-  }));
-
 const cartRefreshQueues = new WeakMap<AbortSignal, Promise<void>>();
 
 const enqueueCartRefresh = <T>(signal: AbortSignal, refresh: () => Promise<T>): Promise<T> => {
@@ -61,9 +55,6 @@ export const useUpdateCartQuantity = (
       const cart = await cartApi.getCart({ size: 100 }, scope.signal);
       if (!scope.isCurrent()) throw new Error("Session ended");
       queryClient.setQueryData<ProductBasket[]>(scope.key(cartKeys.all), cart);
-      useCartQuantityStore
-        .getState()
-        .syncWithServer(toServerQuantityItems(cart));
       return cart;
     });
 

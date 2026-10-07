@@ -631,6 +631,32 @@ Stage 17: `unsaved-changes.spec.ts` проверяет add/edit адреса, п
 После этапа обязательны lint, typecheck, architecture:check, build,
 HTTP smoke на запущенном приложении и полный `npm run test:e2e`.
 
+## Корзина на карточках
+
+Stage 21: `cart-card-work-model.spec.ts` проверяет одного владельца проекции,
+80 query observers/два membership consumer на 40 карточек, cached mount,
+одинаковый snapshot, ручное подтверждение без карточек, смену scope и teardown.
+Hooks чтения исполняются с контролируемыми query/React adapters; QueryClient,
+QueryObserver, quantity store и lifecycle mutation настоящие. Отдельный
+`cart-quantity-store-model.spec.ts` фиксирует no-op и восстановление validation
+при прежних counts, сохраняя проверки revisions/rollback.
+
+Сравнение исполнения исходных hooks до/после для 40 карточек (80 consumers):
+effects синхронизации 80 → 0, reconciliation первого snapshot 80 → 1,
+quantity reads для totals 6400 → 0, чтения price для totals 3200 → 0.
+Persist writes 0 → 0: persistence уже удалён в Stage 06. Это счётчики работы
+в модельном прогоне, без утверждения выигрыша в миллисекундах.
+
+`checkout-stock.spec.ts` дополнительно проверяет 40 карточек в браузере:
+общие подтверждённые counts, один initial GET, rollback, stock limit и logout.
+Существующие сценарии покрывают delayed PUT/GET, переход из каталога и retry
+stock validation; `private-data-model.spec.ts` и `private-data.spec.ts` — изоляцию
+при смене аккаунта. Запуск: `npx playwright test cart-card-work-model
+cart-quantity-store-model checkout-stock private-data --project=chromium`;
+также `checkout-cart.mobile.spec.ts` в `mobile-chromium`.
+Обязательны lint, typecheck, architecture:check, build и HTTP smoke.
+Все записи используют mock API, реальный backend не проверяется.
+
 ## Documentation-only
 
 Если менялись только Markdown-файлы, достаточно проверить diff, ссылки и соответствие коду. Полный test suite не требуется.

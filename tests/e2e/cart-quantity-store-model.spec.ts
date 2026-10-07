@@ -13,6 +13,28 @@ const getItemQuantity = (productId: number) =>
 test.describe("cart quantity store", () => {
   test.beforeEach(resetStore);
 
+  test("identical confirmation is a no-op, but the same counts can restore validation", () => {
+    const snapshot = [{ productId: 1, count: 2 }, { productId: 2, count: 3 }];
+    useCartQuantityStore.getState().syncWithServer(snapshot);
+    const confirmed = useCartQuantityStore.getState();
+    let notifications = 0;
+    const unsubscribe = useCartQuantityStore.subscribe(() => notifications++);
+    try {
+      useCartQuantityStore.getState().syncWithServer(snapshot.map(item => ({ ...item })));
+      expect(useCartQuantityStore.getState()).toBe(confirmed);
+      expect(notifications).toBe(0);
+      const revision = useCartQuantityStore.getState().setQuantity(1, 4);
+      useCartQuantityStore.getState().syncWithServer(snapshot);
+      expect(getItemQuantity(1)).toBe(4);
+      useCartQuantityStore.getState().rollbackUpdate(1, revision);
+      useCartQuantityStore.getState().markNeedsValidation(1, revision);
+      useCartQuantityStore.getState().syncWithServer(snapshot);
+      expect(getItemQuantity(1)).toBe(2);
+      expect(useCartQuantityStore.getState().getSyncStatus(1)).toBe("synced");
+      expect(useCartQuantityStore.getState().syncStates[1].confirmedRevision).toBe(revision);
+    } finally { unsubscribe(); }
+  });
+
   test("initial server sync replaces an unconfirmed persisted quantity", () => {
     useCartQuantityStore.setState({
       items: [{ productId: 1, quantity: 7 }],

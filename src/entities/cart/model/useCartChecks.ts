@@ -1,32 +1,30 @@
-import { useCartProducts, useCartQuantityStore } from "@/entities/cart";
+import { useCartProducts } from "./useCartQueries";
+import type { ProductBasket } from "./types";
+
+const membershipIndexes = new WeakMap<ProductBasket[], Set<number>>();
+
+const getMembershipIndex = (cart: ProductBasket[]) => {
+  let index = membershipIndexes.get(cart);
+  if (!index) {
+    index = new Set(cart.map(item => item.product.id));
+    membershipIndexes.set(cart, index);
+  }
+  return index;
+};
 
 export const useCartChecks = (isAuthenticated: boolean) => {
   const { data: cartItems } = useCartProducts({ enabled: isAuthenticated });
-  const getQuantity = useCartQuantityStore((state) => state.getQuantity);
+  const productIds = isAuthenticated && cartItems ? getMembershipIndex(cartItems) : undefined;
 
   const isProductInCart = (productId: number) => {
     if (!isAuthenticated) return false;
-    return cartItems?.some((item) => item.product.id === productId) ?? false;
+    return productIds?.has(productId) ?? false;
   };
 
   const getCartItemsCount = isAuthenticated ? (cartItems?.length ?? 0) : 0;
 
-  const getCartTotal =
-    cartItems?.reduce((total, item) => {
-      const quantity = getQuantity(item.product.id);
-      return total + item.product.price * quantity;
-    }, 0) ?? 0;
-
-  const getTotalQuantity =
-    cartItems?.reduce((total, item) => {
-      const quantity = getQuantity(item.product.id);
-      return total + quantity;
-    }, 0) ?? 0;
-
   return {
     isProductInCart,
     getCartItemsCount,
-    getCartTotal,
-    getTotalQuantity,
   };
 };

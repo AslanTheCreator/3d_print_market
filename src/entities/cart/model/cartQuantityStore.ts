@@ -155,15 +155,14 @@ export const useCartQuantityStore = create<CartQuantityState>()(
 
       syncWithServer: (serverItems) => {
         set((state) => {
+          const localItems = new Map(state.items.map(item => [item.productId, item]));
           const serverProductIds = new Set(
             serverItems.map((item) => item.productId),
           );
           const nextSyncStates: Record<number, CartQuantitySyncState> = {};
 
           const nextItems = serverItems.map((serverItem) => {
-            const localItem = state.items.find(
-              (item) => item.productId === serverItem.productId,
-            );
+            const localItem = localItems.get(serverItem.productId);
             const syncState = state.syncStates[serverItem.productId];
 
             if (localItem && syncState?.status === "pending") {
@@ -197,7 +196,20 @@ export const useCartQuantityStore = create<CartQuantityState>()(
             }
           });
 
-          return { items: nextItems, syncStates: nextSyncStates };
+          const unchanged = nextItems.length === state.items.length &&
+            Object.keys(nextSyncStates).length === Object.keys(state.syncStates).length &&
+            nextItems.every((item, index) => {
+              const previousItem = state.items[index];
+              const previousSync = state.syncStates[item.productId];
+              const nextSync = nextSyncStates[item.productId];
+              return previousItem.productId === item.productId && previousItem.quantity === item.quantity &&
+                previousSync?.revision === nextSync.revision &&
+                previousSync?.confirmedRevision === nextSync.confirmedRevision &&
+                previousSync?.confirmedQuantity === nextSync.confirmedQuantity &&
+                previousSync?.status === nextSync.status;
+            });
+
+          return unchanged ? state : { items: nextItems, syncStates: nextSyncStates };
         });
       },
 
