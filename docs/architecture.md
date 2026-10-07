@@ -9,6 +9,13 @@
 order route нет. Фильтры и страницы хранятся в URL, редактор принимает
 проверенный локальный `returnTo`.
 
+Поисковое поле `AdminProducts` имеет локальный draft: URL обновляется через
+debounce 300 мс либо Enter со сбросом страницы в 0. Изменения фильтров сохраняют
+текущий ввод и остальные query params. Подтверждения собственных переходов
+не откатывают новый draft; Back/Forward восстанавливают его и отменяют debounce.
+Этот lifecycle находится в модели widget; остальные consumers `useUrlState`
+сохраняют прежний механизм навигации.
+
 Widgets `admin-shell`, `admin-orders`, `admin-products`, `admin-agents`,
 `admin-agent-details` собирают features `admin-access`, `admin-product-management`,
 `admin-order-action`, `admin-agent-settings`. Доменные DTO/API/queries находятся
@@ -321,6 +328,10 @@ Mobile search открывается отдельным fullscreen dialog без
 «Категории» открывает другой fullscreen dialog, где поиск товаров расположен
 над иерархией категорий. Overlay surfaces используют `100dvh`, safe areas,
 focus trap и возврат фокуса; desktop search и categories drawer сохраняются.
+
+Выбор подсказки в header сбрасывается при изменении данных того же query.
+Enter проверяет актуальную строку; если выбранной подсказки уже нет, выполняется
+поиск по введённому тексту, как при отсутствии выбора.
 
 Геометрия shell задаётся CSS-переменными `--shell-top-offset`,
 `--shell-bottom-offset` и `--shell-sticky-top`. Контент, sticky/fixed controls,

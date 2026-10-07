@@ -89,7 +89,7 @@ export const useSearch = (
 
   useEffect(() => {
     setHighlightedSuggestionIndex(-1);
-  }, [debouncedSearchQuery]);
+  }, [debouncedSearchQuery, productNameSuggestions]);
 
   const submitSearch = useCallback(
     (value: string) => {
@@ -180,9 +180,13 @@ export const useSearch = (
 
       if (event.key === "Enter" && highlightedSuggestionIndex >= 0) {
         event.preventDefault();
-        handleSuggestionSelect(
-          productNameSuggestions[highlightedSuggestionIndex],
-        );
+        const suggestion = productNameSuggestions[highlightedSuggestionIndex];
+        if (typeof suggestion === "string") {
+          handleSuggestionSelect(suggestion);
+        } else {
+          setHighlightedSuggestionIndex(-1);
+          submitSearch(searchQuery);
+        }
       }
     },
     [
@@ -190,6 +194,8 @@ export const useSearch = (
       highlightedSuggestionIndex,
       isSuggestionsOpen,
       productNameSuggestions,
+      searchQuery,
+      submitSearch,
     ],
   );
 

@@ -59,6 +59,16 @@ build, HTTP smoke и регрессия общего кабинета/auth. Вс
 
 ## Команды
 
+Stage 20: `npx playwright test search-input admin --project=chromium`.
+`search-input-model.spec.ts` исполняет исходные hooks с управляемыми snapshots,
+React effects и таймерами: delayed/out-of-order URL acknowledgements, быстрый ввод,
+совместные изменения фильтров, Enter/clear/unmount, история и отмена debounce.
+Подсказки 3 → 1 проверяются также с Enter до выполнения reset effect.
+`search-input.spec.ts` проверяет задержанные RSC-переходы, сохранение query params,
+сброс страницы, Back/Forward и подсказки 3 → 1/0 после refetch на 393/1280 px.
+Обязательны lint, typecheck, architecture:check, build и HTTP smoke;
+общая auth-регрессия — `auth-return-path.spec.ts`. Все API подменяются.
+
 Stage 19: `npx playwright test auth-return-path --project=chromium`.
 Spec проверяет гостевые cart/favorite из каталога и деталей товара на 393/1280 px:
 отмена диалога, login/register с переключением форм, возврат на исходный route/query

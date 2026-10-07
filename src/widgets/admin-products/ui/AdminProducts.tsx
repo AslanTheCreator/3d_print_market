@@ -7,7 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { ProductStatusActions } from "@/features/admin-product-management";
 import { Alert, Box, Button, Chip, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { RequestFeedback } from "@/shared/ui/request-feedback";
-import { useUrlState, parsePositiveSafeInteger, parseNonNegativeSafeInteger } from "@/shared/lib";
+import { parsePositiveSafeInteger, parseNonNegativeSafeInteger } from "@/shared/lib";
+import { useAdminProductSearch } from "../model/useAdminProductSearch";
 
 const statuses: Record<string, string> = { ACTIVE: "Активные", BLOCKED: "Заблокированные", TIME_EXPIRED: "Истёкшие", DELETED: "Удалённые" };
 const statusLabels: Record<string, string> = { ACTIVE: "Активен", BLOCKED: "Заблокирован", TIME_EXPIRED: "Истёк", DELETED: "Удалён" };
@@ -23,7 +24,7 @@ export function AdminProducts({ agentId }: { agentId?: number }) {
   const sessionKey = useAccountSessionKey();
   const desktop = useMediaQuery(useTheme().breakpoints.up("md"));
   const agents = useAgents(sessionKey);
-  const { params, set, currentUrl } = useUrlState();
+  const { params, set, currentUrl, searchDraft, changeSearch, submitSearch } = useAdminProductSearch();
   const selected = parsePositiveSafeInteger(agentId ?? params.get("agent")) ?? undefined;
   const ids = (agents.data ?? []).filter((agent) => !selected || agent.id === selected).map((agent) => agent.id);
   const lists = useAdminProductLists(sessionKey, ids);
@@ -39,7 +40,7 @@ export function AdminProducts({ agentId }: { agentId?: number }) {
   const failed = lists.filter((list) => list.error);
   return <Stack spacing={3}><Stack direction="row" justifyContent="space-between"><Typography component={agentId ? "h2" : "h1"} variant="h4">Товары</Typography><Button disabled={pending} onClick={() => lists.forEach((list) => void list.refetch())}>Обновить</Button></Stack>
     <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-      <TextField label="Поиск по названию или ID" value={search} onChange={(event) => set({ q: event.target.value, page: 0 })} fullWidth />
+      <TextField label="Поиск по названию или ID" value={searchDraft} onChange={(event) => changeSearch(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); submitSearch(); } }} fullWidth />
       {!agentId && <TextField select label="Бот" InputLabelProps={{ shrink: true }} SelectProps={{ displayEmpty: true }} value={selected ?? ""} onChange={(event) => set({ agent: event.target.value || null, page: 0 })} sx={{ minWidth: 180 }}><MenuItem value="">Все боты</MenuItem>{agents.data?.map((agent) => <MenuItem key={agent.id} value={agent.id}>{agent.login}</MenuItem>)}</TextField>}
       <TextField select label="Статус товара" InputLabelProps={{ shrink: true }} SelectProps={{ displayEmpty: true }} value={status} onChange={(event) => set({ status: event.target.value, page: 0 })} sx={{ minWidth: 190 }}><MenuItem value="">Все статусы</MenuItem>{Object.entries(statuses).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>
     </Stack>
