@@ -1,8 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useProductById } from "./useProductQueries";
+import { productKeys } from "./queryKeys";
 import { ProductNotFoundError } from "../lib/ProductNotFoundError";
-import { getImageUrl } from "@/shared/lib";
+import { getImageUrl, parsePositiveSafeInteger } from "@/shared/lib";
 import type { ProductDetail } from "./types";
 import type { ImageGalleryImage } from "@/shared/ui/image-gallery";
 
@@ -19,6 +21,8 @@ interface UseProductDetailsReturn {
   isError: boolean;
   error: Error | null;
   isNotFound: boolean;
+  refetch: () => Promise<unknown>;
+  isFetching: boolean;
 }
 
 export const useProductDetails = ({
@@ -29,15 +33,31 @@ export const useProductDetails = ({
 }: UseProductDetailsOptions = {}): UseProductDetailsReturn => {
   const params = useParams();
   const id = productId ?? (params.id as string);
+  const queryClient = useQueryClient();
+  const [awaitingServerRecovery, setAwaitingServerRecovery] = useState(initialError);
+
+  useEffect(() => {
+    if (initialError) {
+      setAwaitingServerRecovery(true);
+      return;
+    }
+    const validId = parsePositiveSafeInteger(id);
+    if (awaitingServerRecovery && initialProduct && validId !== null) {
+      queryClient.setQueryData(productKeys.detail(validId), initialProduct, { updatedAt: initialDataUpdatedAt });
+      setAwaitingServerRecovery(false);
+    }
+  }, [awaitingServerRecovery, id, initialError, initialProduct, initialDataUpdatedAt, queryClient]);
 
   const {
     data: productCard,
     error,
     isError,
+    refetch,
+    isFetching,
   } = useProductById(id, {
     initialProduct,
     initialDataUpdatedAt,
-    enabled: !initialError,
+    enabled: !initialError && !awaitingServerRecovery,
   });
 
   const allImages = useMemo<ImageGalleryImage[]>(() => {
@@ -74,7 +94,9 @@ export const useProductDetails = ({
     productCard,
     allImages,
     error,
+    refetch,
+    isFetching,
     isError: initialError || isError,
-    isNotFound: error instanceof ProductNotFoundError,
+    isNotFound: parsePositiveSafeInteger(id) === null || error instanceof ProductNotFoundError,
   };
 };

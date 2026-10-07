@@ -83,6 +83,7 @@ interface ErrorStateProps {
   description?: string;
   onRetry?: () => void;
   retryText?: string;
+  retryPending?: boolean;
   /** Скрыть кнопку повтора */
   hideRetry?: boolean;
   /** Минимальная высота контейнера */
@@ -110,6 +111,7 @@ export const ErrorState = ({
   description,
   onRetry,
   retryText,
+  retryPending = false,
   hideRetry = false,
   minHeight = 400,
   iconSize = "medium",
@@ -182,6 +184,7 @@ export const ErrorState = ({
           variant="contained"
           startIcon={<RefreshIcon />}
           onClick={onRetry}
+          disabled={retryPending}
           size="large"
           sx={{
             textTransform: "none",
@@ -190,7 +193,7 @@ export const ErrorState = ({
             py: { xs: 1, sm: 1.25 },
           }}
         >
-          {finalRetryText}
+          {retryPending ? "Загрузка..." : finalRetryText}
         </Button>
       )}
 

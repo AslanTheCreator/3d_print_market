@@ -1,7 +1,9 @@
 import {
   type InfiniteData,
   useInfiniteQuery,
+  hashKey,
 } from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
 import type {
   FetchProductsParams,
   ProductFilter,
@@ -51,8 +53,12 @@ export const useInfiniteProducts = <T extends ProductDto = Product>({
   enabled = true,
   refetchOnWindowFocus,
 }: UseInfiniteProductsOptions<T>) => {
-  return useInfiniteQuery({
-    queryKey: [...queryKey, size, filters, sortBy],
+  const fullQueryKey = [...queryKey, size, filters, sortBy];
+  const queryHash = hashKey(fullQueryKey);
+  const [failedPageKey, setFailedPageKey] = useState<string | null>(null);
+  useEffect(() => setFailedPageKey(null), [queryHash]);
+  const query = useInfiniteQuery({
+    queryKey: fullQueryKey,
     queryFn: ({ pageParam, signal }: { pageParam: CursorPageParam | null; signal: AbortSignal }) => {
       const { lastCreatedAt, lastPrice, lastId } = pageParam || {};
 
@@ -86,4 +92,19 @@ export const useInfiniteProducts = <T extends ProductDto = Product>({
     ...(refetchOnWindowFocus !== undefined ? { refetchOnWindowFocus } : {}),
     ...(retry !== undefined ? { retry } : {}),
   });
+
+  const { fetchNextPage: requestNextPage } = query;
+  const fetchNextPage = useCallback(async (...args: Parameters<typeof requestNextPage>) => {
+    const result = await requestNextPage(...args);
+    setFailedPageKey(previous => result.isError ? queryHash : previous === queryHash ? null : previous);
+    return result;
+  }, [requestNextPage, queryHash]);
+
+  const hasNextPageError = query.isFetchNextPageError || failedPageKey === queryHash;
+  return {
+    ...query,
+    fetchNextPage,
+    hasNextPageError,
+    isLoadMoreBlocked: query.isFetching || (query.isError && !hasNextPageError),
+  };
 };

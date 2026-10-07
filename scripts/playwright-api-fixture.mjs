@@ -87,6 +87,8 @@ const sendJson = (response, status, body) => {
 };
 
 const requestCounts = {};
+let recoveryStatus = 503;
+let recoveryDelay = 0;
 const server = createServer((request, response) => {
   if (!request.url) {
     sendJson(response, 400, { error: "Missing request URL" });
@@ -101,6 +103,13 @@ const server = createServer((request, response) => {
 
   const url = new URL(request.url, `http://127.0.0.1:${port}`);
 
+  if (request.method === "POST" && url.pathname === "/__test/product-recovery") {
+    recoveryStatus = url.searchParams.get("status") === "200" ? 200 : 503;
+    recoveryDelay = url.searchParams.get("delay") === "500" ? 500 : 0;
+    sendJson(response, 200, { status: recoveryStatus });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/__test/requests") {
     sendJson(response, 200, requestCounts);
     return;
@@ -114,6 +123,14 @@ const server = createServer((request, response) => {
 
   if (request.method === "GET" && url.pathname === `/product/${product.id}`) {
     sendJson(response, 200, product);
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/product/924") {
+    const status = recoveryStatus;
+    setTimeout(() => sendJson(response, status, status === 200
+      ? { ...product, id: 924, name: "Восстановленный серверный товар", imageIds: [] }
+      : { message: "Fixture recovery failure" }), recoveryDelay);
     return;
   }
 

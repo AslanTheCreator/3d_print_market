@@ -35,6 +35,10 @@ export const SearchProducts = () => {
     hasNextPage,
     isError,
     isFetchingNextPage,
+    isFetchNextPageError,
+    hasNextPageError,
+    isLoadMoreBlocked,
+    isFetching,
     isLoading,
     refetch,
   } = useProductsInfinite(SEARCH_PRODUCTS_PAGE_SIZE, filters, undefined, {
@@ -94,13 +98,16 @@ export const SearchProducts = () => {
           onLoadMore={fetchNextPage}
           hasNextPage={!!hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
+          isLoadMoreError={hasNextPageError}
+          isLoadMoreBlocked={isLoadMoreBlocked}
           loadingContent={
             <ProductGridSkeleton count={SEARCH_PRODUCTS_PAGE_SIZE} />
           }
         >
           <ProductCatalog
             products={products}
-            isError={isError}
+            isError={isError && !isFetchNextPageError}
+            isRetrying={isFetching}
             isLoading={isLoading || !isInitialized}
             skeletonCount={SEARCH_PRODUCTS_PAGE_SIZE}
             onRetry={() => {

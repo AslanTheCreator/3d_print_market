@@ -195,6 +195,13 @@ age gate категории остаётся предупреждением, а 
 и персональные данные в query keys не помещаются. SSR initial data используются
 только в гостевом кэше, поэтому не подавляют авторизованную загрузку.
 
+Infinite catalog сохраняет страницы при ошибке хвоста или фонового refetch.
+`useInfiniteProducts` отдаёт `hasNextPageError` и `isLoadMoreBlocked`:
+автозагрузка ждёт окончания любого чтения и после отказа хвоста остаётся
+на паузе, даже если reconnect успешно обновил страницы. Ручной retry хвоста
+вызывает `fetchNextPage`; смена query key сбрасывает паузу. Initial/background
+retry вызывает `refetch`, не заменяя загруженные карточки общим error screen.
+
 Публичные товарные DTO поддерживают `EXTERNAL_PRODUCT`, `count: number | null`
 и `externalUrl: string | null`. `count=null` означает неограниченный остаток;
 публичный backend скрывает внешнюю ссылку значением `null`, покупатель её не видит.
@@ -256,6 +263,13 @@ Seller submit требует валидный ID и инициализирова
 `ProductNotFoundError`. Ошибка image metadata, включая 404, сохраняет общий
 error/retry и не означает отсутствия товара. Пустой успешный metadata-ответ
 допускается. Неверный route ID блокируется до запроса, включая ручной refetch.
+
+Retry деталей привязан к источнику ошибки: client query повторяется через
+`useProductDetails.refetch`, initial SSR error — через `router.refresh`.
+Восстановленный после SSR ошибки snapshot записывается в существующий detail
+cache до включения клиентского чтения: изменение `initialData` само по себе
+не обновляет созданный query. `isFetching` и pending route refresh блокируют
+повторное нажатие; подтверждённое отсутствие и invalid ID не предлагают retry.
 
 `entities/image` владеет `ImageMetadata`, `ImageResponse`, `ImageTag`, image API,
 query hooks и `attachImages`. В `src/shared/model` остаётся только нейтральный

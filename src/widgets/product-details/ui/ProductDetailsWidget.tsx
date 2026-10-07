@@ -6,6 +6,7 @@ import {
   Stack,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { useProductDetails } from "@/entities/product";
 import type { ProductDetail } from "@/entities/product";
 import { ErrorState } from "@/shared/ui/states";
@@ -25,8 +26,9 @@ export function ProductDetailsWidget({
   initialError,
 }: ProductDetailsWidgetProps) {
   const router = useRouter();
+  const [isRefreshing, startRefresh] = useTransition();
 
-  const { productCard, allImages, isError, isNotFound } = useProductDetails({
+  const { productCard, allImages, isError, isNotFound, refetch, isFetching } = useProductDetails({
     productId,
     initialProduct,
     initialDataUpdatedAt,
@@ -40,7 +42,10 @@ export function ProductDetailsWidget({
           type="products"
           title={isNotFound ? "Товар не найден" : "Не удалось открыть товар"}
           description={isNotFound ? "Товар больше недоступен. Вернитесь к просмотру каталога." : "Не удалось загрузить товар. Попробуйте обновить страницу или вернуться к просмотру каталога."}
-          onRetry={isNotFound ? undefined : () => router.refresh()}
+          onRetry={isNotFound ? undefined : initialError
+            ? () => startRefresh(() => router.refresh())
+            : () => void refetch()}
+          retryPending={isFetching || isRefreshing}
           retryText="Обновить"
           actions={
             <Stack

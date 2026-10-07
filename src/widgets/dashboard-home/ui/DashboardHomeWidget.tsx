@@ -14,6 +14,12 @@ import { AdminEntryLink } from "@/features/admin-access";
 export const DashboardHomeWidget = () => {
   const { data: userData, isLoading, error, refetch, isFetching } = useCurrentUser();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const handleRetry = async () => {
+    if (isFetching) return;
+    setIsRetrying(true);
+    try { await refetch(); } finally { setIsRetrying(false); }
+  };
 
   if (isEditingProfile && userData) {
     return (
@@ -28,7 +34,7 @@ export const DashboardHomeWidget = () => {
   return (
     <Box>
       <AdminEntryLink />
-      {isLoading ? (
+      {isLoading && !isRetrying ? (
         <DashboardHomeSkeleton />
       ) : error || !userData ? (
         <>
@@ -37,7 +43,7 @@ export const DashboardHomeWidget = () => {
               severity="error"
               sx={{ borderRadius: 2, "& .MuiAlert-action": { alignItems: "center" } }}
               action={
-                <Button color="inherit" disabled={isFetching} onClick={() => void refetch()}>
+                <Button color="inherit" disabled={isFetching} onClick={() => void handleRetry()}>
                   {isFetching ? "Загрузка..." : "Повторить"}
                 </Button>
               }
@@ -46,7 +52,7 @@ export const DashboardHomeWidget = () => {
             </Alert>
           </Box>
           <Box sx={{ display: { xs: "none", md: "block" } }}>
-            <ErrorState type="profile" />
+            <ErrorState type="profile" onRetry={() => void handleRetry()} retryPending={isFetching} />
           </Box>
         </>
       ) : (

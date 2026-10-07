@@ -98,6 +98,10 @@ export const SellerPageClient = ({ sellerId }: SellerPageClientProps) => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetchNextPageError,
+    hasNextPageError,
+    isLoadMoreBlocked,
+    isFetching,
     isLoading: isProductsLoading,
     isError: isProductsError,
     refetch: refetchProducts,
@@ -213,12 +217,15 @@ export const SellerPageClient = ({ sellerId }: SellerPageClientProps) => {
         onLoadMore={fetchNextPage}
         hasNextPage={!!hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
+        isLoadMoreError={hasNextPageError}
+        isLoadMoreBlocked={isLoadMoreBlocked}
         loadingContent={<ProductGridSkeleton count={PAGE_SIZE} />}
       >
         <ProductCatalog
           products={products}
           isLoading={isProductsLoading}
-          isError={isProductsError}
+          isError={isProductsError && !isFetchNextPageError}
+          isRetrying={isFetching}
           onRetry={handleProductsRetry}
         />
       </InfiniteScroll>

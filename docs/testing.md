@@ -59,6 +59,21 @@ build, HTTP smoke и регрессия общего кабинета/auth. Вс
 
 ## Команды
 
+Stage 16: `npx playwright test infinite-recovery-model read-recovery route-boundaries product-search-session core-images --project=chromium`.
+`infinite-recovery-model.spec.ts` исполняет настоящий InfiniteQueryObserver,
+entity hook и effect автозагрузки с видимым sentinel: `retry:false` и один retry,
+пауза после фонового успеха, ручное восстановление, category/name/participant/price,
+session и sort query keys, включая возврат к прежнему ключу.
+`read-recovery.spec.ts` покрывает initial/tail/background failure всех пяти
+infinite consumers, предел запросов при видимом sentinel, сохранение DOM карточек
+и scroll position, ручной retry хвоста, паузу после автоматического успешного
+refetch и смену ценового фильтра. Отдельно проверяются client GET retry деталей,
+SSR route refresh с восстановлением существующего cache, invalid ID без retry
+и pending/recovery профиля на desktop/mobile ширинах.
+SSR fixture product 924 управляется только тестовым `/__test/product-recovery`.
+Обязательные проверки: lint, typecheck, architecture:check, build, HTTP smoke
+и полный `npm run test:e2e`. API подменены; реальный backend не проверяется.
+
 Stage 15: `npx playwright test core-images own-product-purchase user-products-stock order-details image-identity open-forms private-data --project=chromium`.
 `core-images.spec.ts` проверяет header-only без metadata, общий core cache
 шапки/списков, локальный fallback/retry профиля, заказов и собственных товаров,

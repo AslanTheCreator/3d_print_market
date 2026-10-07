@@ -131,6 +131,11 @@ Adapter также передаёт сигнал поколения сессии
 правила изоляции query cache и гостевого SSR описаны в
 [api-and-auth.md](./api-and-auth.md#поиск-товаров-и-сессия).
 
+Entity hook infinite products различает initial/background и next-page error;
+композиция каталога сохраняет карточки, а нейтральный `InfiniteScroll` получает
+состояния паузы/ошибки и callback повтора хвоста. Правила восстановления чтений
+описаны в [api-and-auth.md](./api-and-auth.md).
+
 Server state хранится в TanStack Query. Zustand используется для клиентского состояния.
 
 `PrivateDataBoundary` в app providers задаёт владельца приватных данных через

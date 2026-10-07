@@ -32,6 +32,10 @@ export const HomeProducts = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetchNextPageError,
+    hasNextPageError,
+    isLoadMoreBlocked,
+    isFetching,
     isLoading,
     isError,
     refetch,
@@ -53,7 +57,7 @@ export const HomeProducts = ({
 
   return (
     <Container sx={{ pt: "20px" }}>
-      {!hasError && (products.length > 0 || isCatalogLoading) && (
+      {(products.length > 0 || (!hasError && isCatalogLoading)) && (
         <Typography
           component="h1"
           variant="h2"
@@ -71,6 +75,8 @@ export const HomeProducts = ({
           onLoadMore={fetchNextPage}
           hasNextPage={!!hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
+          isLoadMoreError={hasNextPageError}
+          isLoadMoreBlocked={isLoadMoreBlocked}
           loadingContent={<ProductGridSkeleton count={pageSize} />}
         >
           <ProductCatalog
@@ -81,7 +87,8 @@ export const HomeProducts = ({
               </ProductGridItem>
             }
             isLoading={isCatalogLoading}
-            isError={hasError}
+            isError={hasError && !isFetchNextPageError}
+            isRetrying={isFetching}
             onRetry={handleRetry}
             skeletonCount={pageSize}
           />

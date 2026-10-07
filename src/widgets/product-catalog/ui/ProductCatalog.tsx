@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Box } from "@mui/material";
+import { Alert, Box, Button } from "@mui/material";
 import {
   ProductCard,
   ProductGrid,
@@ -22,6 +22,7 @@ interface ProductCatalogProps {
   isLoading?: boolean;
   isError?: boolean;
   onRetry?: () => void;
+  isRetrying?: boolean;
   skeletonCount?: number;
 }
 
@@ -31,6 +32,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   isLoading,
   isError,
   onRetry,
+  isRetrying,
   skeletonCount = 12,
 }) => {
   const { isAuthenticated } = useAuth();
@@ -41,7 +43,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
     router.push(`/catalog/${productId}/detail`);
   };
 
-  if (isLoading) {
+  if (isLoading && products.length === 0 && !isError) {
     return (
       <Box>
         <ProductGridSkeleton
@@ -52,8 +54,8 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
     );
   }
 
-  if (isError) {
-    return <ErrorState type="products" onRetry={onRetry} />;
+  if (isError && products.length === 0) {
+    return <ErrorState type="products" onRetry={onRetry} retryPending={isRetrying} />;
   }
 
   if (!products || products.length === 0) {
@@ -105,6 +107,15 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
           </ProductGridItem>
         ))}
       </ProductGrid>
+      {isError && (
+        <Alert severity="error" sx={{ mt: 2 }} action={onRetry && (
+          <Button color="inherit" disabled={isRetrying} onClick={onRetry}>
+            {isRetrying ? "Загрузка..." : "Повторить обновление"}
+          </Button>
+        )}>
+          Не удалось обновить товары. Показаны ранее загруженные данные.
+        </Alert>
+      )}
     </Box>
   );
 };

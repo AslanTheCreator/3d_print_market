@@ -1,6 +1,7 @@
 "use client";
 
-import { Box, Typography, Paper } from "@mui/material";
+import { Alert, Box, Button, Typography, Paper } from "@mui/material";
+import { ErrorState } from "@/shared/ui/states";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { useIntersectionObserver } from "usehooks-ts";
 import {
@@ -89,7 +90,8 @@ export function RelatedProducts({
     }
   }, [entry?.isIntersecting]);
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading,
+    isError, refetch, isFetching, hasNextPageError, isLoadMoreBlocked, isFetchNextPageError } =
     useProductsInfinite(10, { categoryId }, undefined, {
       sessionKey,
       enabled: isInitialized && canLoadProducts,
@@ -107,7 +109,7 @@ export function RelatedProducts({
     return <div ref={ref} />;
   }
 
-  if (!isLoading && filteredProducts.length === 0) {
+  if (!isLoading && !isError && filteredProducts.length === 0) {
     return null;
   }
 
@@ -133,19 +135,32 @@ export function RelatedProducts({
           Похожие товары
         </Typography>
 
-        {isLoading ? (
+        {isError && !data ? (
+          <ErrorState type="products" onRetry={() => void refetch()} retryPending={isFetching} />
+        ) : isLoading ? (
           <RelatedProductsGrid products={[]} isLoading />
         ) : (
           <InfiniteScroll
             onLoadMore={fetchNextPage}
             hasNextPage={!!hasNextPage}
             isFetchingNextPage={isFetchingNextPage}
+            isLoadMoreError={hasNextPageError}
+            isLoadMoreBlocked={isLoadMoreBlocked}
             loadingContent={<ProductGridSkeleton count={10} />}
           >
             <RelatedProductsGrid
               products={filteredProducts}
               isLoading={isLoading}
             />
+            {isError && !isFetchNextPageError && (
+              <Alert severity="error" sx={{ mt: 2 }} action={
+                <Button color="inherit" disabled={isFetching} onClick={() => void refetch()}>
+                  {isFetching ? "Загрузка..." : "Повторить обновление"}
+                </Button>
+              }>
+                Не удалось обновить товары. Показаны ранее загруженные данные.
+              </Alert>
+            )}
           </InfiniteScroll>
         )}
       </Box>

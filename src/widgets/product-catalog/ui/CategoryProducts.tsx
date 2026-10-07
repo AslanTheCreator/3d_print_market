@@ -85,6 +85,10 @@ export const CategoryProducts = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetchNextPageError,
+    hasNextPageError,
+    isLoadMoreBlocked,
+    isFetching,
     isLoading,
     isError,
     error,
@@ -182,12 +186,15 @@ export const CategoryProducts = ({
         onLoadMore={fetchNextPage}
         hasNextPage={!!hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
+        isLoadMoreError={hasNextPageError}
+        isLoadMoreBlocked={isLoadMoreBlocked}
         loadingContent={<ProductGridSkeleton count={pageSize} />}
       >
         <ProductCatalog
           products={products}
           isLoading={isCatalogLoading}
-          isError={hasError}
+          isError={hasError && !isFetchNextPageError}
+          isRetrying={isFetching}
           onRetry={handleRetry}
           skeletonCount={pageSize}
         />
