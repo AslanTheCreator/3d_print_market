@@ -28,7 +28,7 @@ export const getProductWord = (count: number): string => {
 export const getProfileTasks = (user: UserBaseModel): ProfileTask[] => [
   {
     label: "Добавьте фото профиля",
-    completed: Boolean(user.imageId || user.image?.length),
+    completed: Boolean(user.imageId),
   },
   {
     label: "Заполните имя профиля",

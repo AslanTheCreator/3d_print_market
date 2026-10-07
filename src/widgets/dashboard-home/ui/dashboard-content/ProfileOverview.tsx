@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { CameraAltRounded, PersonRounded, StarRounded } from "@mui/icons-material";
 import type { UserBaseModel } from "@/entities/user";
+import { ImageMetadataFeedback, useImageMetadataQuery } from "@/entities/image";
 import { getImageUrl } from "@/shared/lib";
 import { ProfileProgress } from "./ProfileProgress";
 import { getProfileCompletion, getProfileTasks } from "./model";
@@ -29,7 +30,8 @@ export const ProfileOverview = ({
 }: ProfileOverviewProps): React.ReactElement => {
   const theme = useTheme();
   const userName = user.login || user.fullName;
-  const userImage = user.image?.[0];
+  const avatarQuery = useImageMetadataQuery(user.imageId);
+  const userImage = avatarQuery.data?.find(image => image.id === user.imageId);
   const userImageSrc = getImageUrl(userImage, "medium");
   const tasks = getProfileTasks(user);
   const completion = getProfileCompletion(tasks);
@@ -54,6 +56,7 @@ export const ProfileOverview = ({
       }}
     >
       <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+        <ImageMetadataFeedback query={avatarQuery} />
         <Stack
           direction={{ xs: "column", lg: "row" }}
           spacing={{ xs: 1.5, md: 3, lg: 4 }}

@@ -87,10 +87,13 @@ export const useProductsInfinite = (
   });
 };
 
+export const USER_PRODUCTS_PAGE_SIZE = 100;
+
 export const useUserProductsInfinite = (
   size: number,
   filters?: ProductFilter,
   sortBy?: SortBy,
+  options?: { enabled?: boolean },
 ) => {
   const scope = usePrivateScope();
   return useInfiniteProducts({
@@ -98,7 +101,8 @@ export const useUserProductsInfinite = (
     filters,
     sortBy,
     fetchFunction: productApi.getUserProducts,
-    enabled: scope.id !== null,
+    refetchOnWindowFocus: true,
+    enabled: scope.id !== null && (options?.enabled ?? true),
     queryKey: scope.key(productKeys.userLists()),
   });
 };

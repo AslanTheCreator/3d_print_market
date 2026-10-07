@@ -46,7 +46,7 @@ export {
 } from "./lib/orderStatusMeta";
 
 // Types
-export type { ListOrdersModel, OrderCancel, OrderStatus } from "./model/types";
+export type { ListOrdersDto, ListOrdersModel, OrderCancel, OrderStatus } from "./model/types";
 export type { OrderProgressStep, OrderUserRole } from "./lib/orderStatusMeta";
 
 export { orderApi } from "./api/orderApi";

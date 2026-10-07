@@ -3,7 +3,6 @@ import type {
   TransferMoney,
 } from "@/entities/account/@x/user";
 import type { Address } from "@/entities/address/@x/user";
-import type { ImageMetadata } from "@/entities/image/@x/user";
 import type {
   SocialNetwork,
 } from "@/entities/social-network/@x/user";
@@ -19,7 +18,6 @@ export interface UserProfileModel extends Pick<
   role: string;
   email: string;
   imageId: number | null;
-  image: ImageMetadata[];
   exp: number;
   type: string;
 }
@@ -35,7 +33,6 @@ export interface UserBaseModel {
   averageRating: number;
   totalReviews: number;
   imageId: number | null;
-  image: ImageMetadata[];
   addresses: Address[];
   accounts: AccountsBaseModel[];
   transfers: Transfer[];

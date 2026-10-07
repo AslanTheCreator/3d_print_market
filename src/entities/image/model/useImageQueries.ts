@@ -35,11 +35,14 @@ export const useImagesQuery = (
 export const useImageMetadataQuery = (
   imageIds: number | number[] | null | undefined,
 ) => {
-  const normalizedIds = useMemo(() => normalizeImageIds(imageIds), [imageIds]);
+  const normalizedIds = useMemo(
+    () => [...new Set(normalizeImageIds(imageIds))].sort((a, b) => a - b),
+    [imageIds],
+  );
 
   return useQuery<ImageMetadata[]>({
     queryKey: [IMAGE_METADATA_QUERY_KEY, ...normalizedIds],
-    queryFn: () => imageApi.getImageMetadata(normalizedIds),
+    queryFn: ({ signal }) => imageApi.getImageMetadata(normalizedIds, signal),
     enabled: normalizedIds.length > 0,
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,

@@ -156,6 +156,31 @@ query-параметров через `useSearchParams`.
 
 ## Поиск товаров и сессия
 
+`userApi.getUser/getProfileUser` и соответствующие queries возвращают core
+`UserBaseModel/UserProfileModel` с `imageId`, без `image`. Ошибка metadata не
+влияет на профиль, sellerId или доступность действий; ошибка core по-прежнему
+блокирует проверку владельца. Существующие scoped `userKeys` сохранены.
+
+`orderApi.getSellerOrders/getCustomerOrders` кэшируют `ListOrdersDto[]` без
+enrichment, под прежними scoped `orderQueryKeys`. `OrdersWidget` отдельно
+загружает metadata и собирает `ListOrdersModel` для отображения и диалогов.
+`productApi.getUserProducts` возвращает `ProductDto[]`; шапка и список используют
+один scoped infinite key: `productKeys.userLists(), 100, undefined, DATE_DESC`.
+Шапка считает продления по первой сотне, как прежде; список показывает по 12
+карточек из общего кэша, затем читает следующую сотню существующим cursor API.
+Отдельный renewal-check query больше не используется. Delete/extend/update
+инвалидируют общий core cache через существующую user-ветку.
+
+Metadata загружается только отображающими картинки widgets через
+`useImageMetadataQuery`: ключ `imageMetadata, ...ids` содержит отсортированные
+уникальные положительные IDs, запрос получает AbortSignal. Профиль и редактор
+аватара используют тот же image cache; списки запрашивают batch. Public API
+`mapImageMetadata` синхронно сопоставляет DTO с metadata по ID, без сети и
+изменения core cache. `ImageMetadataFeedback` показывает локальную загрузку
+или ошибку с retry только metadata; fallback не блокирует данные и формы.
+Публичные catalog/detail чтения и сопоставление изображений редактора товара
+сохраняют прежний контракт.
+
 `POST /products/find` не получает `includeAdult`: возрастной доступ определяет
 backend по пользовательскому bearer token. Браузерный поиск авторизованного
 пользователя идёт через `authClient`; гостевой поиск, SSR и sitemap — через

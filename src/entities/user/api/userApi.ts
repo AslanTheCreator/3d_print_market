@@ -4,7 +4,6 @@ import {
   UserProfileModel,
   UserUpdateModel,
 } from "../model/types";
-import { imageApi } from "@/entities/image/@x/user";
 import { authClient, publicClient } from "@/shared/api";
 
 const API_URL = `/participant`;
@@ -14,10 +13,7 @@ const API_URL_PROFILE = `/auth/profile`;
 export const userApi = {
   async getUser(signal?: AbortSignal): Promise<UserBaseModel> {
     const { data } = await authClient.get<UserBaseModel>(API_URL, { signal });
-    const images = data.imageId
-      ? await imageApi.getImageMetadata(data.imageId, signal)
-      : [];
-    return { ...data, image: images };
+    return data;
   },
   async getUserByParams(id?: number): Promise<UserFindModel[]> {
     const { data } = await publicClient.post<UserFindModel[]>(API_URL_FIND, {
@@ -27,10 +23,7 @@ export const userApi = {
   },
   async getProfileUser(signal?: AbortSignal): Promise<UserProfileModel> {
     const { data } = await authClient.get<UserProfileModel>(API_URL_PROFILE, { signal });
-    const image = data.imageId
-      ? await imageApi.getImageMetadata(data.imageId, signal)
-      : [];
-    return { ...data, image: image };
+    return data;
   },
   async updateUser(userData: UserUpdateModel): Promise<number> {
     const { data } = await authClient.put<number>(API_URL, userData, {

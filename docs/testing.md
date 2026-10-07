@@ -59,6 +59,15 @@ build, HTTP smoke и регрессия общего кабинета/auth. Вс
 
 ## Команды
 
+Stage 15: `npx playwright test core-images own-product-purchase user-products-stock order-details image-identity open-forms private-data --project=chromium`.
+`core-images.spec.ts` проверяет header-only без metadata, общий core cache
+шапки/списков, локальный fallback/retry профиля, заказов и собственных товаров,
+сохранение ввода профиля, показ товаров по 12 и проверку sellerId при отказе
+аватара и самого профиля. Retry картинки не повторяет core GET/POST.
+Дополнительно: `dashboard-home.mobile.spec.ts`, полный `npm run test:e2e`,
+lint, typecheck, architecture:check, build и HTTP smoke. Все API подменены;
+эти сценарии не подтверждают реальный backend.
+
 Stage 10: `npx playwright test save-confirmation image-identity private-data-model --project=chromium`;
 профиль: `npx playwright test dashboard-home.mobile --project=mobile-chromium`.
 `save-confirmation-model.spec.ts` исполняет настоящие entity mutations с

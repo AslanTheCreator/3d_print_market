@@ -1,7 +1,8 @@
 export { imageApi } from "./api/imageApi";
 export { adminImageApi } from "./api/adminImageApi";
 export { AdminImages } from "./ui/AdminImages";
-export { attachImages } from "./lib/attachImages";
+export { attachImages, mapImageMetadata } from "./lib/attachImages";
+export { ImageMetadataFeedback } from "./ui/ImageMetadataFeedback";
 export type {
   ImageMetadata,
   ImageResponse,

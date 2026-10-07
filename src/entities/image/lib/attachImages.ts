@@ -12,6 +12,14 @@ export const attachImages = async <T, R extends T & { image: ImageMetadata[] }>(
 
   const uniqueImageIds = [...new Set(imageIds)];
   const images = await imageApi.getImageMetadata(uniqueImageIds, signal);
+  return mapImageMetadata(items, getImageId, images) as R[];
+};
+
+export const mapImageMetadata = <T>(
+  items: T[],
+  getImageId: (item: T) => number | undefined | null,
+  images: ImageMetadata[] = [],
+): (T & { image: ImageMetadata[] })[] => {
   const imageById = new Map(images.map((image) => [image.id, image]));
 
   return items.map((item) => {
@@ -21,6 +29,6 @@ export const attachImages = async <T, R extends T & { image: ImageMetadata[] }>(
     return {
       ...item,
       image: image ? [image] : [],
-    } as R;
+    };
   });
 };

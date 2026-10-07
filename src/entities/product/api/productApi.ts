@@ -52,7 +52,7 @@ export const productApi = {
     }));
   },
 
-  getUserProducts: async (params: FetchProductsParams, signal?: AbortSignal): Promise<Product[]> => {
+  getUserProducts: async (params: FetchProductsParams, signal?: AbortSignal): Promise<ProductDto[]> => {
     const requestData = buildProductRequest(params);
     const { data } = await authClient.post<ProductDto[]>(
       `${API_URL}/my`,
@@ -60,7 +60,7 @@ export const productApi = {
       { signal },
     );
 
-    return attachImages<ProductDto, Product>(data, (p) => p.imageId, signal);
+    return data;
   },
 
   findProductNames: async (name: string): Promise<string[]> => {

@@ -111,7 +111,11 @@ app layer находится в корневом `app/`, вне `src`.
 
 Доменные DTO размещаются в `model` соответствующих entities. `entities/image`
 владеет image DTO, API, query hooks и связыванием изображений с доменными
-данными. `entities/session` владеет auth API, Zustand store, auth hooks,
+данными. Core DTO профиля, заказов и собственных товаров кэшируются отдельно;
+widgets собирают визуальные модели через `mapImageMetadata` и существующий
+image query с локальными loading/error/fallback/retry. Контракты и ключи
+описаны в [api-and-auth.md](./api-and-auth.md#поиск-товаров-и-сессия).
+`entities/session` владеет auth API, Zustand store, auth hooks,
 инициализацией и refresh lifecycle. В `src/shared/model`, доступном через
 `@/shared/types`, остаётся только нейтральный тип `Currency`.
 

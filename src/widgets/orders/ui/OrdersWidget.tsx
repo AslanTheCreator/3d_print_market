@@ -4,7 +4,8 @@ import React, { useMemo, useState } from "react";
 import { Alert, Box, Button, Stack } from "@mui/material";
 import { Receipt, Storefront } from "@mui/icons-material";
 import { UseQueryResult } from "@tanstack/react-query";
-import { ListOrdersModel, OrdersEmptyState } from "@/entities/order";
+import { ListOrdersDto, OrdersEmptyState } from "@/entities/order";
+import { ImageMetadataFeedback, mapImageMetadata, useImageMetadataQuery } from "@/entities/image";
 import { PageHeader } from "@/shared/ui/page-header";
 import {
   filterOrdersByStatus,
@@ -28,7 +29,7 @@ import { MobileOrders } from "./MobileOrders";
 import { OrderActionsContext } from "../model/orderActionsContext";
 
 interface OrdersWidgetProps {
-  query: UseQueryResult<ListOrdersModel[]>;
+  query: UseQueryResult<ListOrdersDto[]>;
   userRole: OrdersUserRole;
 }
 
@@ -37,6 +38,7 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
   const [sort, setSort] = useState<OrdersSortId>("attention");
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const { data: orders, isLoading, error, refetch, isFetching } = query;
+  const imageQuery = useImageMetadataQuery(orders?.map(order => order.product.imageId));
 
   const title = getOrdersTitle(userRole);
   const Icon = userRole === "seller" ? Storefront : Receipt;
@@ -45,8 +47,9 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
   </Alert>;
 
   const ordersList = useMemo(
-    () => (Array.isArray(orders) ? orders : []),
-    [orders],
+    () => mapImageMetadata(Array.isArray(orders) ? orders : [], order => order.product.imageId, imageQuery.data)
+      .map(({ image, ...order }) => ({ ...order, product: { ...order.product, image } })),
+    [orders, imageQuery.data],
   );
 
   const filters = useMemo(() => getOrdersFilters(userRole), [userRole]);
@@ -128,6 +131,7 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
     <OrderActionsContext.Provider value={{ actionsAvailable: !error, retry: () => void refetch(), retryPending: isFetching }}>
     <Box sx={{ width: "100%", py: { xs: 2, sm: 3 } }}>
       {refreshWarning}
+      <ImageMetadataFeedback query={imageQuery} />
       <Box sx={{ display: { xs: "none", md: "block" } }}><PageHeader title={title} icon={<Icon />} /></Box>
       <Stack data-testid="desktop-orders" spacing={{ xs: 2, sm: 3 }} sx={{ display: { xs: "none", md: "flex" } }}>
         <OrdersSummaryCards stats={stats} userRole={userRole} />

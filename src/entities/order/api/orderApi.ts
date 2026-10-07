@@ -1,36 +1,12 @@
 import {
   OrderCreateModel,
   OrderGetDataModel,
-  ListOrdersModel,
   ListOrdersDto,
   OrderCancel,
 } from "../model/types";
 import { authClient } from "@/shared/api";
-import { attachImages } from "@/entities/image/@x/order";
-import type { ImageMetadata } from "@/entities/image/@x/order";
 
 const API_URL = `/order`;
-
-type OrderDtoWithImage = ListOrdersDto & { image: ImageMetadata[] };
-
-const attachOrderProductImages = async (
-  orders: ListOrdersDto[],
-  signal?: AbortSignal,
-): Promise<ListOrdersModel[]> => {
-  const ordersWithImages = await attachImages<ListOrdersDto, OrderDtoWithImage>(
-    orders,
-    (order) => order.product.imageId,
-    signal,
-  );
-
-  return ordersWithImages.map(({ image, ...order }) => ({
-    ...order,
-    product: {
-      ...order.product,
-      image,
-    },
-  }));
-};
 
 export const orderApi = {
   // Создание заказа
@@ -127,7 +103,7 @@ export const orderApi = {
   // Получение заказов продавца
   getSellerOrders: async (signal?: AbortSignal) => {
     const { data } = await authClient.get<ListOrdersDto[]>(`${API_URL}/seller`, { signal });
-    return attachOrderProductImages(data, signal);
+    return data;
   },
 
   // Получение заказов покупателя
@@ -136,6 +112,6 @@ export const orderApi = {
       `${API_URL}/customer`,
       { signal },
     );
-    return attachOrderProductImages(data, signal);
+    return data;
   },
 };

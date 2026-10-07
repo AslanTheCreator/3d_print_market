@@ -22,6 +22,7 @@ import { AvatarUpload } from "@/shared/ui/avatar-upload";
 import { PageHeader } from "@/shared/ui/page-header";
 import { useImageUpload, useImageCleanup } from "@/features/image-upload";
 import { useUpdateUser, UserBaseModel } from "@/entities/user";
+import { ImageMetadataFeedback, useImageMetadataQuery } from "@/entities/image";
 import { getImageUrl } from "@/shared/lib";
 import { useNotification } from "@/shared/ui/notification";
 import { useState, useRef } from "react";
@@ -64,7 +65,8 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     removeImage,
   } = useImageUpload("PARTICIPANT");
 
-  const existingImage = initialData?.image?.[0];
+  const avatarQuery = useImageMetadataQuery(initialData?.imageId);
+  const existingImage = avatarQuery.data?.find(image => image.id === initialData?.imageId);
   const existingImagePreview = getImageUrl(existingImage, "medium") ?? null;
 
   const {
@@ -211,6 +213,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                   onImageChange={handleImageChangeWrapper}
                   onDeleteImage={handleResetImage}
                 />
+                {imageState.selection.kind === "unchanged" && <ImageMetadataFeedback query={avatarQuery} />}
               </Stack>
             </Grid>
 

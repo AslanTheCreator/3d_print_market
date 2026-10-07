@@ -7,7 +7,7 @@ import type {
   ProductFilter,
   SortBy,
 } from "./productRequest";
-import type { Product } from "./types";
+import type { Product, ProductDto } from "./types";
 
 export interface CursorPageParam {
   lastCreatedAt?: string;
@@ -15,8 +15,8 @@ export interface CursorPageParam {
   lastId?: number;
 }
 
-export interface ProductFetchFunction {
-  (params: FetchProductsParams, signal?: AbortSignal): Promise<Product[]>;
+export interface ProductFetchFunction<T extends ProductDto = Product> {
+  (params: FetchProductsParams, signal?: AbortSignal): Promise<T[]>;
 }
 
 type QueryRetryValue =
@@ -24,20 +24,21 @@ type QueryRetryValue =
   | number
   | ((failureCount: number, error: Error) => boolean);
 
-export interface UseInfiniteProductsOptions {
+export interface UseInfiniteProductsOptions<T extends ProductDto = Product> {
   size: number;
   filters?: ProductFilter;
   sortBy?: SortBy;
-  fetchFunction: ProductFetchFunction;
+  fetchFunction: ProductFetchFunction<T>;
   queryKey: readonly unknown[];
   staleTime?: number;
   retry?: QueryRetryValue;
-  initialData?: InfiniteData<Product[], CursorPageParam | null>;
+  initialData?: InfiniteData<T[], CursorPageParam | null>;
   initialDataUpdatedAt?: number;
   enabled?: boolean;
+  refetchOnWindowFocus?: boolean;
 }
 
-export const useInfiniteProducts = ({
+export const useInfiniteProducts = <T extends ProductDto = Product>({
   size,
   filters,
   sortBy = "DATE_DESC",
@@ -48,7 +49,8 @@ export const useInfiniteProducts = ({
   initialData,
   initialDataUpdatedAt,
   enabled = true,
-}: UseInfiniteProductsOptions) => {
+  refetchOnWindowFocus,
+}: UseInfiniteProductsOptions<T>) => {
   return useInfiniteQuery({
     queryKey: [...queryKey, size, filters, sortBy],
     queryFn: ({ pageParam, signal }: { pageParam: CursorPageParam | null; signal: AbortSignal }) => {
@@ -63,7 +65,7 @@ export const useInfiniteProducts = ({
         sortBy,
       }, signal);
     },
-    getNextPageParam: (lastPage: Product[]) => {
+    getNextPageParam: (lastPage: T[]) => {
       if (!lastPage || lastPage.length === 0 || lastPage.length < size) {
         return undefined;
       }
@@ -81,6 +83,7 @@ export const useInfiniteProducts = ({
     initialDataUpdatedAt,
     enabled,
     staleTime,
+    ...(refetchOnWindowFocus !== undefined ? { refetchOnWindowFocus } : {}),
     ...(retry !== undefined ? { retry } : {}),
   });
 };

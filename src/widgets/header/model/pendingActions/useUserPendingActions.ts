@@ -1,13 +1,11 @@
-import { usePrivateScope } from "@/shared/lib/query";
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/entities/session";
 import { useSellerOrders, useCustomerOrders } from "@/entities/order";
 import {
   getExpirationStatus,
   isEditableAvailability,
-  productApi,
-  productKeys,
+  useUserProductsInfinite,
+  USER_PRODUCTS_PAGE_SIZE,
 } from "@/entities/product";
 import {
   SELLER_ACTION_STATUSES,
@@ -19,21 +17,15 @@ import {
 } from "./constants";
 
 // Отдельный запрос для товаров пользователя (только для подсчёта продлений)
+// Core cache теперь общий со списком; изображения загружает только список.
 interface UseUserPendingActionsOptions {
   enabled?: boolean;
 }
 
 const useUserProductsForRenewal = (enabled: boolean) => {
-  const scope = usePrivateScope();
   const { isAuthenticated } = useAuth();
-
-  return useQuery({
-    queryKey: scope.key(productKeys.renewalCheck()),
-    queryFn: ({ signal }) => productApi.getUserProducts({ size: 100 }, signal),
-    enabled: scope.id !== null && enabled && isAuthenticated,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: true,
+  return useUserProductsInfinite(USER_PRODUCTS_PAGE_SIZE, undefined, "DATE_DESC", {
+    enabled: enabled && isAuthenticated,
   });
 };
 
@@ -48,8 +40,9 @@ export const useUserPendingActions = (
   });
   const { data: customerOrders, isLoading: isLoadingCustomer } =
     useCustomerOrders({ enabled: enabled && isAuthenticated });
-  const { data: userProducts, isLoading: isLoadingProducts } =
+  const { data: userProductsData, isLoading: isLoadingProducts } =
     useUserProductsForRenewal(enabled);
+  const userProducts = userProductsData?.pages[0];
 
   const isLoading =
     enabled && (isLoadingSeller || isLoadingCustomer || isLoadingProducts);

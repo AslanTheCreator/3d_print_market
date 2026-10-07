@@ -17,7 +17,9 @@ import { useRouter } from "next/navigation";
 import {
   useDeleteProduct,
   useUserProductsInfinite,
+  USER_PRODUCTS_PAGE_SIZE,
 } from "@/entities/product";
+import { ImageMetadataFeedback, mapImageMetadata, useImageMetadataQuery } from "@/entities/image";
 import { useNotification } from "@/shared/ui/notification";
 import { EmptyCatalogState } from "@/shared/ui/states";
 import { UserProductCard } from "./UserProductCard";
@@ -49,6 +51,7 @@ export const UserProductsList: React.FC = () => {
   );
 
   const [sortBy] = React.useState<SortBy>("DATE_DESC");
+  const [visibleCount, setVisibleCount] = useState(12);
 
   const {
     data,
@@ -60,15 +63,24 @@ export const UserProductsList: React.FC = () => {
     error,
     refetch,
     isRefetching,
-  } = useUserProductsInfinite(12, undefined, sortBy);
+  } = useUserProductsInfinite(USER_PRODUCTS_PAGE_SIZE, undefined, sortBy);
 
-  const products = data?.pages.flat() ?? [];
+  const coreProducts = data?.pages.flat() ?? [];
+  const visibleProducts = coreProducts.slice(0, visibleCount);
+  const imageQuery = useImageMetadataQuery(visibleProducts.map(product => product.imageId));
+  const products = mapImageMetadata(visibleProducts, product => product.imageId, imageQuery.data);
+  const canLoadMore = visibleCount < coreProducts.length || hasNextPage;
 
   const handleLoadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
+    if (isFetchingNextPage) return;
+    if (visibleCount < coreProducts.length) {
+      setVisibleCount(count => Math.min(count + 12, coreProducts.length));
+    } else if (hasNextPage) {
+      void fetchNextPage().then(result => {
+        if (!result.isError) setVisibleCount(count => count + 12);
+      });
     }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, visibleCount, coreProducts.length]);
 
   const handleOpenDeleteDialog = (product: ProductToDelete) => {
     setProductToDelete(product);
@@ -135,6 +147,7 @@ export const UserProductsList: React.FC = () => {
 
   return (
     <Box>
+      <ImageMetadataFeedback query={imageQuery} />
       {/* Products Grid */}
       <Box sx={productsGridSx}>
         {products.map((product) => (
@@ -159,7 +172,7 @@ export const UserProductsList: React.FC = () => {
           Обновить
         </Button>
 
-        {hasNextPage && (
+        {canLoadMore && (
           <Button
             variant="outlined"
             onClick={handleLoadMore}
