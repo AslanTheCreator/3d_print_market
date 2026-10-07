@@ -134,6 +134,27 @@ const server = createServer((request, response) => {
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/product/925") {
+    sendJson(response, 200, {
+      ...product,
+      id: 925,
+      name: "Товар с полными отзывами",
+      imageIds: [],
+      reviews: Array.from({ length: 5 }, (_, index) => ({
+        id: 7100 + index,
+        rating: 5 - index % 3,
+        reviewerName: `Покупатель ${index + 1}`,
+        comment: Array.from({ length: 18 }, (_, paragraph) =>
+          `Отзыв ${index + 1}, абзац ${paragraph + 1}: подробности комплектации, упаковки и качества коллекционной фигурки.`,
+        ).join("\n\n") + `\nКонец отзыва ${index + 1}.`,
+        imageId: 0,
+        createdAt: ["2026-07-28T10:00:00.000Z", "", "invalid-date", "2026-07-29T10:00:00.000Z", "2026-07-30T10:00:00.000Z"][index],
+      })),
+      totalReviews: 5,
+    });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/product/902") {
     sendJson(response, 200, {
       ...product,

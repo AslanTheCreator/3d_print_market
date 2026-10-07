@@ -59,6 +59,17 @@ build, HTTP smoke и регрессия общего кабинета/auth. Вс
 
 ## Команды
 
+Stage 24: `npx playwright test product-reviews financial-display --project=chromium`
+и `npx playwright test mobile-rendering.mobile --project=mobile-chromium --grep "product state survives"`.
+SSR fixture `/product/925` содержит пять длинных отзывов с ISO, пустой и невалидной
+датами. `product-reviews.spec.ts` проверяет сохранение всего текста и отсутствие
+обрезания карточками на 393/600/768/1280 px, keyboard navigation карусели,
+прокрутку списка до конца последнего отзыва, имя/модальность Drawer, Tab cycle,
+Escape/кнопку закрытия и возврат фокуса. Formatter даёт нейтральный fallback
+для невалидного timestamp без изменения денежного форматирования B10.
+Обязательны lint, typecheck, architecture:check, build и HTTP smoke.
+Используется локальный fixture; реальный backend не проверяется.
+
 Stage 23: `npx playwright test controls-focus accessibility-authenticated-controls accessibility-interactions open-forms save-confirmation --project=chromium`
 и `npx playwright test accessibility-touch-targets.mobile --project=mobile-chromium`.
 `controls-focus.spec.ts` проверяет фокус первого ошибочного native input в формах

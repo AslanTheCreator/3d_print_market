@@ -62,7 +62,8 @@ function ReviewCard({ review, compact = false }: ReviewCardProps) {
       elevation={0}
       sx={{
         p: compact ? 2 : 2.5,
-        height: compact ? "auto" : 180,
+        height: "auto",
+        flexShrink: 0,
         borderRadius: compact ? 2.5 : 3,
         border: "1px solid",
         borderColor: "divider",
@@ -215,6 +216,9 @@ export function ProductReviewsSection({
 
               <Button
                 onClick={() => setIsDrawerOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={isDrawerOpen}
+                aria-controls="product-reviews-dialog"
                 endIcon={<ArrowForwardIos sx={{ fontSize: 14 }} />}
                 sx={{
                   flexShrink: 0,
@@ -400,7 +404,12 @@ export function ProductReviewsSection({
         anchor="bottom"
         open={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        aria-labelledby={drawerTitleId}
+        PaperProps={{
+          id: "product-reviews-dialog",
+          role: "dialog",
+          "aria-modal": true,
+          "aria-labelledby": drawerTitleId,
+        }}
         ModalProps={{ keepMounted: true }}
         sx={{
           "& .MuiDrawer-paper": {
@@ -422,6 +431,7 @@ export function ProductReviewsSection({
             bgcolor: "divider",
             mx: "auto",
             mb: 1.5,
+            flexShrink: 0,
           }}
         />
 
@@ -430,7 +440,7 @@ export function ProductReviewsSection({
           justifyContent="space-between"
           alignItems="center"
           spacing={2}
-          sx={{ mb: 2 }}
+          sx={{ mb: 2, flexShrink: 0 }}
         >
           <Box minWidth={0}>
             <Typography id={drawerTitleId} variant="h6" fontWeight={700}>
@@ -472,7 +482,21 @@ export function ProductReviewsSection({
           </IconButton>
         </Stack>
 
-        <Stack spacing={1.5} sx={{ overflowY: "auto", pb: 1 }}>
+        <Stack
+          role="region"
+          aria-label="Список отзывов"
+          tabIndex={0}
+          spacing={1.5}
+          sx={{
+            overflowY: "auto",
+            minHeight: 0,
+            pb: 1,
+            "&:focus-visible": {
+              outline: (theme) => `3px solid ${theme.palette.primary.dark}`,
+              outlineOffset: -3,
+            },
+          }}
+        >
           {reviews.map((review) => (
             <ReviewCard key={review.id} review={review} compact />
           ))}

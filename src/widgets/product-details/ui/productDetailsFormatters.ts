@@ -43,8 +43,12 @@ export const getSellerCardMeta = (
 export const formatAverageRating = (value: number): string =>
   value.toFixed(1).replace(".", ",");
 
-export const formatReviewDate = (value: string): string =>
-  new Intl.DateTimeFormat("ru-RU", {
+export const formatReviewDate = (value: string): string => {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "Дата неизвестна";
+
+  return new Intl.DateTimeFormat("ru-RU", {
     day: "numeric",
     month: "long",
-  }).format(new Date(value));
+  }).format(date);
+};
