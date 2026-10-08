@@ -308,8 +308,11 @@ Zustand используется для session state в `entities/session` и �
 
 Toggle избранного откатывает только свою позицию, если её revision не заменена
 новой операцией. Добавление берёт типизированные pages каталога; итоговая
-invalidation списка выполняется после последней pending mutation текущего scope,
-включая отказ. `useAddToFavorites` / `useRemoveFromFavorites` принимают `onError`
+invalidation списка выполняется при обнулении общего для scope счётчика операций:
+регистрация до первого await в onMutate, снятие синхронно в onSettled, включая отказ.
+Это обеспечивает одну сверку при одновременном settlement независимо от момента,
+когда TanStack снимает pending. Новый toggle отменяет текущий GET и запускает
+сверку после своего settlement. `useAddToFavorites` / `useRemoveFromFavorites` принимают `onError`
 с нормализованным `ApiError`; feature показывает одно уведомление об отказе.
 `useRemoveFromCart` / `useCartItemRemoval` передают `onError(error, productId)`
 на уровень feature/widget. Успешное контрольное чтение корзины не скрывает

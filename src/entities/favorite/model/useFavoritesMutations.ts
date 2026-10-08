@@ -10,24 +10,29 @@ interface FavoritesMutationOptions {
   onError?: (error: ApiError) => void;
 }
 
-const revisions = new WeakMap<AbortSignal, Map<number, symbol>>();
+const operations = new WeakMap<AbortSignal, {
+  revisions: Map<number, symbol>;
+  pending: number;
+}>();
 
 const useFavoriteMutation = (adding: boolean, options?: FavoritesMutationOptions) => {
   const scope = usePrivateScope();
   const queryClient = useQueryClient();
   const queryKey = scope.key(favoritesKeys.lists());
   const mutationKey = [...queryKey, "toggle"];
-  let itemRevisions = revisions.get(scope.signal);
-  if (!itemRevisions) {
-    itemRevisions = new Map();
-    revisions.set(scope.signal, itemRevisions);
+  let scopeOperations = operations.get(scope.signal);
+  if (!scopeOperations) {
+    scopeOperations = { revisions: new Map(), pending: 0 };
+    operations.set(scope.signal, scopeOperations);
   }
-  const currentRevisions = itemRevisions;
+  const currentOperations = scopeOperations;
+  const currentRevisions = currentOperations.revisions;
 
   return usePrivateMutation({
     mutationKey,
     mutationFn: adding ? favoritesApi.addToFavorites : favoritesApi.removeFromFavorites,
     onMutate: async (productId: number) => {
+      currentOperations.pending++;
       await queryClient.cancelQueries({ queryKey });
       if (!scope.isCurrent()) throw new Error("Session ended");
       const revision = Symbol();
@@ -61,7 +66,8 @@ const useFavoriteMutation = (adding: boolean, options?: FavoritesMutationOptions
     },
     onSettled: () => {
       // Последняя операция сверяет весь список; ранний GET не затирает соседний optimistic toggle.
-      if (queryClient.isMutating({ mutationKey }) === 1) {
+      // TanStack снимает pending после onSettled; собственный счётчик учитывает settlement синхронно.
+      if (--currentOperations.pending === 0) {
         currentRevisions.clear();
         return queryClient.invalidateQueries({ queryKey });
       }

@@ -33,6 +33,54 @@ function capture<T>(client: QueryClient, scope: ReturnType<typeof createPrivateS
 const product = (id: number): Product => ({ ...orderFixture(id, "BOOKED", 1).product, id,
   currency: "RUB", status: "ACTIVE", availability: "PURCHASABLE", image: [] });
 
+for (const outcomes of [[false, false], [false, true], [true, false], [true, true]]) {
+  for (const reverse of [false, true]) {
+    test(`simultaneous DELETE settlements reconcile once: success=${outcomes}, reverse=${reverse}`, async () => {
+      const client = new QueryClient();
+      const scope = createPrivateScope(1, () => true);
+      const key = scope.key(favoritesKeys.lists());
+      const responses = [deferred<void>(), deferred<void>()];
+      const finalRead = deferred<Product[]>();
+      const original = { ...favoritesApi };
+      const errors: ApiError[] = [];
+      let writes = 0;
+      let reads = 0;
+      favoritesApi.removeFromFavorites = () => responses[writes++].promise;
+      favoritesApi.getFavorites = () => { reads++; return finalRead.promise; };
+      client.setQueryData(key, [product(1)]);
+      const observer = new QueryObserver(client, {
+        queryKey: key, queryFn: () => favoritesApi.getFavorites({ size: 50 }), staleTime: Infinity,
+      });
+      const unsubscribe = observer.subscribe(() => {});
+      try {
+        // Separate hook instances share settlement ownership, as separate cards do.
+        const first = capture(client, scope, () => useRemoveFromFavorites({ onError: error => errors.push(error) }));
+        const second = capture(client, scope, () => useRemoveFromFavorites({ onError: error => errors.push(error) }));
+        const a = first.mutateAsync(1).catch(() => undefined);
+        await expect.poll(() => writes).toBe(1);
+        const b = second.mutateAsync(1).catch(() => undefined);
+        await expect.poll(() => writes).toBe(2);
+        expect(client.isMutating()).toBe(2);
+        expect(reads).toBe(0);
+        // No await between responses: both callbacks run before TanStack clears pending.
+        for (const index of reverse ? [1, 0] : [0, 1]) {
+          if (outcomes[index]) responses[index].resolve();
+          else responses[index].reject(new Error(`Delete ${index} failed`));
+        }
+        await expect.poll(() => reads).toBe(1);
+        const server = outcomes.some(Boolean) ? [] : [product(1)];
+        finalRead.resolve(server);
+        await Promise.all([a, b]);
+        expect(client.isMutating()).toBe(0);
+        expect(client.getQueryData(key)).toEqual(server);
+        expect(errors).toHaveLength(outcomes.filter(success => !success).length);
+        expect(reads).toBe(1);
+        expect(client.isFetching()).toBe(0);
+      } finally { unsubscribe(); Object.assign(favoritesApi, original); client.clear(); }
+    });
+  }
+}
+
 test("late failure of A rolls back only A after B succeeds; GET waits for every toggle", async () => {
   const client = new QueryClient();
   const scope = createPrivateScope(1, () => true);
