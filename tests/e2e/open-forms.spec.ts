@@ -126,6 +126,141 @@ for (const malformed of [false, true]) test(`dirty admin form retains its baseli
   expect(state.writes[0].body).toMatchObject({ name: "Несохранённое название", categoryIds: [1], imageIds: [77] });
 });
 
+test("initial admin profile failure blocks the tree until retry succeeds", async ({ page, baseURL }) => {
+  const state = await setupAdmin(page, baseURL);
+  state.profileStatus = 500;
+  await page.goto("/admin/products/101");
+  await expect(page.getByRole("button", { name: "Повторить", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Название", { exact: true })).toHaveCount(0);
+  expect(state.reads.filter(path => path.startsWith("/admin/"))).toEqual([]);
+  state.profileStatus = 200;
+  await page.getByRole("button", { name: "Повторить", exact: true }).click();
+  await expect(page.getByLabel("Название", { exact: true })).toHaveValue(state.products[0].name);
+});
+
+test("dirty admin editor survives profile reconnect failure and successful retry without remount", async ({ page, baseURL }) => {
+  const state = await setupAdmin(page, baseURL);
+  const uploads: string[] = [];
+  page.on("request", request => {
+    if (request.method() === "POST" && new URL(request.url()).pathname === "/images") uploads.push(request.url());
+  });
+  await page.goto("/admin/products/101");
+  const name = page.getByLabel("Название", { exact: true });
+  await name.fill("Несохранённое название после reconnect");
+  const originalForm = await name.evaluateHandle(input => input.closest("form")!);
+  const save = page.getByRole("button", { name: "Сохранить изменения", exact: true, includeHidden: true });
+  state.profileStatus = 500;
+  await reconnect(page);
+  await expect(page.getByText(/Не удалось проверить доступ/)).toBeVisible();
+  await expect(name).toHaveValue("Несохранённое название после reconnect");
+  await expect(save).toBeDisabled();
+  expect(await originalForm.evaluate(form => form.isConnected)).toBe(true);
+  await name.evaluate(input => {
+    input.closest("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    input.closest("form")!.querySelector<HTMLButtonElement>('button[type="submit"]')!.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    const fileInput = input.closest("form")!.querySelector<HTMLInputElement>('input[type="file"]')!;
+    const files = new DataTransfer();
+    files.items.add(new File(["test"], "blocked.png", { type: "image/png" }));
+    fileInput.files = files.files;
+    fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  expect(state.writes).toHaveLength(0);
+  expect(uploads).toHaveLength(0);
+
+  const retry = deferred();
+  await page.route("**/auth/profile", async route => {
+    if (route.request().method() === "GET") await retry.promise;
+    await route.fallback();
+  });
+  state.profileStatus = 200;
+  await page.getByRole("button", { name: "Повторить", exact: true }).click();
+  try {
+    await expect(name).toHaveValue("Несохранённое название после reconnect");
+    await expect(save).toBeDisabled();
+    expect(await originalForm.evaluate(form => form.isConnected)).toBe(true);
+  } finally { retry.resolve(); }
+  await expect(save).toBeEnabled();
+  await expect(page.getByText(/Не удалось проверить доступ/)).toHaveCount(0);
+  await expect(name).toHaveValue("Несохранённое название после reconnect");
+  expect(await originalForm.evaluate(form => form.isConnected)).toBe(true);
+  await save.click();
+  await expect(page.getByText("Изменения сохранены", { exact: true })).toBeVisible();
+  expect(state.writes).toHaveLength(1);
+  expect(state.writes[0].body).toMatchObject({ name: "Несохранённое название после reconnect", categoryIds: [1], imageIds: [77] });
+  await originalForm.dispose();
+});
+
+for (const status of [200, 409]) test(`pending admin save settles after profile reconnect failure: HTTP ${status}`, async ({ page, baseURL }) => {
+  const state = await setupAdmin(page, baseURL);
+  const gate = deferred();
+  await page.route("**/admin/actions/agents/2/products/101", async route => {
+    if (route.request().method() === "PUT") await gate.promise;
+    await route.fallback();
+  });
+  state.saveStatus = status;
+  await page.goto("/admin/products/101");
+  const name = page.getByLabel("Название", { exact: true });
+  await name.fill("Название pending-записи");
+  const originalForm = await name.evaluateHandle(input => input.closest("form")!);
+  await page.getByRole("button", { name: "Сохранить изменения", exact: true }).click();
+  try {
+    await expect(name).toBeDisabled();
+    state.profileStatus = 500;
+    await reconnect(page);
+    await expect(page.getByText(/Не удалось проверить доступ/)).toBeVisible();
+    await expect(name).toHaveValue("Название pending-записи");
+    expect(await originalForm.evaluate(form => form.isConnected)).toBe(true);
+  } finally { gate.resolve(); }
+  await expect(page.getByText(status === 200 ? "Изменения сохранены" : "Конфликт данных", { exact: true })).toBeVisible();
+  expect(state.writes).toHaveLength(1);
+  const save = page.getByRole("button", { name: "Сохранить изменения", exact: true, includeHidden: true });
+  await expect(save).toBeDisabled();
+  await name.evaluate(input => input.closest("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+  expect(state.writes).toHaveLength(1);
+  state.profileStatus = 200;
+  await page.getByRole("button", { name: "Повторить", exact: true }).click();
+  await expect(save).toBeEnabled();
+  await expect(name).toHaveValue("Название pending-записи");
+  expect(await originalForm.evaluate(form => form.isConnected)).toBe(true);
+  expect(state.writes).toHaveLength(1);
+  await originalForm.dispose();
+});
+
+test("profile reconnect failure blocks actions in an already open admin portal", async ({ page, baseURL }) => {
+  const state = await setupAdmin(page, baseURL);
+  await page.goto("/admin/products/101");
+  await page.getByRole("button", { name: "Заблокировать", exact: true }).click();
+  const dialog = page.getByRole("dialog", { includeHidden: true }).filter({ has: page.getByRole("heading", { name: "Заблокировать товар?", exact: true, includeHidden: true }) });
+  await expect(dialog).toBeVisible();
+  state.profileStatus = 500;
+  await reconnect(page);
+  await expect(page.getByText(/Не удалось проверить доступ/)).toBeVisible();
+  await dialog.getByRole("button", { name: "Подтвердить", exact: true, includeHidden: true }).evaluate(button => button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
+  await expect(dialog).toBeVisible();
+  expect(state.writes).toHaveLength(0);
+  state.profileStatus = 200;
+  await page.getByRole("button", { name: "Повторить", exact: true, includeHidden: true }).click();
+  await expect(page.getByText(/Не удалось проверить доступ/)).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Подтвердить", exact: true }).click();
+  await expect(page.getByText("Статус товара обновлён", { exact: true })).toBeVisible();
+  expect(state.writes).toHaveLength(1);
+});
+
+test("profile retry with revoked admin role blocks the retained editor", async ({ page, baseURL }) => {
+  const state = await setupAdmin(page, baseURL);
+  await page.goto("/admin/products/101");
+  await page.getByLabel("Название", { exact: true }).fill("Несохранённое название");
+  state.profileStatus = 500;
+  await reconnect(page);
+  await expect(page.getByText(/Не удалось проверить доступ/)).toBeVisible();
+  state.role = "USER";
+  state.profileStatus = 200;
+  await page.getByRole("button", { name: "Повторить", exact: true }).click();
+  await expect(page.getByText("Доступ разрешён только администратору.")).toBeVisible();
+  await expect(page.getByLabel("Название", { exact: true })).toHaveCount(0);
+  expect(state.writes).toHaveLength(0);
+});
+
 for (const review of [false, true]) test(`${review ? "review" : "cancel"} guards every pending close and keeps failed input for retry`, async ({ page, baseURL }) => {
   const state = await setupMobileAccount(page, baseURL);
   state.customerOrders = [orderFixture(1, review ? "COMPLETED" : "BOOKED", 1)];

@@ -154,6 +154,12 @@ refetch и смену ценового фильтра. Отдельно пров
 SSR route refresh с восстановлением существующего cache, invalid ID без retry
 и pending/recovery профиля на desktop/mobile ширинах.
 SSR fixture product 924 управляется только тестовым `/__test/product-recovery`.
+
+Для B09 в `UserProductsList` проверены две загруженные страницы → отказ хвоста →
+сохранение DOM карточек и scroll position → ручной retry только того же cursor.
+Успешный background refetch не снимает паузу хвоста; initial/background errors
+имеют отдельные состояния и повторяют общее чтение, сохраняя загруженные карточки.
+
 Обязательные проверки: lint, typecheck, architecture:check, build, HTTP smoke
 и полный `npm run test:e2e`. API подменены; реальный backend не проверяется.
 
@@ -193,6 +199,10 @@ Stage 14: `npx playwright test open-forms order-dialog-lifecycle-model order-pay
 на 393/1280 px, сохранение чека и комментария, запрет записи по устаревшему статусу,
 settlement pending-оплаты, dirty admin-редактор после отказа/невалидных связей,
 Escape/backdrop/крестик при pending cancel/review и сохранение ввода для повтора.
+Для B08 отдельно покрыт отказ `/auth/profile` после reconnect: идентичность DOM
+формы и dirty-ввод сохраняются после 500 и retry, новые submit/click/upload и действия
+в открытом admin portal блокируются, pending PUT обрабатывает success/409.
+Первоначальный отказ не запускает admin-запросы; retry с ролью USER закрывает доступ.
 Быстрое повторное открытие отзыва не сбрасывает новый текст; model spec проверяет
 поздний success и exit старого открытия, включая unmount. Дополнительно выполняются
 `orders.mobile.spec.ts`, полный `npm run test:e2e`, build и HTTP smoke.

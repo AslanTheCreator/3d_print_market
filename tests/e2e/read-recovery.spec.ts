@@ -127,6 +127,123 @@ for (const consumer of consumers) {
   });
 }
 
+test("own products keep loaded pages after tail failure and retry only the failed cursor", async ({ page, baseURL }) => {
+  await setupMobileAccount(page, baseURL);
+  const state = { tailStatus: 503, tailGate: Promise.resolve(), cursors: [] as (number | undefined)[] };
+  const products = Array.from({ length: 205 }, (_, index) => ({
+    ...orderFixture(1, "BOOKED", 1).product, id: 10000 + index,
+    name: `Мой recovery товар ${index + 1}`, imageId: 0, sellerId: 1,
+  }));
+  await page.route("**/products/my", async route => {
+    if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+    const { pageable } = route.request().postDataJSON() as { pageable: { size: number; lastId?: number } };
+    state.cursors.push(pageable.lastId);
+    const failedTail = pageable.lastId === 10199;
+    if (failedTail) await state.tailGate;
+    const status = failedTail ? state.tailStatus : 200;
+    const offset = pageable.lastId === undefined ? 0 : pageable.lastId - 9999;
+    return fulfillJson(route, status === 200 ? products.slice(offset, offset + pageable.size) : { message: "Tail unavailable" }, status);
+  });
+  await page.goto("/dashboard/products");
+  const first = page.getByText("Мой recovery товар 1", { exact: true });
+  await expect(first).toBeVisible();
+  const originalFirst = await first.evaluateHandle(element => element);
+  const loadMore = page.getByRole("button", { name: "Загрузить ещё", exact: true });
+  for (const count of [24, 36, 48, 60, 72, 84, 96, 100, 112, 124, 136, 148, 160, 172, 184, 196, 200]) {
+    await loadMore.click();
+    await expect(page.getByText(`Мой recovery товар ${count}`, { exact: true })).toBeVisible();
+  }
+  expect(state.cursors).toEqual([undefined, 10099]);
+  const second = page.getByText("Мой recovery товар 101", { exact: true });
+  const originalSecond = await second.evaluateHandle(element => element);
+  await loadMore.scrollIntoViewIfNeeded();
+  const scrollY = await page.evaluate(() => window.scrollY);
+  await loadMore.click();
+  const tailError = page.getByText("Не удалось загрузить следующие товары.", { exact: true });
+  await expect(tailError).toBeVisible({ timeout: 15_000 });
+  await expect(first).toBeVisible();
+  await expect(second).toBeVisible();
+  await expect(page.getByText("Мой recovery товар 200", { exact: true })).toBeVisible();
+  expect(await originalFirst.evaluate(element => element.isConnected)).toBe(true);
+  expect(await originalSecond.evaluate(element => element.isConnected)).toBe(true);
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+  expect(state.cursors).toEqual([undefined, 10099, 10199, 10199]);
+  await page.waitForTimeout(1500);
+  expect(state.cursors).toHaveLength(4);
+  await expect(loadMore).toHaveCount(0);
+
+  await reconnect(page);
+  await expect.poll(() => state.cursors.length).toBe(6);
+  await expect(tailError).toBeVisible();
+  expect(state.cursors).toEqual([undefined, 10099, 10199, 10199, undefined, 10099]);
+  expect(await originalFirst.evaluate(element => element.isConnected)).toBe(true);
+  expect(await originalSecond.evaluate(element => element.isConnected)).toBe(true);
+
+  const gate = deferred();
+  state.tailGate = gate.promise;
+  state.tailStatus = 200;
+  await page.getByRole("button", { name: "Повторить загрузку", exact: true }).click();
+  try {
+    await expect(page.getByRole("button", { name: "Загрузка...", exact: true })).toBeDisabled();
+    await expect(page.getByText("Мой recovery товар 200", { exact: true })).toBeVisible();
+    await expect.poll(() => state.cursors.length).toBe(7);
+  } finally { gate.resolve(); }
+  await expect(page.getByText("Мой recovery товар 205", { exact: true })).toBeVisible();
+  await expect(tailError).toHaveCount(0);
+  await expect(loadMore).toHaveCount(0);
+  expect(state.cursors.slice(6)).toEqual([10199]);
+  expect(await originalFirst.evaluate(element => element.isConnected)).toBe(true);
+  expect(await originalSecond.evaluate(element => element.isConnected)).toBe(true);
+  await originalFirst.dispose();
+  await originalSecond.dispose();
+});
+
+test("own products distinguish initial failure from a background refresh failure", async ({ page, baseURL }) => {
+  await setupMobileAccount(page, baseURL);
+  const state = { status: 503, reads: 0, gate: Promise.resolve() };
+  await page.route("**/products/my", async route => {
+    if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+    state.reads++;
+    await state.gate;
+    return fulfillJson(route, state.status === 200 ? [{
+      ...orderFixture(1, "BOOKED", 1).product, id: 11000,
+      name: "Мой восстановленный товар", imageId: 0, sellerId: 1,
+    }] : { message: "Own products unavailable" }, state.status);
+  });
+  await page.goto("/dashboard/products");
+  await expect(page.getByText(/Ошибка загрузки товаров:/)).toBeVisible();
+  const card = page.getByText("Мой восстановленный товар", { exact: true });
+  await expect(card).toHaveCount(0);
+  expect(state.reads).toBe(2);
+  const initialRetry = deferred();
+  state.gate = initialRetry.promise;
+  state.status = 200;
+  await page.getByRole("button", { name: "Повторить", exact: true }).click();
+  try {
+    await expect(page.getByText(/Ошибка загрузки товаров:/)).toHaveCount(0);
+    await expect(card).toHaveCount(0);
+    await expect.poll(() => state.reads).toBe(3);
+  } finally { initialRetry.resolve(); }
+  await expect(card).toBeVisible();
+  const originalCard = await card.evaluateHandle(element => element);
+  state.status = 503;
+  await reconnect(page);
+  const warning = page.getByText("Не удалось обновить товары. Показаны ранее загруженные данные.", { exact: true });
+  await expect(warning).toBeVisible();
+  await expect(card).toBeVisible();
+  await expect(page.getByText(/Ошибка загрузки товаров:/)).toHaveCount(0);
+  await expect(page.getByText("Не удалось загрузить следующие товары.", { exact: true })).toHaveCount(0);
+  expect(await originalCard.evaluate(element => element.isConnected)).toBe(true);
+  expect(state.reads).toBe(5);
+  state.status = 200;
+  await page.getByRole("button", { name: "Повторить обновление", exact: true }).click();
+  await expect(warning).toHaveCount(0);
+  await expect(card).toBeVisible();
+  expect(state.reads).toBe(6);
+  expect(await originalCard.evaluate(element => element.isConnected)).toBe(true);
+  await originalCard.dispose();
+});
+
 test("client product retry repeats the failed GET and keeps the action pending", async ({ page, baseURL }) => {
   await setupMobileAccount(page, baseURL);
   let reads = 0;

@@ -58,6 +58,9 @@ export const UserProductsList: React.FC = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    hasNextPageError,
+    isLoadMoreBlocked,
+    isFetching,
     isLoading,
     isError,
     error,
@@ -71,16 +74,21 @@ export const UserProductsList: React.FC = () => {
   const products = mapImageMetadata(visibleProducts, product => product.imageId, imageQuery.data);
   const canLoadMore = visibleCount < coreProducts.length || hasNextPage;
 
+  const handleFetchNextPage = useCallback(() => {
+    if (isLoadMoreBlocked) return;
+    void fetchNextPage().then(result => {
+      if (!result.isError) setVisibleCount(count => count + 12);
+    });
+  }, [isLoadMoreBlocked, fetchNextPage]);
+
   const handleLoadMore = useCallback(() => {
-    if (isFetchingNextPage) return;
+    if (isLoadMoreBlocked || hasNextPageError) return;
     if (visibleCount < coreProducts.length) {
       setVisibleCount(count => Math.min(count + 12, coreProducts.length));
     } else if (hasNextPage) {
-      void fetchNextPage().then(result => {
-        if (!result.isError) setVisibleCount(count => count + 12);
-      });
+      handleFetchNextPage();
     }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, visibleCount, coreProducts.length]);
+  }, [hasNextPage, isLoadMoreBlocked, hasNextPageError, handleFetchNextPage, visibleCount, coreProducts.length]);
 
   const handleOpenDeleteDialog = (product: ProductToDelete) => {
     setProductToDelete(product);
@@ -116,13 +124,13 @@ export const UserProductsList: React.FC = () => {
   }
 
   // Error state
-  if (isError) {
+  if (isError && !data) {
     return (
       <Alert
         severity="error"
         sx={{ borderRadius: 2 }}
         action={
-          <Button color="inherit" size="small" onClick={() => refetch()}>
+          <Button color="inherit" size="small" disabled={isFetching} sx={{ minHeight: 44 }} onClick={() => void refetch()}>
             Повторить
           </Button>
         }
@@ -133,7 +141,7 @@ export const UserProductsList: React.FC = () => {
   }
 
   // Empty state
-  if (products.length === 0) {
+  if (products.length === 0 && !isError) {
     return (
       <EmptyCatalogState
         type="empty"
@@ -160,11 +168,11 @@ export const UserProductsList: React.FC = () => {
       </Box>
 
       {/* List Actions */}
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 4, gap: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 4, gap: 2, minHeight: 48 }}>
         <Button
           variant="outlined"
           onClick={() => refetch()}
-          disabled={isRefetching}
+          disabled={isFetching}
           startIcon={
             isRefetching ? <CircularProgress size={16} /> : <Refresh />
           }
@@ -172,11 +180,11 @@ export const UserProductsList: React.FC = () => {
           Обновить
         </Button>
 
-        {canLoadMore && (
+        {canLoadMore && !hasNextPageError && (
           <Button
             variant="outlined"
             onClick={handleLoadMore}
-            disabled={isFetchingNextPage}
+            disabled={isLoadMoreBlocked}
             size="large"
             sx={{ minWidth: 200 }}
           >
@@ -188,6 +196,25 @@ export const UserProductsList: React.FC = () => {
           </Button>
         )}
       </Box>
+
+      {hasNextPageError && (
+        <Alert severity="error" sx={{ mt: 2 }} action={
+          <Button color="inherit" sx={{ minHeight: 44 }} disabled={isLoadMoreBlocked} onClick={handleFetchNextPage}>
+            {isFetchingNextPage ? "Загрузка..." : "Повторить загрузку"}
+          </Button>
+        }>
+          Не удалось загрузить следующие товары.
+        </Alert>
+      )}
+      {isError && !hasNextPageError && (
+        <Alert severity="error" sx={{ mt: 2 }} action={
+          <Button color="inherit" sx={{ minHeight: 44 }} disabled={isFetching} onClick={() => void refetch()}>
+            {isFetching ? "Загрузка..." : "Повторить обновление"}
+          </Button>
+        }>
+          Не удалось обновить товары. Показаны ранее загруженные данные.
+        </Alert>
+      )}
 
       <Dialog
         open={Boolean(productToDelete)}
