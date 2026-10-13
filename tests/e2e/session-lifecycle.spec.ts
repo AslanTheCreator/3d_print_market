@@ -553,13 +553,169 @@ test.describe("session lifecycle", () => {
   });
 });
 
+type NavigationCall = { method: "push" | "replace"; href: string };
+type HistoryChange = { method: "pushState" | "replaceState" | "popstate"; href: string };
+interface NavigationSnapshot {
+  calls: NavigationCall[];
+  history: HistoryChange[];
+  rsc: string[];
+  url: string;
+  historyLength: number;
+}
+
+interface ObservedWindow extends Window {
+  next?: { router: Record<"push" | "replace", (href: string, options?: { scroll?: boolean }) => void> };
+  p01Navigation?: { calls: NavigationCall[]; history: HistoryChange[] };
+}
+
+async function observeNavigation(page: Page) {
+  const rsc: string[] = [];
+  page.on("request", request => {
+    if (request.headers().rsc === "1" && !request.headers()["next-router-prefetch"]) {
+      rsc.push(request.url());
+    }
+  });
+  await page.evaluate(() => {
+    const observed = window as ObservedWindow;
+    const router = observed.next?.router;
+    if (!router) throw new Error("The real Next app router is required for the navigation probe");
+    const state = { calls: [] as NavigationCall[], history: [] as HistoryChange[] };
+    observed.p01Navigation = state;
+    // Делегируем настоящему router без изменения href, options или результата.
+    // Вызов фиксируется до startTransition: XHR task не ждёт RSC/commit Next.
+    for (const method of ["push", "replace"] as const) {
+      const original = router[method];
+      router[method] = function (href, options) {
+        state.calls.push({ method, href: new URL(href, location.href).href });
+        return original.call(this, href, options);
+      };
+    }
+    for (const method of ["pushState", "replaceState"] as const) {
+      const original = history[method];
+      history[method] = function (...args: Parameters<typeof original>) {
+        const before = location.href;
+        const result = original.apply(this, args);
+        if (location.href !== before) state.history.push({ method, href: location.href });
+        return result;
+      };
+    }
+    addEventListener("popstate", () => state.history.push({ method: "popstate", href: location.href }));
+  });
+  return async (): Promise<NavigationSnapshot> => ({
+    ...await page.evaluate(() => {
+      const state = (window as ObservedWindow).p01Navigation;
+      if (!state) throw new Error("Navigation probe was lost (document navigation)");
+      return { ...state, url: location.href, historyLength: history.length };
+    }),
+    rsc: [...rsc],
+  });
+}
+
+function assertNoAuthNavigation(before: NavigationSnapshot, after: NavigationSnapshot) {
+  if (JSON.stringify(before) !== JSON.stringify(after)) {
+    throw new Error(`Unexpected post-auth navigation: ${JSON.stringify({ before, after })}`);
+  }
+}
+
+async function holdRsc(page: Page, pathname: string) {
+  const gate = createDeferred();
+  const started = createDeferred();
+  const ready = createDeferred();
+  const match = (url: URL) => url.pathname === pathname;
+  const handler = async (route: Route) => {
+    if (route.request().headers().rsc !== "1") return route.continue();
+    started.resolve();
+    const response = await route.fetch();
+    expect(response.status()).toBe(200);
+    ready.resolve();
+    await gate.promise;
+    await route.fulfill({ response });
+  };
+  await page.route(match, handler);
+  return {
+    started: started.promise,
+    ready: ready.promise,
+    release: gate.resolve,
+    dispose: async () => { gate.resolve(); await page.unroute(match, handler); },
+  };
+}
+
+async function observeAuthSettlement(page: Page, path: string) {
+  await page.addInitScript(path => {
+    const observed = window as typeof window & { lateAuthSettled?: boolean };
+    const originalOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function (method: string, url: string | URL, async: boolean = true, username?: string | null, password?: string | null) {
+      const request = this;
+      if (new URL(String(url), location.href).pathname === path) {
+        request.addEventListener("loadend", () => {
+          if (request.status !== 200) return;
+          const channel = new MessageChannel();
+          channel.port1.onmessage = () => {
+            observed.lateAuthSettled = true;
+            channel.port1.close();
+            channel.port2.close();
+          };
+          channel.port2.postMessage(null);
+        }, { once: true });
+      }
+      return originalOpen.call(this, method, url, async, username, password);
+    };
+  }, path);
+}
+
+// Положительный контроль навигационного oracle отдельно от token assertions.
+// Настоящий успешный login начинает replace, пока RSC удерживает старый URL/UI.
+test("navigation probe detects a pending post-auth replace with unchanged session cookies", async ({ page, context }) => {
+  await mockApiFallback(page);
+  await mockLogin(page, { accessToken: "probe-access", refreshToken: "probe-refresh" });
+  await observeAuthSettlement(page, "/auth/login");
+  const about = await holdRsc(page, "/about");
+  try {
+    await page.goto("/auth/login?redirect=%2Fabout", { waitUntil: "domcontentloaded" });
+    const submit = page.getByRole("button", { name: "Войти", exact: true });
+    await waitForReactHydration(submit);
+    const snapshot = await observeNavigation(page);
+    const before = await snapshot();
+    await page.getByLabel(/^Email/).fill("probe@example.test");
+    await page.getByLabel(/^Пароль/).fill("fixture-password");
+    await submit.click();
+    await about.started;
+    await about.ready;
+    await expect.poll(() => page.evaluate(() => (window as typeof window & { lateAuthSettled?: boolean }).lateAuthSettled)).toBe(true);
+    await expect(page).toHaveURL(before.url);
+    await expect(page.getByRole("heading", { name: "Вход в аккаунт", exact: true })).toBeVisible();
+    const pending = await snapshot();
+    expect(pending.calls.slice(before.calls.length)).toEqual([{ method: "replace", href: new URL("/about", page.url()).href }]);
+    expect(pending.rsc.slice(before.rsc.length).map(url => new URL(url).pathname)).toEqual(["/about"]);
+    expect(pending.history).toEqual(before.history);
+    const cookies = await getSessionCookies(context);
+    const user = await page.evaluate(() => localStorage.getItem("auth-storage"));
+    expect(() => assertNoAuthNavigation(before, pending)).toThrow("Unexpected post-auth navigation");
+    // Независимый канал истории также обнаруживает завершение перехода,
+    // даже если из snapshot исключить уже обнаруженные calls и RSC.
+    about.release();
+    await expect(page).toHaveURL(/\/about$/);
+    await expect(page.getByRole("heading", { name: "О нас", exact: true })).toBeVisible();
+    const committed = await snapshot();
+    expect(committed.history.slice(before.history.length)).toEqual([{ method: "replaceState", href: page.url() }]);
+    expect(() => assertNoAuthNavigation(before, { ...committed, calls: before.calls, rsc: before.rsc, url: before.url })).toThrow("Unexpected post-auth navigation");
+    expect(await getSessionCookies(context)).toEqual(cookies);
+    expect(await page.evaluate(() => localStorage.getItem("auth-storage"))).toBe(user);
+  } finally {
+    await about.dispose();
+  }
+});
+
 // P01: docs/api-and-auth.md и FTA-034 требуют, чтобы поздний auth старого
 // поколения не возвращал пользователя и не выполнял его post-auth redirect.
 for (const flow of ["login", "login verification", "registration verification"] as const) {
-  for (const replacement of ["logout", "new login"] as const) {
+  for (const replacement of ["logout", "new login", "pending new login"] as const) {
     test(`late ${flow} after ${replacement} preserves the current owner and navigation`, async ({ page, context, baseURL }) => {
       const gate = createDeferred();
       const started = createDeferred();
+      const nextGate = createDeferred();
+      const nextStarted = createDeferred();
+      const hasNewLogin = replacement !== "logout";
       const isRegistration = flow === "registration verification";
       const endpoint = flow === "login" ? "/auth/login" : "/auth/verify-code";
       const authPayloads: unknown[] = [];
@@ -570,26 +726,8 @@ for (const flow of ["login", "login verification", "registration verification"] 
       });
       // Наблюдаем завершение XHR и следующий task после его promise callbacks.
       // Store, router и auth API приложения не подменяются.
-      await page.addInitScript(path => {
-        const observed = window as typeof window & { lateAuthSettled?: boolean };
-        const originalOpen = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function (method: string, url: string | URL, async: boolean = true, username?: string | null, password?: string | null) {
-          const request = this;
-          if (new URL(String(url), location.href).pathname === path) {
-            request.addEventListener("loadend", () => {
-              if (request.status !== 200) return;
-              const channel = new MessageChannel();
-              channel.port1.onmessage = () => {
-                observed.lateAuthSettled = true;
-                channel.port1.close();
-                channel.port2.close();
-              };
-              channel.port2.postMessage(null);
-            }, { once: true });
-          }
-          return originalOpen.call(this, method, url, async, username, password);
-        };
-      }, endpoint);
+      await observeAuthSettlement(page, endpoint);
+      const about = await holdRsc(page, "/about");
       if (flow !== "login verification") {
         await setSessionCookies(context, baseURL, { accessToken: "access-A", refreshToken: "refresh-A" });
       }
@@ -621,6 +759,7 @@ for (const flow of ["login", "login verification", "registration verification"] 
         authPayloads.push(payload);
         if (payload.mail === "B@example.test" || payload.mail === "A@example.test") {
           const owner = payload.mail === "B@example.test" ? "B" : "A";
+          if (owner === "B") { nextStarted.resolve(); await nextGate.promise; }
           return fulfillJson(route, { access_token: `access-${owner}`, refresh_token: `refresh-${owner}` });
         }
         expect(payload).toEqual({ mail: "late-A@example.test", password: "fixture-password" });
@@ -643,6 +782,7 @@ for (const flow of ["login", "login verification", "registration verification"] 
         await page.goto(authPath, { waitUntil: "domcontentloaded" });
         const submit = page.getByRole("button", { name: isRegistration ? "Зарегистрироваться" : "Войти", exact: true });
         await waitForReactHydration(submit);
+        const snapshot = await observeNavigation(page);
         // Forward позволяет уйти даже из busy verification dialog через браузер.
         // Вся цепочка остаётся в одном документе и сохраняет выполняющийся callback.
         await page.getByRole("link", { name: "Figurzilla", exact: true }).click();
@@ -684,23 +824,31 @@ for (const flow of ["login", "login verification", "registration verification"] 
         await expect(page).toHaveURL(requireBaseUrl(baseURL) + "/");
         await page.getByRole("link", { name: "Профиль", exact: true }).click();
         await expect(page).toHaveURL(/\/auth\/login$/);
-        if (replacement === "new login") {
+        if (hasNewLogin) {
           await page.getByLabel(/^Email/).fill("B@example.test");
           await page.getByLabel(/^Пароль/).fill("fixture-password");
           await page.getByRole("button", { name: "Войти", exact: true }).click();
-          await expect(page).toHaveURL(requireBaseUrl(baseURL) + "/");
-          await page.getByRole("link", { name: "Профиль", exact: true }).click();
-          await expect(page.getByText("account-B", { exact: true }).first()).toBeVisible();
+          await nextStarted.promise;
+          if (replacement === "new login") {
+            nextGate.resolve();
+            await expect(page).toHaveURL(requireBaseUrl(baseURL) + "/");
+            await page.getByRole("link", { name: "Профиль", exact: true }).click();
+            await expect(page.getByText("account-B", { exact: true }).first()).toBeVisible();
+          } else {
+            await expect(page.locator('form button[type="submit"]')).toBeDisabled();
+          }
         }
         const currentUrl = page.url();
         const cookies = await getSessionCookies(context);
         const user = await page.evaluate(() => localStorage.getItem("auth-storage"));
         const reads = protectedRequests.length;
+        const navigation = await snapshot();
         await page.evaluate(() => { (window as typeof window & { lateAuthSettled?: boolean }).lateAuthSettled = false; });
         const finished = page.waitForEvent("requestfinished", request => new URL(request.url()).pathname === endpoint && request.method() === "POST");
         gate.resolve();
         await finished;
         await expect.poll(() => page.evaluate(() => (window as typeof window & { lateAuthSettled?: boolean }).lateAuthSettled)).toBe(true);
+        assertNoAuthNavigation(navigation, await snapshot());
         await expect(page).toHaveURL(currentUrl);
         expect(await getSessionCookies(context)).toEqual(cookies);
         expect(await page.evaluate(() => localStorage.getItem("auth-storage"))).toBe(user);
@@ -709,12 +857,30 @@ for (const flow of ["login", "login verification", "registration verification"] 
         expect(authPayloads).toEqual([
           ...(isRegistration ? [] : [{ mail: "late-A@example.test", password: "fixture-password" }]),
           ...(flow === "login verification" ? [{ mail: "A@example.test", password: "fixture-password" }] : []),
-          ...(replacement === "new login" ? [{ mail: "B@example.test", password: "fixture-password" }] : []),
+          ...(hasNewLogin ? [{ mail: "B@example.test", password: "fixture-password" }] : []),
         ]);
-        if (replacement === "new login") {
-          expect(cookies.access_token).toBe("access-B");
-          expect(cookies.refresh_token).toBe("refresh-B");
-          expect(JSON.parse(user!).state.user).toEqual({ mail: "B@example.test" });
+        if (replacement === "pending new login") {
+          expect(cookies).toEqual({});
+          expect(JSON.parse(user!).state.user).toBeNull();
+          await expect(page.getByRole("heading", { name: "Вход в аккаунт", exact: true })).toBeVisible();
+          await expect(page.getByLabel(/^Email/)).toHaveValue("B@example.test");
+          await expect(page.locator('form button[type="submit"]')).toBeDisabled();
+          nextGate.resolve();
+          await expect(page).toHaveURL(requireBaseUrl(baseURL) + "/");
+          const ownNavigation = await snapshot();
+          expect(ownNavigation.calls.slice(navigation.calls.length)).toEqual([{ method: "replace", href: page.url() }]);
+          expect(ownNavigation.history.slice(navigation.history.length)).toEqual([{ method: "replaceState", href: page.url() }]);
+          expect(ownNavigation.historyLength).toBe(navigation.historyLength);
+          expect(ownNavigation.rsc.slice(navigation.rsc.length).some(url => new URL(url).pathname === "/about")).toBe(false);
+          await page.getByRole("link", { name: "Профиль", exact: true }).click();
+          await expect(page.getByText("account-B", { exact: true }).first()).toBeVisible();
+        }
+        if (hasNewLogin) {
+          const currentCookies = await getSessionCookies(context);
+          expect(currentCookies.access_token).toBe("access-B");
+          expect(currentCookies.refresh_token).toBe("refresh-B");
+          const currentUser = await page.evaluate(() => localStorage.getItem("auth-storage"));
+          expect(JSON.parse(currentUser!).state.user).toEqual({ mail: "B@example.test" });
           await expect(page.getByText("account-B", { exact: true }).first()).toBeVisible();
           await expect(page.getByText("account-A", { exact: true })).toHaveCount(0);
           expect(protectedRequests.at(-1)?.authorization).toBe("Bearer access-B");
@@ -726,6 +892,8 @@ for (const flow of ["login", "login verification", "registration verification"] 
         }
       } finally {
         gate.resolve();
+        nextGate.resolve();
+        await about.dispose();
       }
     });
   }
