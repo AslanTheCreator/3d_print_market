@@ -1,11 +1,131 @@
 import { expect, test } from "@playwright/test";
 import { AxiosError } from "axios";
 import { createJSONStorage } from "zustand/middleware";
+import { QueryClient } from "@tanstack/react-query";
+import { bindPrivateDataLifecycle } from "@/app/providers/privateDataLifecycle";
+import { createPrivateScope } from "@/shared/lib/query";
 import { authApi, useAuthStore, VerificationRequiredError } from "@/entities/session";
 import { createAuthStorage } from "@/entities/session/model/authPersistence";
 import { publicClient } from "@/shared/api";
 import { tokenStorage } from "@/shared/lib";
 import { ApiError } from "@/shared/lib/errorHandler";
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(yes => { resolve = yes; });
+  return { promise, resolve };
+}
+
+// P01: план/FTA-034 и docs/api-and-auth.md — завершённое поколение не владеет
+// cookies, user или private scope. Подменены только транспорт и storage.
+for (const operation of ["login", "verify"] as const) {
+  for (const completion of ["after logout", "before new login completes", "after new login completes"] as const) {
+    test(`late ${operation} ${completion} cannot restore tokens, user or private data`, async () => {
+      const initial = useAuthStore.getState();
+      const options = useAuthStore.persist.getOptions();
+      const originalStorage = { ...tokenStorage };
+      const adapter = publicClient.defaults.adapter;
+      const client = new QueryClient();
+      const cookies: { accessToken?: string; refreshToken?: string } = {};
+      const writes: typeof cookies[] = [];
+      const disk = new Map<string, string>();
+      const late = deferred<void>();
+      const started = deferred<void>();
+      const next = deferred<void>();
+      const nextStarted = deferred<void>();
+      let unbind = () => {};
+      let pending: Promise<boolean> | undefined;
+      let newLogin: Promise<boolean> | undefined;
+      try {
+        useAuthStore.persist.setOptions({ storage: createJSONStorage(() => ({
+          getItem: key => disk.get(key) ?? null,
+          setItem: (key, value) => { disk.set(key, value); },
+          removeItem: key => { disk.delete(key); },
+        })) });
+        Object.assign(tokenStorage, {
+          getAccessToken: () => cookies.accessToken,
+          getRefreshToken: () => cookies.refreshToken,
+          saveTokens: (tokens: typeof cookies) => { writes.push({ ...tokens }); Object.assign(cookies, tokens); },
+          clearTokens: () => { delete cookies.accessToken; delete cookies.refreshToken; },
+        });
+        publicClient.defaults.adapter = async config => {
+          const payload = JSON.parse(config.data) as { mail?: string };
+          const owner = config.url?.endsWith("/verify-code") || payload.mail === "late-A@example.test"
+            ? "late-A" : payload.mail === "B@example.test" ? "B" : "A";
+          if (owner === "late-A") { started.resolve(); await late.promise; }
+          if (owner === "B") { nextStarted.resolve(); await next.promise; }
+          return { config, status: 200, statusText: "OK", headers: {},
+            data: { access_token: `access-${owner}`, refresh_token: `refresh-${owner}` } };
+        };
+        useAuthStore.getState().logout();
+        await useAuthStore.getState().initializeAuth();
+        expect(await useAuthStore.getState().login("A@example.test", "fixture-password")).toBe(true);
+        const scope = createPrivateScope(useAuthStore.getState().accountRevision, () => true);
+        let cleared = 0;
+        unbind = bindPrivateDataLifecycle(client, scope, () => {}, () => { cleared++; });
+        client.setQueryData(scope.key(["users"]), { owner: "A" });
+        client.setQueryData(["admin", scope.id, "access"], { owner: "A" });
+        pending = operation === "login"
+          ? useAuthStore.getState().login("late-A@example.test", "fixture-password")
+          : authApi.verifyCode(101, "12345");
+        await started.promise;
+        const generation = useAuthStore.getState().getSessionSignal();
+        if (completion === "after logout") {
+          useAuthStore.getState().logout();
+        } else {
+          newLogin = useAuthStore.getState().login("B@example.test", "fixture-password");
+          await nextStarted.promise;
+          if (completion === "after new login completes") {
+            next.resolve();
+            expect(await newLogin).toBe(true);
+            expect(scope.isCurrent()).toBe(false);
+            expect(client.getQueryCache().getAll()).toEqual([]);
+            client.setQueryData(["private", useAuthStore.getState().accountRevision, "users"], { owner: "B" });
+          }
+        }
+        expect(generation.aborted).toBe(true);
+        const state = useAuthStore.getState();
+        const currentGeneration = state.getSessionSignal();
+        const savedCookies = { ...cookies };
+        const savedPersistence = disk.get("auth-storage");
+        const savedQueries = client.getQueryCache().getAll().map(query => ({ key: query.queryKey, data: query.state.data }));
+        const savedCleared = cleared;
+        const savedWrites = writes.length;
+        late.resolve();
+        expect(await pending).toBe(false);
+        expect(useAuthStore.getState()).toEqual(state);
+        expect(useAuthStore.getState().getSessionSignal()).toBe(currentGeneration);
+        expect(currentGeneration.aborted).toBe(false);
+        expect(cookies).toEqual(savedCookies);
+        expect(writes).toHaveLength(savedWrites);
+        expect(disk.get("auth-storage")).toBe(savedPersistence);
+        expect(client.getQueryCache().getAll().map(query => ({ key: query.queryKey, data: query.state.data }))).toEqual(savedQueries);
+        expect(cleared).toBe(savedCleared);
+        if (newLogin) {
+          next.resolve();
+          expect(await newLogin).toBe(true);
+          expect(cookies).toEqual({ accessToken: "access-B", refreshToken: "refresh-B" });
+          expect(useAuthStore.getState()).toMatchObject({ isAuthenticated: true, user: { mail: "B@example.test" } });
+        } else {
+          expect(cookies).toEqual({});
+          expect(useAuthStore.getState()).toMatchObject({ isAuthenticated: false, user: null });
+          expect(client.getQueryCache().getAll()).toEqual([]);
+        }
+      } finally {
+        late.resolve();
+        next.resolve();
+        await Promise.allSettled([pending, newLogin]);
+        unbind();
+        client.clear();
+        useAuthStore.getState().logout();
+        publicClient.defaults.adapter = adapter;
+        Object.assign(tokenStorage, originalStorage);
+        useAuthStore.persist.setOptions(options);
+        useAuthStore.setState(initial, true);
+      }
+    });
+  }
+}
 
 test.describe("optional auth persistence", () => {
   for (const failure of ["getItem", "setItem", "removeItem", "access"] as const) {
