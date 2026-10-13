@@ -327,6 +327,46 @@ node node_modules/@playwright/test/cli.js test tests/e2e/product-search-session.
 
 **Git и VP:** пользователь разрешил отдельный Conventional Commit P02 с русским описанием; точный SHA и диапазон возвращаются в итоговом отчёте после создания коммита. Диапазон P02 — `89ba9f93db50b15f7d9bc9a948054260b3e1ad06..<коммит P02>`, содержащий только этот spec и карточку. Автор не присваивает независимый `PASS`; push запрещён и не выполняется.
 
+#### Карточка результата P03 — 2026-10-13, Europe/Moscow
+
+- **Статус:** `AWAITING_VP`; авторская проверка профиля B успешна. Независимый VP не проводился; контрольная точка P02–P06 сохранена. Следующие пакеты не реализуются.
+- **Baseline / prerequisites:** HEAD `15beea1b95cbeaa2c58196a30ef59a084d69fd51`, ветка `master`, рабочее дерево и index исходно чистые. Снимки разрешённых файлов — `.cache/p03/`. P00 имеет `SELF_CHECK_COMPLETE`, P01 — независимый `PASS`; P02 имеет `AWAITING_VP`, отдельный PASS P02 не является prerequisite P03.
+- **Область:** только `tests/e2e/search-input.spec.ts` и эта карточка. Production, helpers, model spec, config, зависимости/lockfile, исходный аудит и другие карточки не изменены.
+- **Источники:** P03 и FTA-015 [исходного аудита](frontend-tests-audit.md); подтверждённые требования B26 [frontend backlog](../frontend-audit/00-final-backlog.md) и Stage 20 [testing.md](../testing.md): быстрый ввод, delayed/out-of-order URL acknowledgements, сохранение фильтров, сброс страницы, Back/Forward и безопасный Enter после refetch подсказок. Изучены актуальные `useAdminProductSearch`, `useSearch`, реальные consumers и существующие admin/guest mocks. Техническая семантика clock сверена с API-документацией и реализацией установленного Playwright `1.60.0` (`playwright-core/types/types.d.ts`, `coreBundle.js`): install до navigation оставляет таймеры работающими при загрузке, pauseAt переводит часы вперёд и останавливает их.
+- **Изменение:** в двух существующих history cases clock устанавливается до `page.goto` с фиксированным `2026-10-13T10:00:00.000Z`; pause вычисляется из того же значения как `start + 60_000 ms`. Непривязанное `pauseAt(new Date())` удалено. До паузы таймеры работают для загрузки приложения; пауза происходит до изменения поискового draft. Смещение на одну минуту — виртуальная точка clock, не задержка и не увеличенный timeout: оно больше неизменённого 30 s лимита case, поэтому успешный case не может успеть продвинуть clock за точку паузы. Host date/timezone не участвуют в выборе базы. Сохранён прежний `fastForward(1000)` для проверки отменённого debounce.
+
+**Сохранение регрессионной защиты:** cases не удалены и не объединены; все 8 browser cases и 5 соседних model cases исполнены. Все 28 исходных expect-выражений совпадают с baseline по AST; код остальных сценариев совпадает после нормализации переводов строк. History по-прежнему проверяет draft `101` → `дракон` → pending input → Back `101`, отсутствие поздней замены query после `fastForward(1000)`, Forward `дракон`, очистку через Enter и сохранение `agent/status`. Оба delayed-navigation cases сохраняют gates, локальный ввод, итоговый query, page reset и отсутствие writes. Четыре header cases сохраняют 3 → 0/1, сброс keyboard selection, точный URL, mobile dialog close и отсутствие page errors. Assertions и комментарии не ослаблялись; отдельная карта удаления не нужна.
+
+**Проверки автора:**
+
+| Проверка | Команда / результат |
+| --- | --- |
+| TypeScript | `npm run typecheck` — exit 0. |
+| Production lint | `npm run lint` — exit 0. |
+| FSD | `npm run architecture:check` — exit 0, `No problems found`. |
+| Прямой lint теста | `node node_modules/eslint/bin/eslint.js tests/e2e/search-input.spec.ts --max-warnings=0` — exit 0. |
+| Discovery | `node node_modules/@playwright/test/cli.js test tests/e2e/search-input.spec.ts tests/e2e/search-input-model.spec.ts --project=chromium --list` — exit 0, 13 cases в 2 файлах. |
+| Browser / соседние model regressions | Команда ниже — exit 0, **13 passed, 0 failed/skipped/flaky**, errors `[]`; 8 browser + 5 model, включая обе ширины history. У каждого case один attempt с retry 0; 40.226 s с startup/cleanup. JSON `.cache/p03/browser.json`, лог `.cache/p03/browser.log`, artifacts `test-results/p03-browser`. |
+
+```powershell
+Remove-Item Env:TEST_BASE_URL,Env:PLAYWRIGHT_WEB_SERVER_COMMAND -ErrorAction SilentlyContinue
+$env:CI = '1'
+$env:PLAYWRIGHT_PORT = '3100'
+$env:PLAYWRIGHT_FIXTURE_API_PORT = '3101'
+$env:CLIENT_API_BASE_URL = 'http://127.0.0.1:9'
+$env:PLAYWRIGHT_API_BASE_URL = 'http://127.0.0.1:3101'
+$env:ALLOW_LOCAL_API_URL = 'true'
+$env:DEBUG = 'pw:webserver'
+$env:PLAYWRIGHT_JSON_OUTPUT_FILE = '.cache/p03/browser.json'
+node node_modules/@playwright/test/cli.js test tests/e2e/search-input.spec.ts tests/e2e/search-input-model.spec.ts --project=chromium --workers=1 --retries=0 --trace=retain-on-failure --global-timeout=300000 --reporter=list,json --output=test-results/p03-browser
+```
+
+**Условия запуска / cleanup:** до старта проверены свободные 3100/3101 и отсутствие fixture asset; лимит всего run 300 s задан заранее, case/assertion/startup timeouts не менялись. Chromium с viewport `393/1280 × 850` внутри исходных cases; отдельный mobile project для этого spec не применяется. Node `24.15.0`, npm `11.12.1`; Next/eslint-config-next `15.5.27`, sharp `0.35.5`, Playwright `1.60.0` совпадают с lockfile. Использованы штатные mocks/локальный fixture; реальный backend не проверялся, аналитика подменена существующими helpers. Запуск вне Windows sandbox завершил оба server trees штатно: в логе две пары `Terminating/Terminated`, runner exit 0, после запуска listeners и проверенные server PIDs отсутствуют. Удалён только созданный fixture asset `public/__playwright-image-sizing.png`, отсутствовавший до run, с проверкой точного абсолютного пути. Посторонние процессы не останавливались; artifacts игнорируются Git. Trace/screenshot — диагностика, не visual baseline. Build, HTTP smoke, полный suite и SSR acceptance не требуются профилем B P03 и не объявляются пройденными.
+
+**Авторское ревью / границы:** проверены полный diff, неизменность assertions и прочих сценариев, отсутствие production/config/lockfile и посторонних изменений, сохранность остальных карточек плана побайтно после исключения новой карточки, локальные ссылки, размер документа и `git diff --check`. SHA256 исторического аудита сохранён: `ADB4B3C24B85089A10E8AD219391F83C9667BE01114BCA6EA4633A0144436CF8`. Новых skip/retries/timeouts нет. Подтверждённых product defects, неоднозначных требований и блокировок P03 не обнаружено; проблемы других пакетов этим результатом не закрываются. Документация обновлена только этой карточкой: действующие требования, архитектура, команды и workflow не меняются, поэтому `AGENTS.md`, `docs/architecture.md`, `docs/testing.md`, `docs/api-and-auth.md` не требуют правок.
+
+**Git / VP:** разрешён отдельный Conventional Commit с русским описанием; точный SHA и диапазон возвращаются в итоговом отчёте после создания коммита. Диапазон P03 — `15beea1b95cbeaa2c58196a30ef59a084d69fd51..<коммит P03>`, только spec и карточка. Независимый PASS не присваивается, push не выполняется.
+
 ### 3.2. Строгие helpers и разделение режимов запуска
 
 | Пакет / FTA                                                                            | Разрешённые файлы                                                              | Результат и критерии завершения                                                                                                                                                                                                                                                                                                                                                            | Проверки и критерии VP в контрольной точке                                                                                                                                |

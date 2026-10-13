@@ -46,13 +46,16 @@ for (const width of [393, 1280]) {
   test(`${width}px admin Back/Forward restores draft and cancels pending debounce`, async ({ page, baseURL }) => {
     await setupAdmin(page, baseURL);
     await page.setViewportSize({ width, height: 850 });
+    const clockStartTime = new Date("2026-10-13T10:00:00.000Z");
+    const clockPauseTime = new Date(clockStartTime.getTime() + 60_000);
+    // Загрузка идёт с работающими таймерами; пауза задана относительно той же UTC-базы.
+    await page.clock.install({ time: clockStartTime });
     await page.goto("/admin/products?agent=2&status=ACTIVE&q=101&page=0");
     const input = page.getByRole("textbox", { name: "Поиск по названию или ID" });
     await expect(input).toHaveValue("101");
     await page.evaluate(() => window.history.pushState(null, "", "/admin/products?agent=2&status=ACTIVE&q=дракон&page=0"));
     await expect(input).toHaveValue("дракон");
-    await page.clock.install();
-    await page.clock.pauseAt(new Date());
+    await page.clock.pauseAt(clockPauseTime);
     await input.fill("несохранённый поиск");
     await page.goBack();
     await expect(input).toHaveValue("101");
