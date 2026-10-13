@@ -280,6 +280,53 @@ node node_modules/@playwright/test/cli.js test tests/e2e/auth-boundaries-model.s
 
 **Фиксация приёмки:** исходный HEAD документационной задачи — `c4e74d2c81b9b1f99777dcb28bf555d6b700b6dc`, рабочее дерево чистое, пользовательских tracked/untracked правок нет. Изменён только этот план: статус P01, запись независимого результата и актуальность паспорта. Автор проверил diff, границы файла, размер и доказательства; новые прогоны тестов для documentation-only изменения не требуются. Документационный коммит не входит в проверенный implementation range. Тесты, production, config, зависимости и исторический аудит не изменяются. Push не выполняется, P02 не начинается; следующий пакет требует отдельной команды пользователя.
 
+#### Карточка результата P02 — 2026-10-13, Europe/Moscow
+
+- **Статус:** `AWAITING_VP`; авторская проверка профиля B успешна. Независимый VP не проводился; контрольная точка P02–P06 остаётся по плану. Следующие пакеты не реализуются.
+- **Baseline и зависимости:** HEAD `89ba9f93db50b15f7d9bc9a948054260b3e1ad06`, ветка `master`; исходные staged/tracked/untracked изменения отсутствовали. Снимки разрешённых файлов сохранены в `.cache/p02/`. P00 имеет `SELF_CHECK_COMPLETE`, P01 — независимый `PASS`, поэтому prerequisite выполнен.
+- **Область diff:** только `tests/e2e/product-search-session.spec.ts` и эта карточка P02. Production, helpers, runner/config, зависимости, lockfile, исходный аудит и карточки других пакетов не меняются. Все пять cases исходного spec сохранены.
+- **Источники требований:** строка P02 и FTA-001 [исходного аудита](frontend-tests-audit.md); подтверждённый сценарий guest cart/favorite → login/register → исходный route/query в B25 [frontend backlog](../frontend-audit/00-final-backlog.md); разделы auth navigation и «Поиск товаров и сессия» в [api-and-auth.md](../api-and-auth.md). Механизм проверен по актуальным `AddToCartButton`, `getAuthSwitchPath/getPostAuthRedirectPath`, `LoginPageClient`, `productApi.getProducts`, `useProductsInfinite` и `productKeys.catalog(sessionKey)`: исходный pathname/query передаётся в redirect, login заменяет auth entry, каталог разделяет выдачу по сессиям. Новых backend-контрактов и возрастных правил нет; adult/minor остаются синтетическими ответами существующего mock.
+- **Изменённый сценарий:** ожидается точный `/catalog/search?query=figurine` сразу после взрослого login, без предварительного Back для достижения выдачи. До входа проверяется отсутствие adult product, на auth route — точный redirect. После входа проверяются взрослый bearer/read и adult UI, затем точный URL и adult UI после настоящих Back/Forward. Logout и вход следующего аккаунта сохранены: тот же поиск выполняется с minor bearer, обычный товар виден, adult product отсутствует. Все четыре optional authorization cases и assertion отсутствия `includeAdult` сохранены без изменений.
+
+**Карта сохранения защиты.** Cases не удалялись и не объединялись; заменено только подтверждённо устаревшее ожидание, остальные assertions сохранены либо усилены.
+
+| Исходный assertion / риск | Сохраняющая проверка и основание |
+| --- | --- |
+| После login ожидался `/`, затем Back к search; исходный query мог потеряться | Вместо устаревшего `/` проверяются заранее заданные точные login redirect и search URL с `query=figurine`; основание — B25 и auth navigation. Главная либо потеря query теперь не проходят. |
+| Back → search и adult product; риск guest cache и неправильной auth history | Сразу после login, после Back и после Forward проверяются точный search URL и видимый adult product. Дополнительно требуется взрослый bearer/read. Back не должен открывать auth entry, который заменён login. |
+| После смены аккаунта обычный товар виден, adult product отсутствует | Оба прежних UI assertions сохранены; URL усилен до точного исходного поиска, дополнительно требуется minor bearer/read. Выдача предыдущей сессии не удовлетворяет adult count 0. |
+| Guest/minor/adult/invalid bearer и отсутствие `includeAdult` | Четыре исходных cases и общий mock assertion не изменены; все пять cases spec исполнены. |
+
+**Команды и результаты автора:**
+
+| Проверка | Команда / результат |
+| --- | --- |
+| TypeScript | `npm run typecheck` — exit 0; strict/config не менялись. |
+| Production lint | `npm run lint` — exit 0. |
+| FSD | `npm run architecture:check` — exit 0, `No problems found`. |
+| Прямой lint изменённого теста | `node node_modules/eslint/bin/eslint.js tests/e2e/product-search-session.spec.ts --max-warnings=0` — exit 0. |
+| Discovery затронутого поднабора | `node node_modules/@playwright/test/cli.js test tests/e2e/product-search-session.spec.ts tests/e2e/auth-return-path.spec.ts tests/e2e/private-data-model.spec.ts --project=chromium --list` — exit 0; 39 cases в 3 файлах, из них 5 cases P02. |
+| Browser и соседние регрессии | Команда ниже — exit 0; **39 passed, 0 failed/skipped/flaky**, errors `[]`, все attempts с retry 0; 311.064 s с startup/cleanup. P02 — 5 passed, auth return — 29 passed, private scope — 5 passed. JSON `.cache/p02/browser.json`, лог `.cache/p02/browser.log`, artifacts `test-results/p02-browser`. |
+
+```powershell
+Remove-Item Env:TEST_BASE_URL,Env:PLAYWRIGHT_WEB_SERVER_COMMAND -ErrorAction SilentlyContinue
+$env:CI = '1'
+$env:PLAYWRIGHT_PORT = '3100'
+$env:PLAYWRIGHT_FIXTURE_API_PORT = '3101'
+$env:CLIENT_API_BASE_URL = 'http://127.0.0.1:9'
+$env:PLAYWRIGHT_API_BASE_URL = 'http://127.0.0.1:3101'
+$env:ALLOW_LOCAL_API_URL = 'true'
+$env:DEBUG = 'pw:webserver'
+$env:PLAYWRIGHT_JSON_OUTPUT_FILE = '.cache/p02/browser.json'
+node node_modules/@playwright/test/cli.js test tests/e2e/product-search-session.spec.ts tests/e2e/auth-return-path.spec.ts tests/e2e/private-data-model.spec.ts --project=chromium --workers=1 --retries=0 --trace=retain-on-failure --global-timeout=600000 --reporter=list,json --output=test-results/p02-browser
+```
+
+**Условия и ограничения:** до старта подтверждены свободные 3100/3101 и отсутствие fixture asset; лимит run 600 s назначен заранее, case/assertion/startup timeouts не увеличивались. Использованы Next/eslint-config-next `15.5.27`, sharp `0.35.5`, Playwright `1.60.0`, совпадающие с lockfile; Node `24.15.0`, npm `11.12.1`. Запуск вне Windows sandbox обеспечил штатный cleanup: лог содержит обе пары `Terminating/Terminated`, runner завершился самостоятельно; после run listeners и принадлежащие ему server PIDs отсутствуют. Удалён только созданный fixture `public/__playwright-image-sizing.png` с проверкой точного абсолютного пути и исходного отсутствия. Посторонние процессы не останавливались. Chromium использует Desktop Chrome; соседний auth return spec дополнительно задаёт 393/1280 px, как прежде. API контролируются существующими mocks/локальным fixture; реальный backend не проверялся, аналитика в Next dev отключена существующим production guard. Screenshots/trace являются диагностикой, не visual baseline. Build, HTTP smoke, полный suite и SSR acceptance не запускались: профиль B P02 их не требует, их PASS не заявляется.
+
+**Авторское ревью и контроль границ:** проверены полный diff и карта assertions; уникальная защита и комментарии сохранены, skip/retries/timeouts не добавлялись, приложение не изменялось ради тестов. Проверены отсутствие постороннего diff, неизменность четырёх authorization cases и всех остальных карточек плана, `git diff --check`, локальные ссылки и размер документа. SHA256 исторического аудита сохранён: `ADB4B3C24B85089A10E8AD219391F83C9667BE01114BCA6EA4633A0144436CF8`. Подтверждённых product defects, неоднозначных требований или блокировок P02 не обнаружено; это не закрывает отдельные проблемы других пакетов. Документация обновляется только этой карточкой: действующие требования, архитектура, команды и workflow не меняются, поэтому `AGENTS.md`, `docs/architecture.md`, `docs/testing.md`, `docs/api-and-auth.md` не требуют правок.
+
+**Git и VP:** пользователь разрешил отдельный Conventional Commit P02 с русским описанием; точный SHA и диапазон возвращаются в итоговом отчёте после создания коммита. Диапазон P02 — `89ba9f93db50b15f7d9bc9a948054260b3e1ad06..<коммит P02>`, содержащий только этот spec и карточку. Автор не присваивает независимый `PASS`; push запрещён и не выполняется.
+
 ### 3.2. Строгие helpers и разделение режимов запуска
 
 | Пакет / FTA                                                                            | Разрешённые файлы                                                              | Результат и критерии завершения                                                                                                                                                                                                                                                                                                                                                            | Проверки и критерии VP в контрольной точке                                                                                                                                |

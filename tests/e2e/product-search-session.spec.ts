@@ -63,18 +63,32 @@ for (const token of [undefined, "minor-token", "adult-token", "invalid-token"]) 
   });
 }
 
-test("login refreshes cached guest search and a later account cannot see adult results", async ({ page }) => {
-  await mockSearch(page);
-  await page.goto("/catalog/search?query=figurine");
+test("login refreshes cached guest search and a later account cannot see adult results", async ({ page, baseURL }) => {
+  const requests = await mockSearch(page);
+  const searchPath = "/catalog/search?query=figurine";
+  const searchUrl = new URL(searchPath, baseURL).href;
+  await page.goto(searchPath);
+  await expect(page).toHaveURL(searchUrl);
   await expect(page.getByText(regularProduct.name, { exact: true })).toBeVisible();
+  await expect(page.getByText(adultProduct.name, { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Купить", exact: true }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Войти", exact: true }).click();
+  const loginPath = `/auth/login?${new URLSearchParams({ redirect: searchPath })}`;
+  await expect(page).toHaveURL(new URL(loginPath, baseURL).href);
   await page.getByLabel(/^Email/).fill("adult@example.com");
   await page.getByLabel(/^Пароль/).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
-  await expect(page).toHaveURL(/\/$/);
+  // docs/api-and-auth.md: guest cart login returns to the original pathname/query.
+  await expect(page).toHaveURL(searchUrl);
+  await expect.poll(() => requests.some(request => request.authorization === "Bearer adult-token")).toBe(true);
+  await expect(page.getByText(adultProduct.name, { exact: true })).toBeVisible();
+
+  // Login replaces the auth entry; Back/Forward retain search and the current session.
   await page.goBack();
-  await expect(page).toHaveURL(/catalog\/search/);
+  await expect(page).toHaveURL(searchUrl);
+  await expect(page.getByText(adultProduct.name, { exact: true })).toBeVisible();
+  await page.goForward();
+  await expect(page).toHaveURL(searchUrl);
   await expect(page.getByText(adultProduct.name, { exact: true })).toBeVisible();
 
   await page.getByRole("navigation", { name: "Действия в шапке сайта" }).getByRole("link", { name: "Профиль", exact: true }).click();
@@ -88,7 +102,8 @@ test("login refreshes cached guest search and a later account cannot see adult r
   const search = page.getByRole("combobox", { name: "поиск по сайту" });
   await search.fill("figurine");
   await search.press("Enter");
-  await expect(page).toHaveURL(/catalog\/search/);
+  await expect(page).toHaveURL(searchUrl);
+  await expect.poll(() => requests.some(request => request.authorization === "Bearer minor-token")).toBe(true);
   await expect(page.getByText(regularProduct.name, { exact: true })).toBeVisible();
   await expect(page.getByText(adultProduct.name, { exact: true })).toHaveCount(0);
 });
