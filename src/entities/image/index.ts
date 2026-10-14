@@ -7,8 +7,10 @@ export type {
   ImageMetadata,
   ImageResponse,
   ImageTag,
+  NonOrderImageTag,
 } from "./model/types";
 export {
   useImageMetadataQuery,
   useImagesQuery,
+  useOrderImagesQuery,
 } from "./model/useImageQueries";

@@ -5,7 +5,7 @@ import {
   createImagePreview,
   validateImage,
 } from "@/shared/lib";
-import { imageApi, type ImageTag } from "@/entities/image";
+import { imageApi, type NonOrderImageTag } from "@/entities/image";
 import { usePrivateScope } from "@/shared/lib/query";
 
 type ImageSelection =
@@ -31,7 +31,7 @@ export interface UseImageUploadReturn {
   removeImage: () => void;
 }
 
-export const useImageUpload = (tag: ImageTag): UseImageUploadReturn => {
+export const useImageUpload = (tag: NonOrderImageTag): UseImageUploadReturn => {
   const scope = usePrivateScope();
   const [state, setState] = useState<ImageUploadState>({
     status: "unchanged", selection: { kind: "unchanged" }, error: null,

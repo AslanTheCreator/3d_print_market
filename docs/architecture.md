@@ -128,8 +128,14 @@ feature и не выбирает auth route. Политика возврата �
 [api-and-auth.md](./api-and-auth.md#текущий-auth-flow).
 
 Доменные DTO размещаются в `model` соответствующих entities. `entities/image`
-владеет image DTO, API, query hooks и связыванием изображений с доменными
-данными. Core DTO профиля, заказов и собственных товаров кэшируются отдельно;
+владеет image DTO, API, query hooks и связыванием изображений с доменными данными,
+включая защищённый транспорт и scoped query ORDER-изображений;
+административный reader переиспользует транспорт, сохраняя admin namespace.
+`widgets/orders` показывает нейтральную галерею файлов заказа, а локальным
+выбором файла и отложенным upload при submit владеет `features/order-payment`.
+Общий image-upload/cleanup ограничен NonOrderImageTag. Правила приватности
+и lifecycle описаны в [api-and-auth.md](./api-and-auth.md#изображения-заказа-этап-3).
+Core DTO профиля, заказов и собственных товаров кэшируются отдельно;
 widgets собирают визуальные модели через `mapImageMetadata` и существующий
 image query с локальными loading/error/fallback/retry. Контракты и ключи
 описаны в [api-and-auth.md](./api-and-auth.md#поиск-товаров-и-сессия).

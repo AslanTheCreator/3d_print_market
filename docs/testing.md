@@ -53,6 +53,35 @@ npx playwright test orders.mobile --project=mobile-chromium
 Все изменяющие запросы подменяются Playwright; на реальном backend проверяется
 только OpenAPI. По плану интеграции build, smoke и полный e2e — этап 12.
 
+## Backend integration: этап 3
+
+`order-images-model.spec.ts` проверяет auth-транспорт, AbortSignal, entityId,
+multipart files, upload responses, запрет generic ORDER upload/DELETE и реальный
+private query: refresh сохраняет scope, смена аккаунта отменяет поздний GET
+и очищает приватные/admin данные без удаления публичной metadata.
+`order-images.spec.ts` проверяет обе роли, 403 с retry без публичного fallback,
+нейтральные подписи и фильтрацию невалидного содержимого, замену/удаление
+локального файла без HTTP и освобождение blob URL. Поздние upload после смены
+заказа, статуса и logout не отправляют status mutation и не попадают в новую форму.
+
+`order-payment.spec.ts` проверяет выбор без немедленного upload, отсутствие
+DELETE после закрытия/ошибки, точный ORDER-upload, невалидные ответы и повтор
+того же imageId. `order-details.spec.ts` проверяет нейтральный empty state;
+`open-forms.spec.ts` сохраняет проверки ввода и pending settlement.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test order-images order-payment order-details open-forms avatar-upload-model avatar-replacement image-identity save-confirmation-model private-data-model --project=chromium
+npx playwright test admin.spec --project=chromium --grep "proof uses authorization"
+npx playwright test orders.mobile --project=mobile-chromium
+```
+
+API-записи подменены. На реальном backend прочитан только OpenAPI;
+object-level авторизация требует отдельной серверной приёмки. Build, smoke
+и полный e2e по плану интеграции остаются этапу 12.
+
 ## Локальные товары бота
 
 `scripts/seed-agent-products.mjs` создаёт два товара с префиксом `[ТЕСТ]`
@@ -620,7 +649,7 @@ Playwright с mock API должен проверять:
 - ошибки `403`, `409`, `500` и network failure на действиях этапов 2–5 без закрытия диалога и потери введённых данных;
 - перечитывание заказов после сетевой ошибки с неизвестным результатом без имитации успешного перехода;
 - повтор оплаты с тем же `imageId` после отклонённого status mutation;
-- удаление только заведомо непривязанного upload при замене файла или закрытии, а при timeout — отсутствие удаления до подтверждающего refetch;
+- отсутствие DELETE ORDER при замене/закрытии/ошибке; замена и удаление допустимы только для локального файла до upload, а полученный ID сохраняется для повтора;
 - блокировку status request для невалидного tracking URL.
 
 Для изменений order flow выполняются:

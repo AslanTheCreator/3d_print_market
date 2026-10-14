@@ -24,7 +24,6 @@ import {
 import {
   getOrderPaymentBreakdown,
   OrderStatusChip,
-  shouldShowPaymentProofForRole,
   shouldShowTrackingForRole,
   type ListOrdersModel,
 } from "@/entities/order";
@@ -58,10 +57,6 @@ export const OrderDetailsDialog = ({
 }: OrderDetailsDialogProps) => {
   const peerLabel = getOrderPeerLabel(userRole);
   const showTracking = shouldShowTrackingForRole(
-    order.actualStatus,
-    userRole,
-  );
-  const showPaymentProof = shouldShowPaymentProofForRole(
     order.actualStatus,
     userRole,
   );
@@ -253,12 +248,7 @@ export const OrderDetailsDialog = ({
 
           {showTracking && <OrderTracking deliveryUrl={order.deliveryUrl} />}
 
-          {showPaymentProof && (
-            <OrderPaymentProof
-              orderId={order.orderId}
-              imageIds={order.images}
-            />
-          )}
+          <OrderPaymentProof orderId={order.orderId} imageIds={order.images} />
 
           <OrderHistory order={order} />
         </Stack>

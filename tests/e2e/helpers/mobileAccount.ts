@@ -11,7 +11,7 @@ export const orderFixture = (orderId: number, actualStatus: string, day: number)
   product: { id: orderId + 100, name: longProductName, count: 2, price: 1250, prepaymentAmount: 0, currency: "RUB", categories,
     imageId: 0, sellerId: 10, expirationDate: "2030-01-01T00:00:00Z", status: "ACTIVE", availability: "PURCHASABLE", sellerLogin: "seller", sellerRating: 5, totalReviews: 2, createdAt: "2026-07-01T00:00:00Z", externalUrl: null },
   transfer: { transferId: 51, addressId: 61, imageId: 0, address: "Тестовый адрес", price: 400, currency: "RUB" },
-  images: [], deliveryUrl: "", histories: [{ status: "BOOKED", comment: null, changedAt: "2026-07-01T10:00:00Z" }],
+  images: [] as number[], deliveryUrl: "", histories: [{ status: "BOOKED", comment: null, changedAt: "2026-07-01T10:00:00Z" }],
 });
 
 export const fulfillJson = async (route: Route, body: unknown, status = 200) => route.fulfill({

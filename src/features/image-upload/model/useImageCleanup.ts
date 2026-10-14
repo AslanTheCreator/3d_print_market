@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { imageApi, type ImageTag } from "@/entities/image";
+import { imageApi, type NonOrderImageTag } from "@/entities/image";
 import { usePrivateScope } from "@/shared/lib/query";
 
 // Вызывать только после подтверждённого сохранения связей без этих ID.
-export const useImageCleanup = (tag: ImageTag) => {
+export const useImageCleanup = (tag: NonOrderImageTag) => {
   const scope = usePrivateScope();
   const mounted = useRef(true);
   const pending = useRef<number[]>([]);

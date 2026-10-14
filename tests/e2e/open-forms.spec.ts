@@ -46,7 +46,7 @@ for (const width of [393, 1280]) {
     await reconnect(page);
     await expect(dialog.getByText(/Подтверждение недоступно до успешной загрузки/)).toBeVisible();
     await expect(comment).toHaveValue("Сохранённый комментарий");
-    await expect(dialog.getByText("Изображение загружено", { exact: true })).toBeVisible();
+    await expect(dialog.getByText("Файл выбран", { exact: true })).toBeVisible();
     await expect(confirm).toBeDisabled();
     await confirm.evaluate(button => button.dispatchEvent(new MouseEvent("click", { bubbles: true })));
     expect(writes).toEqual([]);
@@ -54,7 +54,7 @@ for (const width of [393, 1280]) {
     await dialog.getByRole("button", { name: "Повторить загрузку", exact: true }).click();
     await expect(confirm).toBeEnabled();
     await expect(comment).toHaveValue("Сохранённый комментарий");
-    await expect(dialog.getByText("Изображение загружено", { exact: true })).toBeVisible();
+    await expect(dialog.getByText("Файл выбран", { exact: true })).toBeVisible();
     await confirm.click();
     await expect(dialog).toBeHidden();
     expect(writes).toHaveLength(1);

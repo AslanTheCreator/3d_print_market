@@ -12,7 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Refresh } from "@mui/icons-material";
-import { useImagesQuery } from "@/entities/image";
+import { useOrderImagesQuery } from "@/entities/image";
 import {
   ImageGallery,
   type ImageGalleryImage,
@@ -67,7 +67,7 @@ export const OrderPaymentProof = ({
   const validImageIds = useMemo(
     () => [
       ...new Set(
-        imageIds.filter((imageId) => Number.isInteger(imageId) && imageId > 0),
+        imageIds.filter((imageId) => Number.isSafeInteger(imageId) && imageId > 0),
       ),
     ],
     [imageIds],
@@ -78,7 +78,7 @@ export const OrderPaymentProof = ({
     isError,
     isFetching,
     refetch,
-  } = useImagesQuery(validImageIds);
+  } = useOrderImagesQuery(orderId, validImageIds);
   const galleryImages = useMemo<ImageGalleryImage[]>(
     () =>
       (imageResponses ?? []).flatMap((image) => {
@@ -101,7 +101,7 @@ export const OrderPaymentProof = ({
     if (validImageIds.length === 0) {
       return (
         <Alert severity="info">
-          Подтверждение оплаты для этого заказа не приложено.
+          Изображения заказа пока отсутствуют.
         </Alert>
       );
     }
@@ -110,7 +110,7 @@ export const OrderPaymentProof = ({
       return (
         <Stack
           spacing={1.5}
-          aria-label="Загрузка подтверждения оплаты"
+          aria-label="Загрузка изображений заказа"
           aria-busy="true"
         >
           <Skeleton
@@ -155,7 +155,7 @@ export const OrderPaymentProof = ({
           <Stack direction="row" spacing={1} alignItems="center">
             <CircularProgress size={18} />
             <Typography variant="body2" color="text.secondary">
-              Загружаем подтверждение оплаты...
+              Загружаем изображения заказа...
             </Typography>
           </Stack>
         </Stack>
@@ -180,7 +180,7 @@ export const OrderPaymentProof = ({
             </Button>
           }
         >
-          Не удалось загрузить подтверждение оплаты.
+          Не удалось загрузить изображения заказа.
         </Alert>
       );
     }
@@ -188,7 +188,7 @@ export const OrderPaymentProof = ({
     if (galleryImages.length === 0) {
       return (
         <Alert severity="info">
-          В ответе сервера нет доступных изображений подтверждения оплаты.
+          В ответе сервера нет доступных изображений заказа.
         </Alert>
       );
     }
@@ -196,7 +196,7 @@ export const OrderPaymentProof = ({
     return (
       <ImageGallery
         images={galleryImages}
-        alt={`Подтверждение оплаты по заказу #${orderId}`}
+        alt={`Изображения заказа #${orderId}`}
       />
     );
   })();
@@ -204,13 +204,13 @@ export const OrderPaymentProof = ({
   return (
     <Paper
       component="section"
-      data-testid="order-payment-proof"
+      data-testid="order-images"
       variant="outlined"
       sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: 2 }}
     >
       <Box sx={{ mb: 2 }}>
         <Typography component="h3" variant="h6" fontWeight={700}>
-          Подтверждение оплаты
+          Изображения заказа
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Заказ #{orderId}

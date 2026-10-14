@@ -39,7 +39,43 @@ URL `/admin/actions/agents/{agentId}/orders/{orderId}/CANCEL`, query comment
 DISPUTED — «На рассмотрении». Отменённые имеют отдельный фильтр; обычная цепочка
 прогресса скрыта для этих трёх состояний. Исторический FAILED не преобразуется.
 Старого пользовательского закрытия спора `/order/orders/{orderId}/dispute/COMPLETED`
-в `src` нет; новый код его не вызывает. Работа с изображениями остаётся этапу 3.
+в `src` нет; новый код его не вызывает.
+
+## Изображения заказа (этап 3)
+
+`imageApi.getOrderImages(ids, signal)` читает `GET /images?ids=...` через
+authClient, без публичного fallback. `adminImageApi.read` переиспользует этот
+транспорт; административный query остаётся в ветке `["admin", session, ...]`.
+`useOrderImagesQuery` использует `["private", scopeId, "orderImages", orderId, ...ids]`
+с уникальными положительными safe integer ID. Чтение не запускается без сессии,
+принимает AbortSignal; при ручном refetch дополнительно проверяет актуальность
+scope. staleTime/gcTime равны нулю: после закрытия приватная галерея не хранится
+для повторного показа. Смена аккаунта/выход отменяют и удаляют эту ветку через
+существующий PrivateDataBoundary. Metadata товаров остаётся публичной и отдельной.
+
+`order.images` показываются обеим сторонам заказа как «Изображения заказа»,
+с нейтральными alt и loading/error/empty. Статус, имя файла, порядок и пустая
+история не определяют назначение изображения и не доказывают отсутствие чека.
+Content type и base64 проверяются перед ImageGallery. Ответ ImageResponse
+не содержит ID; для достоверного отдельного payment proof в последующих этапах
+нужно отдельное чтение известного ID, без сопоставления по позиции массива.
+
+PaymentDialog сначала хранит File и blob preview только в памяти. До отправки
+файл можно заменить или удалить локально. Upload выполняется при submit через
+`saveOrderImage(file, orderId, signal)`: multipart POST
+`/images?tag=ORDER&entityId={orderId}`, поле `files`. Пустой массив и невалидные
+ID отклоняются. После получения ID файл закреплён: ошибка status mutation
+сохраняет его для повтора без нового upload; замена/удаление недоступны.
+Закрытие, ошибка, размонтирование и смена scope не выполняют DELETE.
+Blob URL освобождаются при замене/очистке/unmount. Поздний upload отменяется
+и не меняет другую форму; перед status mutation повторно проверяются заказ,
+scope, текущий статус, readiness списка и реквизиты.
+
+`NonOrderImageTag` исключает ORDER из generic saveImage, deleteImages и
+upload/cleanup hooks. Generic API дополнительно отклоняет ORDER во время
+исполнения, до HTTP-запроса. Product/avatar upload и cleanup сохраняют прежний
+flow. Серверная проверка object-level доступа остаётся обязанностью backend;
+mock-тесты и чтение OpenAPI не подтверждают её выполнение на реальных данных.
 
 ## Административный API
 
@@ -492,7 +528,7 @@ Retry подтверждённых отказов сверяет актуаль�
 - `PUT /participant/password` сейчас отправляет `oldPassword` и `newPassword` в query string. Для production нужен подтверждённый body-контракт и redaction на proxy/backend.
 - `POST /auth/password/reset` отправляет email в query, а UI может показывать backend message. Backend должен исключать account enumeration и определить rate limit, single-use, expiry и session revocation.
 - Комментарии к заказу и delivery URL в части order endpoints также передаются через query. Чувствительные пользовательские значения должны переноситься в body после согласования контракта.
-- Изображения `ORDER` загружаются авторизованно, но читаются через общий `publicClient`. До production требуется подтверждённый private access по участнику заказа.
+- Изображения `ORDER` читаются и загружаются через authClient; перед production требуется проверить серверный object-level доступ по участнику заказа на реальных изолированных данных.
 - Платёжные реквизиты продавца запрашиваются по `participantId`; backend должен подтверждать object-level доступ в контексте заказа.
 
 ## Env

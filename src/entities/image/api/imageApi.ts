@@ -1,7 +1,22 @@
 import { authClient, publicClient } from "@/shared/api";
-import type { ImageMetadata, ImageResponse, ImageTag } from "../model/types";
+import type { ImageMetadata, ImageResponse, ImageTag, NonOrderImageTag } from "../model/types";
 
 const API_URL = `/images`;
+
+const requireNonOrderTag = (tag: ImageTag) => {
+  if (tag === "ORDER") throw new Error("ORDER images require an order-bound upload and cannot be deleted");
+};
+
+const uploadImage = async (file: File, params: URLSearchParams, signal?: AbortSignal): Promise<number[]> => {
+  const formData = new FormData();
+  formData.append("files", file);
+  const { data } = await authClient.post<number[]>(`${API_URL}?${params}`, formData, { signal });
+  if (!Array.isArray(data) || data.length === 0 ||
+    !data.every((id: unknown) => typeof id === "number" && Number.isSafeInteger(id) && id > 0)) {
+    throw new Error("Invalid image upload response");
+  }
+  return data;
+};
 
 const normalizeImageIds = (imageIds: number | number[] | null) => {
   if (!imageIds || imageIds === 0) {
@@ -51,6 +66,19 @@ const getMetadataBatch = async (
 };
 
 export const imageApi = {
+  async getOrderImages(ids: number[], signal?: AbortSignal): Promise<ImageResponse[]> {
+    const validIds = [...new Set(ids.filter(id => Number.isSafeInteger(id) && id > 0))];
+    if (!validIds.length) return [];
+    const params = new URLSearchParams();
+    validIds.forEach(id => params.append("ids", String(id)));
+    const { data } = await authClient.get<ImageResponse[]>(`${API_URL}?${params}`, { signal });
+    if (!Array.isArray(data)) throw new Error("Invalid order images response");
+    return data;
+  },
+  async saveOrderImage(file: File, orderId: number, signal?: AbortSignal): Promise<number[]> {
+    if (!Number.isSafeInteger(orderId) || orderId <= 0) throw new Error("Invalid order ID");
+    return uploadImage(file, new URLSearchParams({ tag: "ORDER", entityId: String(orderId) }), signal);
+  },
   async getImages(
     imageIds: number | number[] | null,
   ): Promise<ImageResponse[]> {
@@ -78,21 +106,12 @@ export const imageApi = {
 
     return getMetadataBatch(validIds, signal);
   },
-  async saveImage(file: File, tag: ImageTag): Promise<number[]> {
-    const formData = new FormData();
-    formData.append("files", file);
-
-    const { data } = await authClient.post<number[]>(
-      `${API_URL}?tag=${tag}`,
-      formData,
-    );
-    if (!Array.isArray(data) || data.length === 0 ||
-      !data.every((id: unknown) => typeof id === "number" && Number.isSafeInteger(id) && id > 0)) {
-      throw new Error("Invalid image upload response");
-    }
-    return data;
+  async saveImage(file: File, tag: NonOrderImageTag): Promise<number[]> {
+    requireNonOrderTag(tag);
+    return uploadImage(file, new URLSearchParams({ tag }));
   },
-  async deleteImages(imageIds: number[], tag: ImageTag): Promise<void> {
+  async deleteImages(imageIds: number[], tag: NonOrderImageTag): Promise<void> {
+    requireNonOrderTag(tag);
     if (imageIds.length === 0) {
       return;
     }
