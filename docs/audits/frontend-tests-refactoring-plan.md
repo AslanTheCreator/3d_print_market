@@ -367,6 +367,75 @@ node node_modules/@playwright/test/cli.js test tests/e2e/search-input.spec.ts te
 
 **Git / VP:** разрешён отдельный Conventional Commit с русским описанием; точный SHA и диапазон возвращаются в итоговом отчёте после создания коммита. Диапазон P03 — `15beea1b95cbeaa2c58196a30ef59a084d69fd51..<коммит P03>`, только spec и карточка. Независимый PASS не присваивается, push не выполняется.
 
+#### Карточка результата P04 — 2026-10-13, Europe/Moscow
+
+- **Статус:** `BLOCKED_PRODUCT`, блокировка P04-F01 ниже. Авторская проверка профиля B выполнена, но не успешна; `AWAITING_VP` и независимый `PASS` не присваиваются. Независимый VP не проводился, следующие пакеты не реализуются.
+- **Baseline / prerequisites:** HEAD `7fde919d27f0068c2b23cb43a854055c3d89d984`, ветка `master`, исходные рабочее дерево и index чистые. Снимки разрешённых файлов — `.cache/p04/`. P00 имеет `SELF_CHECK_COMPLETE`, P01 — независимый `PASS`; индивидуальный PASS P02/P03 не является prerequisite P04, их групповой VP остаётся после P06.
+- **Разрешённый и фактический diff:** только `tests/e2e/catalog-filter-empty.spec.ts` и эта карточка P04. Production, helpers, config, зависимости/lockfile, исходный аудит и остальные карточки не изменены. Правки сохраняются отдельным диагностическим коммитом по прямому разрешению пользователя от 2026-10-14; пакет остаётся заблокированным и не представлен как готовый.
+- **Источники требований:** P04 и FTA-016 [исходного аудита](frontend-tests-audit.md); B29 [frontend backlog](../frontend-audit/00-final-backlog.md), раздел «UI и формы» [architecture.md](../architecture.md) и Stage 22 [testing.md](../testing.md). Подтверждены keyboard entry, focus trap/return, диапазоны, короткий viewport, текст 200% и приоритет loading/error над empty. Требование сохранить начальный фокус поля «От» явно установлено P04/FTA-016; оно не заменено более слабым «фокус где-нибудь внутри dialog». Актуальные `PriceRangeFilter`, `usePriceRangeFilter`, `PriceRangeTrigger`, обе поверхности, `PriceInput` и parsing model изучены: оба варианта передают `autoFocus` в поле «От», открытие выбирает поверхность по breakpoint. Реализация объясняет механизм, требования взяты из плана и документов; новых API/бизнес-правил нет.
+- **Реализованная часть:** `openFilter` открывает цену клавиатурой и проверяет именованный dialog и видимость обоих полей. Точный исходный `toBeFocused()` перенесён в существующие keyboard cases 1280/320 px перед первым Tab и после повторного открытия. Для сохранения особого условия 320×240 / текст 200% добавлен самостоятельный initial-focus case; прежний case прокрутки/достижимости не зависит от начального focus. Ручное фокусирование поля для обхода дефекта не добавлено.
+
+**Карта сохранения защиты и авторское ревью:**
+
+| Исходная проверка / риск | Сохраняющий owner и фактическое доказательство |
+| --- | --- |
+| `openFilter`: dialog виден, поле «От» автоматически focused при keyboard open | Видимость dialog/полей остаётся в helper; тот же exact role/name/`toBeFocused()` находится в отдельных keyboard cases обоих вариантов. До переноса оба cases падали в helper, после — на том же assertion в case: `Expected: focused`, `Received: inactive`. Отказ не скрыт. |
+| Initial focus при повторном открытии уже применённого диапазона | Тот же assertion сохранён после второго `openFilter` в keyboard case с применённым `minPrice: 100`. Эта ветвь пока не достигнута из-за первого focus failure и не объявляется пройденной. |
+| Начальный focus на коротком mobile viewport при тексте 200% | Новый отдельный case повторяет исходные setupSearch, `320×240`, style и keyboard open, затем требует тот же initial focus и сохраняет Escape/return checks. Новый case падает на `toBeFocused`; исходный scroll/controls case теперь проходит полностью. |
+| Диапазоны/Apply/cancel/reset/validation, focus return, empty/loading/error/retry | Все исходные bodies/assertions сохранены. В финальном run 8 остальных cases этого spec прошли, включая оба диапазона, short screen, invalid input и четыре consumer states. |
+
+Все 10 исходных cases сохранены; в spec стало 11. AST-сверка подтверждает наличие всех 68 исходных expect-выражений с не меньшей кратностью, после переноса/нового case — 74. Обратное исключение только новых блоков восстанавливает исходный файл после нормализации переводов строк: остальные шаги, assertions и исходный комментарий про controlled query gate не менялись. Cases не объединены; уникальная защита не удалена. Авторское подтверждение одинакового отказа до/после не является независимым VP или приёмкой owner.
+
+**Команды и результаты профиля B:**
+
+| Проверка | Команда / результат |
+| --- | --- |
+| TypeScript | `npm run typecheck` — exit 0 на итоговом TS diff. |
+| Production lint | `npm run lint` — exit 0. |
+| FSD | `npm run architecture:check` — exit 0, `No problems found`. |
+| Прямой lint теста | `node node_modules/eslint/bin/eslint.js tests/e2e/catalog-filter-empty.spec.ts --max-warnings=0` — exit 0. |
+| Discovery | Точная финальная команда ниже с `--list` вместо runtime flags — exit 0, 14 cases / 3 файла: 11 cases P04, один соседний keyboard clear и два catalog recovery model cases. |
+| Исходное воспроизведение | До редактирования: `node node_modules/@playwright/test/cli.js test tests/e2e/catalog-filter-empty.spec.ts --grep 'keyboard enters fields' --project=chromium --workers=1 --retries=0 --trace=retain-on-failure --global-timeout=240000 --reporter=list,json --output=test-results/p04-focus-baseline`; JSON `.cache/p04/focus-baseline.json`, лог `.cache/p04/focus-baseline.log`. Exit 1, **0 passed / 2 failed**, 0 skipped/flaky, retries 0, 28.138 s. |
+| Промежуточный основной run | После переноса initial focus, до добавления short-screen owner: три файла и тот же grep без `initial price focus`, остальные runtime flags как ниже, JSON `.cache/p04/browser.json`, лог `.cache/p04/browser.log`, output `test-results/p04-browser`. Exit 1, **11 passed / 2 failed**, 0 skipped/flaky, retries 0, 71.614 s. |
+| Итоговый основной run | Команда ниже — exit 1, **11 passed / 3 failed**, 0 skipped/flaky, runner errors `[]`; у каждого case один attempt с retry 0, 80.169 s с startup/cleanup. P04: 8 passed / 3 failed; соседние: 3 passed. JSON `.cache/p04/browser-final.json`, лог `.cache/p04/browser-final.log`, output `test-results/p04-browser-final`. |
+
+```powershell
+Remove-Item Env:TEST_BASE_URL,Env:PLAYWRIGHT_WEB_SERVER_COMMAND -ErrorAction SilentlyContinue
+$env:CI = '1'
+$env:PLAYWRIGHT_PORT = '3100'
+$env:PLAYWRIGHT_FIXTURE_API_PORT = '3101'
+$env:CLIENT_API_BASE_URL = 'http://127.0.0.1:9'
+$env:PLAYWRIGHT_API_BASE_URL = 'http://127.0.0.1:3101'
+$env:ALLOW_LOCAL_API_URL = 'true'
+$env:DEBUG = 'pw:webserver'
+$env:PLAYWRIGHT_JSON_OUTPUT_FILE = '.cache/p04/browser-final.json'
+node node_modules/@playwright/test/cli.js test tests/e2e/catalog-filter-empty.spec.ts tests/e2e/accessibility-interactions.spec.ts tests/e2e/infinite-recovery-model.spec.ts --grep 'price filter clear action|price draft preserves|keyboard enters fields|initial price focus|short screen|invalid and overflowing|empty has context|visible sentinel' --project=chromium --workers=1 --retries=0 --trace=retain-on-failure --global-timeout=360000 --reporter=list,json --output=test-results/p04-browser-final
+```
+
+В каждом run до старта проверены свободные 3100/3101 и отсутствие fixture asset; global limits 240 s для двух baseline cases и 360 s для основных поднаборов заданы заранее. Существующий `test.setTimeout(90_000)` и default assertion timeout 5 s сохранены, новых skip/retries/timeouts нет. Повтор основного набора потребовался после добавления отдельного short-screen focus owner; предыдущие отказы и artifacts не перезаписаны. Chromium проверяет исходные desktop/compact keyboard условия; short screen — 320×240 с CSS-текстом 200%, без имитации touch там, где сценарий клавиатурный. Node `24.15.0`, npm `11.12.1`; Next/eslint-config-next `15.5.27`, sharp `0.35.5`, Playwright `1.60.0` совпадают с lockfile. Mocks/локальный fixture не обращаются к реальному backend; production-код не менялся ради тестов. Full suite, build, HTTP smoke и SSR acceptance не запускались: профиль B P04 их не требует, их PASS не заявляется.
+
+##### Блокировка продукта P04-F01 — начальный фокус фильтра цены
+
+**Статус: `BLOCKED_PRODUCT`, отдельная задача приложения; исправление не входит в P04.** Это локальная карточка дефекта, внешняя задача/чат не создавались. Правильное ожидание — первоначальный фокус поля «От» после keyboard open, как зафиксировано P04/FTA-016; общая keyboard/focus policy подтверждена B29 и архитектурой.
+
+**Минимальное воспроизведение:** синтетический гостевой поиск `/catalog/search?query=filter`, два mock products с ценами 1000/9000, viewport 1280×850 или 320×850. Сфокусировать нативную кнопку `price-range-trigger`, нажать Enter; дождаться именованного dialog «Цена» и обоих полей. Ожидать `dialog.getByRole('textbox', { name: 'От', exact: true })` focused. Отдельное воспроизведение: 320×240, перед открытием `html { font-size: 200% !important; }`.
+
+**Actual / expected:** поле существует и видно, но `toBeFocused()` все 5 s получает `inactive`; expected — `focused`. Первые два варианта воспроизведены до правки и в обоих основных runs; третий — в итоговом новом owner. Это подтверждает нарушение начального focus в смонтированной UI-интеграции, а не вновь созданное падение от переноса assertion. Конкретная причина в React/MUI/portal lifecycle и фактически focused element не установлены; их нельзя считать доказанными по одному `autoFocus` prop. Следующие assertions Tab/Shift+Tab, Enter и reopen этих focus cases не достигнуты и не объявляются успешными. При этом обычные диапазоны, возврат trigger focus, short-screen reachability и empty recovery проверены отдельными прошедшими cases.
+
+**Trace первой попытки каждого итогового failure:** архивы прочитаны, selector соответствует исходному «От», assertion timeout 5000 ms; это диагностические artifacts, не visual baseline. Старые baseline traces сохранены отдельно.
+
+| Условие | Trace под `test-results/p04-browser-final/` | SHA256 |
+| --- | --- | --- |
+| 1280×850 | [trace.zip](../../test-results/p04-browser-final/catalog-filter-empty-1280p-8fe77-restores-focus-after-Escape-chromium/trace.zip) | `9B82BF8D7A7465330C955217F38902B88D20549244C213BC7C46907987A75563` |
+| 320×850 | [trace.zip](../../test-results/p04-browser-final/catalog-filter-empty-320px-f1f1f-restores-focus-after-Escape-chromium/trace.zip) | `02D099B64E048DC3BC2A12C1897BDD0E7E263EAE5D32F9C6E1494D4E52854B60` |
+| 320×240, текст 200% | [trace.zip](../../test-results/p04-browser-final/catalog-filter-empty-320px-5fc3f--short-screen-with-200-text-chromium/trace.zip) | `5346F53C38647761707D396B29944322C2F174D1F8F11402114B32242840C97F` |
+
+**Границы будущего исправления:** отдельно исследовать lifecycle `PriceRangeDesktopPanel`, `PriceRangeMobileDrawer` и `PriceInput` при открытии через `PriceRangeFilter/usePriceRangeFilter`; точный production diff ещё не выбран и не разрешён этой задачей. Backend, filtering contracts и validation не затрагивать. Критерий независимой проверки будущего исправления: три initial-focus owners проходят без ручного focus/skip/retries/увеличения timeouts, два keyboard cases доходят до всех Tab/Shift+Tab/Enter/reopen/Escape assertions, сохраняются все диапазоны, short-screen controls, validation и empty/loading/error/retry; повтор полного итогового поднабора без регрессий. До этого P04 не готов, защита остаётся падающей.
+
+**Cleanup / итоговое ревью:** все три runs завершили server trees штатно вне Windows sandbox, логи содержат обе пары `Terminating/Terminated`; runner exit 1 относится к сохранённым assertions, не к cleanup. После запусков listeners отсутствуют; финальные server PIDs проверены завершёнными. После каждого run удалён только созданный fixture `public/__playwright-image-sizing.png` с проверкой точного абсолютного пути и исходного отсутствия; посторонние процессы не останавливались. Проверены diff, границы двух файлов, неизменность остальных карточек побайтно после исключения добавленной карточки, локальные ссылки, размер документа и `git diff --check`. SHA256 исторического аудита сохранён: `ADB4B3C24B85089A10E8AD219391F83C9667BE01114BCA6EA4633A0144436CF8`. Других подтверждённых дефектов/неясных требований в пределах P04 не обнаружено; непроверенные части не объявлены пройденными.
+
+**Документация / Git — сохранение диагностики 2026-10-14:** обновлена только карточка P04: воспроизведение, три падающих сценария, результаты запусков 2026-10-13 и проверенные ссылки/хеши traces. Пользователь прямо разрешил отдельный коммит ожидаемо падающей регрессии; он сохраняет тесты и документацию в ветке `fix/p04-filter-focus`, созданной от общего `master` / HEAD `7fde919d27f0068c2b23cb43a854055c3d89d984`. Статус остаётся `BLOCKED_PRODUCT`; это не завершение P04, не `AWAITING_VP` и не независимый PASS. Точный SHA сохранённого коммита возвращается в итоговом отчёте; диапазон — `7fde919d27f0068c2b23cb43a854055c3d89d984..<диагностический коммит P04>`. Перед сохранением проверены отсутствие посторонних пользовательских правок, пустой index, соответствие текущего spec исходнику в trace итогового запуска, все три SHA256 traces и исторический audit hash. Тесты повторно не запускались: TS-код совпадает с уже проверенным итоговым diff, изменены только ссылки и фиксация нового разрешения в документации. Traces и отчёты остаются локальными игнорируемыми artifacts; в коммит входят только разрешённые spec и карточка. Остальные нормативные документы не требуют изменений: приложение, архитектура, API, setup и workflow не изменены. Production, падающие assertions, retries/timeouts и остальные пакеты не меняются; push, независимый VP и P05 не выполняются.
+
 ### 3.2. Строгие helpers и разделение режимов запуска
 
 | Пакет / FTA                                                                            | Разрешённые файлы                                                              | Результат и критерии завершения                                                                                                                                                                                                                                                                                                                                                            | Проверки и критерии VP в контрольной точке                                                                                                                                |

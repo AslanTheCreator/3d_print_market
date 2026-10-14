@@ -13,7 +13,8 @@ async function openFilter(page: Page) {
   await trigger.focus();
   await trigger.press("Enter");
   await expect(dialog(page)).toBeVisible();
-  await expect(dialog(page).getByRole("textbox", { name: "От", exact: true })).toBeFocused();
+  await expect(dialog(page).getByRole("textbox", { name: "От", exact: true })).toBeVisible();
+  await expect(dialog(page).getByRole("textbox", { name: "До", exact: true })).toBeVisible();
   return dialog(page);
 }
 
@@ -97,6 +98,7 @@ for (const width of [1280, 320]) {
     await page.setViewportSize({ width, height: 850 });
     const requests = await setupSearch(page);
     const panel = await openFilter(page);
+    await expect(dialog(page).getByRole("textbox", { name: "От", exact: true })).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(panel.getByRole("textbox", { name: "До", exact: true })).toBeFocused();
     await page.keyboard.press("Shift+Tab");
@@ -113,11 +115,23 @@ for (const width of [1280, 320]) {
     await expect.poll(() => requests.at(-1)?.priceRange).toEqual({ minPrice: 100 });
     await expect(page.getByTestId("price-range-trigger")).toBeFocused();
     await openFilter(page);
+    await expect(dialog(page).getByRole("textbox", { name: "От", exact: true })).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(panel).toBeHidden();
     await expect(page.getByTestId("price-range-trigger")).toBeFocused();
   });
 }
+
+test("320px initial price focus on a short screen with 200% text", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 240 });
+  await setupSearch(page);
+  await page.addStyleTag({ content: "html { font-size: 200% !important; }" });
+  const panel = await openFilter(page);
+  await expect(dialog(page).getByRole("textbox", { name: "От", exact: true })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+  await expect(page.getByTestId("price-range-trigger")).toBeFocused();
+});
 
 test("320px short screen with 200% text keeps the named mobile dialog scrollable and all controls reachable", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 240 });
