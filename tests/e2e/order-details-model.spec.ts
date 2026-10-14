@@ -1,10 +1,13 @@
 import { expect, test } from "@playwright/test";
 import {
+  getCustomerOrderActionFlags,
   getOrderStatusActionHint,
+  getSellerOrderActionFlags,
   isActiveOrderStatus,
   shouldShowPaymentProofForRole,
   shouldShowTrackingForRole,
   type ListOrdersModel,
+  type OrderStatus,
 } from "@/entities/order";
 import {
   formatOrderDate,
@@ -26,6 +29,110 @@ const history = (
   status,
   changedAt,
   comment: status,
+});
+
+// P09: docs/core-flows.md, «Личный кабинет», and docs/api-and-auth.md,
+// «Суммы и этапы заказа» confirm the ordinary payment/fulfilment chains.
+// docs/plans/backend-integration.md is the target contract confirmed for P09.
+// Proof visibility and payment in DISPUTED still need integration/context;
+// see the P09 blockers. User cancellation is tested separately below.
+// Expected values are literals, independent of the production whitelists.
+const customerStagePermissions = {
+  BOOKED: { canPay: false, canPrePay: false, canConfirmReceipt: false },
+  AWAITING_PREPAYMENT: { canPay: false, canPrePay: true, canConfirmReceipt: false },
+  AWAITING_PREPAYMENT_APPROVAL: { canPay: false, canPrePay: false, canConfirmReceipt: false },
+  AWAITING_PAYMENT: { canPay: true, canPrePay: false, canConfirmReceipt: false },
+  ASSEMBLING: { canPay: false, canPrePay: false, canConfirmReceipt: false },
+  ON_THE_WAY: { canPay: false, canPrePay: false, canConfirmReceipt: true },
+  COMPLETED: { canPay: false, canPrePay: false, canConfirmReceipt: false },
+  FAILED: { canPay: false, canPrePay: false, canConfirmReceipt: false },
+} satisfies Record<
+  Exclude<OrderStatus, "DISPUTED">,
+  Pick<ReturnType<typeof getCustomerOrderActionFlags>, "canPay" | "canPrePay" | "canConfirmReceipt">
+>;
+
+const sellerStagePermissions = {
+  BOOKED: { canConfirmOrder: true, canConfirmPreOrder: false, canShipOrder: false },
+  AWAITING_PREPAYMENT: { canConfirmOrder: false, canConfirmPreOrder: false, canShipOrder: false },
+  AWAITING_PREPAYMENT_APPROVAL: { canConfirmOrder: false, canConfirmPreOrder: true, canShipOrder: false },
+  AWAITING_PAYMENT: { canConfirmOrder: false, canConfirmPreOrder: false, canShipOrder: false },
+  ASSEMBLING: { canConfirmOrder: false, canConfirmPreOrder: false, canShipOrder: true },
+  ON_THE_WAY: { canConfirmOrder: false, canConfirmPreOrder: false, canShipOrder: false },
+  DISPUTED: { canConfirmOrder: false, canConfirmPreOrder: false, canShipOrder: false },
+  COMPLETED: { canConfirmOrder: false, canConfirmPreOrder: false, canShipOrder: false },
+  FAILED: { canConfirmOrder: false, canConfirmPreOrder: false, canShipOrder: false },
+} satisfies Record<
+  OrderStatus,
+  Pick<ReturnType<typeof getSellerOrderActionFlags>, "canConfirmOrder" | "canConfirmPreOrder" | "canShipOrder">
+>;
+
+// docs/core-flows.md explicitly limits customer tracking to these two statuses
+// and excludes tracking from seller details. Admin details use a separate UI.
+const trackingPermissions = {
+  BOOKED: { customer: false, seller: false },
+  AWAITING_PREPAYMENT: { customer: false, seller: false },
+  AWAITING_PREPAYMENT_APPROVAL: { customer: false, seller: false },
+  AWAITING_PAYMENT: { customer: false, seller: false },
+  ASSEMBLING: { customer: false, seller: false },
+  ON_THE_WAY: { customer: true, seller: false },
+  DISPUTED: { customer: false, seller: false },
+  COMPLETED: { customer: true, seller: false },
+  FAILED: { customer: false, seller: false },
+} satisfies Record<OrderStatus, Record<"customer" | "seller", boolean>>;
+
+// backend-integration.md, stage 2, and the user's P09 clarification:
+// direct customer/seller cancellation is allowed only in BOOKED.
+// Admin CANCEL has a separate, unconfirmed matrix (backend question B4).
+const userCancellationPermissions = {
+  BOOKED: true,
+  AWAITING_PREPAYMENT: false,
+  AWAITING_PREPAYMENT_APPROVAL: false,
+  AWAITING_PAYMENT: false,
+  ASSEMBLING: false,
+  ON_THE_WAY: false,
+  DISPUTED: false,
+  COMPLETED: false,
+  FAILED: false,
+} satisfies Record<OrderStatus, boolean>;
+
+test.describe("confirmed order permissions (P09 partial; requirement blockers in plan)", () => {
+  for (const [status, expected] of Object.entries(customerStagePermissions)) {
+    test(`customer ordinary stage permissions: ${status}`, () => {
+      const { canPay, canPrePay, canConfirmReceipt } = getCustomerOrderActionFlags(status as OrderStatus);
+      expect({ canPay, canPrePay, canConfirmReceipt }).toEqual(expected);
+    });
+  }
+
+  for (const [status, expected] of Object.entries(sellerStagePermissions)) {
+    test(`seller ordinary stage permissions: ${status}`, () => {
+      const { canConfirmOrder, canConfirmPreOrder, canShipOrder } = getSellerOrderActionFlags(status as OrderStatus);
+      expect({ canConfirmOrder, canConfirmPreOrder, canShipOrder }).toEqual(expected);
+    });
+  }
+
+  for (const [status, expected] of Object.entries(trackingPermissions)) {
+    for (const role of ["customer", "seller"] as const) {
+      test(`${role} tracking permission: ${status}`, () => {
+        expect(shouldShowTrackingForRole(status as OrderStatus, role)).toBe(expected[role]);
+      });
+    }
+  }
+
+  test("customer direct cancellation is restricted to BOOKED for every status", () => {
+    const actual = Object.fromEntries(Object.keys(userCancellationPermissions).map((status) => [
+      status,
+      getCustomerOrderActionFlags(status as OrderStatus).canCancel,
+    ]));
+    expect(actual).toEqual(userCancellationPermissions);
+  });
+
+  test("seller direct cancellation is restricted to BOOKED for every status", () => {
+    const actual = Object.fromEntries(Object.keys(userCancellationPermissions).map((status) => [
+      status,
+      getSellerOrderActionFlags(status as OrderStatus).canCancel,
+    ]));
+    expect(actual).toEqual(userCancellationPermissions);
+  });
 });
 
 test.describe("order details model", () => {
