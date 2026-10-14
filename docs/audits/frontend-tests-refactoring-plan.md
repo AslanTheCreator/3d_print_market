@@ -470,6 +470,43 @@ node node_modules/@playwright/test/cli.js test tests/e2e/catalog-filter-empty.sp
 
 **Cleanup / документация / Git — завершение 2026-10-14:** лог нового run содержит обе пары `Terminating/Terminated`; после exit 0 listeners 3100/3101 и server PIDs 27532/25272 отсутствуют. Поздняя попытка прочитать live PID/HTML произошла уже после cleanup; runtime дополнительно проверен по сохранённым HTML traces, без повторного запуска. Удалён только созданный fixture `public/__playwright-image-sizing.png`, отсутствовавший до проверки, с проверкой точного абсолютного пути. Исходные пользовательские правки отсутствовали; снимки и baseline hashes сохранены под `.cache/p04-completion-20261014/`. Проверены ограниченность diff карточкой, побайтная неизменность остальных разделов плана, spec и нормативных документов, ссылки/хеши artifacts и `git diff --check`. Исторический аудит сохраняет SHA256 `ADB4B3C24B85089A10E8AD219391F83C9667BE01114BCA6EA4633A0144436CF8`. Пользователь разрешил отдельный Conventional Commit с русским описанием; его SHA возвращается в итоговом отчёте. Диапазон текущего завершения — `2a0062de28112c5567567b5b3244699705461b52..<коммит завершения>`, совокупный P04 для VP — `7fde919d27f0068c2b23cb43a854055c3d89d984..<коммит завершения>`. Обновлена только эта карточка; `AGENTS.md`, `docs/architecture.md`, `docs/testing.md`, `docs/api-and-auth.md` не меняются: фиксируется авторский результат с существующим runner/env override, без изменения общих команд, конфигурации или workflow. Traces и отчёты остаются локальными игнорируемыми artifacts. Push, независимый VP и P05 не выполняются.
 
+#### Карточка результата P05 — 2026-10-14, Europe/Moscow
+
+- **Статус:** `AWAITING_VP`, авторская проверка профиля M успешна. Независимый VP не проводился; контрольная точка P02–P06 остаётся по плану. P06 не начинается.
+- **Baseline / зависимости:** HEAD `2bd7dc15274ede59a29a56bc30bec29ead09ad28`, ветка `master`; исходные рабочее дерево и index чистые. Снимок плана — `.cache/p05/plan-baseline.md`; нового spec до работы не было. P00 имеет `SELF_CHECK_COMPLETE`, P01 — независимый `PASS`; отдельный PASS P02–P04 для P05 не требуется. Актуальный P04 уже имеет `AWAITING_VP`, его карточка не изменяется.
+- **Область diff:** новый `tests/e2e/query-retry-model.spec.ts` и только эта карточка. Production, helpers, runner/config, зависимости/lockfile, исходный аудит и существующие tests не изменены. Cases/assertions не удалялись и не объединялись; карта удаления не требуется.
+- **Источники ожиданий:** согласованный P05 и FTA-045 [исходного аудита](frontend-tests-audit.md) подтверждают один retry для server/network failures, отсутствие retry для auth/forbidden/validation и общий предел failureCount. Механизм сверён с актуальными `shouldRetryQuery`, его public API, `QueryProvider`, настоящими `ApiError/transformToApiError`, HTTP-клиентами и локальным TanStack `retryer`: первый callback получает failureCount 0, следующий — 1. Производственная реализация используется напрямую, без копии policy, browser lifecycle и mock error classes; API/бизнес-правила не добавлены.
+
+| Проверяемый риск | Cases / ожидаемый результат |
+| --- | --- |
+| Неправомерный retry auth/forbidden/validation | Настоящие `ApiError` 401/403/400: false при failureCount 0, 1, 2. Те же статусы с синтетическим `NETWORK_ERROR` остаются false, сохраняя приоритет запрета по статусу. |
+| Разрешённый retry server/network | `ApiError` 500/502/503/504 и реальный `AxiosError.ERR_NETWORK`, преобразованный существующим `transformToApiError`: true при 0, false при 1 и 2. Матрица отдельно подтверждает, что используется экземпляр настоящего `ApiError`. |
+| Общий лимит вне API error branch | Обычный `Error` при failureCount 1/2: false; проверяется общий предел, без нового ожидания для первого решения по произвольной unknown ошибке. |
+| Смешение default и query override | Spec относится только к default `QueryProvider`. `useInfiniteProducts` сохраняет явный retry override, detail query имеет собственный `failureCount < 2`, suggestions — `retry: 1`. Эти policies не переопределены; соседние model cases с `retry: false/1` сохранены и исполнены. |
+
+**Проверки автора:**
+
+| Проверка | Команда / результат |
+| --- | --- |
+| TypeScript | `npm run typecheck` — exit 0. |
+| Production lint | `npm run lint` — exit 0. |
+| FSD | `npm run architecture:check` — exit 0, `No problems found`. |
+| Прямой lint нового spec | `node node_modules/eslint/bin/eslint.js tests/e2e/query-retry-model.spec.ts --max-warnings=0` — exit 0. |
+| Discovery | `TEST_BASE_URL=http://127.0.0.1:9`, `node node_modules/@playwright/test/cli.js test tests/e2e/query-retry-model.spec.ts tests/e2e/infinite-recovery-model.spec.ts tests/e2e/safe-diagnostics.spec.ts --project=chromium --list` — exit 0, 49 cases / 3 файла. |
+| Model / соседние регрессии | Команда ниже — exit 0, **49 passed / 0 failed / 0 skipped / 0 flaky**, errors `[]`, один attempt с retry 0 у каждого case, 4.423 s. P05 — 35 passed, infinite recovery — 2 passed, safe diagnostics — 12 passed. [JSON](../../.cache/p05/model.json), [лог](../../.cache/p05/model.log); artifacts `test-results/p05-model`. |
+
+```powershell
+$env:CI = '1'
+$env:TEST_BASE_URL = 'http://127.0.0.1:9'
+$env:PLAYWRIGHT_JSON_OUTPUT_FILE = '.cache/p05/model.json'
+$env:DEBUG = 'pw:webserver'
+node node_modules/@playwright/test/cli.js test tests/e2e/query-retry-model.spec.ts tests/e2e/infinite-recovery-model.spec.ts tests/e2e/safe-diagnostics.spec.ts --project=chromium --workers=1 --retries=0 --global-timeout=180000 --reporter=list,json --output=test-results/p05-model
+```
+
+**Условия / ограничения:** общий лимит 180 s назначен до старта; case/assertion timeouts не менялись. Недоступный base URL отключает webServer по существующему config; запуск обошёлся без приложения, fixture, браузерных fixtures и реального backend. В новом spec нет Page/DOM, React scheduler, sleeps, HTTP-запросов или lifecycle; проверяется чистая функция с реальными типами ошибок. В runner log отсутствует startup WebServer; процессы приложения и fixture assets этим запуском не создавались. Retry внутри двух неизменённых соседних model cases проверяет query override и не является runner retry. Browser/build/smoke/full suite не запускались: профиль M P05 их не требует, их PASS не заявляется.
+
+**Авторское ревью / документация / Git:** проверены весь новый spec, точные строки матрицы, boundary 0/1/2, приоритет запрещённых статусов и отсутствие подмены production policy. Неверный увеличенный лимит обнаруживается cases с failureCount 1; отсутствие status guard обнаруживается collision cases с `NETWORK_ERROR`. Проверены соседние регрессии, отсутствие постороннего diff, сохранность прочих карточек побайтно после исключения этой карточки, локальные ссылки и `git diff --check`. Исторический аудит сохраняет SHA256 `ADB4B3C24B85089A10E8AD219391F83C9667BE01114BCA6EA4633A0144436CF8`. Блокировок P05 не обнаружено. Документация обновлена только этой карточкой: правила приложения, архитектура, API, setup и команды не изменены, поэтому остальные нормативные документы не требуют правок. Пользователь разрешил отдельный Conventional Commit с русским описанием; точный SHA возвращается после создания коммита, диапазон P05 — `2bd7dc15274ede59a29a56bc30bec29ead09ad28..<коммит P05>`. Push, независимый VP и следующий пакет не выполняются.
+
 ### 3.2. Строгие helpers и разделение режимов запуска
 
 | Пакет / FTA                                                                            | Разрешённые файлы                                                              | Результат и критерии завершения                                                                                                                                                                                                                                                                                                                                                            | Проверки и критерии VP в контрольной точке                                                                                                                                |
