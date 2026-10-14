@@ -5,6 +5,7 @@ import {
   type Route,
   test,
 } from "@playwright/test";
+import { orderFixture } from "./helpers/mobileAccount";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -571,6 +572,197 @@ for (const outcome of ["lost", "server-error", "mixed"] as const) {
     await expect(page.getByRole("button", { name: "Оформить заказ" })).toHaveCount(0);
     expect(accepted).toHaveLength(1);
     expect(posts).toBe(count);
+  });
+}
+
+for (const outcome of ["confirmed", "mixed-unknown"] as const) {
+  test(`confirmed checkout ${outcome} survives failed reads and remount before an explicit new intent`, async ({
+    context, page, baseURL,
+  }, testInfo) => {
+    // P08 / FTA-037: подтверждённая запись отличается от failed read.
+    // Уточнение пользователя 2026-10-14: remount/read retry не создают заказ;
+    // явный submit после свежей корзины — новый intent только при известном успехе.
+    await authenticate(context, baseURL);
+    const items = Array.from({ length: outcome === "confirmed" ? 1 : 2 }, (_, index) => createCartItem({
+      id: index + 1, name: `Подтверждение заказа ${index + 1}`, count: 1,
+      availableCount: 10, enoughStock: true,
+    }));
+    const controller = await setupCheckoutApi(page, items);
+    let initialOrdersReads = 0;
+    await page.route("**/order/customer", route => {
+      if (route.request().method() !== "OPTIONS") initialOrdersReads++;
+      return fulfillJson(route, []);
+    });
+    await openReadyCheckout(page);
+    await expect.poll(() => initialOrdersReads).toBe(1);
+    const initialReads = controller.basketFindRequests;
+    const cartReadsBeforeNavigation = outcome === "mixed-unknown" ? 4 : 2;
+    const cartGates = Array.from({ length: cartReadsBeforeNavigation + 2 }, createResponseGate);
+    const ordersGates = Array.from({ length: 4 }, createResponseGate);
+    const recoveryGate = createResponseGate();
+    const reads: Array<{ kind: "cart" | "orders"; status: number; phase: "held" | "fulfilled" }> = [];
+    let cartFailures = 0;
+    let ordersFailures = 0;
+    let recovering = false;
+    let recoveryReads = 0;
+    const confirmedOrders: ReturnType<typeof orderFixture>[] = [];
+    const expectedPayloads = items.map(item => [{ productId: item.product.id, count: 1,
+      addressId: 50, transferId: 101, comment: "" }]);
+    await page.route("**/order/BOOKED", async route => {
+      if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+      const payload = route.request().postDataJSON() as CheckoutApiController["orderCreateRequests"][number];
+      controller.orderCreateRequests.push(payload);
+      if (outcome === "mixed-unknown" && payload[0].productId === 2) return route.abort("failed");
+      const item = items.find(item => item.product.id === payload[0].productId)!;
+      const order = orderFixture(100 + confirmedOrders.length + 1, "BOOKED", 1);
+      confirmedOrders.push({ ...order, product: { ...order.product, id: item.product.id,
+        name: item.product.name, price: item.product.price, count: payload[0].count },
+        transfer: { ...order.transfer, transferId: payload[0].transferId, addressId: payload[0].addressId, price: 0 },
+        totalPrice: item.product.price * payload[0].count });
+      await fulfillJson(route, [confirmedOrders.at(-1)!.orderId]);
+    });
+    await page.route("**/basket/find", async route => {
+      if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+      controller.basketFindRequests++;
+      const entry: (typeof reads)[number] = { kind: "cart", status: recovering ? 200 : 500, phase: "held" };
+      reads.push(entry);
+      if (recovering) {
+        if (recoveryReads++ === 0) await recoveryGate.promise;
+        await fulfillJson(route, items);
+      } else {
+        const gate = cartGates[cartFailures++];
+        if (gate) await gate.promise;
+        await fulfillError(route);
+      }
+      entry.phase = "fulfilled";
+    });
+    await page.route("**/order/customer", async route => {
+      if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+      const entry: (typeof reads)[number] = { kind: "orders", status: recovering ? 200 : 500, phase: "held" };
+      reads.push(entry);
+      if (recovering) await fulfillJson(route, confirmedOrders);
+      else {
+        const gate = ordersGates[ordersFailures++];
+        if (gate) await gate.promise;
+        await fulfillError(route);
+      }
+      entry.phase = "fulfilled";
+    });
+    const expectOriginalWrites = () => expect([...controller.orderCreateRequests]
+      .sort((a, b) => a[0].productId - b[0].productId)).toEqual(expectedPayloads);
+    const submit = page.getByRole("button", { name: "Оформить заказ", exact: true });
+    try {
+      await expect(submit).toBeEnabled();
+      await submit.click();
+      await expect.poll(() => cartFailures).toBe(1);
+      expectOriginalWrites();
+      expect(confirmedOrders).toHaveLength(1);
+      expect(reads[0]).toEqual({ kind: "cart", status: 500, phase: "held" });
+      cartGates[0].release();
+      await expect.poll(() => cartFailures).toBe(2);
+      expectOriginalWrites();
+      cartGates[1].release();
+      // Desktop header уже наблюдает orders: confirming read выполняется
+      // до callback результата, а не только при открытии «Моих покупок».
+      await expect.poll(() => ordersFailures).toBe(1);
+      ordersGates[0].release();
+      await expect.poll(() => ordersFailures).toBe(2);
+      expectOriginalWrites();
+      ordersGates[1].release();
+      if (outcome === "confirmed") {
+        await expect(page.getByRole("heading", { name: "Заказ оформлен!", exact: true })).toBeVisible();
+        await expect(page.getByText("Результат оформления неизвестен", { exact: false })).toHaveCount(0);
+      } else {
+        const dialog = page.getByTestId("checkout-result-dialog");
+        await expect(dialog).toContainText("Успешно оформлено (1)");
+        await expect(dialog).toContainText("Результат неизвестен (1)");
+        await expect(dialog.getByRole("button", { name: "Повторить для неудачных" })).toHaveCount(0);
+        await expect(dialog).not.toContainText("Заказы не были оформлены");
+        // Unknown сначала скрывает CheckoutContent, а открытие результата
+        // снова монтирует quantity consumer: stale cart query даёт отдельный refetch + retry.
+        await expect.poll(() => cartFailures).toBe(3);
+        expectOriginalWrites();
+        cartGates[2].release();
+        await expect.poll(() => cartFailures).toBe(4);
+        cartGates[3].release();
+      }
+      await expect.poll(() => reads.filter(read => read.kind === "cart" && read.phase === "fulfilled").length)
+        .toBe(cartReadsBeforeNavigation);
+      expect(controller.basketFindRequests).toBe(initialReads + cartReadsBeforeNavigation);
+      expectOriginalWrites();
+
+      await page.getByRole("button", { name: "Мои покупки", exact: true }).click();
+      await expect(page).toHaveURL(/\/dashboard\/purchase$/);
+      await expect.poll(() => ordersFailures).toBe(3);
+      ordersGates[2].release();
+      await expect.poll(() => ordersFailures).toBe(4);
+      expectOriginalWrites();
+      ordersGates[3].release();
+      await expect(page.getByText("Не удалось обновить заказы. Действия недоступны до успешной загрузки.", { exact: true })).toBeVisible();
+      expectOriginalWrites();
+
+      await page.goBack();
+      await expect(page).toHaveURL(/\/checkout$/);
+      await expect.poll(() => cartFailures).toBe(cartReadsBeforeNavigation + 1);
+      if (outcome === "confirmed") await expect(submit).toBeDisabled();
+      else await expect(submit).toHaveCount(0);
+      expectOriginalWrites();
+      cartGates[cartReadsBeforeNavigation].release();
+      await expect.poll(() => cartFailures).toBe(cartReadsBeforeNavigation + 2);
+      cartGates[cartReadsBeforeNavigation + 1].release();
+      const retry = outcome === "confirmed"
+        ? page.getByTestId("checkout-stock-validation-retry")
+        : page.getByRole("button", { name: "Обновить корзину", exact: true });
+      if (outcome === "confirmed") {
+        await expect(page.getByTestId("checkout-submit-blocker")).toHaveText("Не удалось проверить актуальные остатки");
+        await expect(retry).toBeEnabled();
+        await expect(submit).toBeDisabled();
+      } else {
+        await expect(page.getByRole("status")).toContainText("Результат оформления неизвестен");
+        await expect(retry).toBeEnabled();
+      }
+      recovering = true;
+      await retry.click();
+      await expect.poll(() => recoveryReads).toBe(1);
+      expectOriginalWrites();
+      expect(controller.basketFindRequests).toBe(initialReads + cartReadsBeforeNavigation + 3);
+      if (outcome === "confirmed") await expect(submit).toBeDisabled();
+      else await expect(submit).toHaveCount(0);
+      recoveryGate.release();
+      await expect.poll(() => reads.filter(read => read.phase === "fulfilled").length).toBe(cartReadsBeforeNavigation + 7);
+      expectOriginalWrites();
+      expect(cartFailures).toBe(cartReadsBeforeNavigation + 2);
+      expect(ordersFailures).toBe(4);
+
+      if (outcome === "confirmed") {
+        await expect(getQuantityCounter(page, 1).getByText("1", { exact: true })).toBeVisible();
+        await expect(page.getByTestId("checkout-stock-availability-1")).toHaveText("Доступно: 10 шт.");
+        await expect(page.getByTestId("checkout-submit-blocker")).toHaveText("Выберите адрес доставки");
+        await expect(submit).toBeDisabled(); // после remount адрес нужно выбрать заново
+        await page.getByText("Тестовая 1", { exact: true }).click();
+        await expect(submit).toBeEnabled();
+        await expect(page.getByTestId("checkout-submit-blocker")).toHaveCount(0);
+        expectOriginalWrites();
+        await submit.click();
+        await expect(page.getByRole("heading", { name: "Заказ оформлен!", exact: true })).toBeVisible();
+        expect(controller.orderCreateRequests).toEqual([...expectedPayloads, ...expectedPayloads]);
+        expect(confirmedOrders.map(order => order.orderId)).toEqual([101, 102]);
+      } else {
+        // Свежее чтение не превращает продолжение неизвестной попытки в новый заказ.
+        await expect(page.getByRole("status")).toContainText("Результат оформления неизвестен");
+        await expect(submit).toHaveCount(0);
+        expectOriginalWrites();
+      }
+    } finally {
+      cartGates.forEach(gate => gate.release());
+      ordersGates.forEach(gate => gate.release());
+      recoveryGate.release();
+      await testInfo.attach("confirmed-write-remount", {
+        body: JSON.stringify({ outcome, writes: controller.orderCreateRequests,
+          confirmedOrderIds: confirmedOrders.map(order => order.orderId), reads,
+          cartFailures, ordersFailures, recoveryReads }, null, 2), contentType: "application/json",
+      });
+    }
   });
 }
 
