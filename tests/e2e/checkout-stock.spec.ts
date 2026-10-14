@@ -127,6 +127,9 @@ const setupCheckoutApi = async (
   page: Page,
   cartItems: CartFixture[],
 ): Promise<CheckoutApiController> => {
+  await page.route("https://mc.yandex.ru/**", (route) =>
+    route.fulfill({ status: 200, body: "" }),
+  );
   const controller: CheckoutApiController = {
     cartItems,
     basketMode: "success",
@@ -302,6 +305,198 @@ const getIncrementButton = (page: Page, productId: number) =>
 
 const getQuantityCounter = (page: Page, productId: number) =>
   getIncrementButton(page, productId).locator("..");
+
+const createResponseGate = () => {
+  let release!: () => void;
+  const promise = new Promise<void>((resolve) => { release = resolve; });
+  return { promise, release };
+};
+
+for (const olderPutOutcome of ["success", "failure"] as const) {
+  test(`mounted quantity queue preserves the latest edit after older PUT ${olderPutOutcome}, delayed read and validation retry`, async ({
+    context, page, baseURL,
+  }, testInfo) => {
+    // P07 / FTA-036: docs/core-flows.md «Корзина и checkout» и
+    // docs/api-and-auth.md «Server и client state»: optimistic revision,
+    // обязательное контрольное чтение и запрет submit до проверки остатка.
+    await authenticate(context, baseURL);
+    const controller = await setupCheckoutApi(page, [createCartItem({
+      id: 1, name: "Товар с очередью количества", count: 1,
+      availableCount: 10, enoughStock: true,
+    })]);
+    await openReadyCheckout(page);
+    const submit = page.getByRole("button", { name: "Оформить заказ", exact: true });
+    const blocker = page.getByTestId("checkout-submit-blocker");
+    const retry = page.getByTestId("checkout-stock-validation-retry");
+    const availability = page.getByTestId("checkout-stock-availability-1");
+    const quantity = (count: number) =>
+      getQuantityCounter(page, 1).getByText(String(count), { exact: true });
+    await expect(submit).toBeEnabled();
+    const initialReads = controller.basketFindRequests;
+    const putGates = [createResponseGate(), createResponseGate()];
+    const readPlan = [
+      { gate: createResponseGate(), status: 200, availableCount: 8 },
+      { gate: createResponseGate(), status: 500, availableCount: 8 },
+      { gate: createResponseGate(), status: 200, availableCount: 5 },
+    ];
+    const reads: Array<{
+      method: string; count: number; availableCount: number; status: number;
+      phase: "held" | "fulfilled";
+    }> = [];
+    const putMethods: string[] = [];
+    const readHandler = async (route: Route) => {
+      if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+      controller.basketFindRequests++;
+      const planned = readPlan[reads.length];
+      if (!planned) return fulfillError(route);
+      // Snapshot фиксируется при отправке чтения, а не после release:
+      // поздний ответ действительно содержит прежнее серверное количество.
+      const snapshot = createCartItem({
+        id: 1, name: "Товар с очередью количества",
+        count: controller.cartItems[0].count,
+        availableCount: planned.availableCount, enoughStock: true,
+      });
+      const entry: (typeof reads)[number] = {
+        method: route.request().method(), count: snapshot.count,
+        availableCount: planned.availableCount, status: planned.status, phase: "held",
+      };
+      reads.push(entry);
+      await planned.gate.promise;
+      if (planned.status === 500) await fulfillError(route);
+      else {
+        controller.cartItems = [snapshot];
+        await fulfillJson(route, [snapshot]);
+      }
+      entry.phase = "fulfilled";
+    };
+    await page.route("**/basket/find", readHandler);
+    await page.route("**/basket?productId=*", async (route) => {
+      if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+      const url = new URL(route.request().url());
+      const request = {
+        productId: Number(url.searchParams.get("productId")),
+        count: Number(url.searchParams.get("count")),
+      };
+      const gate = putGates[controller.putRequests.length];
+      controller.putRequests.push(request);
+      putMethods.push(route.request().method());
+      if (!gate) return fulfillError(route);
+      await gate.promise;
+      if (gate === putGates[0] && olderPutOutcome === "failure") return fulfillError(route);
+      controller.cartItems[0].count = request.count;
+      await route.fulfill({ status: 200, headers: corsHeaders, body: "" });
+    });
+    const expectPending = async () => {
+      await expect(quantity(5)).toBeVisible();
+      await expect(blocker).toHaveText("Синхронизируем количество товаров");
+      await expect(submit).toBeDisabled();
+      await expect(retry).toHaveCount(0);
+      expect(controller.orderCreateRequests).toEqual([]);
+    };
+
+    try {
+      // Одна временная база; 499/500 ms проверяют настоящий mounted debounce.
+      await page.clock.install({ time: new Date("2026-10-14T10:00:00.000Z") });
+      await page.clock.pauseAt(new Date("2026-10-14T10:01:00.000Z"));
+      const increment = getIncrementButton(page, 1);
+      await increment.press("Enter");
+      await expect(quantity(2)).toBeVisible();
+      await expect(submit).toBeDisabled();
+      await page.clock.runFor(250);
+      await increment.press("Enter");
+      await expect(quantity(3)).toBeVisible();
+      await page.clock.runFor(499);
+      expect(controller.putRequests).toEqual([]);
+      expect(controller.basketFindRequests).toBe(initialReads);
+      await page.clock.runFor(1);
+      await expect.poll(() => controller.putRequests).toEqual([{ productId: 1, count: 3 }]);
+
+      await increment.press("Enter");
+      await page.clock.runFor(250);
+      await increment.press("Enter");
+      await expectPending();
+      await page.clock.runFor(499);
+      expect(controller.putRequests).toEqual([{ productId: 1, count: 3 }]);
+      await page.clock.runFor(1);
+      await page.clock.resume();
+      await expectPending();
+      expect(controller.putRequests).toEqual([{ productId: 1, count: 3 }]);
+      expect(reads).toEqual([]);
+
+      putGates[0].release();
+      await expect.poll(() => reads.length).toBe(1);
+      expect(reads[0]).toEqual({ method: "POST", count: olderPutOutcome === "success" ? 3 : 1,
+        availableCount: 8, status: 200, phase: "held" });
+      await expectPending();
+      expect(controller.putRequests).toEqual([{ productId: 1, count: 3 }]);
+      await expect(availability).toHaveText("Доступно: 10 шт.");
+
+      readPlan[0].gate.release();
+      await expect(availability).toHaveText("Доступно: 8 шт.");
+      await expect.poll(() => controller.putRequests).toEqual([
+        { productId: 1, count: 3 }, { productId: 1, count: 5 },
+      ]);
+      await expectPending();
+      expect(controller.basketFindRequests).toBe(initialReads + 1);
+      expect(reads[0].phase).toBe("fulfilled");
+
+      putGates[1].release();
+      await expect.poll(() => reads.length).toBe(2);
+      await expectPending();
+      expect(reads[1]).toEqual({ method: "POST", count: 5,
+        availableCount: 8, status: 500, phase: "held" });
+      readPlan[1].gate.release();
+      await expect(blocker).toHaveText("Не удалось проверить актуальные остатки");
+      await expect(quantity(5)).toBeVisible();
+      await expect(submit).toBeDisabled();
+      await expect(retry).toHaveText("Повторить проверку");
+      await expect(retry).toBeEnabled();
+      expect(controller.orderCreateRequests).toEqual([]);
+      expect(controller.basketFindRequests).toBe(initialReads + 2);
+
+      await retry.click();
+      await expect.poll(() => reads.length).toBe(3);
+      await expect(quantity(5)).toBeVisible();
+      await expect(submit).toBeDisabled();
+      await expect(blocker).toHaveText("Синхронизируем количество товаров");
+      await expect(retry).toHaveCount(0);
+      await expect(availability).toHaveText("Доступно: 8 шт.");
+      expect(reads[2]).toEqual({ method: "POST", count: 5,
+        availableCount: 5, status: 200, phase: "held" });
+      expect(controller.putRequests).toEqual([
+        { productId: 1, count: 3 }, { productId: 1, count: 5 },
+      ]);
+      expect(controller.orderCreateRequests).toEqual([]);
+
+      readPlan[2].gate.release();
+      await expect(availability).toHaveText("Доступно: 5 шт.");
+      await expect(quantity(5)).toBeVisible();
+      await expect(increment).toBeDisabled();
+      await expect(submit).toBeEnabled();
+      await expect(blocker).toHaveCount(0);
+      await expect(retry).toHaveCount(0);
+      expect(controller.basketFindRequests).toBe(initialReads + 3);
+      expect(reads.map(read => read.phase)).toEqual(["fulfilled", "fulfilled", "fulfilled"]);
+      expect(putMethods).toEqual(["PUT", "PUT"]);
+
+      // После проверки очереди обычный helper обслуживает invalidation оформления.
+      await page.unroute("**/basket/find", readHandler);
+      await submit.click();
+      await expect(page.getByRole("heading", { name: "Заказ оформлен!", exact: true })).toBeVisible();
+      expect(controller.orderCreateRequests).toEqual([[{
+        productId: 1, count: 5, addressId: 50, transferId: 101, comment: "",
+      }]]);
+    } finally {
+      putGates.forEach(gate => gate.release());
+      readPlan.forEach(read => read.gate.release());
+      await testInfo.attach("quantity-queue-responses", {
+        body: JSON.stringify({ olderPutOutcome, puts: controller.putRequests,
+          putMethods, reads, orders: controller.orderCreateRequests }, null, 2),
+        contentType: "application/json",
+      });
+    }
+  });
+}
 
 test("explicit empty selection survives quantity confirmation and refetch", async ({ context, page, baseURL }) => {
   await authenticate(context, baseURL);

@@ -597,6 +597,53 @@ node node_modules/@playwright/test/cli.js test tests/e2e/read-recovery.spec.ts t
 
 **Фиксация приёмки:** исходный HEAD этой документационной задачи — `8c0b4e8159b20f71bba9d3bf43b2693d7475cbb9`, ветка `master`, рабочее дерево и index чистые. Все авторские отчёты, команды, traces, прежние `AWAITING_VP` и диагностика `BLOCKED_PRODUCT` P04 сохранены как история; меняются текущие статусы и добавляется независимый итог. Автор проверил только документационный diff, диапазоны, доступность ссылок, SHA256 artifacts/аудита и размеры файла; новых test/build runs для этой правки нет. Пакеты P02–P06 приняты; P07 требует отдельной команды пользователя и здесь не начинается. Тесты, production, другие документы и artifacts VP не редактируются. По прямому разрешению пользователя создаётся отдельный документационный Conventional Commit с русским описанием; push не выполняется.
 
+#### Карточка результата P07 — 2026-10-14, Europe/Moscow
+
+**Статус: `AWAITING_VP`.** Авторская проверка профиля B и существующих quantity/private model regressions успешна. Независимый VP не проводился; контрольная точка P07–P08 остаётся после P08. P08 не начат, PB-01 не закрывается.
+
+**Baseline / границы:** исходный HEAD `ba08582f772b44d392a2467c22701635e60c7fc4`, ветка `master`, index и рабочее дерево чистые, пользовательских tracked/untracked правок нет. P00 имеет `SELF_CHECK_COMPLETE`, P01–P06 имеют независимый `PASS`; prerequisites соблюдены. Изменены только `tests/e2e/checkout-stock.spec.ts` и собственная карточка P07 в этом плане. Production, routing, зависимости/lockfile, конфиги, общие helpers и исходный аудит не менялись. Все 12 исходных cases/assertions/комментариев сохранены, добавлены два cases; удаления и карта замещения защиты не требуются.
+
+**Источники / реализация:** [FTA-036](frontend-tests-audit.md#fta-036--missing-coverage-mounted-quantity-debouncequeue-chain), строка P07 и профиль B; [core-flows.md, «Корзина и checkout»](../core-flows.md#корзина-и-checkout) подтверждает optimistic quantity, контрольное чтение после PUT, блокировку pending/непроверенного остатка и retry; [api-and-auth.md, «Server и client state»](../api-and-auth.md#server-и-client-state) подтверждает scoped cache, единственного владельца проекции и очередь подтверждений. Актуальные `useCartQuantity`, `useCartMutations`, `cartQuantityStore`, `cartQuantityProjection`, checkout readiness и `cartApi` изучены без изменения. Debounce 500 ms и ожидание контрольного чтения перед следующим PUT проверяют существующий механизм FTA-036, а не вводят новое бизнес-правило. Реальный транспорт чтения — `POST /basket/find`; термин GET в описании сценария не превращён в придуманный endpoint.
+
+| Assertion / защищаемый риск | Наблюдаемый результат |
+| --- | --- |
+| Быстрые edits 1 → 2 → 3; перезапуск debounce | До 499 ms после последней правки PUT отсутствует; на 500 ms отправлен только count=3, оформление уже disabled. Фиксированные install/pause используют одну UTC-базу. |
+| Новые edits 3 → 4 → 5 при удерживаемом PUT=3 | После второго debounce PUT=5 остаётся в очереди. Успех и отказ старого PUT проверяются отдельно; UI сохраняет 5 и pending. |
+| Поздний snapshot старой revision | Первый read удерживает count=3 при успехе PUT или count=1 при отказе. После release stock UI меняется 10 → 8, подтверждая применение snapshot к cache; optimistic UI остаётся 5, submit disabled, затем отправляется ровно PUT=5. |
+| PUT=5 подтверждён, контрольный read задержан и завершается 500 | UI сохраняет 5; pending меняется на «Не удалось проверить актуальные остатки», появляется ручной retry. Заказов нет, оформление disabled. |
+| Ручной retry чтения, отдельный удерживаемый ответ | Retry не повторяет PUT; до release submit disabled. После count=5/availableCount=5 исчезают blocker/retry, increment disabled по актуальному максимуму, submit enabled. Только после этого одно пользовательское оформление отправляет точный payload count=5/addressId=50/transferId=101/comment="" и показывает успешный результат. |
+
+**Границы mocks:** приложение, mounted React hooks, TanStack очередь/cache и Zustand исполняются в настоящем браузере. Подменяются только существующие HTTP API, синтетические auth данные и аналитика. Два PUT и три reads после initial регулируются promises; snapshot создаётся при отправке read, а не после release. Для каждого удерживаемого этапа проверены UI и отсутствие order writes. Дополнительные записи/чтения не получают безусловный успех: неожиданный PUT/read получает error и учитывается counters. После подтверждения очереди прежний helper обслуживает обычную invalidation оформления. Gates освобождаются в finally; JSON attachment `quantity-queue-responses` — диагностика, не замена assertions. Локальный setup дополнен подменой `https://mc.yandex.ru/**`, чтобы итоговый standalone run не отправлял аналитику.
+
+**Проверки автора:**
+
+| Проверка | Результат |
+| --- | --- |
+| Статика | `npm run lint`, `npm run architecture:check` — exit 0, FSD без нарушений; итоговый `npm run typecheck` и `node node_modules/eslint/bin/eslint.js tests/e2e/checkout-stock.spec.ts --max-warnings=0` — exit 0. [Логи](../../.cache/p07/). |
+| Свежая сборка / smoke | `npm run build` — exit 0, Build ID `yUNl13KQbU2flF2rWJyd4`; `TEST_BASE_URL=http://127.0.0.1:3100 npm run test:smoke` — 15 passed / 0 failed / 0 skipped, exit 0. [Build](../../.cache/p07/build.log), [smoke](../../.cache/p07/smoke.log). |
+| Discovery | Точные пять файлов итоговой команды, `--project=chromium --list`, недоступный `TEST_BASE_URL=http://127.0.0.1:9` — 33 cases / 5 файлов, exit 0. Исходные 12 checkout-stock cases сохранены; итоговый файл содержит 14. [Listing](../../.cache/p07/discovery-final.log). |
+| Итоговый B / quantity/private regressions | Команда ниже — **33 passed / 0 failed / 0 skipped / 0 flaky**, exit 0, errors=[], 92.635 s. Состав: checkout-stock 14, quantity store 6, cart-card-work model 3, private-data model 5, private-data browser 5. Один attempt на case, retry=0. [JSON](../../.cache/p07/production-final.json), [лог](../../.cache/p07/production-final.log); SHA256 JSON `5FC031A0D843A9E0A3B92E175D7ED67B5843E523B3D49D79FF6A27480D0787F8`. |
+
+
+```powershell
+$env:CI = '1'
+$env:PLAYWRIGHT_PORT = '3100'
+$env:PLAYWRIGHT_FIXTURE_API_PORT = '3101'
+$env:CLIENT_API_BASE_URL = 'http://127.0.0.1:9'
+$env:API_BASE_URL = 'http://127.0.0.1:3101'
+$env:PLAYWRIGHT_API_BASE_URL = 'http://127.0.0.1:3101'
+$env:ALLOW_LOCAL_API_URL = 'true'
+$env:PLAYWRIGHT_WEB_SERVER_COMMAND = 'node scripts/start-standalone.mjs'
+$env:PLAYWRIGHT_JSON_OUTPUT_FILE = '.cache/p07/production-final.json'
+$env:DEBUG = 'pw:webserver'
+Remove-Item Env:TEST_BASE_URL, Env:NODE_OPTIONS -ErrorAction SilentlyContinue
+node node_modules/@playwright/test/cli.js test tests/e2e/checkout-stock.spec.ts tests/e2e/cart-quantity-store-model.spec.ts tests/e2e/private-data-model.spec.ts tests/e2e/cart-card-work-model.spec.ts tests/e2e/private-data.spec.ts --project=chromium --workers=1 --retries=0 --trace=on --global-timeout=300000 --reporter=list,json --output=test-results/p07-production-final
+```
+
+**История отказов / ограничения:** исходный browser baseline дал 12 passed / 0 failed cases, но sandbox shutdown завис и runner завершился exit 1 с teardown error на заранее заданном лимите 300 s; этот запуск не объявляется PASS. После сверки PID/parent/command завершены только собственные standalone/fixture PID 29424/25080. Первый focused run новых cases вне sandbox — 0 passed / 2 failed / 0 skipped / 0 flaky: неверно выбранный автором final UI locator ожидал dialog при полном успехе, тогда как обычный single-order success показывает «Заказ оформлен!». Исправлен только новый assertion успешного результата с сохранением точного payload; это не product defect и не удаление прежней защиты. [Первый JSON/trace](../../.cache/p07/focused.json), [лог](../../.cache/p07/focused.log). Следующий run — 33/33, exit 0; при авторском ревью добавлена подмена аналитики и повторён тот же поднабор по итоговой версии, результат выше. Во всех runs retry=0, лимит 300 s; исходные case/assertion/startup timeouts не увеличивались. Build не повторялся после правок только тестов. Итоговое окружение: Windows, Node 24.15.0, npm 11.12.1, Playwright 1.60.0, Chromium Desktop Chrome 1280×720; только mock API и локальный SSR fixture, CI без reuse. Полный suite, mobile/touch и реальный backend не проверялись; SSR recovery/remount checkout и P08 не входят в P07. Подтверждённых product defects или неоднозначных требований, блокирующих P07, не обнаружено.
+
+**Cleanup / самостоятельное ревью / документация / Git:** итоговый runner завершился самостоятельно, лог содержит обе пары Terminating/Terminated. Проверено отсутствие собственных runner/server процессов и listeners 3100/3101. Созданный штатным fixture игнорируемый image asset удалён только по проверенному абсолютному пути/времени создания. Проверены полный diff, границы mocks/assertions, сохранность всех прежних cases и комментариев, отсутствие skip/retries/timeouts для сокрытия failures, `git diff --check`, список файлов и побайтная сохранность плана вне карточки P07. Audit SHA256 — `ADB4B3C24B85089A10E8AD219391F83C9667BE01114BCA6EA4633A0144436CF8`. Обновлена только эта карточка P07; команды, архитектура и существующая стратегия уровней не меняются, поэтому `docs/testing.md` и остальные нормативные документы не требуют правок. По прямому разрешению пользователя создаётся отдельный Conventional Commit `test(e2e): проверить очередь количества корзины в P07`; коммит содержит эту карточку, полный SHA возвращается после его создания. Git-диапазон пакета — `ba08582f772b44d392a2467c22701635e60c7fc4..<коммит P07>`. Push и независимый VP не выполняются.
+
 ### 3.2. Строгие helpers и разделение режимов запуска
 
 | Пакет / FTA                                                                            | Разрешённые файлы                                                              | Результат и критерии завершения                                                                                                                                                                                                                                                                                                                                                            | Проверки и критерии VP в контрольной точке                                                                                                                                |
