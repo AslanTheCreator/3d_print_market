@@ -109,6 +109,13 @@ app layer находится в корневом `app/`, вне `src`.
 
 ## Размещение кода
 
+Модели обращений (`OrderCase`, detail/summary и параметры нового решения)
+принадлежат `entities/order`; DTO розыгрышей и отдельный административный
+payload — `entities/product`. Они экспортируются через public API существующих
+слайсов. Новых entities, маршрутов и HTTP-клиентов на этапе 1 нет.
+Границы типов и источники полей описаны в
+[контрактах интеграции](./backend-integration-contracts.md).
+
 - route, layout, metadata, error page — `app/`;
 - provider, theme, analytics — `src/app/`;
 - крупный блок страницы — `src/widgets/<slice>`;

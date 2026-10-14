@@ -15,6 +15,14 @@ export interface AdminProductDto {
   status: ProductDetailDto["status"];
   createdAt: string;
   expirationDate: string;
+  used?: boolean;
+  giveawayEnabled?: boolean | null;
+  giveawayTelegramUrl?: string | null;
+  giveawayStartAt?: string | null;
+  giveawayEndAt?: string | null;
+  giveawayWinnersCount?: number | null;
+  giveawayRules?: string | null;
+  giveawayHomeText?: string | null;
 }
 export interface AdminProductInput extends Omit<ProductCreateModel, "availability" | "externalUrl"> {
   availability: "EXTERNAL_PRODUCT";

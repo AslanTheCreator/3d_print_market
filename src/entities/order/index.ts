@@ -46,6 +46,16 @@ export {
 } from "./lib/orderStatusMeta";
 
 // Types
+export type {
+  OrderCase,
+  OrderCaseDetail,
+  OrderCaseSummary,
+  OrderCaseKind,
+  OrderCaseState,
+  OrderCaseOutcome,
+  OrderCaseResolutionOutcome,
+  ResolveOrderCaseRequest,
+} from "./model/orderCase";
 export type { ListOrdersDto, ListOrdersModel, OrderCancel, OrderStatus } from "./model/types";
 export type { OrderProgressStep, OrderUserRole } from "./lib/orderStatusMeta";
 

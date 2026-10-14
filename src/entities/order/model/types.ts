@@ -12,6 +12,7 @@ export type OrderStatus =
   | "ON_THE_WAY"
   | "DISPUTED"
   | "COMPLETED"
+  | "CANCELLED"
   | "FAILED";
 
 interface OrderTransfer {

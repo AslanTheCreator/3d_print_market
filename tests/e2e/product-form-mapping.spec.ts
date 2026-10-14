@@ -54,20 +54,33 @@ test("external product is not mapped to the edit form", () => {
   expect(formData).toBeNull();
 });
 
-test("runtime mapper rejects forged EXTERNAL_PRODUCT form data", () => {
-  const forgedAvailability =
-    "EXTERNAL_PRODUCT" as unknown as EditableAvailability;
+for (const availability of ["EXTERNAL_PRODUCT", "GIVEAWAY"] as const) {
+  test(`seller mappers reject ${availability} even with otherwise valid fields`, () => {
+    const forgedAvailability = availability as unknown as EditableAvailability;
+    const writeModelAllowsGiveaway:
+      "GIVEAWAY" extends ProductCreateModel["availability"] ? true : false = false;
+    const formAllowsGiveaway:
+      "GIVEAWAY" extends EditableAvailability ? true : false = false;
 
-  expect(
-    mapFormDataToCreateModel(
-      {
-        ...defaultProductFormValues,
-        availability: forgedAvailability,
-      },
-      [101],
-    ),
-  ).toBeNull();
-});
+    expect(writeModelAllowsGiveaway).toBe(false);
+    expect(formAllowsGiveaway).toBe(false);
+    expect(isEditableAvailability(availability)).toBe(false);
+    expect(mapProductDetailToFormData({ ...externalProduct, availability })).toBeNull();
+    expect(
+      mapFormDataToCreateModel(
+        {
+          ...defaultProductFormValues,
+          name: "Товар",
+          categoryIds: [3],
+          count: "1",
+          price: "1500",
+          availability: forgedAvailability,
+        },
+        [101],
+      ),
+    ).toBeNull();
+  });
+}
 
 test("internal product edit preserves confirmed contract fields", () => {
   const formData = mapProductDetailToFormData({

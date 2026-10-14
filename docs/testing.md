@@ -1,5 +1,30 @@
 # Testing
 
+## Backend integration: этап 1
+
+`backend-integration-contract-model.spec.ts` проверяет полноту полей новых DTO,
+optional/null при чтении, enum, исключение LEGACY из нового решения,
+структуру giveaway request и отсутствие обычных действий у CANCELLED.
+Compile-time assertions входят в `npm run typecheck`; сам Playwright
+транспилирует тесты без проверки типов.
+`product-form-mapping.spec.ts` дополнительно проверяет отказ seller mapper
+для GIVEAWAY при остальных валидных полях и неизменность create/edit типов.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test backend-integration-contract-model product-form-mapping product-contract-v129 editor-boundaries-model order-details-model --project=chromium
+```
+
+Это model/contract проверки без записей в backend. По
+[плану интеграции](./plans/backend-integration.md) production build, smoke
+и полный e2e выполняются на этапе 12; этап 1 не меняет order flow или редакторы.
+Для прогона только этих model specs без служебных webServer можно задать
+`TEST_BASE_URL=http://127.0.0.1:3000` (PowerShell:
+`$env:TEST_BASE_URL = 'http://127.0.0.1:3000'`) в окружении команды Playwright.
+Эти specs не обращаются по указанному URL и не требуют запущенного приложения.
+
 ## Локальные товары бота
 
 `scripts/seed-agent-products.mjs` создаёт два товара с префиксом `[ТЕСТ]`

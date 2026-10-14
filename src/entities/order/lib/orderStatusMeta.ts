@@ -65,6 +65,11 @@ const ORDER_STATUS_META: Record<OrderStatus, OrderStatusMeta> = {
     chipColor: "success",
     isActive: false,
   },
+  CANCELLED: {
+    label: "Отменён",
+    chipColor: "default",
+    isActive: false,
+  },
   FAILED: {
     label: "Отменен",
     chipColor: "error",
@@ -237,6 +242,7 @@ export const getOrderStatusActionHint = (
       return userRole === "customer"
         ? "Заказ завершён, при необходимости можно оставить отзыв"
         : "Заказ завершён";
+    case "CANCELLED":
     case "FAILED":
       return "Заказ отменён";
     case "DISPUTED":
@@ -251,7 +257,7 @@ export const getCustomerOrderActionFlags = (status: OrderStatus) => {
     canPay: status === "AWAITING_PAYMENT",
     canPrePay: status === "AWAITING_PREPAYMENT",
     canConfirmReceipt: status === "ON_THE_WAY",
-    canCancel: !["COMPLETED", "FAILED", "DISPUTED"].includes(status),
+    canCancel: !["COMPLETED", "FAILED", "CANCELLED", "DISPUTED"].includes(status),
     canLeaveReview: status === "COMPLETED",
   };
 };
@@ -261,6 +267,6 @@ export const getSellerOrderActionFlags = (status: OrderStatus) => {
     canConfirmOrder: status === "BOOKED",
     canConfirmPreOrder: status === "AWAITING_PREPAYMENT_APPROVAL",
     canShipOrder: status === "ASSEMBLING",
-    canCancel: !["COMPLETED", "FAILED", "DISPUTED"].includes(status),
+    canCancel: !["COMPLETED", "FAILED", "CANCELLED", "DISPUTED"].includes(status),
   };
 };

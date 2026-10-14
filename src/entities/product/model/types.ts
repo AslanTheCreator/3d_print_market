@@ -3,8 +3,8 @@ import type { ImageMetadata } from "@/entities/image/@x/product";
 import type { Review } from "@/entities/review/@x/product";
 import type { Currency } from "@/shared/types";
 
-export type Availability = "PURCHASABLE" | "PREORDER" | "EXTERNAL_PRODUCT";
-type Status = "ACTIVE" | "TIME_EXPIRED" | "BLOCKED" | "DELETED";
+export type Availability = "PURCHASABLE" | "PREORDER" | "EXTERNAL_PRODUCT" | "GIVEAWAY";
+type Status = "ACTIVE" | "AWAITING_GIVEAWAY" | "TIME_EXPIRED" | "BLOCKED" | "DELETED";
 
 export interface ProductDto {
   id: number;
@@ -55,7 +55,7 @@ export interface ProductDetail extends ProductDetailDto {
   image: ImageMetadata[];
 }
 
-export type EditableAvailability = Exclude<Availability, "EXTERNAL_PRODUCT">;
+export type EditableAvailability = "PURCHASABLE" | "PREORDER";
 
 export interface ProductCreateModel {
   name: string;

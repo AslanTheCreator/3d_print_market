@@ -34,6 +34,7 @@ const getStatusIcon = (status: OrderStatus) => {
     case "DISPUTED":
       return <Warning sx={{ fontSize: 16 }} />;
     case "FAILED":
+    case "CANCELLED":
       return <Cancel sx={{ fontSize: 16 }} />;
     default:
       return null;
