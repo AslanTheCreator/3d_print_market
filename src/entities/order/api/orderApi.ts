@@ -79,9 +79,9 @@ export const orderApi = {
   },
 
   // Отмена заказа
-  cancelOrder: async (orderData: OrderCancel) => {
+  cancelOrder: async (orderId: number, orderData: OrderCancel) => {
     const { data } = await authClient.post<number>(
-      `${API_URL}/${orderData.orderId}/FAILED`,
+      `${API_URL}/${orderId}/CANCELLED`,
       orderData,
     );
     return data;

@@ -1,6 +1,13 @@
 import { expect, test } from "@playwright/test";
 import {
   getOrderStatusActionHint,
+  getOrderStatusMeta,
+  getCustomerOrderActionFlags,
+  getSellerOrderActionFlags,
+  getAdminOrderActionFlags,
+  shouldShowOrderProgress,
+  getOrderProgressSteps,
+  adminOrderStatuses,
   isActiveOrderStatus,
   shouldShowPaymentProofForRole,
   shouldShowTrackingForRole,
@@ -9,6 +16,8 @@ import {
 import {
   formatOrderDate,
   sortOrders,
+  filterOrdersByStatus,
+  getOrdersFilters,
 } from "@/widgets/orders/model/dashboardOrders";
 import {
   getSafeTrackingUrl,
@@ -29,6 +38,36 @@ const history = (
 });
 
 test.describe("order details model", () => {
+  test("cancelled, failed and disputed keep distinct filters, history, terminal UI and action policies", () => {
+    const statuses = ["BOOKED", "AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL", "AWAITING_PAYMENT", "ASSEMBLING", "ON_THE_WAY", "DISPUTED", "COMPLETED", "CANCELLED", "FAILED"] as const;
+    const orders = statuses.map((actualStatus, orderId) => ({ orderId, actualStatus })) as ListOrdersModel[];
+    for (const role of ["seller", "customer"] as const) {
+      expect(getOrdersFilters(role).find(item => item.id === "cancelled")?.label).toBe("Отменены");
+      expect(filterOrdersByStatus(orders, "cancelled", role).map(item => item.actualStatus)).toEqual(["CANCELLED"]);
+      expect(filterMobileOrders(orders, "disputed", role).map(item => item.actualStatus)).toEqual(["DISPUTED", "FAILED"]);
+      expect(filterMobileOrders(orders, "cancelled", role).map(item => item.actualStatus)).toEqual(["CANCELLED"]);
+    }
+    expect(adminOrderStatuses).toContain("CANCELLED");
+    for (const status of statuses) {
+      expect(getCustomerOrderActionFlags(status).canCancel).toBe(status === "BOOKED");
+      expect(getSellerOrderActionFlags(status).canCancel).toBe(status === "BOOKED");
+      const admin = getAdminOrderActionFlags(status);
+      expect(admin.canCancel).toBe(["BOOKED", "AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL", "AWAITING_PAYMENT", "ASSEMBLING", "ON_THE_WAY"].includes(status));
+      expect(admin.canConfirmOrder).toBe(status === "BOOKED");
+      expect(admin.canConfirmPreOrder).toBe(status === "AWAITING_PREPAYMENT_APPROVAL");
+      expect(admin.canShipOrder).toBe(status === "ASSEMBLING");
+    }
+    for (const [status, label] of [["CANCELLED", "Отменён"], ["FAILED", "Спор решён в пользу покупателя"], ["DISPUTED", "На рассмотрении"]] as const) {
+      expect(getOrderStatusMeta(status).label).toBe(label);
+      expect(isActiveOrderStatus(status)).toBe(false);
+      expect(Object.values(getCustomerOrderActionFlags(status))).not.toContain(true);
+      expect(Object.values(getSellerOrderActionFlags(status))).not.toContain(true);
+      for (const prepayment of [true, false]) expect(shouldShowOrderProgress(status, prepayment)).toBe(false);
+    }
+    expect(sortOrderHistories([history("FAILED", "2026-10-01T10:00:00Z"), history("CANCELLED", "2026-10-02T10:00:00Z")]).map(item => item.status)).toEqual(["FAILED", "CANCELLED"]);
+    expect(getOrderProgressSteps(false).map(item => item.key)).toEqual(["BOOKED", "AWAITING_PAYMENT", "ASSEMBLING", "ON_THE_WAY", "COMPLETED"]);
+    expect(getOrderProgressSteps(true).map(item => item.key)).toEqual(["BOOKED", "AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL", "AWAITING_PAYMENT", "ASSEMBLING", "ON_THE_WAY", "COMPLETED"]);
+  });
   test("mobile priority keeps action first, then active, then completed without mutating input", () => {
     const orders = [
       { orderId: 1, actualStatus: "COMPLETED", createdAt: "2026-07-25T10:00:00Z" },

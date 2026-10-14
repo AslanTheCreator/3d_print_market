@@ -13,6 +13,7 @@ import {
 import { InfoOutlined } from "@mui/icons-material";
 import {
   getOrderProgressSteps,
+  getOrderStatusMeta,
   OrderStatusChip,
   shouldShowOrderProgress,
   type ListOrdersModel,
@@ -43,7 +44,7 @@ const getStepIndex = (
     return steps.length - 1;
   }
 
-  if (["FAILED", "DISPUTED"].includes(order.actualStatus)) {
+  if (["CANCELLED", "FAILED", "DISPUTED"].includes(order.actualStatus)) {
     return -1;
   }
 
@@ -61,7 +62,9 @@ const OrderMiniProgress = ({ order }: { order: ListOrdersModel }) => {
   if (!shouldShowProgress) {
     return (
       <Typography variant="caption" color="text.secondary">
-        Этапы появятся после оплаты
+        {["CANCELLED", "FAILED", "DISPUTED"].includes(order.actualStatus)
+          ? getOrderStatusMeta(order.actualStatus).label
+          : "Этапы появятся после оплаты"}
       </Typography>
     );
   }

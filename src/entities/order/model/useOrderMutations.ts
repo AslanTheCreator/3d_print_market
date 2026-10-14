@@ -164,7 +164,7 @@ export const useCancelOrder = () => {
   const scope = usePrivateScope();
 
   return usePrivateMutation({
-    mutationFn: (orderData: OrderCancel) => orderApi.cancelOrder(orderData),
+    mutationFn: ({ orderId, ...body }: OrderCancel & { orderId: number }) => orderApi.cancelOrder(orderId, body),
     onSuccess: () => invalidateOrdersLists(queryClient, scope),
     onError: logMutationError("Ошибка отмены заказа:"),
   });

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField } from "@mui/material";
-import { adminOrderApi, getSellerOrderActionFlags, type AdminOrderAction, type AdminOrderDto } from "@/entities/order";
+import { adminOrderApi, getAdminOrderActionFlags, type AdminOrderAction, type AdminOrderDto } from "@/entities/order";
 import { adminAccountsApi } from "@/entities/account";
 import { ApiError } from "@/shared/lib/errorHandler";
 import { RequestFeedback } from "@/shared/ui/request-feedback";
@@ -14,7 +14,7 @@ const validUrl = (value: string) => { try { return ["http:", "https:"].includes(
 export function AdminOrderActions({ order, session, changed, lockPanel }: {
   order: AdminOrderDto; session: number | null; changed: () => Promise<void>; lockPanel: (locked: boolean) => void;
 }) {
-  const flags = getSellerOrderActionFlags(order.actualStatus);
+  const flags = getAdminOrderActionFlags(order.actualStatus);
   const [action, setAction] = useState<AdminOrderAction | null>(null);
   const [busy, setBusy] = useState(false);
   const [unknown, setUnknown] = useState(false);
@@ -41,6 +41,9 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
   }
   async function submit(input: { comment: string; deliveryUrl: string }) {
     if (!action || lock.current || unknown || accepted) return;
+    const currentFlags = getAdminOrderActionFlags(order.actualStatus);
+    const allowed = { CONFIRM: currentFlags.canConfirmOrder, CONFIRM_PREPAYMENT: currentFlags.canConfirmPreOrder, SHIP: currentFlags.canShipOrder, CANCEL: currentFlags.canCancel };
+    if (!allowed[action]) { setError(new Error("Статус заказа изменился. Действие недоступно.")); return; }
     lock.current = true; setBusy(true); setError(undefined);
     let needsCheck = false;
     let written = false;

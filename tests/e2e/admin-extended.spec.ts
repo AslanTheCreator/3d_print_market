@@ -3,6 +3,7 @@ import { adminOrderFixture, setupAdmin } from "./helpers/admin";
 import { expectNoOverflow, png } from "./helpers/mobileAccount";
 
 for (const scenario of [
+  { status: "BOOKED", action: "CONFIRM", label: "Подтвердить заказ" },
   { status: "AWAITING_PREPAYMENT_APPROVAL", action: "CONFIRM_PREPAYMENT", label: "Подтвердить предоплату" },
   { status: "ASSEMBLING", action: "SHIP", label: "Отправить" },
   { status: "AWAITING_PAYMENT", action: "CANCEL", label: "Отменить заказ" },
@@ -14,9 +15,14 @@ for (const scenario of [
   const dialog = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: scenario.label, exact: true }) });
   if (scenario.action === "SHIP") await dialog.getByLabel("Ссылка доставки", { exact: true }).fill("https://example.com/track/201");
   if (scenario.action === "CANCEL") await expect(dialog.getByText(/не подтверждает возврат денег/)).toBeVisible();
+  await dialog.getByLabel("Комментарий", { exact: true }).fill("Комментарий & проверка");
   await dialog.getByRole("button", { name: scenario.label, exact: true }).click();
   await expect(page.getByText(/заказ больше не входит/)).toBeVisible();
   expect(state.writes.map((item) => item.path)).toEqual([`/admin/actions/agents/2/orders/201/${scenario.action}`]);
+  expect(state.writes[0].body).toBeNull();
+  const params = new URLSearchParams(state.writes[0].search);
+  expect(params.get("comment")).toBe("Комментарий & проверка");
+  expect(params.get("deliveryUrl")).toBe(scenario.action === "SHIP" ? "https://example.com/track/201" : null);
 });
 
 for (const status of [403, 500]) test(`admin action error ${status} preserves comment`, async ({ page, baseURL }) => {
@@ -44,6 +50,68 @@ test("unresolved outcome blocks repeated POST and uses paginated reconciliation"
   await dialog.getByRole("button", { name: "Проверить результат" }).click();
   await expect(dialog.getByText(/Изменение статуса не подтверждено/)).toBeVisible();
   expect(state.writes).toHaveLength(1);
+});
+
+for (const status of [403, 409, 500]) test(`temporary ADMIN CANCEL outside BOOKED preserves input after ${status}`, async ({ page, baseURL }) => {
+  const state = await setupAdmin(page, baseURL);
+  state.orders = [adminOrderFixture(201, "AWAITING_PAYMENT")];
+  state.actionStatus = status;
+  await page.goto("/admin/orders?status=AWAITING_PAYMENT");
+  await page.getByRole("button", { name: "Открыть заказ #201" }).click();
+  await page.getByRole("button", { name: "Отменить заказ", exact: true }).click();
+  const dialog = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: "Отменить заказ", exact: true }) });
+  await dialog.getByLabel("Комментарий", { exact: true }).fill("Комментарий отмены");
+  await dialog.getByRole("button", { name: "Отменить заказ", exact: true }).click();
+  await expect(dialog.getByText("Действие отклонено", { exact: true })).toBeVisible();
+  await expect(dialog.getByLabel("Комментарий", { exact: true })).toHaveValue("Комментарий отмены");
+  expect(state.writes).toHaveLength(1);
+  expect(state.writes[0]).toMatchObject({ path: "/admin/actions/agents/2/orders/201/CANCEL", method: "POST", body: null });
+  expect([...new URLSearchParams(state.writes[0].search)]).toEqual([["comment", "Комментарий отмены"]]);
+});
+
+for (const applied of [false, true]) test(`ADMIN CANCEL lost response applied=${applied} reads actual server status`, async ({ page, baseURL }) => {
+  const state = await setupAdmin(page, baseURL);
+  state.orders = [adminOrderFixture(201, "AWAITING_PAYMENT")];
+  state.actionAbort = true; state.actionStatus = 500; state.applyBeforeAbort = applied;
+  await page.goto("/admin/orders?status=all");
+  await page.getByRole("button", { name: "Открыть заказ #201" }).click();
+  await page.getByRole("button", { name: "Отменить заказ", exact: true }).click();
+  const dialog = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: "Отменить заказ", exact: true }) });
+  await dialog.getByLabel("Комментарий", { exact: true }).fill("Не повторять отмену");
+  await dialog.getByRole("button", { name: "Отменить заказ", exact: true }).click();
+  if (applied) {
+    await expect(dialog).toBeHidden();
+    // Mock намеренно вернул FAILED: клиент не подменяет его на CANCELLED по имени CANCEL.
+    await expect(page.getByRole("dialog", { name: "Детали заказа", exact: true }).getByText("Спор решён в пользу покупателя", { exact: true })).toBeVisible();
+  } else {
+    await expect(dialog.getByText(/Изменение статуса не подтверждено/)).toBeVisible();
+    await expect(dialog.getByLabel("Комментарий", { exact: true })).toHaveValue("Не повторять отмену");
+    await expect(dialog.getByRole("button", { name: "Отменить заказ", exact: true })).toBeDisabled();
+    await dialog.getByRole("button", { name: "Проверить результат", exact: true }).click();
+    await expect(dialog.getByText(/Изменение статуса не подтверждено/)).toBeVisible();
+  }
+  expect(state.writes).toHaveLength(1);
+  expect(state.writes[0].path).toBe("/admin/actions/agents/2/orders/201/CANCEL");
+  expect(state.reads).toContain("/admin/actions/agents/2/orders?page=0&size=50");
+});
+
+test("ADMIN cancelled filter exposes server CANCELLED without ordinary actions", async ({ page, baseURL }) => {
+  const state = await setupAdmin(page, baseURL);
+  state.orders = [adminOrderFixture(201, "CANCELLED")];
+  await page.goto("/admin/orders?status=CANCELLED");
+  await page.getByRole("button", { name: "Открыть заказ #201" }).click();
+  const detail = page.getByRole("dialog", { name: "Детали заказа", exact: true });
+  await expect(detail.getByText("Отменён", { exact: true })).toBeVisible();
+  await expect(detail.getByRole("button", { name: /Отменить заказ|Подтвердить|Отправить/ })).toHaveCount(0);
+  expect(state.writes).toHaveLength(0);
+});
+
+test("ordinary users cannot invoke ADMIN CANCEL", async ({ page, baseURL }) => {
+  const state = await setupAdmin(page, baseURL, "USER");
+  await page.goto("/admin/orders?status=AWAITING_PAYMENT");
+  await expect(page.getByText("Доступ разрешён только администратору.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Отменить заказ", exact: true })).toHaveCount(0);
+  expect(state.writes).toHaveLength(0);
 });
 
 test("orders pagination accepts an empty next page and returns", async ({ page, baseURL }) => {

@@ -51,7 +51,7 @@ export const OrderStatusChip = ({ status }: OrderStatusChipProps) => {
       size="small"
       variant="filled"
       icon={getStatusIcon(status) ?? undefined}
-      sx={{ minWidth: 120 }}
+      sx={{ minWidth: 120, maxWidth: "100%", height: "auto", minHeight: 24, "& .MuiChip-label": { whiteSpace: "normal", py: 0.25 } }}
     />
   );
 };

@@ -56,7 +56,7 @@ const ORDER_STATUS_META: Record<OrderStatus, OrderStatusMeta> = {
     isActive: true,
   },
   DISPUTED: {
-    label: "Спор",
+    label: "На рассмотрении",
     chipColor: "error",
     isActive: false,
   },
@@ -71,7 +71,7 @@ const ORDER_STATUS_META: Record<OrderStatus, OrderStatusMeta> = {
     isActive: false,
   },
   FAILED: {
-    label: "Отменен",
+    label: "Спор решён в пользу покупателя",
     chipColor: "error",
     isActive: false,
   },
@@ -112,6 +112,7 @@ export const ORDER_DISPUTED_STATUSES: readonly OrderStatus[] = [
   "DISPUTED",
   "FAILED",
 ];
+export const ORDER_CANCELLED_STATUSES: readonly OrderStatus[] = ["CANCELLED"];
 
 const CUSTOMER_STATUSES_WITH_TRACKING: readonly OrderStatus[] = [
   "ON_THE_WAY",
@@ -189,6 +190,7 @@ export const shouldShowOrderProgress = (
   status: OrderStatus,
   hasPrepayment: boolean,
 ) => {
+  if (["CANCELLED", "FAILED", "DISPUTED"].includes(status)) return false;
   if (hasPrepayment) {
     return true;
   }
@@ -243,10 +245,11 @@ export const getOrderStatusActionHint = (
         ? "Заказ завершён, при необходимости можно оставить отзыв"
         : "Заказ завершён";
     case "CANCELLED":
-    case "FAILED":
       return "Заказ отменён";
+    case "FAILED":
+      return "Спор решён в пользу покупателя";
     case "DISPUTED":
-      return "По заказу открыт спор";
+      return "Заказ на рассмотрении";
     default:
       return undefined;
   }
@@ -257,7 +260,7 @@ export const getCustomerOrderActionFlags = (status: OrderStatus) => {
     canPay: status === "AWAITING_PAYMENT",
     canPrePay: status === "AWAITING_PREPAYMENT",
     canConfirmReceipt: status === "ON_THE_WAY",
-    canCancel: !["COMPLETED", "FAILED", "CANCELLED", "DISPUTED"].includes(status),
+    canCancel: status === "BOOKED",
     canLeaveReview: status === "COMPLETED",
   };
 };
@@ -267,6 +270,15 @@ export const getSellerOrderActionFlags = (status: OrderStatus) => {
     canConfirmOrder: status === "BOOKED",
     canConfirmPreOrder: status === "AWAITING_PREPAYMENT_APPROVAL",
     canShipOrder: status === "ASSEMBLING",
-    canCancel: !["COMPLETED", "FAILED", "CANCELLED", "DISPUTED"].includes(status),
+    canCancel: status === "BOOKED",
   };
 };
+
+// Временная frontend-политика до B4: сохраняет прежнюю ADMIN-доступность.
+// Это не подтверждённая серверная матрица; новый CANCELLED в неё не включён.
+export const getAdminOrderActionFlags = (status: OrderStatus) => ({
+  canConfirmOrder: status === "BOOKED",
+  canConfirmPreOrder: status === "AWAITING_PREPAYMENT_APPROVAL",
+  canShipOrder: status === "ASSEMBLING",
+  canCancel: (["BOOKED", "AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL", "AWAITING_PAYMENT", "ASSEMBLING", "ON_THE_WAY"] as readonly OrderStatus[]).includes(status),
+});

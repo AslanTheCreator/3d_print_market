@@ -1,6 +1,7 @@
 import {
   ORDER_ASSEMBLING_STATUSES,
   ORDER_COMPLETED_STATUSES,
+  ORDER_CANCELLED_STATUSES,
   ORDER_DISPUTED_STATUSES,
   ORDER_NEW_STATUSES,
   ORDER_PAYMENT_STATUSES,
@@ -24,6 +25,7 @@ export type OrdersFilterId =
   | "assembling"
   | "shipping"
   | "completed"
+  | "cancelled"
   | "disputed";
 
 export type OrdersSortId = "attention" | "newest" | "oldest";
@@ -49,6 +51,7 @@ const SELLER_FILTERS: readonly OrdersFilterOption[] = [
   { id: "assembling", label: "Собрать" },
   { id: "shipping", label: "В пути" },
   { id: "completed", label: "Завершены" },
+  { id: "cancelled", label: "Отменены" },
   { id: "disputed", label: "Спорные" },
 ];
 
@@ -58,6 +61,7 @@ const CUSTOMER_FILTERS: readonly OrdersFilterOption[] = [
   { id: "processing", label: "В обработке" },
   { id: "shipping", label: "В пути" },
   { id: "completed", label: "Завершены" },
+  { id: "cancelled", label: "Отменены" },
   { id: "disputed", label: "Спорные" },
 ];
 
@@ -72,6 +76,7 @@ const SELLER_FILTER_STATUSES: Record<
   assembling: ORDER_ASSEMBLING_STATUSES,
   shipping: ORDER_SHIPPING_STATUSES,
   completed: ORDER_COMPLETED_STATUSES,
+  cancelled: ORDER_CANCELLED_STATUSES,
   disputed: ORDER_DISPUTED_STATUSES,
 };
 
@@ -86,6 +91,7 @@ const CUSTOMER_FILTER_STATUSES: Record<
   assembling: ORDER_ASSEMBLING_STATUSES,
   shipping: ORDER_SHIPPING_STATUSES,
   completed: ORDER_COMPLETED_STATUSES,
+  cancelled: ORDER_CANCELLED_STATUSES,
   disputed: ORDER_DISPUTED_STATUSES,
 };
 

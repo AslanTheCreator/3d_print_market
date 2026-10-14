@@ -70,7 +70,6 @@ export interface ListOrdersDto extends Omit<ListOrdersModel, "product"> {
 }
 
 export interface OrderCancel {
-  orderId: number;
   closureReason: string;
   comment: string;
 }

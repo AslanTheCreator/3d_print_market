@@ -266,7 +266,7 @@ for (const review of [false, true]) test(`${review ? "review" : "cancel"} guards
   state.customerOrders = [orderFixture(1, review ? "COMPLETED" : "BOOKED", 1)];
   const gate = deferred();
   const writes: Record<string, unknown>[] = [];
-  await page.route(review ? "**/reviews" : "**/order/1/FAILED", async route => {
+  await page.route(review ? "**/reviews" : "**/order/1/CANCELLED", async route => {
     if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
     writes.push(route.request().postDataJSON());
     if (writes.length === 1) await gate.promise;
@@ -297,6 +297,112 @@ for (const review of [false, true]) test(`${review ? "review" : "cancel"} guards
   else await expect(dialog).toBeHidden();
   expect(writes).toHaveLength(2);
   expect(writes[0]).toEqual(writes[1]);
+  if (!review) expect(writes[0]).toEqual({ closureReason: "Текст для повторной попытки", comment: "Текст для повторной попытки" });
+});
+
+for (const role of ["purchase", "sales"] as const) {
+  test(`${role}: cancellation sends only the new body, joins reason and comment, and locks double submit`, async ({ page, baseURL }) => {
+    const state = await setupMobileAccount(page, baseURL);
+    const orders = [orderFixture(1, "BOOKED", 1)];
+    state[role === "purchase" ? "customerOrders" : "sellerOrders"] = orders;
+    const gate = deferred();
+    const writes: { url: string; body: unknown }[] = [];
+    const oldRequests: string[] = [];
+    page.on("request", request => { if (/\/order\/.*(?:\/FAILED|\/dispute\/COMPLETED)/.test(request.url())) oldRequests.push(request.url()); });
+    await page.route("**/order/1/CANCELLED", async route => {
+      if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+      writes.push({ url: route.request().url(), body: route.request().postDataJSON() });
+      await gate.promise;
+      orders[0].actualStatus = "CANCELLED";
+      return fulfillJson(route, 1);
+    });
+    await page.goto(`/dashboard/${role}`);
+    await page.getByRole("button", { name: "Отменить", exact: true }).first().click();
+    const dialog = page.getByRole("dialog");
+    const reason = role === "purchase" ? "Передумал покупать" : "Товар закончился";
+    await dialog.getByRole("button", { name: reason, exact: true }).click();
+    await dialog.getByLabel("Дополнительный комментарий (необязательно)").fill("  Дополнительная причина  ");
+    const submit = dialog.getByRole("button", { name: "Отменить заказ", exact: true });
+    await submit.evaluate(button => { (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click(); });
+    try {
+      await expect.poll(() => writes.length).toBe(1);
+      await expect(dialog.getByRole("button", { name: "Отмена...", exact: true })).toBeDisabled();
+    } finally { gate.resolve(); }
+    await expect(dialog).toBeHidden();
+    expect(writes).toEqual([{ url: "http://127.0.0.1:9/order/1/CANCELLED", body: { closureReason: reason, comment: `${reason}\n\nДополнительная причина` } }]);
+    expect(oldRequests).toEqual([]);
+    expect(state.ordersReads).toBeGreaterThanOrEqual(2);
+  });
+
+  test(`${role}: current non-BOOKED status blocks an already open cancellation dialog`, async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 393, height: 900 });
+    const state = await setupMobileAccount(page, baseURL);
+    const orders = [orderFixture(1, "BOOKED", 1)];
+    state[role === "purchase" ? "customerOrders" : "sellerOrders"] = orders;
+    const writes: string[] = [];
+    page.on("request", request => { if (request.method() === "POST" && request.url().includes("/order/")) writes.push(request.url()); });
+    await page.goto(`/dashboard/${role}`);
+    await page.getByRole("button", { name: "Отменить", exact: true }).first().click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Причина отмены").fill("Сохранить причину");
+    orders[0].actualStatus = "AWAITING_PAYMENT";
+    await reconnect(page);
+    await expect(dialog.getByText(/Статус заказа изменился/)).toBeVisible();
+    const submit = dialog.getByRole("button", { name: "Отменить заказ", exact: true });
+    await expect(submit).toBeDisabled();
+    await submit.evaluate(button => button.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await expect(dialog.getByLabel("Причина отмены")).toHaveValue("Сохранить причину");
+    expect(writes).toEqual([]);
+  });
+}
+
+for (const applied of [false, true]) test(`lost cancellation response: applied=${applied}, GET confirms result without another POST`, async ({ page, baseURL }) => {
+  const state = await setupMobileAccount(page, baseURL);
+  state.customerOrders = [orderFixture(1, "BOOKED", 1)];
+  let writes = 0;
+  await page.route("**/order/1/CANCELLED", route => {
+    if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+    writes++;
+    if (applied) state.customerOrders[0].actualStatus = "CANCELLED";
+    return route.abort("connectionfailed");
+  });
+  await page.goto("/dashboard/purchase");
+  await page.getByRole("button", { name: "Отменить", exact: true }).first().click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Причина отмены").fill("Оплата не нужна");
+  await dialog.getByRole("button", { name: "Отменить заказ", exact: true }).click();
+  if (!applied) {
+    await expect(dialog.getByText(/Результат отмены не подтверждён/)).toBeVisible();
+    await expect(dialog.getByLabel("Причина отмены")).toHaveValue("Оплата не нужна");
+    await expect(dialog.getByRole("button", { name: "Отменить заказ", exact: true })).toBeDisabled();
+    await dialog.getByRole("button", { name: "Проверить результат", exact: true }).click();
+    await expect(dialog.getByText(/Результат отмены не подтверждён/)).toBeVisible();
+    state.customerOrders[0].actualStatus = "CANCELLED";
+    await dialog.getByRole("button", { name: "Проверить результат", exact: true }).click();
+  }
+  await expect(dialog).toBeHidden();
+  expect(writes).toBe(1);
+  expect(state.ordersReads).toBeGreaterThanOrEqual(2);
+});
+
+test("accepted cancellation remains successful when list refresh fails", async ({ page, baseURL }) => {
+  const state = await setupMobileAccount(page, baseURL);
+  state.customerOrders = [orderFixture(1, "BOOKED", 1)];
+  let writes = 0;
+  await page.route("**/order/1/CANCELLED", route => {
+    if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+    writes++; state.ordersStatus = 403;
+    return fulfillJson(route, 1);
+  });
+  await page.goto("/dashboard/purchase");
+  await page.getByRole("button", { name: "Отменить", exact: true }).first().click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Причина отмены").fill("Отказ от покупки");
+  await dialog.getByRole("button", { name: "Отменить заказ", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByText("Заказ успешно отменён", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Не удалось обновить заказы/)).toBeVisible();
+  expect(writes).toBe(1);
 });
 
 test("review reopen before close transition finishes cannot reset new input", async ({ page, baseURL }) => {

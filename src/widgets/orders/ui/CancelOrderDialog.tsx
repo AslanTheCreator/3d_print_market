@@ -61,8 +61,9 @@ export const CancelOrderDialog = ({
   const paymentBreakdown = getOrderPaymentBreakdown(order);
   const actionsAvailable = useOrderActionsAvailable();
   const lock = useRef(false);
-  const cancelOrderAction = useOrderCancelAction();
+  const cancelOrderAction = useOrderCancelAction({ order, userRole });
   const lifecycle = useOrderDialogLifecycle(open, () => {
+    if (cancelOrderAction.requiresCheck) return;
     setReason("");
     setComment("");
   });
@@ -77,21 +78,27 @@ export const CancelOrderDialog = ({
   };
 
   const handleCancel = async () => {
-    if (lock.current || !actionsAvailable || reason.trim().length < 3 || !open) return;
+    if (lock.current || !actionsAvailable || order.actualStatus !== "BOOKED" || cancelOrderAction.requiresCheck || reason.trim().length < 3 || !open) return;
     lock.current = true;
     const generation = lifecycle.generation;
     try {
       await cancelOrderAction.cancelOrder({
-        orderId: order.orderId,
         closureReason: reason.trim(),
-        comment: comment.trim(),
+        comment: [reason.trim(), comment.trim()].filter(Boolean).join("\n\n"),
       }, () => {
         if (lifecycle.isCurrent(generation)) onClose();
       });
     } finally { lock.current = false; }
   };
 
-  const canCancel = actionsAvailable && reason.trim().length >= 3 && !cancelOrderAction.isPending;
+  const canCancel = actionsAvailable && order.actualStatus === "BOOKED" && !cancelOrderAction.requiresCheck && reason.trim().length >= 3 && !cancelOrderAction.isPending;
+
+  const handleCheckResult = () => {
+    const generation = lifecycle.generation;
+    void cancelOrderAction.checkResult(() => {
+      if (lifecycle.isCurrent(generation)) onClose();
+    });
+  };
 
   return (
     <Dialog
@@ -127,6 +134,8 @@ export const CancelOrderDialog = ({
 
       <DialogContent>
         <OrderRefreshWarning />
+        {order.actualStatus !== "BOOKED" && <Alert severity="warning" sx={{ mb: 2 }}>Статус заказа изменился. Прямая отмена доступна только для забронированного заказа.</Alert>}
+        {cancelOrderAction.recoveryMessage && <Alert severity="warning" sx={{ mb: 2 }} action={cancelOrderAction.requiresCheck && <Button disabled={cancelOrderAction.isPending} onClick={handleCheckResult}>Проверить результат</Button>}>{cancelOrderAction.recoveryMessage}</Alert>}
         {/* Информация о заказе */}
         <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: "grey.50" }}>
           <Typography variant="subtitle2" gutterBottom>
@@ -184,7 +193,7 @@ export const CancelOrderDialog = ({
                 variant={reason === quickReason ? "filled" : "outlined"}
                 color={reason === quickReason ? "primary" : "default"}
                 size="small"
-                sx={{ cursor: "pointer" }}
+                sx={{ cursor: "pointer", minWidth: 44, minHeight: 44 }}
               />
             ))}
           </Stack>

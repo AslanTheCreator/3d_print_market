@@ -25,6 +25,34 @@ npx playwright test backend-integration-contract-model product-form-mapping prod
 `$env:TEST_BASE_URL = 'http://127.0.0.1:3000'`) в окружении команды Playwright.
 Эти specs не обращаются по указанному URL и не требуют запущенного приложения.
 
+## Backend integration: этап 2
+
+`order-details-model.spec.ts` проверяет пользовательскую отмену только из BOOKED,
+отдельную временную ADMIN-политику, enum-подписи, terminal progress и фильтры
+без преобразования FAILED. `open-forms.spec.ts` проверяет точный новый URL/body,
+причину в comment, обе роли, смену статуса открытого диалога, двойную отправку,
+отказ, потерю ответа и успех POST при ошибке перечитывания.
+`order-cancel.spec.ts` дополняет проверками desktop-фильтров, истории, отказа
+контрольного GET и восстановления продавца. `orders.mobile.spec.ts` проверяет
+новый фильтр и terminal UI для обеих ролей, включая 320 px.
+
+`admin-extended.spec.ts` фиксирует временную доступность CANCEL вне BOOKED,
+точные admin URL/query, CONFIRM/CONFIRM_PREPAYMENT/SHIP, отказ 403/409/500,
+потерю ответа без повторного POST и отсутствие действий для CANCELLED/обычного
+пользователя. Возвращённый mock-статус не является подтверждением результата
+реального ADMIN CANCEL. После B4 нужна окончательная серверная матрица.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test open-forms order-cancel order-details order-dialog-lifecycle-model order-payment-model backend-integration-contract-model admin-extended admin.spec --project=chromium
+npx playwright test orders.mobile --project=mobile-chromium
+```
+
+Все изменяющие запросы подменяются Playwright; на реальном backend проверяется
+только OpenAPI. По плану интеграции build, smoke и полный e2e — этап 12.
+
 ## Локальные товары бота
 
 `scripts/seed-agent-products.mjs` создаёт два товара с префиксом `[ТЕСТ]`
