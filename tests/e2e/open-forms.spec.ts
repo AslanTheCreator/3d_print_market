@@ -318,3 +318,144 @@ test("review reopen before close transition finishes cannot reset new input", as
   await page.waitForTimeout(400);
   await expect(input).toHaveValue("Новый текст");
 });
+
+// P10 / FTA-039: successful refetch changes the status while the stable list
+// card's action dialog stays mounted. This is distinct from read error/pending.
+// Sources: backend-integration.md stage 2, ordinary stages in core-flows.md,
+// and the user's confirmation that direct buyer/seller cancellation is BOOKED-only.
+async function refreshP10Order(
+  page: Page,
+  state: Awaited<ReturnType<typeof setupMobileAccount>>,
+  dialog: Locator,
+  role: "customer" | "seller",
+) {
+  const gate = deferred();
+  const readsBefore = state.ordersReads;
+  state.ordersGate = gate.promise;
+  const response = page.waitForResponse(result =>
+    new URL(result.url()).pathname === `/order/${role}` && result.request().method() === "GET",
+  );
+  try {
+    await reconnect(page);
+    await expect.poll(() => state.ordersReads).toBeGreaterThan(readsBefore);
+    await expect(dialog).toBeVisible();
+  } finally {
+    gate.resolve();
+  }
+  const result = await response;
+  expect(result.status()).toBe(200);
+  expect(await result.json()).toEqual(role === "customer" ? state.customerOrders : state.sellerOrders);
+}
+
+test.describe("P10 stale action dialogs", () => {
+  for (const width of [393, 1280]) {
+    for (const payment of [
+      { initial: "AWAITING_PREPAYMENT", next: "AWAITING_PREPAYMENT_APPROVAL", nextLabel: "Ожидает подтверждение предоплаты", label: "Подтвердить предоплату" },
+      { initial: "AWAITING_PAYMENT", next: "ASSEMBLING", nextLabel: "Собирается", label: "Подтвердить оплату" },
+    ] as const) {
+      test(`stale ${payment.initial} cannot submit after successful refetch at ${width}px`, async ({ page, baseURL }) => {
+        await page.setViewportSize({ width, height: 900 });
+        const state = await setupMobileAccount(page, baseURL);
+        const order = { ...orderFixture(1, payment.initial, 1), prepaymentAmount: 500 };
+        state.customerOrders = [order];
+        await page.route("**/accounts/participant/10", route => fulfillJson(route, [
+          { id: 1, participantId: 10, username: "Получатель", entityValue: "TEST", transferMoney: "BANK_CARD", comment: "" },
+        ]));
+        const writes: string[] = [];
+        await page.route("**/order/1/**", route => {
+          if (route.request().method() === "POST") writes.push(new URL(route.request().url()).pathname);
+          return fulfillJson(route, { code: "ORDER_STATUS_CONFLICT", message: "Устаревшая запись запрещена" }, 409);
+        });
+        await page.goto("/dashboard/purchase");
+        // The last desktop action belongs to the permanent list card, not the
+        // attention section that legitimately disappears when its status changes.
+        const surface = page.getByTestId(width === 393 ? "mobile-orders" : "desktop-orders");
+        await surface.getByRole("button", { name: payment.label, exact: true }).last().click();
+        const dialog = page.getByRole("dialog");
+        const comment = dialog.getByLabel("Комментарий (необязательно)");
+        await comment.fill("Комментарий до смены статуса");
+        await dialog.locator('input[type="file"]').setInputFiles({ name: "p10-proof.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+        const confirm = dialog.getByRole("button", { name: payment.label, exact: true });
+        await expect(confirm).toBeEnabled();
+        expect(writes).toEqual([]);
+
+        state.customerOrders = [{ ...order, actualStatus: payment.next }];
+        await refreshP10Order(page, state, dialog, "customer");
+        await expect(surface.getByText(payment.nextLabel, { exact: true }).last()).toBeVisible();
+        await expect(dialog).toBeVisible();
+        await expect(comment).toHaveValue("Комментарий до смены статуса");
+        await expect(dialog.getByText("Изображение загружено", { exact: true })).toBeVisible();
+        await expect(dialog.getByRole("alert").filter({ hasText: /Статус заказа уже обновился/ })).toBeVisible();
+        await expect(dialog.getByText(/Подтверждение недоступно до успешной загрузки/)).toHaveCount(0);
+        await expect(confirm).toBeDisabled();
+        // A DOM replay also checks the submit handler's current-status guard.
+        await confirm.evaluate(button => button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
+
+        // A second successful read is an observable barrier after the replay;
+        // returning to the permitted stage proves the lock was status-dependent.
+        state.customerOrders = [order];
+        await refreshP10Order(page, state, dialog, "customer");
+        await expect(confirm).toBeEnabled();
+        await expect(dialog.getByRole("alert").filter({ hasText: /Статус заказа уже обновился/ })).toHaveCount(0);
+        await expect(comment).toHaveValue("Комментарий до смены статуса");
+        await expect(dialog.getByText("Изображение загружено", { exact: true })).toBeVisible();
+        expect(writes).toEqual([]);
+      });
+    }
+
+    for (const role of ["customer", "seller"] as const) {
+      for (const next of [
+        { status: "AWAITING_PAYMENT", label: "Ожидает оплату" },
+        { status: "COMPLETED", label: "Завершен" },
+      ] as const) {
+        test(`stale ${role} cancellation cannot submit in ${next.status} at ${width}px`, async ({ page, baseURL }) => {
+          await page.setViewportSize({ width, height: 900 });
+          const state = await setupMobileAccount(page, baseURL);
+          const ordersKey = role === "customer" ? "customerOrders" : "sellerOrders";
+          const order = orderFixture(1, "BOOKED", 1);
+          state[ordersKey] = [order];
+          const writes: { method: string; path: string; body: unknown }[] = [];
+          await page.route("**/order/1/**", route => {
+            const request = route.request();
+            if (request.method() === "POST") writes.push({ method: request.method(), path: new URL(request.url()).pathname, body: request.postDataJSON() });
+            // Diagnose an attempted forbidden write without changing the order.
+            return fulfillJson(route, { code: "ORDER_STATUS_CONFLICT", message: "Устаревшая отмена запрещена" }, 409);
+          });
+          await page.goto(role === "customer" ? "/dashboard/purchase" : "/dashboard/sales");
+          const surface = page.getByTestId(width === 393 ? "mobile-orders" : "desktop-orders");
+          await surface.getByRole("button", { name: "Отменить", exact: true }).last().click();
+          const dialog = page.getByRole("dialog");
+          const reason = dialog.getByLabel("Причина отмены");
+          const comment = dialog.getByLabel("Дополнительный комментарий (необязательно)");
+          await reason.fill("Причина до смены статуса");
+          await comment.fill("Комментарий до смены статуса");
+          const confirm = dialog.getByRole("button", { name: "Отменить заказ", exact: true });
+          await expect(confirm).toBeEnabled();
+          expect(writes).toEqual([]);
+
+          state[ordersKey] = [{ ...order, actualStatus: next.status }];
+          await refreshP10Order(page, state, dialog, role);
+          await expect(surface.getByText(next.label, { exact: true }).last()).toBeVisible();
+          await expect(dialog).toBeVisible();
+          await expect(reason).toHaveValue("Причина до смены статуса");
+          await expect(comment).toHaveValue("Комментарий до смены статуса");
+          await expect(reason).toBeEnabled();
+          await expect(dialog.getByText(/Действия недоступны до успешной загрузки/)).toHaveCount(0);
+          // Soft assertions preserve both UI failures and still execute the
+          // decisive no-write check; the case remains failed for any mismatch.
+          await expect.soft(confirm).toBeDisabled();
+          await expect.soft(dialog.getByText(/статус заказа.*(обнов|измен)|актуальный (статус|этап)|отмена (заказа )?(недоступна|невозможна)|отменить (заказ )?(нельзя|невозможно)/i)).toBeVisible();
+          // Exercise the real user click if the stale action is still enabled;
+          // when blocked, replay the event to verify the handler guard as well.
+          if (await confirm.isEnabled()) await confirm.click();
+          else await confirm.evaluate(button => button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
+          await refreshP10Order(page, state, dialog, role);
+          await expect(dialog).toBeVisible();
+          await expect(reason).toHaveValue("Причина до смены статуса");
+          await expect(comment).toHaveValue("Комментарий до смены статуса");
+          expect(writes).toEqual([]);
+        });
+      }
+    }
+  }
+});
