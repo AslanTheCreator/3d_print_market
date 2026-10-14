@@ -102,6 +102,13 @@ const sendJson = (response, status, body) => {
 const requestCounts = {};
 let recoveryStatus = 503;
 let recoveryDelay = 0;
+let recoveryHeld = false;
+let recoveryReads = { started: 0, completed: 0, cancelled: 0 };
+const pendingRecoveryResponses = new Set();
+const recoverySnapshot = () => ({
+  ...recoveryReads, status: recoveryStatus, held: recoveryHeld,
+  pending: pendingRecoveryResponses.size,
+});
 const server = createServer((request, response) => {
   if (!request.url) {
     sendJson(response, 400, { error: "Missing request URL" });
@@ -117,9 +124,26 @@ const server = createServer((request, response) => {
   const url = new URL(request.url, `http://127.0.0.1:${port}`);
 
   if (request.method === "POST" && url.pathname === "/__test/product-recovery") {
+    const action = url.searchParams.get("action");
+    if (action === "release") {
+      recoveryHeld = false;
+      for (const pending of pendingRecoveryResponses) pending.send();
+      sendJson(response, 200, recoverySnapshot());
+      return;
+    }
+    if (action === "reset") {
+      for (const pending of pendingRecoveryResponses) pending.response.destroy();
+      pendingRecoveryResponses.clear();
+      recoveryReads = { started: 0, completed: 0, cancelled: 0 };
+    }
     recoveryStatus = url.searchParams.get("status") === "200" ? 200 : 503;
     recoveryDelay = url.searchParams.get("delay") === "500" ? 500 : 0;
-    sendJson(response, 200, { status: recoveryStatus });
+    recoveryHeld = url.searchParams.get("hold") === "1";
+    sendJson(response, 200, recoverySnapshot());
+    return;
+  }
+  if (request.method === "GET" && url.pathname === "/__test/product-recovery") {
+    sendJson(response, 200, recoverySnapshot());
     return;
   }
 
@@ -141,9 +165,23 @@ const server = createServer((request, response) => {
 
   if (request.method === "GET" && url.pathname === "/product/924") {
     const status = recoveryStatus;
-    setTimeout(() => sendJson(response, status, status === 200
-      ? { ...product, id: 924, name: "Восстановленный серверный товар", imageIds: [] }
-      : { message: "Fixture recovery failure" }), recoveryDelay);
+    const counts = recoveryReads;
+    counts.started++;
+    const pending = { response, send: () => {
+      pendingRecoveryResponses.delete(pending);
+      if (!response.destroyed && !response.writableEnded) sendJson(response, status, status === 200
+        ? { ...product, id: 924, name: "Восстановленный серверный товар", imageIds: [] }
+        : { message: "Fixture recovery failure" });
+    } };
+    let timer;
+    response.once("finish", () => { counts.completed++; });
+    response.once("close", () => {
+      clearTimeout(timer);
+      pendingRecoveryResponses.delete(pending);
+      if (!response.writableFinished) counts.cancelled++;
+    });
+    if (recoveryHeld) pendingRecoveryResponses.add(pending);
+    else timer = setTimeout(pending.send, recoveryDelay);
     return;
   }
 
@@ -237,6 +275,7 @@ server.listen(port, "127.0.0.1", () => {
 });
 
 const shutdown = () => {
+  for (const pending of pendingRecoveryResponses) pending.response.destroy();
   server.close(async () => {
     await unlink(sizingImagePath).catch(() => {});
     process.exit(0);

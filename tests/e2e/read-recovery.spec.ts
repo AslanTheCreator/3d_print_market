@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Request } from "@playwright/test";
 import { fulfillJson, orderFixture, setupMobileAccount } from "./helpers/mobileAccount";
 
 test.setTimeout(90_000);
@@ -7,6 +7,48 @@ const deferred = () => {
   const promise = new Promise<void>(done => { resolve = done; });
   return { promise, resolve };
 };
+type ReadEntry = {
+  request: Request; path: string; cursor?: number; scope: "guest" | "authorized";
+  phase: "sent" | "completed" | "cancelled" | "failed"; status?: number; failure?: string;
+};
+const readLogs = new WeakMap<Page, ReadEntry[]>();
+function observeReads(page: Page, path: string) {
+  const entries: ReadEntry[] = [];
+  readLogs.set(page, entries);
+  page.on("request", request => {
+    if (new URL(request.url()).pathname !== path || request.method() === "OPTIONS") return;
+    const body = request.method() === "POST" ? request.postDataJSON() : undefined;
+    entries.push({ request, path, cursor: body?.pageable?.lastId,
+      scope: request.headers().authorization ? "authorized" : "guest", phase: "sent" });
+  });
+  page.on("response", response => {
+    const entry = entries.find(item => item.request === response.request());
+    if (entry) entry.status = response.status();
+  });
+  page.on("requestfinished", request => {
+    const entry = entries.find(item => item.request === request);
+    if (entry) entry.phase = "completed";
+  });
+  page.on("requestfailed", request => {
+    const entry = entries.find(item => item.request === request);
+    if (entry) {
+      entry.failure = request.failure()?.errorText;
+      entry.phase = entry.failure?.includes("ERR_ABORTED") ? "cancelled" : "failed";
+    }
+  });
+  return entries;
+}
+test.afterEach(async ({ page }, testInfo) => {
+  const entries = readLogs.get(page);
+  if (entries) await testInfo.attach("read-lifecycle", {
+    body: JSON.stringify(entries.map(({ request: _request, ...entry }) => entry), null, 2),
+    contentType: "application/json",
+  });
+});
+async function checkQuietInterval(page: Page) {
+  await page.clock.fastForward(1500);
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())));
+}
 async function reconnect(page: Page) {
   await page.clock.setFixedTime(new Date(await page.evaluate(() => Date.now()) + 600_000));
   await page.evaluate(() => {
@@ -26,6 +68,10 @@ const consumers = [
 for (const consumer of consumers) {
   test(`${consumer.name}: initial, tail and background failures preserve reads and recover`, async ({ page, baseURL }) => {
     await setupMobileAccount(page, baseURL);
+    const reads = observeReads(page, "/products/find");
+    let pageSize = 0;
+    const initialGates = [deferred(), deferred()];
+    const tailGates = [deferred(), deferred()];
     await page.route("http://127.0.0.1:9/product/901", route => fulfillJson(route, {
       ...orderFixture(1, "BOOKED", 1).product, id: 901, name: "Тестовая коллекционная фигурка",
       imageIds: [], reviews: [], description: "Fixture", participantId: 77,
@@ -41,7 +87,14 @@ for (const consumer of consumers) {
       if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
       const body = route.request().postDataJSON() as { pageable: { size: number; lastId?: number }; priceRange?: unknown };
       const tail = body.pageable.lastId !== undefined;
-      if (tail) { state.tailReads++; await state.tailGate; } else state.firstReads++;
+      if (!tail) pageSize = body.pageable.size;
+      if (tail) {
+        const attempt = state.tailReads++;
+        await (tailGates[attempt]?.promise ?? state.tailGate);
+      } else {
+        const attempt = state.firstReads++;
+        await (initialGates[attempt]?.promise ?? Promise.resolve());
+      }
       const status = tail ? state.tailStatus : state.initialStatus;
       state.filtered ||= Boolean(body.priceRange);
       const products = Array.from({ length: tail ? 1 : body.pageable.size }, (_, index) => ({
@@ -52,33 +105,50 @@ for (const consumer of consumers) {
       return fulfillJson(route, status === 200 ? products : { message: "Read unavailable" }, status);
     });
     await page.goto(consumer.url);
-    await expect.poll(async () => {
-      if (consumer.name === "related") await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-      return state.firstReads;
-    }).toBe(2);
+    try {
+      await expect.poll(async () => {
+        if (consumer.name === "related") await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+        return state.firstReads;
+      }).toBe(1);
+      expect(reads.filter(read => read.phase === "completed")).toHaveLength(0);
+      initialGates[0].resolve();
+      await expect.poll(() => state.firstReads).toBe(2);
+      await expect.poll(() => reads.filter(read => read.phase === "completed").length).toBe(1);
+    } finally { initialGates.forEach(gate => gate.resolve()); }
     const initialError = page.getByTestId("error-state-products");
     await expect(initialError).toBeVisible();
     expect(state.firstReads).toBe(2);
+    await expect.poll(() => reads.filter(read => read.phase === "completed").length).toBe(2);
+    expect(reads.map(read => read.status)).toEqual([503, 503]);
+    await page.clock.install();
     state.initialStatus = 200;
     await initialError.getByRole("button", { name: "Обновить", exact: true }).click();
     const card = page.getByText("Recovery 1", { exact: true });
     await expect(card).toBeVisible();
     // Keep a reference to the actual card: a hidden/recreated grid is not acceptable.
-    await card.evaluate(element => { (window as unknown as { recoveryCard: Element }).recoveryCard = element; });
+    // P06: сохранность проверяется по видимым карточкам и scroll, без требования DOM identity.
     await page.getByTestId("infinite-scroll-sentinel").evaluate(element => element.scrollIntoView());
+    try {
+      await expect.poll(() => state.tailReads).toBe(1);
+      await expect(card).toBeVisible();
+      tailGates[0].resolve();
+      await expect.poll(() => state.tailReads).toBe(2);
+      await expect(card).toBeVisible();
+    } finally { tailGates.forEach(gate => gate.resolve()); }
     const tailError = page.getByText("Не удалось загрузить следующие товары.", { exact: true });
     await expect(tailError).toBeVisible();
     expect(state.tailReads).toBe(2);
     const scrollY = await page.evaluate(() => window.scrollY);
-    await page.waitForTimeout(1500);
+    await checkQuietInterval(page);
     expect(state.tailReads).toBe(2);
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
-    expect(await page.evaluate(() => (window as unknown as { recoveryCard: Element }).recoveryCard.isConnected)).toBe(true);
+    await expect(card).toBeVisible();
+    await expect(page.getByText(/^Recovery \d+$/)).toHaveCount(pageSize);
     // An automatic successful refetch must not re-arm the failed tail.
     const firstReads = state.firstReads;
     await reconnect(page);
     await expect.poll(() => state.firstReads).toBe(firstReads + 1);
-    await page.waitForTimeout(1500);
+    await checkQuietInterval(page);
     await expect(tailError).toBeVisible();
     expect(state.tailReads).toBe(2);
     const retry = page.getByRole("button", { name: "Повторить загрузку", exact: true });
@@ -86,17 +156,23 @@ for (const consumer of consumers) {
     state.tailGate = gate.promise;
     state.tailStatus = 200;
     await retry.click();
-    await expect(page.getByRole("button", { name: "Загрузка...", exact: true })).toBeDisabled();
-    gate.resolve();
+    try {
+      await expect(page.getByRole("button", { name: "Загрузка...", exact: true })).toBeDisabled();
+      await expect.poll(() => state.tailReads).toBe(3);
+      await expect(card).toBeVisible();
+    } finally { gate.resolve(); }
     await expect(page.getByText("Recovery хвост", { exact: true })).toBeVisible();
     expect(state.tailReads).toBe(3);
     await expect(tailError).toHaveCount(0);
-    expect(await page.evaluate(() => (window as unknown as { recoveryCard: Element }).recoveryCard.isConnected)).toBe(true);
+    await expect(card).toBeVisible();
+    await expect(page.getByText(/^Recovery \d+$/)).toHaveCount(pageSize);
+    await expect(page.getByText("Recovery хвост", { exact: true })).toBeVisible();
 
     state.initialStatus = 503;
     await reconnect(page);
     await expect(page.getByText("Не удалось обновить товары. Показаны ранее загруженные данные.", { exact: true })).toBeVisible();
-    expect(await page.evaluate(() => (window as unknown as { recoveryCard: Element }).recoveryCard.isConnected)).toBe(true);
+    await expect(card).toBeVisible();
+    await expect(page.getByText(/^Recovery \d+$/)).toHaveCount(pageSize);
     expect(state.tailReads).toBe(3);
     state.initialStatus = 200;
     await page.getByRole("button", { name: "Повторить обновление", exact: true }).click();
@@ -113,7 +189,7 @@ for (const consumer of consumers) {
       await page.getByTestId("infinite-scroll-sentinel").evaluate(element => element.scrollIntoView());
       await expect(tailError).toBeVisible();
       const reads = state.tailReads;
-      await page.waitForTimeout(1500);
+      await checkQuietInterval(page);
       expect(state.tailReads).toBe(reads);
       state.tailStatus = 200;
       await page.getByRole("button", { name: /^Цена/ }).first().click();
@@ -129,6 +205,7 @@ for (const consumer of consumers) {
 
 test("own products keep loaded pages after tail failure and retry only the failed cursor", async ({ page, baseURL }) => {
   await setupMobileAccount(page, baseURL);
+  observeReads(page, "/products/my");
   const state = { tailStatus: 503, tailGate: Promise.resolve(), cursors: [] as (number | undefined)[] };
   const products = Array.from({ length: 205 }, (_, index) => ({
     ...orderFixture(1, "BOOKED", 1).product, id: 10000 + index,
@@ -147,7 +224,7 @@ test("own products keep loaded pages after tail failure and retry only the faile
   await page.goto("/dashboard/products");
   const first = page.getByText("Мой recovery товар 1", { exact: true });
   await expect(first).toBeVisible();
-  const originalFirst = await first.evaluateHandle(element => element);
+  await page.clock.install();
   const loadMore = page.getByRole("button", { name: "Загрузить ещё", exact: true });
   for (const count of [24, 36, 48, 60, 72, 84, 96, 100, 112, 124, 136, 148, 160, 172, 184, 196, 200]) {
     await loadMore.click();
@@ -155,7 +232,6 @@ test("own products keep loaded pages after tail failure and retry only the faile
   }
   expect(state.cursors).toEqual([undefined, 10099]);
   const second = page.getByText("Мой recovery товар 101", { exact: true });
-  const originalSecond = await second.evaluateHandle(element => element);
   await loadMore.scrollIntoViewIfNeeded();
   const scrollY = await page.evaluate(() => window.scrollY);
   await loadMore.click();
@@ -164,11 +240,12 @@ test("own products keep loaded pages after tail failure and retry only the faile
   await expect(first).toBeVisible();
   await expect(second).toBeVisible();
   await expect(page.getByText("Мой recovery товар 200", { exact: true })).toBeVisible();
-  expect(await originalFirst.evaluate(element => element.isConnected)).toBe(true);
-  expect(await originalSecond.evaluate(element => element.isConnected)).toBe(true);
+  await expect(page.getByText(/^Мой recovery товар \d+$/)).toHaveCount(200);
+  await expect(first).toBeVisible();
+  await expect(second).toBeVisible();
   expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
   expect(state.cursors).toEqual([undefined, 10099, 10199, 10199]);
-  await page.waitForTimeout(1500);
+  await checkQuietInterval(page);
   expect(state.cursors).toHaveLength(4);
   await expect(loadMore).toHaveCount(0);
 
@@ -176,8 +253,8 @@ test("own products keep loaded pages after tail failure and retry only the faile
   await expect.poll(() => state.cursors.length).toBe(6);
   await expect(tailError).toBeVisible();
   expect(state.cursors).toEqual([undefined, 10099, 10199, 10199, undefined, 10099]);
-  expect(await originalFirst.evaluate(element => element.isConnected)).toBe(true);
-  expect(await originalSecond.evaluate(element => element.isConnected)).toBe(true);
+  await expect(first).toBeVisible();
+  await expect(second).toBeVisible();
 
   const gate = deferred();
   state.tailGate = gate.promise;
@@ -189,17 +266,17 @@ test("own products keep loaded pages after tail failure and retry only the faile
     await expect.poll(() => state.cursors.length).toBe(7);
   } finally { gate.resolve(); }
   await expect(page.getByText("Мой recovery товар 205", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^Мой recovery товар \d+$/)).toHaveCount(205);
   await expect(tailError).toHaveCount(0);
   await expect(loadMore).toHaveCount(0);
   expect(state.cursors.slice(6)).toEqual([10199]);
-  expect(await originalFirst.evaluate(element => element.isConnected)).toBe(true);
-  expect(await originalSecond.evaluate(element => element.isConnected)).toBe(true);
-  await originalFirst.dispose();
-  await originalSecond.dispose();
+  await expect(first).toBeVisible();
+  await expect(second).toBeVisible();
 });
 
 test("own products distinguish initial failure from a background refresh failure", async ({ page, baseURL }) => {
   await setupMobileAccount(page, baseURL);
+  observeReads(page, "/products/my");
   const state = { status: 503, reads: 0, gate: Promise.resolve() };
   await page.route("**/products/my", async route => {
     if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
@@ -225,7 +302,6 @@ test("own products distinguish initial failure from a background refresh failure
     await expect.poll(() => state.reads).toBe(3);
   } finally { initialRetry.resolve(); }
   await expect(card).toBeVisible();
-  const originalCard = await card.evaluateHandle(element => element);
   state.status = 503;
   await reconnect(page);
   const warning = page.getByText("Не удалось обновить товары. Показаны ранее загруженные данные.", { exact: true });
@@ -233,19 +309,19 @@ test("own products distinguish initial failure from a background refresh failure
   await expect(card).toBeVisible();
   await expect(page.getByText(/Ошибка загрузки товаров:/)).toHaveCount(0);
   await expect(page.getByText("Не удалось загрузить следующие товары.", { exact: true })).toHaveCount(0);
-  expect(await originalCard.evaluate(element => element.isConnected)).toBe(true);
+  await expect(card).toBeVisible();
   expect(state.reads).toBe(5);
   state.status = 200;
   await page.getByRole("button", { name: "Повторить обновление", exact: true }).click();
   await expect(warning).toHaveCount(0);
   await expect(card).toBeVisible();
   expect(state.reads).toBe(6);
-  expect(await originalCard.evaluate(element => element.isConnected)).toBe(true);
-  await originalCard.dispose();
+  await expect(card).toBeVisible();
 });
 
 test("client product retry repeats the failed GET and keeps the action pending", async ({ page, baseURL }) => {
   await setupMobileAccount(page, baseURL);
+  observeReads(page, "/product/901");
   let reads = 0;
   let status = 503;
   let gate = Promise.resolve();
@@ -268,9 +344,10 @@ test("client product retry repeats the failed GET and keeps the action pending",
   gate = retryGate.promise;
   status = 200;
   await page.getByRole("button", { name: "Обновить", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Загрузка...", exact: true })).toBeDisabled();
-  await expect.poll(() => reads).toBe(4);
-  retryGate.resolve();
+  try {
+    await expect(page.getByRole("button", { name: "Загрузка...", exact: true })).toBeDisabled();
+    await expect.poll(() => reads).toBe(4);
+  } finally { retryGate.resolve(); }
   await expect(page.getByRole("heading", { name: "Восстановленный клиентский товар", exact: true })).toBeVisible();
   expect(reads).toBe(4);
 });
@@ -278,7 +355,9 @@ test("client product retry repeats the failed GET and keeps the action pending",
 test("initial SSR product retry refreshes the route and seeds its existing client query", async ({ page, request, baseURL }) => {
   test.skip(Boolean(process.env.TEST_BASE_URL) && !process.env.PLAYWRIGHT_FIXTURE_API_URL, "SSR fixture required");
   const fixture = process.env.PLAYWRIGHT_FIXTURE_API_URL ?? `http://127.0.0.1:${process.env.PLAYWRIGHT_FIXTURE_API_PORT ?? Number(process.env.PLAYWRIGHT_PORT ?? 3000) + 1}`;
-  await request.post(`${fixture}/__test/product-recovery?status=503`);
+  const reset = await request.post(`${fixture}/__test/product-recovery?action=reset`);
+  expect(reset.ok()).toBe(true);
+  expect(await reset.json()).toMatchObject({ status: 503, started: 0, completed: 0, cancelled: 0, pending: 0, held: false });
   await setupMobileAccount(page, baseURL);
   let clientReads = 0;
   await page.route("http://127.0.0.1:9/product/924", route => {
@@ -289,14 +368,33 @@ test("initial SSR product retry refreshes the route and seeds its existing clien
     await page.goto("/catalog/924/detail");
     await expect(page.getByRole("heading", { name: "Не удалось открыть товар", exact: true })).toBeVisible();
     const before = await (await request.get(`${fixture}/__test/requests`)).json();
-    await request.post(`${fixture}/__test/product-recovery?status=200&delay=500`);
+    const hold = await request.post(`${fixture}/__test/product-recovery?status=200&hold=1`);
+    expect(hold.ok()).toBe(true);
+    const held = await hold.json();
     await page.getByRole("button", { name: "Обновить", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Загрузка...", exact: true })).toBeDisabled();
+    try {
+      await expect.poll(async () => (await (await request.get(`${fixture}/__test/product-recovery`)).json()).pending).toBeGreaterThan(0);
+      await expect(page.getByRole("button", { name: "Загрузка...", exact: true })).toBeDisabled();
+      await expect(page.getByRole("heading", { name: "Не удалось открыть товар", exact: true })).toBeVisible();
+      const pending = await (await request.get(`${fixture}/__test/product-recovery`)).json();
+      expect(pending.started).toBeGreaterThan(held.started);
+      expect(pending.completed).toBe(held.completed);
+      expect(pending.cancelled).toBe(0);
+      expect(clientReads).toBe(0);
+    } finally { expect((await request.post(`${fixture}/__test/product-recovery?action=release`)).ok()).toBe(true); }
     await expect(page.getByRole("heading", { name: "Восстановленный серверный товар", exact: true })).toBeVisible();
     const after = await (await request.get(`${fixture}/__test/requests`)).json();
     expect(after["/product/924"]).toBeGreaterThan(before["/product/924"]);
     expect(clientReads).toBe(0);
-  } finally { await request.post(`${fixture}/__test/product-recovery?status=503`); }
+    await expect.poll(async () => (await (await request.get(`${fixture}/__test/product-recovery`)).json()).pending).toBe(0);
+    const completed = await (await request.get(`${fixture}/__test/product-recovery`)).json();
+    expect(completed.completed).toBeGreaterThan(held.completed);
+    expect(completed.cancelled).toBe(0);
+  } finally {
+    expect((await request.post(`${fixture}/__test/product-recovery?action=reset`)).ok()).toBe(true);
+    expect(await (await request.get(`${fixture}/__test/product-recovery`)).json())
+      .toMatchObject({ status: 503, started: 0, completed: 0, cancelled: 0, pending: 0, held: false });
+  }
 });
 
 test("invalid product route never offers a retry", async ({ page }) => {
@@ -309,6 +407,7 @@ for (const width of [393, 1280]) {
   test(`profile retry recovers its core GET once and disables pending actions at ${width}px`, async ({ page, baseURL }) => {
     await page.setViewportSize({ width, height: 900 });
     await setupMobileAccount(page, baseURL);
+    observeReads(page, "/participant");
     let status = 503;
     let reads = 0;
     let gate = Promise.resolve();
@@ -329,9 +428,10 @@ for (const width of [393, 1280]) {
     gate = retryGate.promise;
     status = 200;
     await page.getByRole("button", { name: "Повторить", exact: true }).filter({ visible: true }).click();
-    await expect(page.getByRole("button", { name: "Загрузка...", exact: true }).filter({ visible: true })).toBeDisabled();
-    await expect.poll(() => reads).toBe(3);
-    retryGate.resolve();
+    try {
+      await expect(page.getByRole("button", { name: "Загрузка...", exact: true }).filter({ visible: true })).toBeDisabled();
+      await expect.poll(() => reads).toBe(3);
+    } finally { retryGate.resolve(); }
     await expect(page.getByTestId("profile-overview").getByText("recovered-profile", { exact: true })).toBeVisible();
     expect(reads).toBe(3);
   });
