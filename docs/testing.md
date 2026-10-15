@@ -57,11 +57,21 @@ logout и ошибку проверки доступа ADMIN во время GET
 проверка не позволяет подменить неожиданно перечитанный статус локальным.
 Возвращённый mock-статус не является приёмкой реального ADMIN CANCEL.
 
+`admin-cancel-recovery.spec.ts` воспроизводит потерю ответа + GET BOOKED и
+незавершённый POST с последующим ADMIN → USER → ADMIN и повторным открытием
+заказа. Проверяются отсутствие второго POST, сохранение комментария и recovery,
+поздний успех/ошибка, восстановление при USER, подтверждённый отказ и другой заказ.
+`admin-cancel-recovery-model.spec.ts` вызывает реальный hook через QueryClient:
+USER не отправляет даже программный вызов, общий busy/accepted/unknown сохраняется,
+ключи изолированы по аккаунту/agentId/orderId, поздний ответ старого scope не
+восстанавливает удалённое состояние. Namespace adminOrderCancel входит также
+в logout/expiry/switch/refresh проверки `private-data-model.spec.ts`.
+
 ```bash
 npm run lint
 npm run typecheck
 npm run architecture:check
-npx playwright test open-forms order-cancel order-details order-dialog-lifecycle-model order-payment-model backend-integration-contract-model admin-extended admin.spec --project=chromium
+npx playwright test open-forms order-cancel order-details order-dialog-lifecycle-model order-payment-model backend-integration-contract-model admin-cancel-recovery admin-extended admin.spec private-data-model --project=chromium
 npx playwright test orders.mobile --project=mobile-chromium
 ```
 
@@ -70,6 +80,9 @@ npx playwright test orders.mobile --project=mobile-chromium
 При завершении B4 15.10.2026 дополнительно выполнены production build и HTTP smoke:
 на свежем standalone runtime прошли 132 целевых/регрессионных теста Chromium,
 6 мобильных и 15 HTTP smoke. Lint, typecheck и architecture:check пройдены.
+После нового P2 административного CANCEL на свежей standalone-сборке прошли
+142 целевых/регрессионных теста Chromium (включая 6 новых браузерных и 4 model),
+6 мобильных и 15 HTTP smoke; lint, typecheck, architecture:check и build успешны.
 Независимый повторный VP и приёмка реальных серверных переходов не подменяются этими результатами.
 
 ## Backend integration: этап 3

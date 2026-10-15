@@ -1,15 +1,14 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField } from "@mui/material";
 import { adminOrderApi, getAdminOrderActionFlags, type AdminOrderAction, type AdminOrderDto } from "@/entities/order";
 import { adminAccountsApi } from "@/entities/account";
-import type { UserProfileModel } from "@/entities/user";
 import { ApiError } from "@/shared/lib/errorHandler";
 import { RequestFeedback } from "@/shared/ui/request-feedback";
 import { useUnsavedChanges } from "@/shared/lib";
-import { usePrivateScope } from "@/shared/lib/query";
+import { useAdminCancelAction } from "../model/useAdminCancelAction";
 
 const labels: Record<AdminOrderAction, string> = { CONFIRM: "Подтвердить заказ", CONFIRM_PREPAYMENT: "Подтвердить предоплату", SHIP: "Отправить", CANCEL: "Отменить заказ" };
 const validUrl = (value: string) => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } };
@@ -17,24 +16,36 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
   order: AdminOrderDto; session: number | null; changed: () => Promise<void>; lockPanel: (locked: boolean) => void;
 }) {
   const flags = getAdminOrderActionFlags(order.actualStatus);
-  const scope = usePrivateScope();
-  const queryClient = useQueryClient();
-  const currentOrder = useRef(order);
-  currentOrder.current = order;
-  const mounted = useRef(true);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const cancel = useAdminCancelAction({ order, session, changed });
   const [action, setAction] = useState<AdminOrderAction | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [unknown, setUnknown] = useState(false);
-  const [accepted, setAccepted] = useState(false);
-  const [reconciled, setReconciled] = useState(false);
-  const [error, setError] = useState<unknown>();
+  const [otherBusy, setBusy] = useState(false);
+  const [otherUnknown, setUnknown] = useState(false);
+  const [otherAccepted, setAccepted] = useState(false);
+  const [otherReconciled, setReconciled] = useState(false);
+  const [otherError, setError] = useState<unknown>();
+  const busy = otherBusy || cancel.busy;
+  const unknown = otherUnknown || cancel.unknown;
+  const accepted = otherAccepted || cancel.accepted;
+  const reconciled = otherReconciled || cancel.reconciled;
+  const error = action === "CANCEL" ? cancel.error : otherError;
   const lock = useRef(false);
   const form = useForm<{ comment: string; deliveryUrl: string }>({ defaultValues: { comment: "", deliveryUrl: "" } });
+  const formOrder = useRef({ session, agentId: order.sellerId, orderId: order.orderId });
+  useEffect(() => {
+    const previous = formOrder.current;
+    formOrder.current = { session, agentId: order.sellerId, orderId: order.orderId };
+    if (action === "CANCEL" && (previous.session !== session || previous.agentId !== order.sellerId || previous.orderId !== order.orderId)) {
+      setAction(null); form.reset();
+    }
+  }, [action, session, order.sellerId, order.orderId, form]);
   const accounts = useQuery({ queryKey: ["admin", session, "agent", order.sellerId, "accounts"], queryFn: ({ signal }) => adminAccountsApi.list(order.sellerId, signal), enabled: action === "CONFIRM", retry: false });
   useUnsavedChanges(form.formState.isDirty || busy || unknown);
   useEffect(() => { lockPanel(busy || unknown || form.formState.isDirty); return () => lockPanel(false); }, [busy, unknown, form.formState.isDirty, lockPanel]);
   async function checkResult() {
+    if (action === "CANCEL" || cancel.unknown || cancel.accepted) {
+      if (await cancel.checkResult()) { form.reset(); setAction(null); }
+      return;
+    }
     if (lock.current) return;
     lock.current = true; setBusy(true); setError(undefined);
     try {
@@ -48,6 +59,10 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
     finally { lock.current = false; setBusy(false); }
   }
   async function submit(input: { comment: string; deliveryUrl: string }) {
+    if (action === "CANCEL") {
+      if (!lock.current && !otherBusy && !otherUnknown && !otherAccepted && await cancel.submit(input.comment)) { form.reset(); setAction(null); }
+      return;
+    }
     if (!action || lock.current || unknown || accepted) return;
     const currentFlags = getAdminOrderActionFlags(order.actualStatus);
     const allowed = { CONFIRM: currentFlags.canConfirmOrder, CONFIRM_PREPAYMENT: currentFlags.canConfirmPreOrder, SHIP: currentFlags.canShipOrder, CANCEL: currentFlags.canCancel };
@@ -55,30 +70,13 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
     lock.current = true; setBusy(true); setError(undefined);
     let needsCheck = false;
     let written = false;
-    let attempted = false;
     try {
-      if (action === "CANCEL") {
-        if (!scope.isCurrent()) return;
-        const current = await adminOrderApi.find(order.sellerId, order.orderId, scope.signal);
-        if (!mounted.current || !scope.isCurrent() || currentOrder.current.orderId !== order.orderId || currentOrder.current.sellerId !== order.sellerId) return;
-        const access = queryClient.getQueryState<UserProfileModel>(["admin", session, "access"]);
-        if (access?.status !== "success" || access.data?.role !== "ADMIN") {
-          setError(new Error("Доступ администратора не подтверждён. Повторите проверку доступа."));
-          return;
-        }
-        if (!current || current.sellerId !== order.sellerId || !getAdminOrderActionFlags(current.actualStatus).canCancel || !getAdminOrderActionFlags(currentOrder.current.actualStatus).canCancel) {
-          setError(new Error("Статус или владелец заказа изменился. Отмена недоступна; обновите список."));
-          return;
-        }
-      }
-      attempted = true;
       await adminOrderApi.act(order.sellerId, order.orderId, action, { comment: input.comment || undefined, deliveryUrl: action === "SHIP" ? input.deliveryUrl.trim() : undefined });
       written = true;
       setAccepted(true); form.reset();
       await changed(); setAction(null);
     } catch (cause) {
       setError(cause);
-      if (action === "CANCEL" && !attempted) return;
       if (!written && cause instanceof ApiError && (!cause.statusCode || cause.code === "TIMEOUT" || cause.code === "NETWORK_ERROR" || cause.statusCode === 408)) { setUnknown(true); needsCheck = true; }
       else if (!written) { try { await changed(); } catch { /* Ошибка чтения отображается родительским списком; введённые данные сохраняются. */ } }
     } finally { lock.current = false; setBusy(false); if (needsCheck) void checkResult(); }
@@ -90,14 +88,16 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
   if (flags.canCancel) actions.push("CANCEL");
   const close = () => { if (!busy && !unknown && (!form.formState.isDirty || window.confirm("Отменить введённый комментарий?"))) { setAction(null); form.reset(); } };
   return <Stack spacing={1}>
-    {accepted && <Alert severity="success">{reconciled ? "Статус заказа перечитан; повтор действия не отправлялся" : "Действие принято сервером"}</Alert>}
-    <Stack direction="row" flexWrap="wrap" gap={1}>{actions.map((item) => <Button key={item} color={item === "CANCEL" ? "error" : "primary"} variant={item === "CANCEL" ? "outlined" : "contained"} disabled={busy || unknown || accepted}
-      onClick={() => { setAction(item); setError(undefined); }}>{labels[item]}</Button>)}</Stack>
+    {accepted && <Alert severity="success" action={cancel.accepted && action !== "CANCEL" && <Button disabled={busy} onClick={() => void checkResult()}>Обновить список</Button>}>{reconciled ? "Статус заказа перечитан; повтор действия не отправлялся" : "Действие принято сервером"}</Alert>}
+    {cancel.busy && action !== "CANCEL" && <Alert severity="info">Отмена заказа выполняется. Повторная отправка заблокирована.</Alert>}
+    {cancel.unknown && action !== "CANCEL" && <Alert severity="warning" action={<Button disabled={busy} onClick={() => void checkResult()}>Проверить результат</Button>}>{cancel.recoveryMessage || "Ответ не получен. Операция могла выполниться."}</Alert>}
+    <Stack direction="row" flexWrap="wrap" gap={1}>{actions.map((item) => <Button key={item} color={item === "CANCEL" ? "error" : "primary"} variant={item === "CANCEL" ? "outlined" : "contained"} disabled={busy || otherUnknown || accepted || (cancel.unknown && item !== "CANCEL")}
+      onClick={() => { if (item === "CANCEL") form.reset({ comment: cancel.comment, deliveryUrl: "" }); setAction(item); setError(undefined); }}>{labels[item]}</Button>)}</Stack>
     <Dialog open={!!action} onClose={close} fullWidth maxWidth="sm"><DialogTitle>{action && labels[action]}</DialogTitle>
       <form onSubmit={form.handleSubmit(submit)}><DialogContent><Stack spacing={2}>
         <RequestFeedback error={error} />
         {accepted && <Alert severity="success" action={<Button onClick={() => void changed().then(() => setAction(null)).catch(setError)}>Обновить список</Button>}>Действие выполнено. Повторная отправка не требуется.</Alert>}
-        {unknown && <Alert severity="warning" action={<Button disabled={busy} onClick={() => void checkResult()}>Проверить результат</Button>}>Ответ не получен. Операция могла выполниться.</Alert>}
+        {unknown && <Alert severity="warning" action={<Button disabled={busy} onClick={() => void checkResult()}>Проверить результат</Button>}>Ответ не получен. Операция могла выполниться.{action === "CANCEL" && cancel.recoveryMessage && <div>{cancel.recoveryMessage}</div>}</Alert>}
         {action === "CONFIRM" && <>
           <RequestFeedback pending={accounts.isPending} error={accounts.error} retry={() => void accounts.refetch()} />
           {accounts.data?.length === 0 && <Alert severity="warning">У бота нет реквизитов. <Button href={`/admin/agents/${order.sellerId}?tab=settings`}>Заполнить реквизиты</Button></Alert>}
