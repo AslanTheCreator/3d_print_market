@@ -1,14 +1,16 @@
 # Контракты обращений и розыгрышей: этапы 1–3
 
-Источники: [backend-требования](./backend-plan/plan_2_formatted.md) и
-`GET http://localhost:8081/v3/api-docs`, прочитанный 14.10.2026
+Источники: [backend-требования](./backend-plan/plan_2_formatted.md), окончательные
+[ответы backend B1–B4/N1–N2](./backend-plan/FRONTEND_BACKEND_ANSWERS.md)
+для master на 15.10.2026 и `GET http://localhost:8081/v3/api-docs`, прочитанный 15.10.2026
 (`info.title=Your API`, `info.version=1.0`). Проверена схема, без изменяющих
 запросов и без проверки серверных переходов или полномочий.
 
 Этап 1 добавляет модели и минимальную поддержку новых enum в существующем UI.
 Этап 2 подключает пользовательский POST /order/{orderId}/CANCELLED и разделяет
-пользовательскую и временную административную политику отмены. Контракт этих
-двух endpoints повторно проверен по OpenAPI 14.10.2026; матрицы ADMIN в нём нет.
+пользовательскую и административную политику отмены. B4 подтверждает для ADMIN
+только BOOKED → CANCELLED; отдельный endpoint сохранён. OpenAPI подтверждает
+его параметры, бизнес-матрица взята из окончательного ответа backend.
 API обращений, их формы, новые маршруты и розыгрыши пока не подключены.
 Этап 3 подключает защищённое чтение изображений заказа и ORDER-upload с entityId,
 исключает DELETE ORDER и отделяет локальный выбор чека от отправки.
@@ -33,11 +35,17 @@ OpenAPI не уточняет nullable, и эта терпимость не ут
 | Схема | Поля и wire-типы (все optional) |
 |---|---|
 | `OrderCase` | `id`, `version`, `orderId`, `openedBy`, `resolvedBy`: integer int64; `kind`: string; `state`: `OPEN / RESOLVED`; `openingComment`, `telegramUrl`, `resolutionComment`: string; `previousOrderStatus`: OrderStatus; `outcome`: `BUYER / SELLER / CANCELLED / REJECTED / LEGACY`; `createdAt`, `resolvedAt`: date-time |
-| `OrderCaseDetail` | `orderCase`: OrderCase; `orderStatus`: OrderStatus; `buyerId`, `sellerId`, `productId`, `paymentProofImageId`: integer int64; `count`: integer int32; `totalPrice`, `prepaymentAmount`: number float; `orderImages`, `caseImages`: integer int64[] |
+| `OrderCaseDetail` | `orderCase`: OrderCase; `orderStatus`: OrderStatus; `buyerId`, `sellerId`, `productId`, `paymentProofImageId`: integer int64; `count`: integer int32; `totalPrice`, `prepaymentAmount`: number float; `currency`: Currency; `orderImages`, `caseImages`: integer int64[] |
 | `OrderCaseSummary` | `caseId`, `orderId`, `openedBy`: integer int64; `kind`: string; `state`: `OPEN / RESOLVED`; `openingComment`: string; `createdAt`: date-time; `orderStatus`: OrderStatus |
 
-В деталях нет валюты, логинов участников и признака назначения каждого файла.
+В актуальной схеме `currency` — enum `USD/EUR/GBP/JPY/CNY/RUB/CREATE`;
+по N2 это валюта товара на момент заказа (`productCurrency`), а не текущего товара.
+Логинов участников и признака назначения каждого файла в деталях нет.
 `paymentProofImageId`, `orderImages` и `caseImages` сохраняются раздельно.
+В `FindOrderResponse` добавлено `paymentProofImageId`: integer int64, с описанием
+null до заявления оплаты; поле есть в списках обеих пользовательских ролей и ADMIN.
+В текущем frontend DTO эти два новых поля ещё не подключены: обновление относится
+к чтению обращений на этапе 4. Признака OPEN в списке нет, нужен `/cases`.
 
 | Запрос | Подтверждённая структура |
 |---|---|
@@ -81,7 +89,8 @@ string. `giveawayEnabled` не выводится из `status`.
 
 `AdminGiveawayProductRequest` — отдельный структурный вариант последней схемы
 с `availability=GIVEAWAY`. Остальные поля optional согласно OpenAPI: это не
-утверждение о минимальном валидном запросе (B3). Он пока не подключён к записи.
+утверждение о минимальном валидном запросе; правила B3 ниже подтверждены отдельно.
+Он пока не подключён к записи.
 `ProductCreateModel` и `EditableAvailability` допускают только
 `PURCHASABLE | PREORDER`; runtime seller mapper отклоняет также `GIVEAWAY`.
 Действующий `AdminProductInput` и mapper по-прежнему формируют EXTERNAL_PRODUCT;
@@ -107,7 +116,7 @@ wire-моделях розыгрыша; общий `Currency` и вариант�
   из DISPUTED. Старое пользовательское завершение спора в текущем src отсутствует.
 - Одновременно одно открытое обращение; обязательный содержательный комментарий.
   Спор требует заявленной оплаты и подтверждения; payment appeal доступен
-  только покупателю отменённого заказа. Точная матрица первого обращения — B1/B2.
+  только покупателю отменённого заказа. Подтверждённая матрица B1/B2 приведена ниже.
   Доказательства сначала загружаются через `POST /images?tag=ORDER&entityId={orderId}`;
   полученные ID передаются как imageIds. После создания или решения перечитываются
   заказ и обращения.
@@ -127,7 +136,7 @@ wire-моделях розыгрыша; общий `Currency` и вариант�
   тексты и Telegram URL проверяются в последующих этапах. Включённые периоды
   не пересекаются; повторное включение требует будущего endAt.
 
-## Контракт images, повторная сверка 14.10.2026
+## Контракт images, повторная сверка 15.10.2026
 
 OpenAPI подтверждает `GET /images` с required query `ids`: integer int64[];
 Authorization помечен optional для общего endpoint. Для ORDER обязательную
@@ -141,12 +150,99 @@ frontend API требует orderId. DELETE-схема всё ещё переч�
 и отклоняет попытку до запроса. Успешных изменяющих запросов на реальный backend
 при этой сверке не выполнялось.
 
-## Неподтверждённые данные
+## Окончательные ответы B1–B4 и N1–N2 (15.10.2026)
 
-B1–B4 остаются открытыми: матрица открытия обращений, подтверждение оплаты до
-первого обращения, минимальный товарный payload GIVEAWAY и административная
-матрица CANCEL. OpenAPI их не уточняет. Для ADMIN сохранена только прежняя
-frontend-политика, явно отмеченная как временная до B4; окончательная матрица
-и её acceptance пока не подтверждены.
-Контракт ошибок новых операций (N1) и валюта деталей обращения (N2) отсутствуют.
-Эти вопросы не блокируют типовую основу этапа 1.
+Все шесть вопросов документально закрыты указанным выше ответом backend.
+Это снимает контрактные блокировки; функции этапов 4–11 пока не реализованы.
+
+### B1/B2: обращения и подтверждение оплаты
+
+Участник может создавать обращения только по своему заказу; одновременно не более
+одного OPEN. Непустой comment обязателен. Дополнительно действуют условия:
+
+| Действие | Роль и условия | Результат |
+|---|---|---|
+| CANCELLATION_REQUEST | Покупатель/продавец; AWAITING_PREPAYMENT без paymentProofImageId, либо AWAITING_PAYMENT без paymentProofImageId и prepaymentAmount null/0 | OPEN, статус заказа сохраняется; imageIds не принимает |
+| DISPUTE | Покупатель/продавец; AWAITING_PREPAYMENT_APPROVAL, AWAITING_PAYMENT, ASSEMBLING или ON_THE_WAY и paymentProofImageId != null | OPEN, заказ DISPUTED; imageIds optional |
+| PAYMENT_APPEAL | Только покупатель; CANCELLED, нет OPEN, ранее не было PAYMENT_APPEAL даже в RESOLVED | OPEN, заказ DISPUTED; imageIds optional |
+
+`paymentProofImageId=null` означает отсутствие зарегистрированного чека в самом
+заказе, но не отсутствие оплаты или доказательств в caseImages после appeal.
+В AWAITING_PAYMENT ID может относиться к предоплате и не доказывает полную оплату.
+Отсутствующее поле старого ответа не равно null. `images` не заменяет этот ID;
+пустой `/cases` не мешает проверить наличие чека по FindOrderResponse.
+После действий перечитываются заказ и `/cases`; одно actualStatus не выявляет OPEN.
+
+### B3: создание GIVEAWAY (требования этапа 10)
+
+ADMIN создаёт через POST /products с availability=GIVEAWAY и вложенным giveaway;
+продавцу приходит 403 ACCESS_DENIED. Продавецкие реквизиты/соцсеть не требуются.
+
+| Поля | Подтверждённое правило |
+|---|---|
+| price, currency | Можно опустить: сервер установит 0 и RUB |
+| count | Можно опустить; сохраняется null. Переданные 0/отрицательное отклоняются до обнуления |
+| prepaymentAmount | Не передавать; сохраняется null, переданное значение проходит общую проверку |
+| categoryIds, imageIds, externalUrl | Связи optional, допустимы пустые массивы; externalUrl не требуется |
+| name, description | Хранение допускает null; заполнить для видимой карточки |
+| giveaway.enabled | При создании default true; при true endAt должен быть в будущем |
+| telegramUrl | Обязательная HTTPS-ссылка на точный t.me/telegram.me с непустым путём |
+| startAt, endAt | Обязательные ISO 8601 с timezone; startAt < endAt |
+| winnersCount, rules, homeText | Положительное целое число; обязательные непустые тексты |
+
+Периоды включённых розыгрышей не пересекаются; отключение скрывает выдачу,
+но не отменяет проверку корректности настроек. Плановый статус AWAITING_GIVEAWAY,
+начавшийся ACTIVE. Минимальный пример — в исходном ответе B3.
+
+### B4: ADMIN CANCEL (подтверждённый контракт)
+
+POST /admin/actions/agents/{agentId}/orders/{orderId}/CANCEL?comment=...
+доступен только ADMIN для заказа указанного бота и только BOOKED → CANCELLED.
+Сервер проверяет принадлежность боту и пишет административную историю.
+Покупатель заказа бота сохраняет пользовательский POST /order/{orderId}/CANCELLED
+из BOOKED; бот не управляет заказом через этот пользовательский endpoint.
+CONFIRM, CONFIRM_PREPAYMENT и SHIP сохраняют прежние отдельные правила.
+Окончательная frontend-политика и контрольное чтение перед ADMIN CANCEL подключаются
+отдельным изменением этапа 2; до него действующая ADMIN-политика остаётся временной.
+
+### N1: ошибки новых операций (требования последующих этапов)
+
+Формат ApiErrorResponse: `{ code, message, status, timestamp, details }`.
+Классификация по code, message — текст пользователю; HTTP сам по себе недостаточен.
+Актуальная OpenAPI также содержит descriptions 400/409 для создания обращений,
+resolve и GIVEAWAY_WINDOW_OVERLAP для создания/настроек розыгрыша. Enum поля code
+и полный перечень ошибок каждого endpoint в ней не заданы; Telegram описывает
+только успешный ответ. Ниже используются окончательные ответы N1 целиком.
+
+| HTTP | code | Ситуация |
+|---|---|---|
+| 409 | ORDER_CASE_ALREADY_OPEN | Уже есть OPEN; перечитать заказ и /cases |
+| 409 | PAYMENT_APPEAL_ALREADY_EXISTS | Ранее был PAYMENT_APPEAL, в том числе завершённый |
+| 409 | ORDER_CASE_ALREADY_RESOLVED | Повторное/конкурентное решение или Telegram-ссылка завершённого обращения |
+| 400 | ORDER_CASE_INVALID_TRANSITION | Недопустимый статус/наличие чека/состояние, возможен конфликт версии |
+| 400 | ORDER_CASE_INVALID_OUTCOME | Недопустимый исход для вида/previousOrderStatus; LEGACY запрещён |
+| 400 | GIVEAWAY_WINDOW_OVERLAP | Пересечение включённых периодов; подсветить даты |
+| 400 | BAD_REQUEST / INVALID_REQUEST | Пустой comment — BAD_REQUEST; часть общей валидации — INVALID_REQUEST |
+
+Допустимые исходы решения сохраняются из бизнес-правил выше. N2 закрыт полем
+currency в OrderCaseDetail; его отсутствие в старом ответе не разрешает угадывать валюту.
+
+## Сверка используемого backend
+
+15.10.2026 после запуска пользователем проверен работающий
+`3d_print_market-backend-1`, образ `ready555/model_store:v1.36`, digest
+`sha256:d2864829404d893ecd623e539c0b789abf93e688cf767772e780fa4c6a31b3bb`.
+OpenAPI доступен, info.version=1.0 — версия схемы API, а не Docker-тег.
+FindOrderResponse.paymentProofImageId и OrderCaseDetail.currency присутствуют.
+Параметры ADMIN action, пользовательских обращений и giveaway соответствуют
+документу. В JAR того же образа дополнительно проверены вызов closureOrder
+из ADMIN CANCEL и ограничение BOOKED с результатом CANCELLED. Расхождения
+образа с этими уточнениями не обнаружены; связь образа с конкретным Git SHA master
+не опубликована в metadata, вся бизнес-логика реальными запросами не проверялась.
+
+OpenAPI по-прежнему не задаёт бизнес-матрицы B1/B3/B4 и полный required/nullable;
+описания кодов N1 частичны. У ряда новых POST/PUT указаны только 400/409 без
+успешной схемы. Сохраняются широкие enum LEGACY в resolve, ORDER в DELETE images
+и optional Authorization общего GET images; ограничения берутся из документов.
+Техническое CREATE и назначение used отдельно не разъяснены. Реальных изменяющих
+запросов к backend при сверке не выполнялось.
