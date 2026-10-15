@@ -274,11 +274,10 @@ export const getSellerOrderActionFlags = (status: OrderStatus) => {
   };
 };
 
-// Временная frontend-политика до B4: сохраняет прежнюю ADMIN-доступность.
-// Это не подтверждённая серверная матрица; новый CANCELLED в неё не включён.
+// B4: административный CANCEL разрешён только для BOOKED -> CANCELLED.
 export const getAdminOrderActionFlags = (status: OrderStatus) => ({
   canConfirmOrder: status === "BOOKED",
   canConfirmPreOrder: status === "AWAITING_PREPAYMENT_APPROVAL",
   canShipOrder: status === "ASSEMBLING",
-  canCancel: (["BOOKED", "AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL", "AWAITING_PAYMENT", "ASSEMBLING", "ON_THE_WAY"] as readonly OrderStatus[]).includes(status),
+  canCancel: status === "BOOKED",
 });

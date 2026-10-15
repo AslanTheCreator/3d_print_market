@@ -51,7 +51,7 @@ export async function setupAdmin(page: Page, baseURL: string | undefined, role =
       if (/\/orders\/\d+\//.test(path)) {
         const id = Number(path.split("/").at(-2)); const action = path.split("/").pop();
         const order = state.orders.find((item) => item.orderId === id);
-        if (order && (state.actionStatus === 200 || state.applyBeforeAbort)) order.actualStatus = action === "CONFIRM" ? (order.prepaymentAmount ? "AWAITING_PREPAYMENT" : "AWAITING_PAYMENT") : action === "CONFIRM_PREPAYMENT" ? "AWAITING_PAYMENT" : action === "SHIP" ? "ON_THE_WAY" : "FAILED";
+        if (order && (state.actionStatus === 200 || state.applyBeforeAbort)) order.actualStatus = action === "CONFIRM" ? (order.prepaymentAmount ? "AWAITING_PREPAYMENT" : "AWAITING_PAYMENT") : action === "CONFIRM_PREPAYMENT" ? "AWAITING_PAYMENT" : action === "SHIP" ? "ON_THE_WAY" : "CANCELLED";
         if (state.actionAbort) return route.abort("connectionfailed");
         if (state.failOrderReadAfterAction) state.orderReadStatus = 500;
         return fulfillJson(route, state.actionStatus === 200 ? id : { code: "ACTION_REJECTED", message: "Действие отклонено" }, state.actionStatus);

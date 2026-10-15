@@ -28,7 +28,7 @@ npx playwright test backend-integration-contract-model product-form-mapping prod
 ## Backend integration: этап 2
 
 `order-details-model.spec.ts` проверяет пользовательскую отмену только из BOOKED,
-отдельную временную ADMIN-политику, enum-подписи, terminal progress и фильтры
+отдельную подтверждённую B4 ADMIN-политику, enum-подписи, terminal progress и фильтры
 без преобразования FAILED. `open-forms.spec.ts` проверяет точный новый URL/body,
 причину в comment, обе роли, смену статуса открытого диалога, двойную отправку,
 отказ, потерю ответа и успех POST при ошибке перечитывания.
@@ -48,11 +48,14 @@ logout/login и поздние ответы старого scope. `private-data-
 При исправлении P2 браузерные сценарии запускаются
 на свежем `npm run build` через `npm run start:standalone`; API-записи подменены.
 
-`admin-extended.spec.ts` фиксирует временную доступность CANCEL вне BOOKED,
+`admin-extended.spec.ts` проверяет CANCEL только в BOOKED и запрет остальных статусов,
 точные admin URL/query, CONFIRM/CONFIRM_PREPAYMENT/SHIP, отказ 403/409/500,
 потерю ответа без повторного POST и отсутствие действий для CANCELLED/обычного
-пользователя. Возвращённый mock-статус не является подтверждением результата
-реального ADMIN CANCEL. После B4 нужна окончательная серверная матрица.
+пользователя, смену статуса/владельца при открытой форме, отказ контрольного GET,
+logout и ошибку проверки доступа ADMIN во время GET до POST.
+Успешный mock CANCEL возвращает CANCELLED; отдельная негативная
+проверка не позволяет подменить неожиданно перечитанный статус локальным.
+Возвращённый mock-статус не является приёмкой реального ADMIN CANCEL.
 
 ```bash
 npm run lint
@@ -64,6 +67,10 @@ npx playwright test orders.mobile --project=mobile-chromium
 
 Все изменяющие запросы подменяются Playwright; на реальном backend проверяется
 только OpenAPI. По плану интеграции build, smoke и полный e2e — этап 12.
+При завершении B4 15.10.2026 дополнительно выполнены production build и HTTP smoke:
+на свежем standalone runtime прошли 132 целевых/регрессионных теста Chromium,
+6 мобильных и 15 HTTP smoke. Lint, typecheck и architecture:check пройдены.
+Независимый повторный VP и приёмка реальных серверных переходов не подменяются этими результатами.
 
 ## Backend integration: этап 3
 

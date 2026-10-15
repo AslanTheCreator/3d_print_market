@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField } from "@mui/material";
 import { adminOrderApi, getAdminOrderActionFlags, type AdminOrderAction, type AdminOrderDto } from "@/entities/order";
 import { adminAccountsApi } from "@/entities/account";
+import type { UserProfileModel } from "@/entities/user";
 import { ApiError } from "@/shared/lib/errorHandler";
 import { RequestFeedback } from "@/shared/ui/request-feedback";
 import { useUnsavedChanges } from "@/shared/lib";
+import { usePrivateScope } from "@/shared/lib/query";
 
 const labels: Record<AdminOrderAction, string> = { CONFIRM: "Подтвердить заказ", CONFIRM_PREPAYMENT: "Подтвердить предоплату", SHIP: "Отправить", CANCEL: "Отменить заказ" };
 const validUrl = (value: string) => { try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } };
@@ -15,6 +17,12 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
   order: AdminOrderDto; session: number | null; changed: () => Promise<void>; lockPanel: (locked: boolean) => void;
 }) {
   const flags = getAdminOrderActionFlags(order.actualStatus);
+  const scope = usePrivateScope();
+  const queryClient = useQueryClient();
+  const currentOrder = useRef(order);
+  currentOrder.current = order;
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [action, setAction] = useState<AdminOrderAction | null>(null);
   const [busy, setBusy] = useState(false);
   const [unknown, setUnknown] = useState(false);
@@ -47,13 +55,30 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
     lock.current = true; setBusy(true); setError(undefined);
     let needsCheck = false;
     let written = false;
+    let attempted = false;
     try {
+      if (action === "CANCEL") {
+        if (!scope.isCurrent()) return;
+        const current = await adminOrderApi.find(order.sellerId, order.orderId, scope.signal);
+        if (!mounted.current || !scope.isCurrent() || currentOrder.current.orderId !== order.orderId || currentOrder.current.sellerId !== order.sellerId) return;
+        const access = queryClient.getQueryState<UserProfileModel>(["admin", session, "access"]);
+        if (access?.status !== "success" || access.data?.role !== "ADMIN") {
+          setError(new Error("Доступ администратора не подтверждён. Повторите проверку доступа."));
+          return;
+        }
+        if (!current || current.sellerId !== order.sellerId || !getAdminOrderActionFlags(current.actualStatus).canCancel || !getAdminOrderActionFlags(currentOrder.current.actualStatus).canCancel) {
+          setError(new Error("Статус или владелец заказа изменился. Отмена недоступна; обновите список."));
+          return;
+        }
+      }
+      attempted = true;
       await adminOrderApi.act(order.sellerId, order.orderId, action, { comment: input.comment || undefined, deliveryUrl: action === "SHIP" ? input.deliveryUrl.trim() : undefined });
       written = true;
       setAccepted(true); form.reset();
       await changed(); setAction(null);
     } catch (cause) {
       setError(cause);
+      if (action === "CANCEL" && !attempted) return;
       if (!written && cause instanceof ApiError && (!cause.statusCode || cause.code === "TIMEOUT" || cause.code === "NETWORK_ERROR" || cause.statusCode === 408)) { setUnknown(true); needsCheck = true; }
       else if (!written) { try { await changed(); } catch { /* Ошибка чтения отображается родительским списком; введённые данные сохраняются. */ } }
     } finally { lock.current = false; setBusy(false); if (needsCheck) void checkResult(); }

@@ -52,7 +52,7 @@ test.describe("order details model", () => {
       expect(getCustomerOrderActionFlags(status).canCancel).toBe(status === "BOOKED");
       expect(getSellerOrderActionFlags(status).canCancel).toBe(status === "BOOKED");
       const admin = getAdminOrderActionFlags(status);
-      expect(admin.canCancel).toBe(["BOOKED", "AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL", "AWAITING_PAYMENT", "ASSEMBLING", "ON_THE_WAY"].includes(status));
+      expect(admin.canCancel).toBe(status === "BOOKED");
       expect(admin.canConfirmOrder).toBe(status === "BOOKED");
       expect(admin.canConfirmPreOrder).toBe(status === "AWAITING_PREPAYMENT_APPROVAL");
       expect(admin.canShipOrder).toBe(status === "ASSEMBLING");

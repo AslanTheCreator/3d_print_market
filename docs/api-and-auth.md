@@ -41,10 +41,13 @@ Guard не дублирует DTO заказа; источник статуса 
 без browser storage и гарантий между вкладками или после полной перезагрузки.
 
 `getCustomerOrderActionFlags` / `getSellerOrderActionFlags` отделены от
-`getAdminOrderActionFlags`. До B4 ADMIN сохраняет прежнюю frontend-доступность
-CANCEL в BOOKED, AWAITING_PREPAYMENT, AWAITING_PREPAYMENT_APPROVAL,
-AWAITING_PAYMENT, ASSEMBLING, ON_THE_WAY. Новый CANCELLED в неё не включён.
-Это временная политика, а не подтверждённая матрица backend. Административный
+`getAdminOrderActionFlags`. По окончательному B4 ADMIN CANCEL разрешён только
+в BOOKED с результатом CANCELLED; остальные статусы запрещены. Правила
+CONFIRM, CONFIRM_PREPAYMENT и SHIP сохранены. Перед CANCEL выполняется свежее
+чтение заказа бота; проверяются BOOKED, sellerId, актуальность формы/scope
+и результат существующей проверки доступа ADMIN после ожидания GET.
+При ошибке GET POST не отправляется и ввод сохраняется; это не потеря ответа POST.
+Административный
 URL `/admin/actions/agents/{agentId}/orders/{orderId}/CANCEL`, query comment
 и сверка неизвестного результата через список бота сохранены. Итоговый статус
 берётся из серверного чтения; имя CANCEL не означает автоматически CANCELLED.

@@ -194,7 +194,7 @@ ADMIN создаёт через POST /products с availability=GIVEAWAY и вл�
 но не отменяет проверку корректности настроек. Плановый статус AWAITING_GIVEAWAY,
 начавшийся ACTIVE. Минимальный пример — в исходном ответе B3.
 
-### B4: ADMIN CANCEL (подтверждённый контракт)
+### B4: ADMIN CANCEL (реализованная часть этапа 2)
 
 POST /admin/actions/agents/{agentId}/orders/{orderId}/CANCEL?comment=...
 доступен только ADMIN для заказа указанного бота и только BOOKED → CANCELLED.
@@ -202,8 +202,8 @@ POST /admin/actions/agents/{agentId}/orders/{orderId}/CANCEL?comment=...
 Покупатель заказа бота сохраняет пользовательский POST /order/{orderId}/CANCELLED
 из BOOKED; бот не управляет заказом через этот пользовательский endpoint.
 CONFIRM, CONFIRM_PREPAYMENT и SHIP сохраняют прежние отдельные правила.
-Окончательная frontend-политика и контрольное чтение перед ADMIN CANCEL подключаются
-отдельным изменением этапа 2; до него действующая ADMIN-политика остаётся временной.
+Frontend перед ADMIN CANCEL перечитывает заказ бота; ошибка чтения, смена
+владельца/статуса, заказа или scope не разрешают POST. Итог читается с сервера.
 
 ### N1: ошибки новых операций (требования последующих этапов)
 
