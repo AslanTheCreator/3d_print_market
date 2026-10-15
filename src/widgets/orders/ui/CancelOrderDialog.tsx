@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -56,16 +56,15 @@ export const CancelOrderDialog = ({
   order,
   userRole,
 }: CancelOrderDialogProps) => {
-  const [reason, setReason] = useState("");
-  const [comment, setComment] = useState("");
   const paymentBreakdown = getOrderPaymentBreakdown(order);
   const actionsAvailable = useOrderActionsAvailable();
   const lock = useRef(false);
   const cancelOrderAction = useOrderCancelAction({ order, userRole });
+  const { reason, comment } = cancelOrderAction.draft;
+  const setReason = (reason: string) => cancelOrderAction.setDraft({ reason });
+  const setComment = (comment: string) => cancelOrderAction.setDraft({ comment });
   const lifecycle = useOrderDialogLifecycle(open, () => {
-    if (cancelOrderAction.requiresCheck) return;
-    setReason("");
-    setComment("");
+    cancelOrderAction.resetDraft();
   });
 
   const handleClose = () => {
@@ -91,7 +90,7 @@ export const CancelOrderDialog = ({
     } finally { lock.current = false; }
   };
 
-  const canCancel = actionsAvailable && order.actualStatus === "BOOKED" && !cancelOrderAction.requiresCheck && reason.trim().length >= 3 && !cancelOrderAction.isPending;
+  const canCancel = actionsAvailable && order.actualStatus === "BOOKED" && !cancelOrderAction.isAccepted && !cancelOrderAction.requiresCheck && reason.trim().length >= 3 && !cancelOrderAction.isPending;
 
   const handleCheckResult = () => {
     const generation = lifecycle.generation;

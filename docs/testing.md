@@ -36,6 +36,18 @@ npx playwright test backend-integration-contract-model product-form-mapping prod
 контрольного GET и восстановления продавца. `orders.mobile.spec.ts` проверяет
 новый фильтр и terminal UI для обеих ролей, включая 320 px.
 
+`order-cancel-recovery.spec.ts` воспроизводит потерю ответа + GET BOOKED:
+покупатель закрывает форму, меняет фильтры и открывает её заново; продавец
+использует другую кнопку того же заказа. Проверяются сохранённый ввод,
+recovery, запрет второго POST и завершение через GET CANCELLED. Дополнительно
+проверяются unmount во время POST, принятый результат после пересоздания формы,
+явный retry после отказа и GET BOOKED, независимость заказов, очистка после
+logout/login и поздние ответы старого scope. `private-data-model.spec.ts`
+включает namespace orderCancel в очистку при logout/expiry/прямой смене аккаунта
+и сохранение при refresh. Новые specs входят в команду `order-cancel` ниже.
+При исправлении P2 браузерные сценарии запускаются
+на свежем `npm run build` через `npm run start:standalone`; API-записи подменены.
+
 `admin-extended.spec.ts` фиксирует временную доступность CANCEL вне BOOKED,
 точные admin URL/query, CONFIRM/CONFIRM_PREPAYMENT/SHIP, отказ 403/409/500,
 потерю ответа без повторного POST и отсутствие действий для CANCELLED/обычного
