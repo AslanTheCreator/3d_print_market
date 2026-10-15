@@ -55,11 +55,15 @@ export function useAdminCancelAction({ order, session, changed }: {
     try {
       const current = await adminOrderApi.find(order.sellerId, order.orderId, scope.signal);
       if (!scope.isCurrent()) return false;
-      if (!current || current.sellerId !== order.sellerId || current.actualStatus === "BOOKED") {
+      if (!current || current.orderId !== order.orderId || current.sellerId !== order.sellerId || current.actualStatus === "BOOKED") {
         update({ recoveryMessage: "Изменение статуса не подтверждено. Повтор действия заблокирован; проверьте результат позже." });
         return false;
       }
-      update({ unknown: false, accepted: true, reconciled: true, error: undefined, recoveryMessage: "" });
+      const cancelled = current.actualStatus === "CANCELLED";
+      update({
+        unknown: !cancelled, accepted: cancelled, reconciled: cancelled, error: undefined,
+        recoveryMessage: cancelled ? "" : "Статус заказа перечитан, но результат отмены не подтверждён. Повторная отмена заблокирована.",
+      });
       return await refresh();
     } catch (error) {
       update({ error, recoveryMessage: "Не удалось проверить результат отмены. Повторная отправка заблокирована." });
@@ -84,7 +88,7 @@ export function useAdminCancelAction({ order, session, changed }: {
         update({ error: new Error("Доступ администратора не подтверждён. Повторите проверку доступа.") });
         return false;
       }
-      if (!fresh || fresh.sellerId !== order.sellerId || !getAdminOrderActionFlags(fresh.actualStatus).canCancel || !getAdminOrderActionFlags(currentOrder.current.actualStatus).canCancel) {
+      if (!fresh || fresh.orderId !== order.orderId || fresh.sellerId !== order.sellerId || !getAdminOrderActionFlags(fresh.actualStatus).canCancel || !getAdminOrderActionFlags(currentOrder.current.actualStatus).canCancel) {
         update({ error: new Error("Статус или владелец заказа изменился. Отмена недоступна; обновите список.") });
         return false;
       }
@@ -117,5 +121,8 @@ export function useAdminCancelAction({ order, session, changed }: {
     finally { update({ busy: false }); }
   };
 
-  return { ...state, submit, checkResult };
+  // Читаем общий guard при отправке: render другого экземпляра мог ещё не обновиться.
+  // Сохранённый unknown/accepted относится только к CANCEL; busy защищает от конкурирующего запроса.
+  const canStartOtherAction = () => !getState().busy && isCurrent() && hasAccess();
+  return { ...state, submit, checkResult, canStartOtherAction };
 }

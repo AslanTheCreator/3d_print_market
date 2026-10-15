@@ -37,6 +37,7 @@ test("actual CANCEL guard blocks concurrent consumers and USER; acceptance persi
     expect(reads).toBe(1); expect(posts).toBe(1);
     role(client, 1, "ADMIN");
     expect(capture(client, scope).busy).toBe(true);
+    expect(capture(client, scope).canStartOtherAction()).toBe(false);
     await capture(client, scope).submit("Another POST after remount");
     expect(posts).toBe(1);
     role(client, 1, "USER"); finish(201); await started;
@@ -45,6 +46,40 @@ test("actual CANCEL guard blocks concurrent consumers and USER; acceptance persi
     expect(capture(client, scope).accepted).toBe(true);
     await capture(client, scope).submit("Another POST after acceptance");
     expect(posts).toBe(1);
+  } finally { adminOrderApi.act = original.act; adminOrderApi.find = original.find; client.clear(); scope.dispose(); }
+});
+
+for (const status of ["ASSEMBLING", "AWAITING_PREPAYMENT_APPROVAL", "FAILED", "CANCELLED"] as const) test(`GET ${status} distinguishes CANCEL outcome from the transport guard for other actions`, async () => {
+  const client = new QueryClient(); const scope = createPrivateScope(1, () => true);
+  const original = { act: adminOrderApi.act, find: adminOrderApi.find };
+  let posts = 0, reads = 0, refreshes = 0;
+  adminOrderApi.find = async () => ({ ...order(), actualStatus: ++reads === 1 ? "BOOKED" : status });
+  adminOrderApi.act = async () => { posts++; throw new ApiError("Lost", "NETWORK_ERROR"); };
+  role(client, 1, "ADMIN");
+  try {
+    // Ссылка на guard из предыдущего render тоже должна видеть фактический pending.
+    const previous = capture(client, scope, 2, 201, async () => { refreshes++; });
+    const started = previous.submit("Persisted CANCEL reason");
+    expect(previous.canStartOtherAction()).toBe(false);
+    await started;
+    const restored = capture(client, scope);
+    expect(restored.busy).toBe(false);
+    expect(restored.accepted).toBe(status === "CANCELLED");
+    expect(restored.reconciled).toBe(status === "CANCELLED");
+    expect(restored.unknown).toBe(status !== "CANCELLED");
+    expect(restored.canStartOtherAction()).toBe(true);
+    expect(refreshes).toBe(1);
+    await restored.submit("Never repeat CANCEL"); expect(posts).toBe(1);
+    role(client, 1, "USER"); expect(restored.canStartOtherAction()).toBe(false);
+    role(client, 1, "ADMIN"); expect(restored.canStartOtherAction()).toBe(true);
+    if (status !== "CANCELLED") {
+      adminOrderApi.find = async () => order();
+      await restored.checkResult();
+      expect(capture(client, scope).unknown).toBe(true);
+      expect(capture(client, scope).accepted).toBe(false);
+      await capture(client, scope).submit("BOOKED must not reset guard"); expect(posts).toBe(1);
+    }
+    scope.dispose(); expect(restored.canStartOtherAction()).toBe(false);
   } finally { adminOrderApi.act = original.act; adminOrderApi.find = original.find; client.clear(); scope.dispose(); }
 });
 

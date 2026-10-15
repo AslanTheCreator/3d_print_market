@@ -24,9 +24,8 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
   const [otherReconciled, setReconciled] = useState(false);
   const [otherError, setError] = useState<unknown>();
   const busy = otherBusy || cancel.busy;
-  const unknown = otherUnknown || cancel.unknown;
-  const accepted = otherAccepted || cancel.accepted;
-  const reconciled = otherReconciled || cancel.reconciled;
+  const unknown = action === "CANCEL" ? cancel.unknown : otherUnknown;
+  const accepted = action === "CANCEL" ? cancel.accepted : otherAccepted;
   const error = action === "CANCEL" ? cancel.error : otherError;
   const lock = useRef(false);
   const form = useForm<{ comment: string; deliveryUrl: string }>({ defaultValues: { comment: "", deliveryUrl: "" } });
@@ -41,12 +40,12 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
   const accounts = useQuery({ queryKey: ["admin", session, "agent", order.sellerId, "accounts"], queryFn: ({ signal }) => adminAccountsApi.list(order.sellerId, signal), enabled: action === "CONFIRM", retry: false });
   useUnsavedChanges(form.formState.isDirty || busy || unknown);
   useEffect(() => { lockPanel(busy || unknown || form.formState.isDirty); return () => lockPanel(false); }, [busy, unknown, form.formState.isDirty, lockPanel]);
-  async function checkResult() {
-    if (action === "CANCEL" || cancel.unknown || cancel.accepted) {
-      if (await cancel.checkResult()) { form.reset(); setAction(null); }
+  async function checkResult(checkCancel = action === "CANCEL") {
+    if (checkCancel) {
+      if (await cancel.checkResult() && action === "CANCEL") { form.reset(); setAction(null); }
       return;
     }
-    if (lock.current) return;
+    if (lock.current || !cancel.canStartOtherAction()) return;
     lock.current = true; setBusy(true); setError(undefined);
     try {
       const current = await adminOrderApi.find(order.sellerId, order.orderId);
@@ -63,22 +62,33 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
       if (!lock.current && !otherBusy && !otherUnknown && !otherAccepted && await cancel.submit(input.comment)) { form.reset(); setAction(null); }
       return;
     }
-    if (!action || lock.current || unknown || accepted) return;
+    if (!action || lock.current || otherUnknown || otherAccepted || !cancel.canStartOtherAction()) return;
     const currentFlags = getAdminOrderActionFlags(order.actualStatus);
     const allowed = { CONFIRM: currentFlags.canConfirmOrder, CONFIRM_PREPAYMENT: currentFlags.canConfirmPreOrder, SHIP: currentFlags.canShipOrder, CANCEL: currentFlags.canCancel };
     if (!allowed[action]) { setError(new Error("Статус заказа изменился. Действие недоступно.")); return; }
     lock.current = true; setBusy(true); setError(undefined);
     let needsCheck = false;
     let written = false;
+    let attempted = false;
     try {
+      const fresh = await adminOrderApi.find(order.sellerId, order.orderId);
+      if (!cancel.canStartOtherAction()) return;
+      const freshFlags = fresh && getAdminOrderActionFlags(fresh.actualStatus);
+      const stillAllowed = freshFlags && { CONFIRM: freshFlags.canConfirmOrder, CONFIRM_PREPAYMENT: freshFlags.canConfirmPreOrder, SHIP: freshFlags.canShipOrder };
+      if (!fresh || fresh.orderId !== order.orderId || fresh.sellerId !== order.sellerId || !stillAllowed?.[action]) {
+        setError(new Error("Статус или владелец заказа изменился. Действие недоступно; обновите список."));
+        await changed();
+        return;
+      }
+      attempted = true;
       await adminOrderApi.act(order.sellerId, order.orderId, action, { comment: input.comment || undefined, deliveryUrl: action === "SHIP" ? input.deliveryUrl.trim() : undefined });
       written = true;
       setAccepted(true); form.reset();
       await changed(); setAction(null);
     } catch (cause) {
       setError(cause);
-      if (!written && cause instanceof ApiError && (!cause.statusCode || cause.code === "TIMEOUT" || cause.code === "NETWORK_ERROR" || cause.statusCode === 408)) { setUnknown(true); needsCheck = true; }
-      else if (!written) { try { await changed(); } catch { /* Ошибка чтения отображается родительским списком; введённые данные сохраняются. */ } }
+      if (attempted && !written && cause instanceof ApiError && (!cause.statusCode || cause.code === "TIMEOUT" || cause.code === "NETWORK_ERROR" || cause.statusCode === 408)) { setUnknown(true); needsCheck = true; }
+      else if (attempted && !written) { try { await changed(); } catch { /* Ошибка чтения отображается родительским списком; введённые данные сохраняются. */ } }
     } finally { lock.current = false; setBusy(false); if (needsCheck) void checkResult(); }
   }
   const actions: AdminOrderAction[] = [];
@@ -88,10 +98,11 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
   if (flags.canCancel) actions.push("CANCEL");
   const close = () => { if (!busy && !unknown && (!form.formState.isDirty || window.confirm("Отменить введённый комментарий?"))) { setAction(null); form.reset(); } };
   return <Stack spacing={1}>
-    {accepted && <Alert severity="success" action={cancel.accepted && action !== "CANCEL" && <Button disabled={busy} onClick={() => void checkResult()}>Обновить список</Button>}>{reconciled ? "Статус заказа перечитан; повтор действия не отправлялся" : "Действие принято сервером"}</Alert>}
+    {otherAccepted && <Alert severity="success">{otherReconciled ? "Статус заказа перечитан; повтор действия не отправлялся" : "Действие принято сервером"}</Alert>}
+    {cancel.accepted && <Alert severity="success" action={action !== "CANCEL" && <Button disabled={busy} onClick={() => void checkResult(true)}>Обновить список</Button>}>{cancel.reconciled ? "Статус заказа перечитан; повтор действия не отправлялся" : "Действие принято сервером"}</Alert>}
     {cancel.busy && action !== "CANCEL" && <Alert severity="info">Отмена заказа выполняется. Повторная отправка заблокирована.</Alert>}
-    {cancel.unknown && action !== "CANCEL" && <Alert severity="warning" action={<Button disabled={busy} onClick={() => void checkResult()}>Проверить результат</Button>}>{cancel.recoveryMessage || "Ответ не получен. Операция могла выполниться."}</Alert>}
-    <Stack direction="row" flexWrap="wrap" gap={1}>{actions.map((item) => <Button key={item} color={item === "CANCEL" ? "error" : "primary"} variant={item === "CANCEL" ? "outlined" : "contained"} disabled={busy || otherUnknown || accepted || (cancel.unknown && item !== "CANCEL")}
+    {cancel.unknown && action !== "CANCEL" && <Alert severity="warning" action={<Button disabled={busy} onClick={() => void checkResult(true)}>Проверить результат</Button>}>{cancel.recoveryMessage || "Ответ не получен. Операция могла выполниться."}</Alert>}
+    <Stack direction="row" flexWrap="wrap" gap={1}>{actions.map((item) => <Button key={item} color={item === "CANCEL" ? "error" : "primary"} variant={item === "CANCEL" ? "outlined" : "contained"} disabled={busy || otherUnknown || otherAccepted || (item === "CANCEL" && cancel.accepted)}
       onClick={() => { if (item === "CANCEL") form.reset({ comment: cancel.comment, deliveryUrl: "" }); setAction(item); setError(undefined); }}>{labels[item]}</Button>)}</Stack>
     <Dialog open={!!action} onClose={close} fullWidth maxWidth="sm"><DialogTitle>{action && labels[action]}</DialogTitle>
       <form onSubmit={form.handleSubmit(submit)}><DialogContent><Stack spacing={2}>

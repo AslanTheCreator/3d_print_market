@@ -66,6 +66,14 @@ USER не отправляет даже программный вызов, об�
 ключи изолированы по аккаунту/agentId/orderId, поздний ответ старого scope не
 восстанавливает удалённое состояние. Namespace adminOrderCancel входит также
 в logout/expiry/switch/refresh проверки `private-data-model.spec.ts`.
+Регрессии сохранённого CANCEL проверяют потерю ответа с GET ASSEMBLING и
+AWAITING_PREPAYMENT_APPROVAL: SHIP/CONFIRM_PREPAYMENT выполняются с точным payload,
+включая закрытие и повторное открытие деталей. CANCEL guard и комментарий при этом
+сохраняются даже после последующего GET BOOKED; произвольный статус не считается
+успехом CANCEL. Проверяются CONFIRM после неизвестного CANCEL, запрет конкурирующих
+действий при pending POST и запрет stale CONFIRM после принятого CANCEL с ошибкой
+обновления списка. Model-проверки отделяют busy от сохранённого unknown/accepted
+и проверяют актуальный guard из предыдущего render.
 
 ```bash
 npm run lint
@@ -80,9 +88,11 @@ npx playwright test orders.mobile --project=mobile-chromium
 При завершении B4 15.10.2026 дополнительно выполнены production build и HTTP smoke:
 на свежем standalone runtime прошли 132 целевых/регрессионных теста Chromium,
 6 мобильных и 15 HTTP smoke. Lint, typecheck и architecture:check пройдены.
-После нового P2 административного CANCEL на свежей standalone-сборке прошли
-142 целевых/регрессионных теста Chromium (включая 6 новых браузерных и 4 model),
-6 мобильных и 15 HTTP smoke; lint, typecheck, architecture:check и build успешны.
+После разделения сохранённого CANCEL и остальных ADMIN-действий прошли
+155 уникальных целевых/регрессионных тестов Chromium (добавлены 8 браузерных
+и 4 model), 6 мобильных и 15 HTTP smoke; браузерные проверки выполнены на свежей
+standalone-сборке. Два новых pending-сценария повторно пройдены после явного
+обновления cached списка в тесте. Lint, typecheck, architecture:check и build успешны.
 Независимый повторный VP и приёмка реальных серверных переходов не подменяются этими результатами.
 
 ## Backend integration: этап 3
