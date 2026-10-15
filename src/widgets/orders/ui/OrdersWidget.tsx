@@ -27,6 +27,7 @@ import { OrdersTable } from "./OrdersTable";
 import { OrderDetailsDialog } from "./OrderDetailsDialog";
 import { MobileOrders } from "./MobileOrders";
 import { OrderActionsContext } from "../model/orderActionsContext";
+import { useOrderCaseHistory } from "../model/useOrderCaseHistory";
 
 interface OrdersWidgetProps {
   query: UseQueryResult<ListOrdersDto[]>;
@@ -96,6 +97,7 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
           null),
     [ordersList, selectedOrderId],
   );
+  const casesState = useOrderCaseHistory(selectedOrder, query);
 
   if (isLoading && orders === undefined) {
     return <OrdersLoadingSkeleton title={title} icon={<Icon />} userRole={userRole} />;
@@ -128,9 +130,10 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
   }
 
   return (
-    <OrderActionsContext.Provider value={{ actionsAvailable: !error, retry: () => void refetch(), retryPending: isFetching }}>
+    <OrderActionsContext.Provider value={{ actionsAvailable: !error && !casesState.blocked, retry: casesState.retryOrders, retryPending: isFetching || casesState.syncing }}>
     <Box sx={{ width: "100%", py: { xs: 2, sm: 3 } }}>
       {refreshWarning}
+      {casesState.blocked && <Alert severity="warning" action={<Button disabled={casesState.syncing} onClick={casesState.retryOrders}>Обновить заказ</Button>}>Действия недоступны до сверки статуса заказа с обращениями.</Alert>}
       <ImageMetadataFeedback query={imageQuery} />
       <Box sx={{ display: { xs: "none", md: "block" } }}><PageHeader title={title} icon={<Icon />} /></Box>
       <Stack data-testid="desktop-orders" spacing={{ xs: 2, sm: 3 }} sx={{ display: { xs: "none", md: "flex" } }}>
@@ -168,6 +171,7 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
           open
           order={selectedOrder}
           userRole={userRole}
+          casesState={casesState}
           onClose={() => setSelectedOrderId(null)}
         />
       )}

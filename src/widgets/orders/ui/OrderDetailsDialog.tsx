@@ -38,7 +38,8 @@ import {
   OrderDetailsSection,
 } from "./OrderDetailsSection";
 import { OrderHistory } from "./OrderHistory";
-import { OrderPaymentProof } from "./OrderPaymentProof";
+import { OrderCasesSection } from "./OrderCasesSection";
+import type { useOrderCaseHistory } from "../model/useOrderCaseHistory";
 import { OrderProductPreview } from "./OrderProductPreview";
 import { OrderTracking } from "./OrderTracking";
 
@@ -47,6 +48,7 @@ interface OrderDetailsDialogProps {
   onClose: () => void;
   order: ListOrdersModel;
   userRole: OrdersUserRole;
+  casesState: ReturnType<typeof useOrderCaseHistory>;
 }
 
 export const OrderDetailsDialog = ({
@@ -54,6 +56,7 @@ export const OrderDetailsDialog = ({
   onClose,
   order,
   userRole,
+  casesState,
 }: OrderDetailsDialogProps) => {
   const peerLabel = getOrderPeerLabel(userRole);
   const showTracking = shouldShowTrackingForRole(
@@ -248,7 +251,7 @@ export const OrderDetailsDialog = ({
 
           {showTracking && <OrderTracking deliveryUrl={order.deliveryUrl} />}
 
-          <OrderPaymentProof orderId={order.orderId} imageIds={order.images} />
+          <OrderCasesSection order={order} state={casesState} />
 
           <OrderHistory order={order} />
         </Stack>

@@ -204,6 +204,7 @@ const mockDashboardApi = async (
   await page.route("**/order/seller", (route) =>
     fulfillJson(route, sellerOrders),
   );
+  await page.route("**/order/*/cases", (route) => fulfillJson(route, []));
   await page.route("**/images/metadata?ids=*", (route) =>
     fulfillJson(route, []),
   );
@@ -310,6 +311,8 @@ test.describe("order details", () => {
     await expect(trackingLink).toHaveAttribute("rel", /noopener/);
     await expect(trackingLink).toHaveAttribute("rel", /noreferrer/);
     await expect(dialog.getByTestId("order-images")).toBeVisible();
+    await expect(dialog.getByTestId("order-cases").getByText("Обращения", { exact: true })).toBeVisible();
+    await expect(dialog.getByTestId("order-cases").getByText("Обращений пока нет.", { exact: true })).toBeVisible();
     await expect.poll(() => requestedProofIds).toEqual([701]);
     await expect(dialog.getByText("Подтверждение оплаты", { exact: true })).toHaveCount(0);
   });

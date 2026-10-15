@@ -131,6 +131,39 @@ API-записи подменены. На реальном backend прочит�
 object-level авторизация требует отдельной серверной приёмки. Build, smoke
 и полный e2e по плану интеграции остаются этапу 12.
 
+## Backend integration: этап 4
+
+`order-cases.spec.ts` проверяет фактическое поведение деталей обеих ролей: отсутствие
+N+1 в списке, OPEN при неизменившемся статусе, завершённые/LEGACY/неизвестные виды,
+безопасную Telegram-ссылку, пустую историю, 403/500 и retry, закрытие/Escape,
+повторное открытие/фокус, смену заказа и поздний ответ, logout/login того же orderId.
+Проверяются уникальный общий блок, нейтральные caseImages, точный payment proof
+среди других ID и вне orderImages, его привязка к обращению, null/отсутствующий ID,
+обновление существующего списка и запрет устаревших действий после закрытия и ошибки,
+сохраняющееся расхождение без цикла GET и optional orderStatus при повторном открытии.
+Чек из FindOrderResponse доступен также до первого обращения и при ошибке истории.
+`order-cases-model.spec.ts` проверяет authClient/AbortSignal, optional B2/N2,
+отклонение чужого ответа, группировку файлов и реальный scoped query при смене аккаунта.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test order-cases order-images order-payment order-details order-cancel open-forms backend-integration-contract-model private-data-model --project=chromium
+npx playwright test orders.mobile --project=mobile-chromium
+npx playwright test admin-cancel --project=chromium
+```
+
+Все API-записи подменяются; серверная object-level авторизация требует реальной
+приёмки. Build/smoke и полный e2e по плану обязательны на этапе 12; для этапа 4
+дополнительно используется свежий production standalone runtime.
+
+15.10.2026 локальный Verification Pass пройден: 141 уникальный Chromium e2e/model
+тест (18 новых браузерных, 3 новых model, 6 contract, 85 прежних регрессий и 29 ADMIN
+CANCEL), 6 мобильных, 15 HTTP smoke. Lint, typecheck, architecture:check и production
+build успешны. Финальные проверки истории выполнены после повторной standalone-сборки
+с защитой optional orderStatus; skips и retries ради результата не добавлялись.
+
 ## Локальные товары бота
 
 `scripts/seed-agent-products.mjs` создаёт два товара с префиксом `[ТЕСТ]`

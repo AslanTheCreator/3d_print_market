@@ -37,7 +37,7 @@ const orderCase = {
 
 const detail = {
   orderCase, orderStatus: "FAILED", buyerId: 30, sellerId: 50, productId: 60,
-  count: 2, totalPrice: 1500.5, prepaymentAmount: 100.25,
+  count: 2, totalPrice: 1500.5, prepaymentAmount: 100.25, currency: "RUB",
   paymentProofImageId: 70, orderImages: [70, 71], caseImages: [72],
 } satisfies OrderCaseDetail;
 
@@ -55,8 +55,9 @@ test("case DTOs preserve every confirmed field and distinct proof/image collecti
   expect(detail.paymentProofImageId).toBe(70);
   expect(detail.orderImages).toEqual([70, 71]);
   expect(detail.caseImages).toEqual([72]);
-  const hasCurrency: "currency" extends keyof OrderCaseDetail ? true : false = false;
-  expect(hasCurrency).toBe(false);
+  const hasCurrency: "currency" extends keyof OrderCaseDetail ? true : false = true;
+  expect(hasCurrency).toBe(true);
+  expect(detail.currency).toBe("RUB");
 });
 
 test("new read DTOs accept omitted fields and tolerate null without inventing defaults", () => {

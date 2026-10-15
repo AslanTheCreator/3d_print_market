@@ -10,6 +10,7 @@ const invalidateOrdersLists = (
   scope: ReturnType<typeof usePrivateScope>,
 ): Promise<void> =>
   Promise.all([
+    queryClient.invalidateQueries({ queryKey: scope.key(orderQueryKeys.caseHistories()) }),
     queryClient.invalidateQueries({
       queryKey: scope.key(orderQueryKeys.sellerOrders()),
     }),

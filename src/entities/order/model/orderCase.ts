@@ -1,4 +1,5 @@
 import type { OrderStatus } from "./types";
+import type { Currency } from "@/shared/types";
 
 export type OrderCaseKind = "CANCELLATION_REQUEST" | "DISPUTE" | "PAYMENT_APPEAL";
 export type OrderCaseState = "OPEN" | "RESOLVED";
@@ -10,7 +11,7 @@ export interface OrderCase {
   id?: number | null;
   version?: number | null;
   orderId?: number | null;
-  kind?: OrderCaseKind | null;
+  kind?: OrderCaseKind | (string & {}) | null;
   state?: OrderCaseState | null;
   openedBy?: number | null;
   openingComment?: string | null;
@@ -32,6 +33,7 @@ export interface OrderCaseDetail {
   count?: number | null;
   totalPrice?: number | null;
   prepaymentAmount?: number | null;
+  currency?: Currency | "CREATE" | null;
   paymentProofImageId?: number | null;
   orderImages?: number[] | null;
   caseImages?: number[] | null;

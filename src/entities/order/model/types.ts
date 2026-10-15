@@ -61,6 +61,7 @@ export interface ListOrdersModel {
   product: Product & { count: number };
   transfer: OrderTransfer;
   images: number[];
+  paymentProofImageId?: number | null;
   deliveryUrl: string;
   histories: OrderHistory[];
 }
