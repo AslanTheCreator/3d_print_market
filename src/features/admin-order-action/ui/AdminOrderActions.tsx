@@ -29,6 +29,9 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
   const error = action === "CANCEL" ? cancel.error : otherError;
   const lock = useRef(false);
   const form = useForm<{ comment: string; deliveryUrl: string }>({ defaultValues: { comment: "", deliveryUrl: "" } });
+  // Отправленный комментарий CANCEL уже сохранён в private guard, отдельно от UI формы.
+  const hasUnsavedInput = form.formState.isDirty && !(action === "CANCEL" && (cancel.unknown || cancel.accepted));
+  const closeBlocked = busy || otherUnknown;
   const formOrder = useRef({ session, agentId: order.sellerId, orderId: order.orderId });
   useEffect(() => {
     const previous = formOrder.current;
@@ -38,8 +41,8 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
     }
   }, [action, session, order.sellerId, order.orderId, form]);
   const accounts = useQuery({ queryKey: ["admin", session, "agent", order.sellerId, "accounts"], queryFn: ({ signal }) => adminAccountsApi.list(order.sellerId, signal), enabled: action === "CONFIRM", retry: false });
-  useUnsavedChanges(form.formState.isDirty || busy || unknown);
-  useEffect(() => { lockPanel(busy || unknown || form.formState.isDirty); return () => lockPanel(false); }, [busy, unknown, form.formState.isDirty, lockPanel]);
+  useUnsavedChanges(hasUnsavedInput || closeBlocked);
+  useEffect(() => { lockPanel(closeBlocked || hasUnsavedInput); return () => lockPanel(false); }, [closeBlocked, hasUnsavedInput, lockPanel]);
   async function checkResult(checkCancel = action === "CANCEL") {
     if (checkCancel) {
       if (await cancel.checkResult() && action === "CANCEL") { form.reset(); setAction(null); }
@@ -96,7 +99,7 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
   if (flags.canConfirmPreOrder) actions.push("CONFIRM_PREPAYMENT");
   if (flags.canShipOrder) actions.push("SHIP");
   if (flags.canCancel) actions.push("CANCEL");
-  const close = () => { if (!busy && !unknown && (!form.formState.isDirty || window.confirm("Отменить введённый комментарий?"))) { setAction(null); form.reset(); } };
+  const close = () => { if (!closeBlocked && (!hasUnsavedInput || window.confirm("Отменить введённый комментарий?"))) { setAction(null); form.reset(); } };
   return <Stack spacing={1}>
     {otherAccepted && <Alert severity="success">{otherReconciled ? "Статус заказа перечитан; повтор действия не отправлялся" : "Действие принято сервером"}</Alert>}
     {cancel.accepted && <Alert severity="success" action={action !== "CANCEL" && <Button disabled={busy} onClick={() => void checkResult(true)}>Обновить список</Button>}>{cancel.reconciled ? "Статус заказа перечитан; повтор действия не отправлялся" : "Действие принято сервером"}</Alert>}
@@ -116,7 +119,7 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
         {action === "CANCEL" && <Alert severity="warning">Отмена заказа не подтверждает возврат денег покупателю.</Alert>}
         <TextField label="Комментарий" multiline minRows={2} {...form.register("comment")} disabled={busy || unknown || accepted} />
         {action === "SHIP" && <TextField label="Ссылка доставки" {...form.register("deliveryUrl", { validate: (value) => action !== "SHIP" || validUrl(value.trim()) || "Укажите полную HTTP/HTTPS-ссылку" })} error={!!form.formState.errors.deliveryUrl} helperText={form.formState.errors.deliveryUrl?.message} disabled={busy || unknown || accepted} />}
-      </Stack></DialogContent><DialogActions><Button disabled={busy || unknown} onClick={close}>Закрыть</Button><Button type="submit" variant="contained" disabled={busy || unknown || accepted}>{action && labels[action]}</Button></DialogActions></form>
+      </Stack></DialogContent><DialogActions><Button disabled={closeBlocked} onClick={close}>Закрыть</Button><Button type="submit" variant="contained" disabled={busy || unknown || accepted}>{action && labels[action]}</Button></DialogActions></form>
     </Dialog>
   </Stack>;
 }

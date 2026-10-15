@@ -75,11 +75,17 @@ AWAITING_PREPAYMENT_APPROVAL: SHIP/CONFIRM_PREPAYMENT выполняются с 
 обновления списка. Model-проверки отделяют busy от сохранённого unknown/accepted
 и проверяют актуальный guard из предыдущего render.
 
+`admin-cancel-close.spec.ts` проверяет путь CANCEL → потеря ответа → GET BOOKED →
+закрытие кнопкой/Escape → CONFIRM без смены роли и размонтирования ADMIN-интерфейса.
+Повторное открытие сохраняет комментарий, recovery и запрет CANCEL; перед CONFIRM
+выполняется свежий GET. Отдельные сценарии проверяют запрет закрытия при pending,
+закрытие принятого CANCEL после ошибки обновления списка и явный retry после отказа.
+
 ```bash
 npm run lint
 npm run typecheck
 npm run architecture:check
-npx playwright test open-forms order-cancel order-details order-dialog-lifecycle-model order-payment-model backend-integration-contract-model admin-cancel-recovery admin-extended admin.spec private-data-model --project=chromium
+npx playwright test open-forms order-cancel order-details order-dialog-lifecycle-model order-payment-model backend-integration-contract-model admin-cancel admin-session-model admin-extended admin.spec private-data-model --project=chromium
 npx playwright test orders.mobile --project=mobile-chromium
 ```
 
@@ -88,11 +94,12 @@ npx playwright test orders.mobile --project=mobile-chromium
 При завершении B4 15.10.2026 дополнительно выполнены production build и HTTP smoke:
 на свежем standalone runtime прошли 132 целевых/регрессионных теста Chromium,
 6 мобильных и 15 HTTP smoke. Lint, typecheck и architecture:check пройдены.
-После разделения сохранённого CANCEL и остальных ADMIN-действий прошли
-155 уникальных целевых/регрессионных тестов Chromium (добавлены 8 браузерных
-и 4 model), 6 мобильных и 15 HTTP smoke; браузерные проверки выполнены на свежей
-standalone-сборке. Два новых pending-сценария повторно пройдены после явного
-обновления cached списка в тесте. Lint, typecheck, architecture:check и build успешны.
+После исправлений ADMIN CANCEL и закрытия unknown-формы прошли 162 уникальных
+целевых/регрессионных теста Chromium: общий прогон 141, новые сценарии закрытия 7,
+model-проверки 14. Общий прогон завершился за 5,1 минуты с exit code 0:
+141 passed, 0 failed, 0 skipped, 0 flaky, без зависания. Дополнительно прошли
+6 мобильных и 15 HTTP smoke; браузерные проверки выполнены на свежей production
+standalone-сборке. Lint, typecheck, architecture:check и build успешны.
 Независимый повторный VP и приёмка реальных серверных переходов не подменяются этими результатами.
 
 ## Backend integration: этап 3
