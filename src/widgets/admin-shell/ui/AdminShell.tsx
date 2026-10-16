@@ -6,7 +6,7 @@ import { Box, Button, Divider, Drawer, IconButton, List, ListItemButton, ListIte
 import { useAuth } from "@/entities/session";
 import { confirmDiscardChanges } from "@/shared/lib";
 
-const items = [["/admin/orders", "Заказы"], ["/admin/products", "Товары"], ["/admin/agents", "Боты"]];
+const items = [["/admin/orders", "Заказы"], ["/admin/order-cases", "Обращения"], ["/admin/products", "Товары"], ["/admin/agents", "Боты"]];
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);

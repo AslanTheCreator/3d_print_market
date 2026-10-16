@@ -2,12 +2,15 @@
 
 // Queries
 export { orderCasesApi } from "./api/orderCasesApi";
+export { adminOrderCasesApi } from "./api/adminOrderCasesApi";
+export { adminOrderCaseKeys, hasAdminOrderCaseAccess, useAdminOrderCases, useAdminOrderCaseDetail } from "./model/adminOrderCaseQueries";
+export { getAdminOrderCaseOutcomes } from "./lib/adminOrderCasePolicy";
 export { useOrderCasesQuery } from "./model/useOrderCasesQuery";
 export { useCreateOrderCase } from "./model/useCreateOrderCase";
 export { getAvailableOrderCaseKinds } from "./lib/orderCaseAvailability";
 export type { OrderCaseAccess } from "./lib/orderCaseAvailability";
 export { getDisputePaymentCase, hasDisputePaymentProof } from "./lib/disputePaymentAvailability";
-export { OrderCaseCard } from "./ui/OrderCaseCard";
+export { OrderCaseCard, getSafeCaseTelegramUrl } from "./ui/OrderCaseCard";
 export { getOrderCaseImageGroups } from "./lib/orderCaseImages";
 export {
   useOrderData,

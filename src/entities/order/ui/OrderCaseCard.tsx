@@ -2,16 +2,12 @@ import type { ReactNode } from "react";
 import { Alert, Button, Paper, Stack, Typography } from "@mui/material";
 import { formatDateTime } from "@/shared/lib";
 import type { OrderCaseDetail } from "../model/orderCase";
+import { getSafeCaseTelegramUrl } from "../lib/getSafeCaseTelegramUrl";
+export { getSafeCaseTelegramUrl } from "../lib/getSafeCaseTelegramUrl";
 
 const kinds: Record<string, string> = { CANCELLATION_REQUEST: "Запрос отмены", DISPUTE: "Спор", PAYMENT_APPEAL: "Обращение об оплате после отмены" };
 const outcomes: Record<string, string> = { BUYER: "В пользу покупателя", SELLER: "В пользу продавца", CANCELLED: "Заказ отменён", REJECTED: "Запрос отклонён", LEGACY: "Решение по историческому спору" };
 const date = (value?: string | null) => value && Number.isFinite(Date.parse(value)) ? formatDateTime(value) : "Не указана";
-export const getSafeCaseTelegramUrl = (value?: string | null) => {
-  try {
-    const url = new URL(value ?? "");
-    return url.protocol === "https:" && ["t.me", "telegram.me"].includes(url.hostname) && !url.username && !url.password && !url.port && url.pathname.length > 1 ? url.href : null;
-  } catch { return null; }
-};
 
 export function OrderCaseCard({ detail, participants = [], children }: {
   detail: OrderCaseDetail; participants?: readonly { id: number; login: string }[]; children?: ReactNode;

@@ -43,6 +43,7 @@ test("all private namespaces are removed on logout, expiry and direct account sw
         client.setQueryData(scope.key([key]), { owner: "A" });
       }
       client.setQueryData(["admin", 1, "access"], { owner: "A" });
+      client.setQueryData(["admin", 1, "case-operation", 301], { owner: "A", comment: "Private resolution" });
       client.setQueryData(["categories"], [1]);
       useCartQuantityStore.getState().syncWithServer([{ productId: 1, count: 3 }]);
       useAuthStore.setState({ sessionRevision: initial.sessionRevision + 1 });

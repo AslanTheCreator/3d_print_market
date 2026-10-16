@@ -84,6 +84,7 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
           Обновить
         </Button>
       </Stack>
+      <Button component="a" href="/admin/order-cases" sx={{ alignSelf: "start" }}>Обращения по всем заказам</Button>
       <Stack direction="row" gap={1} flexWrap="wrap">
         {[
           ["BOOKED", "Новые"],

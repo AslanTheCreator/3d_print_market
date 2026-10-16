@@ -2,12 +2,22 @@
 
 ## Административная панель
 
-`app/admin` содержит `/orders`, `/products`, `/products/[productId]`, `/agents`
+`app/admin` содержит `/orders`, `/order-cases`, `/products`, `/products/[productId]`, `/agents`
 и `/agents/[agentId]`; `/admin` перенаправляет на заказы. Последний маршрут
 собирает три widget через slots, без cross-widget imports. Бот имеет вкладки
 заказов, товаров и настроек. Детали заказа открываются в Drawer, отдельного
 order route нет. Фильтры и страницы хранятся в URL, редактор принимает
 проверенный локальный `returnTo`.
+
+`/admin/order-cases` собирает `AdminOrderCases` из существующего `widgets/admin-orders`:
+очередь и заказы ботов относятся к одному widget-слайсу.
+Очередь общая для обычных заказов и заказов ботов. В URL находятся state/page
+и выбранное обращение case; детали открываются в адаптивном Drawer.
+`features/admin-order-case-management` владеет формами Telegram/решения и общим
+guard операции, `entities/order` — политикой решений, API и query keys.
+Карточка обращения и приватные `AdminImages` переиспользуются. Переход из списков
+заказов ботов — ссылка, без cross-widget imports. Lifecycle и синхронизация описаны
+в [api-and-auth.md](./api-and-auth.md#административное-рассмотрение-обращений-этап-7).
 
 Поисковое поле `AdminProducts` имеет локальный draft: URL обновляется через
 debounce 300 мс либо Enter со сбросом страницы в 0. Изменения фильтров сохраняют
@@ -18,7 +28,7 @@ debounce 300 мс либо Enter со сбросом страницы в 0. Из
 
 Widgets `admin-shell`, `admin-orders`, `admin-products`, `admin-agents`,
 `admin-agent-details` собирают features `admin-access`, `admin-product-management`,
-`admin-order-action`, `admin-agent-settings`. Доменные DTO/API/queries находятся
+`admin-order-action`, `admin-order-case-management`, `admin-agent-settings`. Доменные DTO/API/queries находятся
 в соответствующих entities, включая новую `agent`. Обычные seller forms и
 mutations не используются для административной записи.
 

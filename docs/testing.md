@@ -253,6 +253,57 @@ Production build и HTTP smoke дополняют целевые регресс�
 и фактическое размонтирование обоих диалогов; проверки единственного POST,
 сохранённого ID и остановки цепочки после unmount сохранены.
 
+## Backend integration: этап 7
+
+`admin-order-cases-model.spec.ts` исполняет матрицу решений и реальные hooks с
+QueryClient: точные private API/AbortSignal, query encoding, запрет LEGACY,
+Telegram validation, sparse currency/CREATE, общий guard POST/PUT после remount,
+accepted/unknown/rejected, timeout/408/5xx, failed control GET и позднее подтверждение.
+Проверяются потеря ADMIN-доступа до записи, чужое серверное решение, ALREADY_RESOLVED
+с запаздывающим OPEN, отсутствие offline-очереди, refresh/смена аккаунта и поздний POST.
+В одном QueryClient с ненулевым staleTime проверяются обе очереди, admin/user order
+queries и case history: отмена позднего старого GET и отсутствие refetch чужих queries.
+Отдельные model/browser сценарии проверяют конкурентное изменение Telegram URL,
+явный повтор после смены baseline, обновление нетронутого поля из GET без потери
+dirty-ввода и отсутствие PUT уже сохранённой ссылки.
+
+`admin-order-cases.spec.ts` проходит все шесть исходов целиком: очередь → Drawer →
+форма → POST → подтверждение через GET → RESOLVED очередь → повторное открытие.
+Проверяются смешанные обычные/бот-заказы без запроса списка ботов, пагинация/пустая
+страница, обязательный комментарий, Telegram и продолжение рассмотрения,
+неизвестный вид/LEGACY/RESOLVED, N1 для решения и ссылки, concurrent resolve,
+сохранение ввода и единственного запроса после remount, ошибки очереди/деталей,
+недоступность до ADMIN/при смене роли, background access error/retry, keyboard,
+Drawer на 393/1280 px, dirty guard и отсутствие draft в браузерном storage/history.
+`admin-order-cases.mobile.spec.ts` на Pixel 5 проверяет touch/keyboard, сохранение
+ввода на 393/900, мобильное меню, полную цепочку спора и recovery payment appeal
+после lost POST/failed GET и пересоздания Drawer.
+Расширен существующий admin fixture; старые admin specs сохраняются.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test admin open-forms order-cases order-dispute-payment order-payment private-data-model backend-integration-contract-model --project=chromium
+npx playwright test orders.mobile admin-order-cases.mobile --project=mobile-chromium
+```
+
+Браузерные проверки выполняются на свежей production standalone сборке.
+Изменяющие запросы подменены; реальный backend проверен только чтением OpenAPI.
+Полный e2e и серверная приёмка остаются этапу 12. AGENTS.md не меняется:
+общие правила проекта сохранены.
+
+16.10.2026 lint, typecheck, architecture:check, production build, HTTP smoke и
+self-review пройдены. Общая регрессия — 240 Chromium e2e/model; после исправления
+stale Telegram baseline финальный прогон — 73 Chromium на новой standalone сборке.
+Всего проверены 242 уникальных Chromium сценария (47 новых), 8 mobile Chromium
+(2 новых) и 15 HTTP smoke. Mobile Drawer дополнительно проверен по скриншоту.
+Ошибки тестовых предпосылок исправлены: тип fixture, точное float-сравнение ширины
+и попытка refetch по focus при отключённом refetchOnWindowFocus. Геометрия проверяется
+после анимации, для повторного GET используется reconnect с проверкой факта запроса.
+Финальные прогоны завершились без failures/skips/retries; реальная серверная
+авторизация и переходы этим не подтверждаются.
+
 ## Локальные товары бота
 
 `scripts/seed-agent-products.mjs` создаёт два товара с префиксом `[ТЕСТ]`
