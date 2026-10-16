@@ -33,12 +33,13 @@ import {
 import { serializeApiError, transformToApiError } from "@/shared/lib/errorHandler";
 import { UseMutationResult } from "@tanstack/react-query";
 import { SellerPaymentDetails } from "./SellerPaymentDetails";
+import { DisputePaymentDialog, type DisputePaymentDialogProps } from "./DisputePaymentDialog";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Типы
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type PaymentType = "payment" | "prepayment";
+export type PaymentType = "payment" | "prepayment" | "dispute";
 
 interface PaymentMutationParams {
   orderId: number;
@@ -53,7 +54,7 @@ interface PaymentDialogProps {
   retryPending?: boolean;
   onClose: () => void;
   order: ListOrdersModel;
-  paymentType: PaymentType;
+  paymentType: Exclude<PaymentType, "dispute">;
   paymentMutation: UseMutationResult<
     number,
     unknown,
@@ -85,7 +86,10 @@ const paymentConfig = {
 // Компонент
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const PaymentDialog = ({
+export const PaymentDialog = (props: PaymentDialogProps | DisputePaymentDialogProps) =>
+  props.paymentType === "dispute" ? <DisputePaymentDialog {...props} /> : <NormalPaymentDialog {...props} />;
+
+const NormalPaymentDialog = ({
   open,
   actionsAvailable = true,
   onRetry,

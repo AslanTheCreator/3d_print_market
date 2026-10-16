@@ -140,6 +140,11 @@ feature и не выбирает auth route. Политика возврата �
 хранятся в памяти существующего QueryClient, server DTO не копируются в Zustand.
 Новых маршрутов и cross-feature импортов нет; recovery описан в
 [api-and-auth.md](./api-and-auth.md#создание-обращений-этап-5).
+Для этапа 6 `widgets/orders` компонует историю с режимом `dispute` существующего
+`PaymentDialog`, передавая контекст в `useDisputePayment`. Матрица и проверка
+imageId принадлежат public API `entities/order`; feature владеет черновиком,
+upload и recovery операции в приватном QueryClient. Импортов между features нет.
+Lifecycle описан в [api-and-auth.md](./api-and-auth.md#подтверждение-оплаты-в-споре-этап-6).
 Общий image-upload/cleanup ограничен NonOrderImageTag. Правила приватности
 и lifecycle описаны в [api-and-auth.md](./api-and-auth.md#изображения-заказа-этап-3).
 Core DTO профиля, заказов и собственных товаров кэшируются отдельно;

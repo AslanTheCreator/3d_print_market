@@ -208,6 +208,51 @@ OpenAPI трёх POST; права и серверные переходы тре�
 ошибок, пропусков и повторов ради результата нет. Реальные серверные операции
 и независимый VP этими результатами не подтверждаются.
 
+## Backend integration: этап 6
+
+`order-dispute-payment-model.spec.ts` проверяет матрицу покупатель/свой заказ/
+DISPUTED/OPEN DISPUTE/предыдущий AWAITING_PAYMENT, неполные и чужие DTO,
+точный приватный POST, исходный caseId и отправленный imageId. Guard и черновик
+проверяются в настоящем QueryClient с ненулевым staleTime и включённым default
+mutation retry: pending/remount, принятый POST с ошибкой GET, network/timeout/408/5xx,
+позднее доказательство в RESOLVED, отрицательное чтение без разрешения повтора,
+явный отказ с последующим чтением, сохранённый upload, stale cache, замена спора,
+решение во время upload, отсутствие отложенного offline POST и поздний результат
+после смены аккаунта.
+
+`order-dispute-payment.spec.ts` проверяет форму на 393/1280 px, отсутствие запроса
+реквизитов, отложенный ORDER-upload, сохранение DISPUTED, обновление доказательств,
+запрет повторного POST после закрытия/remount, потерю ответа с/без доказательства,
+успешный POST с failed GET, pending/remount, изоляцию черновиков при выборе другого
+заказа и гонки с решением администратора
+во время upload/POST. Unmount во время upload сохраняет ID, но останавливает POST.
+`private-data-model.spec.ts` включает disputePayment в проверку очистки scope.
+Регрессии обычной оплаты, предоплаты и серверных сумм остаются в существующих specs.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test order-dispute-payment order-payment order-case-create order-cases order-images order-details order-cancel open-forms backend-integration-contract-model private-data-model --project=chromium
+npx playwright test orders.mobile --project=mobile-chromium
+```
+
+Браузерные записи подменяются mock API; реальный backend проверяется только
+чтением OpenAPI. Серверные права и переходы требуют отдельной приёмки.
+Production build и HTTP smoke дополняют целевые регрессии; полный e2e — этап 12.
+
+16.10.2026 lint, typecheck, architecture:check, production build и self-review
+пройдены. Общий прогон — 185 Chromium e2e/model; после правок lifecycle и добавления
+проверок offline/выбора заказа финальный прогон — 71 Chromium. Всего проверены
+187 уникальных Chromium сценариев (29 новых), 6 mobile Chromium и 15 HTTP smoke.
+Финальный прогон выполнен на заново собранном standalone runtime, без skips/retries.
+Два первоначальных timeout новых тестов исправлены: родитель вложенного MUI Dialog
+имеет aria-hidden; тесты принудительного unmount учитывают скрытый родитель.
+Перед коммитом оба сценария повторены по пять раз: все 10 запусков успешны,
+без retry и увеличения timeout. Helper явно проверяет aria-hidden родителя
+и фактическое размонтирование обоих диалогов; проверки единственного POST,
+сохранённого ID и остановки цепочки после unmount сохранены.
+
 ## Локальные товары бота
 
 `scripts/seed-agent-products.mjs` создаёт два товара с префиксом `[ТЕСТ]`

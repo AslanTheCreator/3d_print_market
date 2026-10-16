@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Alert, Button, Link, Paper, Stack, Typography } from "@mui/material";
 import { getOrderCaseImageGroups, OrderCaseCard, type ListOrdersModel, type OrderUserRole } from "@/entities/order";
 import { OrderCaseCreate } from "@/features/order-case-create";
+import { PaymentDialog, useDisputePayment } from "@/features/order-payment";
 import { RequestFeedback } from "@/shared/ui/request-feedback";
 import type { useOrderCaseHistory } from "../model/useOrderCaseHistory";
 import { OrderImagesSection } from "./OrderImagesSection";
@@ -11,6 +13,9 @@ export function OrderCasesSection({ order, state, userRole }: { order: ListOrder
   const recovery = useOrderActionsRecovery();
   // При ошибке чтения не используем прежнюю историю для новых выводов о файлах/чеках.
   const cases = history.isError ? [] : (history.data ?? []);
+  const available = history.isSuccess && !history.isFetching && !state.blocked && recovery.actionsAvailable && !recovery.retryPending;
+  const payment = useDisputePayment(order, cases, userRole, available);
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const images = getOrderCaseImageGroups(order, cases);
   const participants = [
     { id: order.userInfo.id, login: order.userInfo.login },
@@ -28,8 +33,10 @@ export function OrderCasesSection({ order, state, userRole }: { order: ListOrder
           {state.syncError instanceof Error ? state.syncError.message : "Статус заказа изменился. Обновляем заказ; действия временно недоступны."}
         </Alert>}
         {history.isSuccess && !history.isFetching && cases.length === 0 && <Typography>Обращений пока нет.</Typography>}
+        {payment.canOpen && <Button variant="outlined" sx={{ minHeight: 44 }} onClick={() => { payment.start(); setPaymentOpen(true); }}>Приложить подтверждение оплаты к спору</Button>}
+        <PaymentDialog paymentType="dispute" open={paymentOpen} onClose={() => setPaymentOpen(false)} order={order} action={payment} />
         <OrderCaseCreate key={order.orderId} order={order} userRole={userRole} cases={cases}
-          available={history.isSuccess && !history.isFetching && !state.blocked && recovery.actionsAvailable && !recovery.retryPending} />
+          available={available} />
         {!history.isError && cases.map((detail, index) => <OrderCaseCard key={detail.orderCase?.id ?? index} detail={detail} participants={participants}>
           <OrderImagesSection orderId={order.orderId} imageIds={images.cases[index].imageIds} kind="case" />
           {images.cases[index].proofIds.map(id => <Link key={id} href={`#${proofAnchor(id)}`}>Подтверждение оплаты, файл #{id}</Link>)}

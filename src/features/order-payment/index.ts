@@ -4,3 +4,4 @@ export {
 } from "./model/useOrderPaymentAction";
 export { PaymentDialog } from "./ui/PaymentDialog";
 export type { PaymentType } from "./ui/PaymentDialog";
+export { useDisputePayment } from "./model/useDisputePayment";

@@ -39,7 +39,7 @@ test("all private namespaces are removed on logout, expiry and direct account sw
     let draftsCleared = 0;
     const unbind = bindPrivateDataLifecycle(client, scope, () => useCartQuantityStore.getState().clearQuantities(), () => { draftsCleared++; });
     try {
-      for (const key of ["users", "cart", "favorites", "orders", "orderImages", "orderCancel", "orderCaseCreate", "adminOrderCancel", "addresses", "accounts", "transfers", "social-networks", "products"]) {
+      for (const key of ["users", "cart", "favorites", "orders", "orderImages", "orderCancel", "orderCaseCreate", "disputePayment", "adminOrderCancel", "addresses", "accounts", "transfers", "social-networks", "products"]) {
         client.setQueryData(scope.key([key]), { owner: "A" });
       }
       client.setQueryData(["admin", 1, "access"], { owner: "A" });
