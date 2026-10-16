@@ -10,7 +10,7 @@ import { useOrderActionsRecovery } from "../model/orderActionsContext";
 
 export function OrderCasesSection({ order, state, userRole }: { order: ListOrdersModel; state: ReturnType<typeof useOrderCaseHistory>; userRole: OrderUserRole }) {
   const { history } = state;
-  const recovery = useOrderActionsRecovery();
+  const recovery = useOrderActionsRecovery(order.orderId);
   // При ошибке чтения не используем прежнюю историю для новых выводов о файлах/чеках.
   const cases = history.isError ? [] : (history.data ?? []);
   const available = history.isSuccess && !history.isFetching && !state.blocked && recovery.actionsAvailable && !recovery.retryPending;

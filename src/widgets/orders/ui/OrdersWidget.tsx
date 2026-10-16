@@ -130,10 +130,18 @@ export const OrdersWidget = ({ query, userRole }: OrdersWidgetProps) => {
   }
 
   return (
-    <OrderActionsContext.Provider value={{ actionsAvailable: !error && !casesState.blocked, retry: casesState.retryOrders, retryPending: isFetching || casesState.syncing }}>
+    <OrderActionsContext.Provider value={orderId => {
+      const recovery = casesState.forOrder(orderId);
+      return { actionsAvailable: !error && !recovery.blocked, retry: recovery.retryOrders, retryPending: isFetching || recovery.syncing };
+    }}>
     <Box sx={{ width: "100%", py: { xs: 2, sm: 3 } }}>
       {refreshWarning}
-      {casesState.blocked && <Alert severity="warning" action={<Button disabled={casesState.syncing} onClick={casesState.retryOrders}>Обновить заказ</Button>}>Действия недоступны до сверки статуса заказа с обращениями.</Alert>}
+      {(selectedOrder ? (casesState.blocked ? [selectedOrder.orderId] : []) : casesState.blockedOrderIds).map(orderId => {
+        const recovery = casesState.forOrder(orderId);
+        return <Alert key={orderId} severity="warning" action={<Button disabled={recovery.syncing} onClick={recovery.retryOrders}>Обновить заказ</Button>}>
+          <span>Заказ №{orderId}. </span><span>Действия недоступны до сверки статуса заказа с обращениями.</span>
+        </Alert>;
+      })}
       <ImageMetadataFeedback query={imageQuery} />
       <Box sx={{ display: { xs: "none", md: "block" } }}><PageHeader title={title} icon={<Icon />} /></Box>
       <Stack data-testid="desktop-orders" spacing={{ xs: 2, sm: 3 }} sx={{ display: { xs: "none", md: "flex" } }}>

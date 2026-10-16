@@ -57,7 +57,7 @@ export const CancelOrderDialog = ({
   userRole,
 }: CancelOrderDialogProps) => {
   const paymentBreakdown = getOrderPaymentBreakdown(order);
-  const actionsAvailable = useOrderActionsAvailable();
+  const actionsAvailable = useOrderActionsAvailable(order.orderId);
   const lock = useRef(false);
   const cancelOrderAction = useOrderCancelAction({ order, userRole });
   const { reason, comment } = cancelOrderAction.draft;
@@ -132,7 +132,7 @@ export const CancelOrderDialog = ({
       </DialogTitle>
 
       <DialogContent>
-        <OrderRefreshWarning />
+        <OrderRefreshWarning orderId={order.orderId} />
         {order.actualStatus !== "BOOKED" && <Alert severity="warning" sx={{ mb: 2 }}>Статус заказа изменился. Прямая отмена доступна только для забронированного заказа.</Alert>}
         {cancelOrderAction.recoveryMessage && <Alert severity="warning" sx={{ mb: 2 }} action={cancelOrderAction.requiresCheck && <Button disabled={cancelOrderAction.isPending} onClick={handleCheckResult}>Проверить результат</Button>}>{cancelOrderAction.recoveryMessage}</Alert>}
         {/* Информация о заказе */}

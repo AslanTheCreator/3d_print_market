@@ -282,7 +282,7 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
           </DialogTitle>
 
           <DialogContent sx={{ pb: 1 }}>
-            <OrderRefreshWarning />
+            <OrderRefreshWarning orderId={orderId} />
             <Stack spacing={3}>
               {/* Информация о товаре */}
               <ProductHeader product={product} />

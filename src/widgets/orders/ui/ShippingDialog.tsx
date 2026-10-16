@@ -45,7 +45,7 @@ interface ShippingDialogProps {
 }
 
 const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
-  const actionsAvailable = useOrderActionsAvailable();
+  const actionsAvailable = useOrderActionsAvailable(order.orderId);
   const [deliveryUrl, setDeliveryUrl] = useState("");
   const [comment, setComment] = useState("");
   const [deliveryService, setDeliveryService] = useState("");
@@ -186,7 +186,7 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
       </DialogTitle>
 
       <DialogContent>
-        <OrderRefreshWarning />
+        <OrderRefreshWarning orderId={order.orderId} />
         {/* Информация о заказе */}
         <Paper variant="outlined" sx={{ p: 2, mb: 2.5, bgcolor: "grey.50" }}>
           <Stack

@@ -21,7 +21,7 @@ interface SellerActionsProps {
 
 export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) => {
   const [shippingDialogOpen, setShippingDialogOpen] = useState(false);
-  const { actionsAvailable, retry, retryPending } = useOrderActionsRecovery();
+  const { actionsAvailable, retry, retryPending } = useOrderActionsRecovery(order.orderId);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   const confirmationAction = useOrderConfirmationAction();
