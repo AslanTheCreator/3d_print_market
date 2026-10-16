@@ -251,7 +251,7 @@ export const OrderDetailsDialog = ({
 
           {showTracking && <OrderTracking deliveryUrl={order.deliveryUrl} />}
 
-          <OrderCasesSection order={order} state={casesState} />
+          <OrderCasesSection order={order} state={casesState} userRole={userRole} />
 
           <OrderHistory order={order} />
         </Stack>

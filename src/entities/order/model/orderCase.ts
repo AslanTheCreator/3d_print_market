@@ -6,6 +6,11 @@ export type OrderCaseState = "OPEN" | "RESOLVED";
 export type OrderCaseOutcome = "BUYER" | "SELLER" | "CANCELLED" | "REJECTED" | "LEGACY";
 export type OrderCaseResolutionOutcome = Exclude<OrderCaseOutcome, "LEGACY">;
 
+export type CreateOrderCaseRequest = { orderId: number; comment: string } & (
+  | { kind: "CANCELLATION_REQUEST"; imageIds?: never }
+  | { kind: "DISPUTE" | "PAYMENT_APPEAL"; imageIds?: number[] }
+);
+
 // OpenAPI не задаёт required; отсутствие полей и null не заменяются значениями по умолчанию.
 export interface OrderCase {
   id?: number | null;

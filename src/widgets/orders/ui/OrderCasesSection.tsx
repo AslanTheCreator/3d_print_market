@@ -1,11 +1,14 @@
 import { Alert, Button, Link, Paper, Stack, Typography } from "@mui/material";
-import { getOrderCaseImageGroups, OrderCaseCard, type ListOrdersModel } from "@/entities/order";
+import { getOrderCaseImageGroups, OrderCaseCard, type ListOrdersModel, type OrderUserRole } from "@/entities/order";
+import { OrderCaseCreate } from "@/features/order-case-create";
 import { RequestFeedback } from "@/shared/ui/request-feedback";
 import type { useOrderCaseHistory } from "../model/useOrderCaseHistory";
 import { OrderImagesSection } from "./OrderImagesSection";
+import { useOrderActionsRecovery } from "../model/orderActionsContext";
 
-export function OrderCasesSection({ order, state }: { order: ListOrdersModel; state: ReturnType<typeof useOrderCaseHistory> }) {
+export function OrderCasesSection({ order, state, userRole }: { order: ListOrdersModel; state: ReturnType<typeof useOrderCaseHistory>; userRole: OrderUserRole }) {
   const { history } = state;
+  const recovery = useOrderActionsRecovery();
   // При ошибке чтения не используем прежнюю историю для новых выводов о файлах/чеках.
   const cases = history.isError ? [] : (history.data ?? []);
   const images = getOrderCaseImageGroups(order, cases);
@@ -25,6 +28,8 @@ export function OrderCasesSection({ order, state }: { order: ListOrdersModel; st
           {state.syncError instanceof Error ? state.syncError.message : "Статус заказа изменился. Обновляем заказ; действия временно недоступны."}
         </Alert>}
         {history.isSuccess && !history.isFetching && cases.length === 0 && <Typography>Обращений пока нет.</Typography>}
+        <OrderCaseCreate key={order.orderId} order={order} userRole={userRole} cases={cases}
+          available={history.isSuccess && !history.isFetching && !state.blocked && recovery.actionsAvailable && !recovery.retryPending} />
         {!history.isError && cases.map((detail, index) => <OrderCaseCard key={detail.orderCase?.id ?? index} detail={detail} participants={participants}>
           <OrderImagesSection orderId={order.orderId} imageIds={images.cases[index].imageIds} kind="case" />
           {images.cases[index].proofIds.map(id => <Link key={id} href={`#${proofAnchor(id)}`}>Подтверждение оплаты, файл #{id}</Link>)}

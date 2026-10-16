@@ -164,6 +164,50 @@ CANCEL), 6 мобильных, 15 HTTP smoke. Lint, typecheck, architecture:chec
 build успешны. Финальные проверки истории выполнены после повторной standalone-сборки
 с защитой optional orderStatus; skips и retries ради результата не добавлялись.
 
+## Backend integration: этап 5
+
+`order-case-create-model.spec.ts` проверяет матрицу B1/B2 по роли, всем статусам,
+наличию paymentProofImageId, null/0 предоплаты, OPEN и прежнему RESOLVED appeal;
+принадлежность и неполные DTO. Проверяются точные private POST, query encoding,
+запрет images у запроса отмены, N1-коды отдельно от произвольного 409, сопоставление
+нового обращения с исходной историей, общий busy/unknown после remount, частичный
+upload, stale cache, refresh и поздний ответ после очистки аккаунта. Отсутствующие
+ID исходной истории не позволяют принять старое обращение за результат нового POST;
+известный отказ с failed GET требует явного контрольного чтения перед повтором.
+
+`order-case-create.spec.ts` проверяет три формы и обе допустимые роли, непустой
+комментарий, optional images, повторяющиеся imageIds без скобок, отсутствие upload
+у запроса отмены, несколько локальных файлов и retry только неудавшегося upload.
+Проверяются сохранение комментария/ID после закрытия, запрет OPEN/прежнего appeal/
+чужого заказа/неизвестного чека, N1 и произвольный 409, конкурентное OPEN, двойной
+submit и remount при pending, потеря ответа с/без принятого обращения, успешный POST
+с failed GET, ошибка preflight и остановка цепочки до POST после unmount при upload.
+Отдельная гонка меняет paymentProofImageId после upload: спор не отправляется,
+а доступный запрос отмены не загружает и не передаёт выбранные ранее файлы.
+`private-data-model.spec.ts` включает namespace orderCaseCreate в очистку при
+logout/expiry/смене аккаунта.
+Базовые пользовательские сценарии включают 393 px и проверку overflow.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test order-case-create order-cases order-images order-payment order-details order-cancel open-forms backend-integration-contract-model private-data-model --project=chromium
+npx playwright test orders.mobile --project=mobile-chromium
+```
+
+Браузерная регрессия выполняется на свежем production standalone runtime;
+API-записи подменены. На реальном backend 16.10.2026 повторно прочитана только
+OpenAPI трёх POST; права и серверные переходы требуют отдельной приёмки.
+Полный e2e по плану остаётся этапу 12.
+
+16.10.2026 lint, typecheck, architecture:check, production build и self-review
+успешны. Общая регрессия — 147 Chromium; после финальных правок повторно прошли
+37 целевых Chromium и 6 мобильных сценариев, отдельно перепроверены model guards.
+Суммарно проверены 149 уникальных Chromium e2e/model и 15 HTTP smoke;
+ошибок, пропусков и повторов ради результата нет. Реальные серверные операции
+и независимый VP этими результатами не подтверждаются.
+
 ## Локальные товары бота
 
 `scripts/seed-agent-products.mjs` создаёт два товара с префиксом `[ТЕСТ]`

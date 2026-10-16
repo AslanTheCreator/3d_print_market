@@ -133,6 +133,13 @@ feature и не выбирает auth route. Политика возврата �
 административный reader переиспользует транспорт, сохраняя admin namespace.
 `widgets/orders` показывает нейтральную галерею файлов заказа, а локальным
 выбором файла и отложенным upload при submit владеет `features/order-payment`.
+`features/order-case-create` собирает формы запроса отмены, спора и оплаты после
+отмены внутри раздела обращений `widgets/orders`. API, mutation и матрица
+доступности принадлежат `entities/order`; feature использует ORDER-upload из
+`entities/image` и scoped профиль из `entities/user`. Guard и черновик операции
+хранятся в памяти существующего QueryClient, server DTO не копируются в Zustand.
+Новых маршрутов и cross-feature импортов нет; recovery описан в
+[api-and-auth.md](./api-and-auth.md#создание-обращений-этап-5).
 Общий image-upload/cleanup ограничен NonOrderImageTag. Правила приватности
 и lifecycle описаны в [api-and-auth.md](./api-and-auth.md#изображения-заказа-этап-3).
 Core DTO профиля, заказов и собственных товаров кэшируются отдельно;

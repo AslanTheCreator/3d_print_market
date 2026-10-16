@@ -3,6 +3,9 @@
 // Queries
 export { orderCasesApi } from "./api/orderCasesApi";
 export { useOrderCasesQuery } from "./model/useOrderCasesQuery";
+export { useCreateOrderCase } from "./model/useCreateOrderCase";
+export { getAvailableOrderCaseKinds } from "./lib/orderCaseAvailability";
+export type { OrderCaseAccess } from "./lib/orderCaseAvailability";
 export { OrderCaseCard } from "./ui/OrderCaseCard";
 export { getOrderCaseImageGroups } from "./lib/orderCaseImages";
 export {
@@ -61,6 +64,7 @@ export type {
   OrderCaseOutcome,
   OrderCaseResolutionOutcome,
   ResolveOrderCaseRequest,
+  CreateOrderCaseRequest,
 } from "./model/orderCase";
 export type { ListOrdersDto, ListOrdersModel, OrderCancel, OrderStatus } from "./model/types";
 export type { OrderProgressStep, OrderUserRole } from "./lib/orderStatusMeta";
