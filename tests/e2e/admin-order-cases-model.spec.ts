@@ -201,3 +201,37 @@ test("offline does not queue POST for a later reconnect", async () => {
   try { const hook = ctx.begin(); onlineManager.setOnline(false); await hook.submit("resolve"); expect(ctx.capture().state.busy).toBe(false); onlineManager.setOnline(true); await ctx.capture().submit("resolve"); expect(ctx.state.posts).toBe(1); }
   finally { onlineManager.setOnline(online); ctx.restore(); }
 });
+
+for (const unknown of [false, true]) test(`settled Telegram accepted=${!unknown} keeps its own replay guard while OPEN/B permits independent resolve`, async () => {
+  const ctx = setup();
+  adminOrderCasesApi.telegram = async (_, url) => {
+    ctx.state.puts++; ctx.state.readsFail = true;
+    ctx.state.detail = { ...ctx.state.detail, orderCase: { ...ctx.state.detail.orderCase, telegramUrl: url } };
+    if (unknown) throw new ApiError("Lost", "NETWORK_ERROR");
+  };
+  try {
+    await ctx.begin().submit("telegram");
+    ctx.capture().continueAfterTelegram(); await ctx.capture().submit("resolve"); expect(ctx.state.posts).toBe(0);
+    ctx.state.readsFail = false; ctx.state.detail.orderCase!.telegramUrl = "https://t.me/newer_B";
+    await ctx.capture().checkResult();
+    expect(ctx.capture().state.attempt).toMatchObject({ status: unknown ? "unknown" : "accepted", checked: false, openChecked: true, synced: true });
+    ctx.capture().continueAfterTelegram();
+    expect(ctx.capture().state.telegramAttempt).toMatchObject({ url: "https://t.me/case", status: unknown ? "unknown" : "accepted", checked: false });
+    await ctx.capture().submit("telegram"); expect(ctx.state.puts).toBe(1);
+    await ctx.capture().submit("resolve"); expect(ctx.state.posts).toBe(1);
+    expect(ctx.state.detail.orderCase!.telegramUrl).toBe("https://t.me/newer_B");
+  } finally { ctx.restore(); }
+});
+
+test("late Telegram PUT after account teardown cannot restore a guard or permit a resolve in the next scope", async () => {
+  const ctx = setup(); const auth = useAuthStore.getState(); useAuthStore.setState({ isInitialized: true, isAuthenticated: true, accountRevision: 1 });
+  const unbind = bindPrivateDataLifecycle(ctx.client, ctx.scope, () => {}, () => {});
+  let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+  adminOrderCasesApi.telegram = async () => { ctx.state.puts++; await gate; };
+  try {
+    const pending = ctx.begin().submit("telegram"); await expect.poll(() => ctx.state.puts).toBe(1);
+    const old = ctx.capture(); useAuthStore.setState({ accountRevision: 2 }); release(); await pending;
+    old.continueAfterTelegram(); await old.submit("resolve");
+    expect(ctx.state.posts).toBe(0); expect(ctx.client.getQueryCache().getAll()).toEqual([]);
+  } finally { release(); unbind(); ctx.restore(); useAuthStore.setState(auth, true); }
+});

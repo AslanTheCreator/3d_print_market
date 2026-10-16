@@ -5,7 +5,7 @@ export type CaseCommand = { caseId: number } & (
   | { kind: "resolve"; outcome: OrderCaseResolutionOutcome; comment: string }
   | { kind: "telegram"; url: string }
 );
-export type CaseAttempt = CaseCommand & { status: "accepted" | "unknown" | "rejected" | "conflict"; checked: boolean; synced: boolean; terminal?: boolean };
+export type CaseAttempt = CaseCommand & { status: "accepted" | "unknown" | "rejected" | "conflict"; checked: boolean; synced: boolean; terminal?: boolean; openChecked?: boolean };
 export function matchesCaseAttempt(detail: OrderCaseDetail, attempt: CaseCommand) {
   if (detail.orderCase?.id !== attempt.caseId) return false;
   return attempt.kind === "telegram" ? getSafeCaseTelegramUrl(detail.orderCase.telegramUrl) === attempt.url

@@ -320,6 +320,23 @@ lint, typecheck, architecture:check и production build успешны.
 Финальные прогоны — без failures/skips/retries; self-review и diff-check пройдены.
 Все записи подменены; реальная серверная приёмка не заменяется этими проверками.
 
+## F2: восстановление ADMIN-рассмотрения
+
+`admin-case-telegram-recovery.spec.ts` проверяет PUT A → failed GET → OPEN/B →
+явное продолжение → resolve без повторного PUT A, включая неизвестный исход PUT,
+закрытие/пересоздание Drawer и выбор другого обращения. Дополнительно проверяются
+pending PUT при отзыве/возврате ADMIN, поздний старый GET, утрата доступа перед
+resolve и уже RESOLVED обращение. Model-тесты сохраняют отдельный guard PUT,
+не приравнивают OPEN/B к отказу записи и проверяют поздний PUT после смены scope.
+
+16.10.2026 четыре новых браузерных и три новых model-сценария F2, существующие
+регрессии `admin-order-cases`, 2 административных mobile и 15 HTTP smoke прошли
+на свежем production standalone runtime (`G4BWgHnaA4O8hkPqm-Bcx`). Lint, typecheck,
+architecture:check и production build успешны; self-review и diff-check пройдены.
+Финальные прогоны — без failures/skips/retries; существующие assertions не ослаблены.
+Все записи подменены. Реальный backend проверен чтением актуальной OpenAPI;
+серверные переходы и конкурентные записи остаются отдельной приёмкой.
+
 ## Локальные товары бота
 
 `scripts/seed-agent-products.mjs` создаёт два товара с префиксом `[ТЕСТ]`

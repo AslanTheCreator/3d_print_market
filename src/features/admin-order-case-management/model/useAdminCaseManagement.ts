@@ -11,11 +11,11 @@ import { getAdminCaseFailure, matchesCaseAttempt, type CaseAttempt, type CaseCom
 
 interface CaseDraft {
   initialized: boolean; context: string; comment: string; outcome: OrderCaseResolutionOutcome | "";
-  url: string; baselineUrl: string; busy: boolean; attempt: CaseAttempt | null; message: string; failureMessage: string;
+  url: string; baselineUrl: string; busy: boolean; attempt: CaseAttempt | null; telegramAttempt: CaseAttempt | null; message: string; failureMessage: string;
 }
 const contextOf = (detail: OrderCaseDetail) => JSON.stringify([detail.orderCase?.id, detail.orderCase?.orderId, detail.orderCase?.kind, detail.orderCase?.previousOrderStatus]);
 const initial = (detail?: OrderCaseDetail): CaseDraft => ({ initialized: !!detail, context: detail ? contextOf(detail) : "", comment: "", outcome: "",
-  url: detail?.orderCase?.telegramUrl ?? "", baselineUrl: detail?.orderCase?.telegramUrl ?? "", busy: false, attempt: null, message: "", failureMessage: "" });
+  url: detail?.orderCase?.telegramUrl ?? "", baselineUrl: detail?.orderCase?.telegramUrl ?? "", busy: false, attempt: null, telegramAttempt: null, message: "", failureMessage: "" });
 
 export function useAdminCaseManagement(caseId: number, session: number | null) {
   const client = useQueryClient(); const scope = usePrivateScope();
@@ -82,6 +82,11 @@ export function useAdminCaseManagement(caseId: number, session: number | null) {
         update({ message: `${draft.failureMessage} Данные обновлены. Проверьте ввод; повтор возможен только явно.` });
       } else if (fresh.orderCase?.state === "RESOLVED" && (!matched || attempt.status === "rejected")) {
         update({ attempt: { ...attempt, status: "conflict", checked: true, synced: false }, message: `${draft.failureMessage} Обращение уже завершено. Показано серверное решение; ваш ввод сохранён, повторная отправка запрещена.` });
+      } else if (attempt.kind === "telegram" && !attempt.terminal && (attempt.status === "accepted" || attempt.status === "unknown") &&
+        fresh.orderCase?.state === "OPEN" && contextOf(fresh) === draft.context) {
+        // Текущее значение не доказывает исход PUT. Оно позволяет независимо рассмотреть OPEN-обращение.
+        update({ attempt: { ...attempt, openChecked: true, checked: false, synced: false }, baselineUrl: fresh.orderCase.telegramUrl ?? "",
+          message: `${draft.failureMessage} ${attempt.status === "accepted" ? "Запрос принят, но текущая ссылка отличается от отправленной." : "Результат пока не подтверждён."} Обращение открыто. После обновления связанных данных можно продолжить рассмотрение без повторного PUT.` });
       } else {
         update({ message: `${draft.failureMessage} ${attempt.status === "accepted" ? "Запрос принят сервером, но изменение ещё не подтверждено деталями." : "Результат пока не подтверждён."} Повторная отправка заблокирована; повторите проверку.` });
       }
@@ -106,7 +111,7 @@ export function useAdminCaseManagement(caseId: number, session: number | null) {
   };
   const submit = async (kind: CaseCommand["kind"]) => {
     const draft = get();
-    if (!callerCurrent() || !draft.initialized || draft.busy || draft.attempt) return;
+    if (!callerCurrent() || !draft.initialized || draft.busy || draft.attempt || (kind === "telegram" && draft.telegramAttempt)) return;
     const url = getSafeCaseTelegramUrl(draft.url.trim());
     if (kind === "resolve" ? !draft.outcome || !draft.comment.trim() : !url) return;
     update({ busy: true, message: "", failureMessage: "" }); let posting = false;
@@ -150,13 +155,25 @@ export function useAdminCaseManagement(caseId: number, session: number | null) {
   return { state, detail, submit,
     dirty: !resolved && (!!state.comment || !!state.outcome || state.url !== state.baselineUrl),
     canEdit: hasAccess() && state.initialized && !state.busy && !state.attempt && detail.isSuccess && !detail.isFetching && detail.data.orderCase?.state === "OPEN",
-    edit: (patch: Partial<Pick<CaseDraft, "comment" | "outcome" | "url">>) => { if (editable()) update(patch); },
+    canEditTelegram: hasAccess() && !state.telegramAttempt,
+    canContinueAfterTelegram: hasAccess() && !state.busy && state.attempt?.kind === "telegram" && !state.attempt.terminal && state.attempt.synced &&
+      ((state.attempt.status === "accepted" && state.attempt.checked) || !!state.attempt.openChecked) && detail.isSuccess && !detail.isFetching && detail.data.orderCase?.state === "OPEN",
+    edit: (patch: Partial<Pick<CaseDraft, "comment" | "outcome" | "url">>) => {
+      if (editable()) { const { url, ...resolution } = patch; update({ ...resolution, ...(!get().telegramAttempt && url !== undefined ? { url } : {}) }); }
+    },
     checkResult: async () => {
       if (!callerCurrent() || get().busy || !get().attempt) return;
       update({ busy: true }); try { await reconcile(); } finally { update({ busy: false }); }
     },
     continueAfterTelegram: () => {
-      const draft = get(); if (callerCurrent() && !draft.busy && draft.attempt?.kind === "telegram" && draft.attempt.status === "accepted" && draft.attempt.checked && draft.attempt.synced) update({ attempt: null, failureMessage: "" });
+      const draft = get(); const attempt = draft.attempt;
+      const query = client.getQueryState<OrderCaseDetail>(detailKey);
+      const fresh = query?.data;
+      if (callerCurrent() && !draft.busy && attempt?.kind === "telegram" && !attempt.terminal && attempt.synced &&
+        ((attempt.status === "accepted" && attempt.checked) || ((attempt.status === "accepted" || attempt.status === "unknown") && attempt.openChecked)) &&
+        query?.status === "success" && query.fetchStatus === "idle" && fresh?.orderCase?.state === "OPEN" && contextOf(fresh) === draft.context) {
+        update({ attempt: null, telegramAttempt: attempt.checked ? draft.telegramAttempt : attempt, failureMessage: "" });
+      }
     },
   };
 }

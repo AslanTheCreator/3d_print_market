@@ -12,17 +12,17 @@ export function AdminOrderCaseForms({ action }: { action: ReturnType<typeof useA
   const telegram = useForm({ values: { url: state.url } });
   useUnsavedChanges(action.dirty, state.busy);
   const outcomes = detail.data ? getAdminOrderCaseOutcomes(detail.data) : [];
-  const savedTelegram = state.attempt?.kind === "telegram" && state.attempt.status === "accepted" && state.attempt.checked && state.attempt.synced;
   return <Stack spacing={2} data-testid="admin-case-forms">
     {state.message && <Alert role="status" severity={state.attempt?.status === "accepted" && state.attempt.checked && state.attempt.synced ? "success" : "warning"}>{state.message}</Alert>}
     {state.attempt && (!state.attempt.checked || !state.attempt.synced) && <Button disabled={state.busy} onClick={() => void action.checkResult()}>Проверить результат операции</Button>}
-    {savedTelegram && <Button onClick={action.continueAfterTelegram}>Продолжить рассмотрение</Button>}
+    {action.canContinueAfterTelegram && <Button onClick={action.continueAfterTelegram}>Продолжить рассмотрение</Button>}
+    {state.telegramAttempt && <Alert severity="warning">Предыдущая запись Telegram-ссылки не подтверждена текущим значением. Её повтор заблокирован; решение принимается отдельно по актуальным деталям обращения.</Alert>}
     {state.initialized && <>
       <Typography variant="h6">Обсуждение в Telegram</Typography>
       <Stack component="form" aria-label="Ссылка обсуждения" spacing={1.5} onSubmit={telegram.handleSubmit(() => action.submit("telegram"))}>
-        <TextField label="Telegram-ссылка" disabled={!action.canEdit} error={!!telegram.formState.errors.url} helperText={telegram.formState.errors.url?.message}
+        <TextField label="Telegram-ссылка" disabled={!action.canEdit || !action.canEditTelegram} error={!!telegram.formState.errors.url} helperText={telegram.formState.errors.url?.message}
           {...telegram.register("url", { validate: value => !!getSafeCaseTelegramUrl(value.trim()) || "Укажите HTTPS-ссылку t.me или telegram.me", onChange: event => action.edit({ url: event.target.value }) })} />
-        <Button type="submit" variant="outlined" disabled={!action.canEdit || state.url === state.baselineUrl}>Сохранить ссылку обсуждения</Button>
+        <Button type="submit" variant="outlined" disabled={!action.canEdit || !action.canEditTelegram || state.url === state.baselineUrl}>Сохранить ссылку обсуждения</Button>
       </Stack>
       <Typography variant="h6">Решение по обращению</Typography>
       {!outcomes.length && <Typography>Новое решение недоступно для этого обращения.</Typography>}
