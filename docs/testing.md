@@ -320,6 +320,49 @@ lint, typecheck, architecture:check и production build успешны.
 Финальные прогоны — без failures/skips/retries; self-review и diff-check пройдены.
 Все записи подменены; реальная серверная приёмка не заменяется этими проверками.
 
+## F3: детерминированная синхронизация регрессий F1
+
+В `order-case-recovery.spec.ts` начало задержанной сверки определяется сигналом
+перехватчика GET конкретной роли, включённого чтением `/order/1/cases`, и pending
+адресной кнопки сверки. Общий `ordersReads` не используется: он также учитывает
+чтения шапки и другой роли. Повторные GET нужной роли удерживаются тем же gate;
+snapshot снимается при начале запроса, а release ожидает завершения удержанных
+ответов. При смене аккаунта новые чтения проходят независимо от старого gate.
+
+Сценарии добавляют параллельные повторные GET обоих списков до сверки и во время
+ожидания, в разном порядке для покупателя и продавца. Проверки изоляции заказов,
+позднего ответа, B1-действия заказа 2 и сохранения ограничений заказа 1 сохранены.
+Production-код, общий fixture, настройки параллельности и timeout не изменяются.
+
+17.10.2026 проверка выполнена на свежем production standalone
+`zKDD6RQ5_-pFw5i5ivvs6`, Chromium, во всех прогонах `--workers=4 --retries=0`,
+без изменения assertions других specs. JSON-отчёты — в `.cache/f3-order-case-recovery/`.
+
+| Прогон | Повтор | Passed / failed | Секунды |
+|---|---:|---:|---:|
+| `purchase`, `late=true` (`targeted-20.json`) | 20 | 20 / 0 | 79.523 |
+| `sales`, `late=true` (`sales-targeted-20.json`) | 20 | 20 / 0 | 60.435 |
+| Все пять F1 (`f1-repeat-10.json`) | 10 | 50 / 0 | 150.264 |
+| Только F1/F2 и история обращений (`f1-f2.json`) | 1 | 80 / 0 | 165.182 |
+| F1/F2 + `order-dispute-payment` (`related.json`) | 1 | 106 / 3 | 224.363 |
+| Только recovery после закрытия payment и local draft (`aria-close-isolated-5.json`) | 5 | 14 / 6 | 62.953 |
+| Активный payment: pending POST и unmount во время upload (`aria-open-isolated-10.json`) | 10 | 20 / 0 | 54.523 |
+
+Суммарно 319 попыток, без retries/skips и глобальных ошибок runner. Timeout
+создания page не воспроизвёлся; связь с F3 не подтверждена. Lint, отдельный ESLint
+изменённого spec, typecheck, architecture:check и production build успешны.
+Self-review и diff-check пройдены; изменения ограничены spec F1 и документацией.
+
+В расширенном прогоне три отказа относятся к неизменённому
+`order-dispute-payment.spec.ts:16`, не к F1/F2. Изолированный запуск того же spec
+без загрузки F1 повторяет `aria-hidden` timeout: recovery lost with/without proof,
+success GET failure и local draft не всегда дожидаются завершения закрытия payment
+перед `unmount`. Trace показывает click «Закрыть», затем `isVisible() === true`
+на уходящем диалоге; к проверке родителя его `aria-hidden` уже снят. Это отдельная
+гонка helper, а не ошибка production-кода и не результат изменения F3.
+Spec и его assertions оставлены без изменений; общий VP этапов 4–7 из-за неё
+нельзя считать полностью успешным.
+
 ## F2: восстановление ADMIN-рассмотрения
 
 `admin-case-telegram-recovery.spec.ts` проверяет PUT A → failed GET → OPEN/B →
