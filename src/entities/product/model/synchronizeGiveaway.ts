@@ -8,6 +8,7 @@ import { productKeys } from "./queryKeys";
 export interface GiveawaySyncTarget {
   session: number; productId: number; agentId?: number; ownedByCurrentUser: boolean;
   scope: PrivateScope; isCurrent: () => boolean;
+  converted?: boolean;
 }
 async function synchronizeKeys(client: QueryClient, target: Pick<GiveawaySyncTarget, "session" | "scope" | "isCurrent">, keys: QueryKey[], invalidateOnly: QueryKey[] = []) {
   const { session, scope } = target;
@@ -27,11 +28,21 @@ export function synchronizeCreatedGiveaway(client: QueryClient, target: Pick<Giv
 }
 export async function synchronizeGiveaway(client: QueryClient, target: GiveawaySyncTarget) {
   const { session, productId, agentId, scope } = target;
+  if (scope.id !== session || !scope.isCurrent() || !target.isCurrent()) throw new Error("Сессия или доступ изменились");
   const keys: QueryKey[] = [adminGiveawayKeys.histories(session), adminGiveawayKeys.detail(session, productId),
     giveawayKeys.detail(productId), giveawayKeys.active(), adminProductKeys.detail(session, productId)];
   if (agentId !== undefined) keys.push(adminProductKeys.list(session, agentId));
   if (target.ownedByCurrentUser) keys.push(scope.key(productKeys.userLists()));
-  // До этапа 11 relations читаются из публичного /product/{id}, исключающего GIVEAWAY.
   const relations = adminProductKeys.relations(session, productId);
-  await synchronizeKeys(client, target, keys, [relations]);
+  // До этапа 11 relations читаются из публичного /product/{id}, исключающего GIVEAWAY.
+  // Теперь query выбирает admin источник; активные связи можно безопасно перечитать.
+  keys.push(relations);
+  if (target.converted) {
+    const details = [productKeys.detail(productId), productKeys.detail(String(productId))];
+    await Promise.all(details.map(queryKey => client.cancelQueries({ queryKey, exact: true })));
+    if (!scope.isCurrent() || !target.isCurrent()) throw new Error("Сессия или доступ изменились");
+    details.forEach(queryKey => client.removeQueries({ queryKey, exact: true }));
+    keys.push(productKeys.lists());
+  }
+  await synchronizeKeys(client, target, keys);
 }

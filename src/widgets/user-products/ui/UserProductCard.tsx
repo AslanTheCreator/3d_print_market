@@ -70,6 +70,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
   const theme = useTheme();
 
   const expirationStatus = getExpirationStatus(expirationDate);
+  const expiredPublication = availability !== "GIVEAWAY" && expirationStatus.isExpired;
   const isExternallyManaged = !isEditableAvailability(availability);
   const productImage = image?.[0] ?? null;
   const productImageSrc = getImageUrl(productImage, "medium");
@@ -125,7 +126,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
         maxWidth: "100%",
         width: "100%",
         borderRadius: { xs: 1.5, sm: 2 },
-        boxShadow: expirationStatus.isExpired
+        boxShadow: expiredPublication
           ? `0 0 0 2px ${theme.palette.error.main}`
           : "0 2px 8px rgba(0, 0, 0, 0.06)",
         overflow: "hidden",
@@ -137,13 +138,13 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
         "&:hover": {
           transform: { sm: "translateY(-4px)" },
           boxShadow: {
-            sm: expirationStatus.isExpired
+            sm: expiredPublication
               ? `0 0 0 2px ${theme.palette.error.main}, 0 8px 16px rgba(0, 0, 0, 0.1)`
               : "0 8px 16px rgba(0, 0, 0, 0.1)",
           },
         },
         bgcolor: "background.paper",
-        opacity: expirationStatus.isExpired ? 0.7 : 1,
+        opacity: expiredPublication ? 0.7 : 1,
       }}
     >
       <Link
@@ -207,7 +208,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
           >
             <Tooltip
               title={
-                isExternallyManaged
+                availability === "GIVEAWAY" ? "Розыгрыш управляется администратором" : isExternallyManaged
                   ? "Товар управляется внешним источником и доступен только для просмотра"
                   : ""
               }

@@ -1,4 +1,4 @@
-# Контракты обращений и розыгрышей: этапы 1–10
+# Контракты обращений и розыгрышей: этапы 1–11
 
 Источники: [backend-требования](./backend-plan/plan_2_formatted.md), окончательные
 [ответы backend B1–B4/N1–N2](./backend-plan/FRONTEND_BACKEND_ANSWERS.md)
@@ -27,8 +27,8 @@ success body для управления UI не используется. Ре�
 пользовательские формы создания по B1/B2 и обработку N1. Этап 7 подключает очередь,
 Telegram и решения ADMIN на `/admin/order-cases`; этап 8 подключает только публичные
 GET розыгрышей. Этап 9 подключает ADMIN history/detail/settings PUT; этап 10 —
-создание собственного розыгрыша через POST /products. Преобразование товара бота
-остаётся этапу 11.
+создание собственного розыгрыша через POST /products. Этап 11 подключает преобразование
+и повторное редактирование товара бота через существующий административный PUT.
 Этап 6 добавляет подтверждение оплаты в открытый
 спор через существующий ASSEMBLING POST; lifecycle и recovery описаны в
 [api-and-auth.md](./api-and-auth.md#подтверждение-оплаты-в-споре-этап-6).
@@ -122,8 +122,14 @@ string. `giveawayEnabled` не выводится из `status`.
 Он подключён к POST /products только административной формой этапа 10.
 `ProductCreateModel` и `EditableAvailability` допускают только
 `PURCHASABLE | PREORDER`; runtime seller mapper отклоняет также `GIVEAWAY`.
-Действующий `AdminProductInput` и mapper по-прежнему формируют EXTERNAL_PRODUCT;
-переключение административного редактора относится к этапу 11.
+`AdminProductInput` явно различает EXTERNAL_PRODUCT и GIVEAWAY с вложенными настройками.
+Обычная seller-модель не расширена. Связи преобразованного товара читаются из полного
+AdminGiveawayProductResponse, а не публичного /product/{id}.
+
+20.10.2026 повторно проверены OpenAPI PUT /admin/actions/agents/{agentId}/products/{productId},
+CreateOrUpdateProductRequest и AdminGiveawayProductResponse: существующий endpoint,
+вложенный GiveawaySettingsRequest и N1 GIVEAWAY_WINDOW_OVERLAP. Success body по-прежнему
+не используется. Реальные записи backend не выполнялись; контракт не изменялся.
 
 OpenAPI включает техническое значение валюты `CREATE` в raw Product и
 CreateOrUpdateProductRequest. Оно сохранено только в новых административных

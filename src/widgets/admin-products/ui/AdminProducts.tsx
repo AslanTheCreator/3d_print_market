@@ -4,16 +4,17 @@ import { useAgents } from "@/entities/agent";
 import { useAdminProductLists, useAdminProductRelations, type AdminProductDto } from "@/entities/product";
 import { imageApi } from "@/entities/image";
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { ProductStatusActions } from "@/features/admin-product-management";
 import { Alert, Box, Button, Chip, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { RequestFeedback } from "@/shared/ui/request-feedback";
 import { parsePositiveSafeInteger, parseNonNegativeSafeInteger } from "@/shared/lib";
 import { useAdminProductSearch } from "../model/useAdminProductSearch";
 
-const statuses: Record<string, string> = { ACTIVE: "Активные", BLOCKED: "Заблокированные", TIME_EXPIRED: "Истёкшие", DELETED: "Удалённые" };
-const statusLabels: Record<string, string> = { ACTIVE: "Активен", BLOCKED: "Заблокирован", TIME_EXPIRED: "Истёк", DELETED: "Удалён" };
+const statuses: Record<string, string> = { ACTIVE: "Активные", AWAITING_GIVEAWAY: "Запланированные розыгрыши", BLOCKED: "Заблокированные", TIME_EXPIRED: "Истёкшие", DELETED: "Удалённые" };
+const statusLabels: Record<string, string> = { ACTIVE: "Активен", AWAITING_GIVEAWAY: "Запланирован розыгрыш", BLOCKED: "Заблокирован", TIME_EXPIRED: "Истёк", DELETED: "Удалён" };
 function ProductPreview({ product, session }: { product: AdminProductDto; session: number | null }) {
-  const relations = useAdminProductRelations(session, product.id, product.availability !== "GIVEAWAY");
+  const relations = useAdminProductRelations(session, product.id, true, product.availability === "GIVEAWAY");
   const matches = relations.data?.id === product.id && relations.data.participantId === product.participantId;
   const imageId = matches ? relations.data?.imageIds?.[0] ?? null : null;
   const metadata = useQuery({ queryKey: ["admin", session, "preview", imageId], queryFn: ({ signal }) => imageApi.getImageMetadata(imageId, signal), enabled: !!imageId, retry: false });
@@ -49,13 +50,13 @@ export function AdminProducts({ agentId }: { agentId?: number }) {
     {!pending && !agents.error && !failed.length && !visible.length && <Alert severity="info">Товары не найдены</Alert>}
     {desktop ? <TableContainer component={Paper} variant="outlined"><Table aria-label="Товары ботов"><TableHead><TableRow>{["Товар", "Бот", "Цена / остаток", "Статус", "Действия"].map((label) => <TableCell key={label}>{label}</TableCell>)}</TableRow></TableHead><TableBody>{visible.map((product) => <TableRow key={product.id}>
       <TableCell sx={{ maxWidth: 310 }}><Stack direction="row" spacing={1}><ProductPreview product={product} session={sessionKey} /><Stack><Typography fontWeight={600}>{product.name}</Typography><Typography variant="body2" color="text.secondary">#{product.id}</Typography></Stack></Stack></TableCell>
-      <TableCell>{agents.data?.find((agent) => agent.id === product.participantId)?.login ?? product.participantId}</TableCell><TableCell>{product.price} {product.currency}<Typography variant="body2">{product.count ?? "Без ограничения"}</Typography></TableCell><TableCell><Chip label={statusLabels[product.status] ?? product.status} /></TableCell>
-      <TableCell><Button href={`/admin/products/${product.id}?returnTo=${encodeURIComponent(currentUrl)}`}>Редактировать</Button>{agents.data?.some((agent) => agent.id === product.participantId) && <ProductStatusActions product={product} session={sessionKey} />}</TableCell>
+      <TableCell>{agents.data?.find((agent) => agent.id === product.participantId)?.login ?? product.participantId}</TableCell><TableCell>{product.availability === "GIVEAWAY" ? "Розыгрыш" : <>{product.price} {product.currency}<Typography variant="body2">{product.count ?? "Без ограничения"}</Typography></>}</TableCell><TableCell><Chip label={statusLabels[product.status] ?? product.status} /></TableCell>
+      <TableCell><Button component={Link} prefetch={false} href={`${product.availability === "GIVEAWAY" ? "/admin/giveaways" : "/admin/products"}/${product.id}?returnTo=${encodeURIComponent(currentUrl)}`}>{product.availability === "GIVEAWAY" ? "Настройки розыгрыша" : "Редактировать"}</Button>{agents.data?.some((agent) => agent.id === product.participantId) && <ProductStatusActions product={product} session={sessionKey} />}</TableCell>
     </TableRow>)}</TableBody></Table></TableContainer> : <Stack spacing={2}>{visible.map((product) => <Paper variant="outlined" key={product.id} sx={{ p: 2 }}>
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
-        <Stack direction="row" spacing={2} flex={1}><ProductPreview product={product} session={sessionKey} /><Box minWidth={0}><Typography fontWeight={600}>{product.name}</Typography><Typography variant="body2" color="text.secondary">#{product.id} · {agents.data?.find((agent) => agent.id === product.participantId)?.login ?? product.participantId}</Typography><Typography>{product.price} {product.currency} · Остаток: {product.count ?? "без ограничения"}</Typography></Box></Stack>
+        <Stack direction="row" spacing={2} flex={1}><ProductPreview product={product} session={sessionKey} /><Box minWidth={0}><Typography fontWeight={600}>{product.name}</Typography><Typography variant="body2" color="text.secondary">#{product.id} · {agents.data?.find((agent) => agent.id === product.participantId)?.login ?? product.participantId}</Typography><Typography>{product.availability === "GIVEAWAY" ? "Розыгрыш" : `${product.price} ${product.currency} · Остаток: ${product.count ?? "без ограничения"}`}</Typography></Box></Stack>
         <Chip label={statusLabels[product.status] ?? product.status} color={product.status === "ACTIVE" ? "success" : "default"} />
-        <Button variant="outlined" href={`/admin/products/${product.id}?returnTo=${encodeURIComponent(currentUrl)}`}>Редактировать</Button>
+        <Button component={Link} prefetch={false} variant="outlined" href={`${product.availability === "GIVEAWAY" ? "/admin/giveaways" : "/admin/products"}/${product.id}?returnTo=${encodeURIComponent(currentUrl)}`}>{product.availability === "GIVEAWAY" ? "Настройки розыгрыша" : "Редактировать"}</Button>
       </Stack>{agents.data?.some((agent) => agent.id === product.participantId) && <ProductStatusActions product={product} session={sessionKey} />}
     </Paper>)}</Stack>}
     <Stack direction="row" alignItems="center" spacing={2}><Button disabled={safePage === 0} onClick={() => set({ page: safePage - 1 })}>Назад</Button><Typography>Страница {safePage + 1} из {pageCount}</Typography><Button disabled={safePage + 1 >= pageCount} onClick={() => set({ page: safePage + 1 })}>Далее</Button></Stack>

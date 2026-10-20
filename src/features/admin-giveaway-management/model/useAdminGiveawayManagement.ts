@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { agentKeys, useAgents, type AgentSummary } from "@/entities/agent";
 import { userApi } from "@/entities/user";
 import {
   adminGiveawayApi, adminGiveawayKeys, giveawaySettingsFingerprint, hasAdminGiveawayAccess,
   mapGiveawaySettings, synchronizeGiveaway, toGiveawaySettingsRequest, useAdminGiveaway, validateGiveawaySettings,
   type AdminGiveawayProductResponse, type GiveawaySettingsValues, type GiveawaySettingsRequest,
+  adminProductOperationKeys, hasOtherAdminProductWrite,
 } from "@/entities/product";
 import { usePrivateMutation, usePrivateScope } from "@/shared/lib/query";
 import { ApiError } from "@/shared/lib/errorHandler";
@@ -22,14 +23,17 @@ const settingsOf = (data: AdminGiveawayProductResponse) => mapGiveawaySettings(d
 export function useAdminGiveawayManagement(session: number | null, id: number) {
   const client = useQueryClient(), scope = usePrivateScope();
   const detail = useAdminGiveaway(session, id), agents = useAgents(session);
-  const key = useMemo(() => ["admin", session, "giveaway-operation", id] as const, [session, id]);
+  const key = useMemo(() => adminProductOperationKeys.settings(session, id), [session, id]);
   const detailKey = adminGiveawayKeys.detail(session, id);
   const { data: state } = useQuery({ queryKey: key, queryFn: empty, initialData: empty, enabled: false, staleTime: Infinity, gcTime: Infinity });
+  useQuery({ queryKey: adminProductOperationKeys.product(session, id), queryFn: skipToken, enabled: false });
+  useQuery({ queryKey: adminProductOperationKeys.status(session, id), queryFn: skipToken, enabled: false });
   const mounted = useRef(true), latest = useRef({ id, session }); latest.current = { id, session };
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const current = () => session !== null && scope.id === session && scope.isCurrent();
   const access = () => current() && hasAdminGiveawayAccess(client, session);
   const caller = () => access() && mounted.current && latest.current.id === id && latest.current.session === session;
+  const other = () => hasOtherAdminProductWrite(client, session, id, "settings");
   const get = () => client.getQueryData<Draft>(key) ?? empty();
   const update = (patch: Partial<Draft>) => { if (current()) client.setQueryData<Draft>(key, old => ({ ...(old ?? empty()), ...patch })); };
   useEffect(() => {
@@ -106,7 +110,7 @@ export function useAdminGiveawayManagement(session: number | null, id: number) {
   }
   async function save() {
     const draft = get();
-    if (!caller() || draft.busy || draft.attempt || draft.readFailed || draft.conflict || !draft.initialized || !detail.isSuccess || detail.isFetching || typeof detail.data.product?.giveawayEnabled !== "boolean") return;
+    if (!caller() || other() || draft.busy || draft.attempt || draft.readFailed || draft.conflict || !draft.initialized || !detail.isSuccess || detail.isFetching || typeof detail.data.product?.giveawayEnabled !== "boolean") return;
     const validation = () => Object.values(validateGiveawaySettings(draft.values));
     if (validation().length) { update({ message: validation().join(". ") }); return; }
     update({ busy: true, message: "", overlap: false }); let sent = false;
@@ -137,8 +141,8 @@ export function useAdminGiveawayManagement(session: number | null, id: number) {
     }
   }
   const dirty = state.initialized && giveawaySettingsFingerprint(state.values) !== state.baseline;
-  return { state, detail, agents, dirty, save, check,
-    canWrite: access() && detail.isSuccess && typeof detail.data.product?.giveawayEnabled === "boolean" && detail.isFetchedAfterMount && !detail.isFetching && !state.busy && !state.attempt && !state.conflict && !state.readFailed && state.initialized,
+  return { state, detail, agents, dirty, save, check, otherBlocked: other(),
+    canWrite: access() && !other() && detail.isSuccess && typeof detail.data.product?.giveawayEnabled === "boolean" && detail.isFetchedAfterMount && !detail.isFetching && !state.busy && !state.attempt && !state.conflict && !state.readFailed && state.initialized,
     edit: (values: GiveawaySettingsValues) => { if (caller() && !get().busy && !get().attempt) update({ values }); },
     adopt: () => {
       if (!caller() || get().busy || get().attempt || !detail.isSuccess || detail.isFetching || get().readFailed) return;

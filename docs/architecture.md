@@ -45,6 +45,14 @@ receipt принадлежат той же feature, поля приза и B3 ma
 seller forms/mutations и их дисковый draft не расширяются. Переходы между созданием
 и историей используют Next Link, сохраняя память QueryClient в административной ветке.
 
+Редактор товара бота в `features/admin-product-management` поддерживает явные варианты
+EXTERNAL_PRODUCT/GIVEAWAY, включая преобразование и повторное изменение розыгрыша.
+Он переиспользует entity-поля настроек, загрузку PRODUCT и адресную синхронизацию.
+Черновик, baseline и lifecycle полной записи находятся в session-scoped QueryClient;
+ключи операций обоих редакторов и проверка конкурирующей записи принадлежат entity.
+Cross-feature imports не добавляются. Связи GIVEAWAY читаются из полного admin snapshot,
+а переходы между редакторами сохраняют память и проверенный локальный `returnTo` списка.
+
 `AdminAccess` после `RequireAuth` проверяет свежий session-scoped профиль.
 Дочерние widgets монтируются только для ADMIN. Правила кэша и API описаны в
 [api-and-auth.md](./api-and-auth.md#административный-api).

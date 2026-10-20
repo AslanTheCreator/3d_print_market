@@ -53,5 +53,6 @@ export { mapGiveawaySettings, validateGiveawaySettings, toGiveawaySettingsReques
 export type { GiveawaySettingsValues, AdminGiveawayProduct } from "./model/giveawaySettings";
 export { GiveawaySettingsFields } from "./ui/GiveawaySettingsFields";
 export { adminProductKeys, useAdminProductLists, useAdminProduct, useAdminProductRelations } from "./model/adminQueries";
-export { mergeAdminProduct, mapAdminProductToInput } from "./model/admin";
-export type { AdminProductDto, AdminProductInput, AdminProductEditorData } from "./model/admin";
+export { mergeAdminProduct, mapAdminProductToInput, giveawayProductRelations, adminProductBaseline, adminProductInputFingerprint, adminProductMatchesInput, toAdminProductRequest } from "./model/admin";
+export type { AdminProductDto, AdminProductInput, AdminProductEditorData, AdminProductRelations } from "./model/admin";
+export { adminProductOperationKeys, hasOtherAdminProductWrite } from "./model/adminProductOperation";

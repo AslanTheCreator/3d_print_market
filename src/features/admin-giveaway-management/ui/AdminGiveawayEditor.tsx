@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { Alert, Button, Paper, Stack, Typography } from "@mui/material";
 import { GiveawaySettingsFields, validateGiveawaySettings, type GiveawaySettingsValues } from "@/entities/product";
@@ -7,7 +8,7 @@ import { useUnsavedChanges } from "@/shared/lib";
 import { RequestFeedback } from "@/shared/ui/request-feedback";
 import { useAdminGiveawayManagement } from "../model/useAdminGiveawayManagement";
 
-export function AdminGiveawayEditor({ session, id }: { session: number | null; id: number }) {
+export function AdminGiveawayEditor({ session, id, returnTo }: { session: number | null; id: number; returnTo?: string }) {
   const operation = useAdminGiveawayManagement(session, id);
   return <Stack spacing={2}>
     <RequestFeedback pending={operation.detail.isPending} error={operation.detail.error || operation.agents.error} retry={() => void operation.check()} />
@@ -17,6 +18,7 @@ export function AdminGiveawayEditor({ session, id }: { session: number | null; i
       <Typography>Публичный показ: {operation.detail.data.product.giveawayEnabled == null ? "не указан" : operation.detail.data.product.giveawayEnabled ? "включён" : "выключен"}</Typography>
       {typeof operation.detail.data.product.giveawayEnabled !== "boolean" && <Alert severity="warning">Включённость не подтверждена сервером. Сохранение недоступно до успешного чтения полных настроек.</Alert>}
       <Button component="a" href={`/giveaways/${id}`} target="_blank" rel="noopener noreferrer" sx={{ alignSelf: "start" }}>Публичная страница</Button>
+      {operation.agents.data?.some(agent => agent.id === operation.detail.data?.product?.participantId) && <Button component={Link} prefetch={false} href={`/admin/products/${id}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`}>Редактор товара бота</Button>}
     </>}
     {operation.state.initialized && <SettingsForm key={`${session}:${id}`} operation={operation} />}
   </Stack>;
@@ -39,6 +41,7 @@ function SettingsForm({ operation }: { operation: ReturnType<typeof useAdminGive
       if (!Object.keys(errors).length) await operation.save();
     })}>
       {state.message && <Alert severity={state.attempt || state.conflict || state.readFailed || state.overlap ? "warning" : "info"}>{state.message}</Alert>}
+      {operation.otherBlocked && <Alert severity="warning">Операция в редакторе товара ещё не завершена. Проверьте её результат перед новой записью.</Alert>}
       {state.overlap && <Alert severity="error">Период пересекается с другим включённым розыгрышем. Измените даты начала или окончания.</Alert>}
       <GiveawaySettingsFields form={form} disabled={blocked} windowError={state.overlap ? "Период пересекается с другим включённым розыгрышем" : undefined} />
       {state.overlap && <Typography color="error" role="alert">Проверьте даты: GIVEAWAY_WINDOW_OVERLAP</Typography>}

@@ -227,7 +227,8 @@ test("ordinary bot list/editor cannot extend or restore GIVEAWAY and do not call
   Object.assign(state.admin.products[0], { id: 8101, availability: "GIVEAWAY" });
   await page.goto("/admin/products"); await expect(page.getByText("Фигурка дракона 101", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Заблокировать", exact: true })).toHaveCount(0);
-  await page.goto("/admin/products/8101"); await expect(page.getByText("Розыгрыш управляется через настройки периода и включённости.")).toBeVisible();
+  await page.goto("/admin/products/8101"); await expect(page.getByRole("textbox", { name: "Правила участия", exact: true })).toHaveValue("Исходные правила");
+  await expect(page.getByRole("button", { name: "Сохранить изменения", exact: true })).toBeEnabled();
   await expect(page.getByRole("link", { name: "Настройки розыгрыша", exact: true })).toHaveAttribute("href", "/admin/giveaways/8101");
   for (const name of ["Продлить", "Восстановить", "Сохранить и восстановить"]) await expect(page.getByRole("button", { name, exact: true })).toHaveCount(0);
   expect(state.admin.reads.filter(path => path.startsWith("/product/8101"))).toEqual([]); expect(state.admin.writes).toEqual([]);

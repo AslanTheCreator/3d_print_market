@@ -100,6 +100,8 @@ export async function setupAdmin(page: Page, baseURL: string | undefined, role =
         if (state.saveStatus === 200) {
           const product = state.products.find((item) => item.id === Number(path.split("/").pop()));
           if (product) Object.assign(product, body);
+          if (Array.isArray(body?.categoryIds)) state.categories = [...body.categoryIds];
+          if (Array.isArray(body?.imageIds)) state.imageIds = [...body.imageIds];
         }
         return fulfillJson(route, state.saveStatus === 200 ? null : { message: "Сохранение отклонено" }, state.saveStatus);
       }

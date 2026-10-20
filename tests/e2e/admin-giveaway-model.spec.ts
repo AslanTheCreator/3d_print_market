@@ -50,7 +50,7 @@ test("admin transport uses auth, fixed pagination, direct settings and signal; 4
   } finally { authClient.get = original.get; authClient.put = original.put; publicClient.get = original.publicGet; }
 });
 
-for (const own of [false, true]) test(`targeted sync own=${own}: active refetch, inactive invalidation, relations cancel-only, unrelated caches untouched`, async () => {
+for (const own of [false, true]) test(`targeted sync own=${own}: active refetch including admin relations, inactive invalidation, unrelated caches untouched`, async () => {
   const client = new QueryClient({ defaultOptions: { queries: { staleTime: 600_000, retry: false } } });
   const scope = createPrivateScope(1, () => true), calls: string[] = [], unbind: (() => void)[] = [];
   const targets: QueryKey[] = [adminGiveawayKeys.history(1, 0), adminGiveawayKeys.history(1, 2), adminGiveawayKeys.detail(1, 8101), giveawayKeys.active(), giveawayKeys.detail(8101), adminProductKeys.detail(1, 8101),
@@ -68,12 +68,13 @@ for (const own of [false, true]) test(`targeted sync own=${own}: active refetch,
       }
     }
     await synchronizeGiveaway(client, { session: 1, productId: 8101, agentId: own ? undefined : 2, ownedByCurrentUser: own, scope, isCurrent: () => true });
-    expect(calls.sort()).toEqual(active.map(key => JSON.stringify(key)).sort());
+    expect(calls.sort()).toEqual([...active, relations].map(key => JSON.stringify(key)).sort());
     for (const key of targets) {
       expect(client.getQueryData(key)).toBe(active.includes(key) ? "fresh" : "old");
       expect(client.getQueryState(key)?.isInvalidated).toBe(!active.includes(key));
     }
-    expect(client.getQueryState(relations)?.isInvalidated).toBe(true);
+    expect(client.getQueryData(relations)).toBe("fresh");
+    expect(client.getQueryState(relations)?.isInvalidated).toBe(false);
     for (const key of foreign) { expect(client.getQueryData(key)).toBe("old"); expect(client.getQueryState(key)?.isInvalidated).toBe(false); }
   } finally { unbind.forEach(stop => stop()); scope.dispose(); client.clear(); }
 });

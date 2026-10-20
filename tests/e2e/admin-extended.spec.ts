@@ -1,6 +1,31 @@
 import { expect, test, type Page } from "@playwright/test";
 import { adminOrderFixture, setupAdmin } from "./helpers/admin";
 import { expectNoOverflow, fulfillJson, png } from "./helpers/mobileAccount";
+import { fillConversion, setupGiveawayConversion, botGiveawayFixture } from "./helpers/adminGiveawayConversion";
+
+for (const code of ["GIVEAWAY_WINDOW_OVERLAP", "INVALID_REQUEST"]) test(`conversion rejects ${code} without losing input or relationships`, async ({ page, baseURL }) => {
+  const state = await setupGiveawayConversion(page, baseURL); await page.goto("/admin/products/101");
+  await expect(page.getByRole("button", { name: "Сохранить изменения", exact: true })).toBeEnabled(); await fillConversion(page);
+  state.writeStatus = 400; state.writeCode = code; await page.getByRole("button", { name: "Сохранить изменения", exact: true }).click();
+  await expect(page.getByText("Сервер отклонил товар", { exact: true })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Правила участия", exact: true })).toHaveValue("Правила бота");
+  await expect(page.getByRole("button", { name: "Сохранить изменения", exact: true })).toBeEnabled();
+  await expect(page.getByText("Период пересекается с другим включённым розыгрышем").first()).toHaveCount(code === "GIVEAWAY_WINDOW_OVERLAP" ? 1 : 0);
+  state.writeStatus = 200; await page.getByRole("button", { name: "Сохранить изменения", exact: true }).click();
+  await expect(page.getByText("Изменения сохранены", { exact: true })).toBeVisible();
+  expect(state.writes).toHaveLength(2); expect(state.writes[1].body).toMatchObject({ categoryIds: [1, 2], imageIds: [77, 78] });
+});
+
+for (const defect of ["relations", "owner", "type", "USER"]) test(`conversion blocks unconfirmed ${defect} before any PUT`, async ({ page, baseURL }) => {
+  const state = await setupGiveawayConversion(page, baseURL, defect === "USER" ? "USER" : "ADMIN");
+  if (defect === "relations") { state.product = botGiveawayFixture(); state.imageIds = null; }
+  if (defect === "owner") state.product.participantId = 99;
+  if (defect === "type") state.product.availability = "PURCHASABLE";
+  await page.goto("/admin/products/101");
+  const text = defect === "relations" ? /Сохранение заблокировано/ : defect === "owner" ? /Владелец не входит/ : defect === "type" ? /Этот тип товара недоступен/ : /Доступ разрешён только администратору/;
+  await expect(page.getByText(text).first()).toBeVisible(); await expect(page.getByRole("button", { name: "Сохранить изменения", exact: true })).toHaveCount(0);
+  expect(state.writes).toEqual([]); if (defect === "relations") expect(state.reads).not.toContain("/product/101"); if (defect === "USER") expect(state.reads).toEqual([]);
+});
 
 const nonBookedStatuses = ["AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL", "AWAITING_PAYMENT", "ASSEMBLING", "ON_THE_WAY", "DISPUTED", "COMPLETED", "CANCELLED", "FAILED"] as const;
 const openAdminCancel = async (page: Page) => {

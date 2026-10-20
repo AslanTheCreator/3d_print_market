@@ -1,5 +1,77 @@
 # Testing
 
+## Backend integration: этап 11
+
+`admin.spec.ts`/`admin-extended.spec.ts` расширены преобразованием через точный прежний
+административный PUT: сохраняются товарные поля, used, категории и image IDs,
+count/prepaymentAmount опускаются по B3. Повторное открытие и preview GIVEAWAY используют
+admin GET, без публичного `/product/{id}`. Проверяются AWAITING_GIVEAWAY, подписи,
+safe returnTo, отсутствие продления/восстановления, запрет USER/чужого владельца,
+неполных связей и неподдерживаемого типа; N1 overlap отделён от общего 400.
+
+`admin-giveaway-conversion.spec.ts` проверяет оба направления между редакторами в одном
+QueryClient с ненулевым default staleTime (включая первое преобразование и уже GIVEAWAY).
+Изменение несвязанного поля не возвращает прежние настройки/связи. Dirty-ввод сохраняется,
+изменённый baseline требует явного подтверждения перечитывания. Покрыты lost response
+с применением/без применения, принятый PUT с ошибкой GET, pending/remount, смена владельца,
+отзыв ADMIN во время preflight, истечение endAt, поздний старый preview GET,
+исключение конкурирующего status action, memory-only draft и 320/393 px.
+
+`admin-giveaway-conversion-model.spec.ts` вызывает настоящие hooks и общий протокол
+синхронизации с staleTime=10 минут. Проверяются точный auth transport и union,
+count=0 против null для внешнего товара, отсутствие смешивания admin snapshots,
+отмена старого GET, адресный refetch активных relations/detail/history/list владельца,
+invalidation неактивных страниц, очистка public product detail и каталог только при
+преобразовании. Чужие боты/scope/товары/metadata не затрагиваются. Покрыты unknown/408,
+ошибки control/sync, подтверждение записи до sync, сохранение guard после remount,
+блокировка обоих редакторов и status action, поздний результат после teardown scope.
+Сверка unknown учитывает только отправленный optional used; отдельные assertions
+проверяют явно переданные true/false. Подтверждённая сервером валюта CREATE проходит
+сквозной сценарий редакторов без расширения seller-модели.
+
+В общем admin fixture принятый PUT теперь обновляет categoryIds/imageIds для последующего
+контрольного чтения; прежние assertions загрузки/удаления фото сохранены. Повторное
+восстановление публикации проверяет только отдельный status PUT после фактического
+завершения первой операции, без повторного сохранения товара. Прежние проверки
+этапов 1/9 обновлены под явно введённый union и активный refetch admin relations,
+добавлены положительные assertions нового поведения.
+
+```bash
+npx playwright test admin-giveaway-conversion --project=chromium --workers=4 --retries=0
+npx playwright test admin-giveaway-conversion.spec.ts --grep "both editors|lost conversion|accepted conversion|pending PUT|pending regular|preflight|late old|revoked ADMIN" --repeat-each=3 --project=chromium --workers=4 --retries=0
+```
+
+Все browser-проверки выполняются на свежем production standalone; записи подменены.
+Независимый VP этапов 8–11 и итоговый этап 12 остаются отдельной работой.
+
+Итоговый локальный VP 20.10.2026, production build `Jpv7dHu17RYAcEIG0xR-n`:
+
+- **251 passed**, 466,18 с: 39 новых (20 browser, 19 model/query) и 212 регрессий.
+  Включены admin/admin-extended/admin-session-model, giveaway/model,
+  admin-giveaway/model/create/model/conversion/model, backend-integration-contract-model,
+  product-form-mapping, editor-boundaries-model, private-data-model, core-images,
+  user-products-stock и catalog-filter-empty.
+- **30 recovery repeats passed**, 89,08 с: 10 асинхронных сценариев × 3.
+- **9 external editor repeats passed**, 27,94 с: связи/null/zero, PRODUCT upload,
+  частичное восстановление статуса × 3.
+- **12 mobile-chromium passed**, 38,13 с; **15 HTTP smoke passed**, 7,48 с.
+- Lint (включая изменённые specs/helpers), typecheck, architecture:check,
+  production build и diff-check успешны.
+
+Финальные browser/model/repeat-прогоны: workers=4, retries=0; mobile сохраняет
+существующий fullyParallel=false и использует два worker для двух файлов.
+Нет failed/flaky/skipped и глобальных ошибок. Отчёты: `.cache/stage11/complete-verified.json`,
+`recovery-repeat-final.json`, `external-editor-repeat-final.json`, `mobile-final.json`.
+Прерванный перезапуск без итогового отчёта в результат не включён.
+
+При разработке исправлены неполное применение связей в прежнем fixture и преждевременное
+предупреждение о частичном восстановлении до завершения запроса. В новом тесте pending
+status используется includeHidden для фоновых кнопок под MUI Dialog: native disabled
+assertions сохранены. В прогоне из 250 тестов было 249 passed / 1 failed по этому locator;
+после исправления весь итоговый набор и повторы прошли. Полные переходы между редакторами
+явно подтверждают перечитывание dirty-формы. Timeout/retries/skips, отключение параллельности
+и произвольные задержки не добавлялись; существующие assertions не ослаблялись.
+
 ## Backend integration: этап 10
 
 `admin-giveaway-create.spec.ts` проверяет полный сценарий ADMIN создания собственного
@@ -75,7 +147,7 @@ dirty-navigation и mobile overflow. Обычные editor/status actions для
 проверяет mapper/валидацию и транспорт. Заранее заполненные кэши со staleTime=10 мин
 доказывают адресный refetch активных и invalidation неактивных запросов: все страницы
 истории текущей сессии, детали одного товара, public active, список только владельца.
-Relations до этапа 11 отменяются/инвалидируются без публичного refetch. Чужие товары,
+На этапе 11 активные relations перечитываются через admin API. Чужие товары,
 сессии, metadata и списки не затронуты. Поздний старый GET не восстанавливает snapshot;
 ошибка control/sync сохраняет guard, подтверждённый unknown становится accepted
 до sync, а принятый PUT инвалидирует связанные данные даже при отказе первого GET.
@@ -89,7 +161,8 @@ npx playwright test admin-giveaway.spec.ts --grep "pending PUT|successful PUT.*f
 
 Браузерные проверки запускаются на свежем production standalone. Все записи
 подменены; реальный backend проверяется только чтением OpenAPI. Независимый VP
-и сквозной переход между двумя редакторами этапа 11 остаются отдельными проверками.
+остаётся отдельной проверкой. Сквозные переходы между двумя редакторами закрыты
+тестами этапа 11, описанными выше.
 
 Итоговый локальный VP 20.10.2026, production build `SqEDVj0mnxAorOj5xDrsd`:
 

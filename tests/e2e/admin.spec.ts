@@ -1,6 +1,46 @@
 import { test, expect } from "@playwright/test";
 import { adminOrderFixture, adminProductFixture, setupAdmin } from "./helpers/admin";
 import { expectNoOverflow } from "./helpers/mobileAccount";
+import { fillConversion, setupGiveawayConversion } from "./helpers/adminGiveawayConversion";
+
+test("bot conversion uses exact existing PUT, preserves source fields and relations, reopens without public product GET", async ({ page, baseURL }) => {
+  const state = await setupGiveawayConversion(page, baseURL);
+  const source = structuredClone(state.product);
+  const returnTo = "/admin/products?agent=2&status=&q=101&page=0";
+  await page.goto(`/admin/products/101?returnTo=${encodeURIComponent(returnTo)}`);
+  await expect(page.getByRole("button", { name: "Сохранить изменения", exact: true })).toBeEnabled(); await fillConversion(page);
+  await page.getByRole("button", { name: "Сохранить изменения", exact: true }).click();
+  await expect(page.getByText("Изменения сохранены", { exact: true })).toBeVisible();
+  expect(state.writes).toEqual([{ path: "/admin/actions/agents/2/products/101", body: {
+    name: source.name, description: source.description, price: source.price,
+    currency: source.currency, originality: source.originality, externalUrl: source.externalUrl, used: true,
+    availability: "GIVEAWAY", categoryIds: [1, 2], imageIds: [77, 78], giveaway: {
+      enabled: true, telegramUrl: "https://t.me/bot_prize", startAt: "2027-06-02T12:00:00.000Z", endAt: "2027-06-03T12:00:00.000Z", winnersCount: 2, rules: "Правила бота", homeText: "Новый приз бота",
+    },
+  } }]);
+  expect(state.writes[0].body).not.toHaveProperty("prepaymentAmount"); expect(state.writes[0].body).not.toHaveProperty("count");
+  await expect(page.getByRole("button", { name: "Восстановить", exact: true })).toHaveCount(0);
+  const count = state.reads.filter(path => path === "/product/101").length;
+  await page.reload(); await expect(page.getByRole("textbox", { name: "Правила участия", exact: true })).toHaveValue("Правила бота");
+  await expect(page.getByRole("link", { name: "← К списку", exact: true })).toHaveAttribute("href", returnTo);
+  expect(state.reads.filter(path => path === "/product/101")).toHaveLength(count);
+  await page.getByRole("link", { name: "Настройки розыгрыша", exact: true }).click();
+  await expect(page.getByRole("link", { name: "← К списку товаров", exact: true })).toHaveAttribute("href", returnTo);
+  await page.goto("/giveaways/101"); await expect(page.getByRole("heading", { name: source.name, exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Розыгрыш в Telegram", exact: true })).toHaveAttribute("href", "https://t.me/bot_prize");
+  expect(state.writes).toHaveLength(1);
+});
+
+test("bot list shows scheduled giveaway preview and settings with safe returnTo, without regular status actions", async ({ page, baseURL }) => {
+  const state = await setupGiveawayConversion(page, baseURL);
+  Object.assign(state.product, { availability: "GIVEAWAY", status: "AWAITING_GIVEAWAY", count: null, giveawayEnabled: true });
+  await page.goto("/admin/products?agent=2&status=AWAITING_GIVEAWAY&q=101&page=0");
+  await expect(page.getByText("Запланирован розыгрыш", { exact: true })).toBeVisible();
+  const link = page.getByRole("link", { name: "Настройки розыгрыша", exact: true }); await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute("href", /\/admin\/giveaways\/101\?returnTo=/);
+  await expect(page.getByRole("button", { name: /Продлить|Восстановить|Заблокировать/ })).toHaveCount(0);
+  expect(state.reads).toContain("/admin/actions/giveaways/101"); expect(state.reads).not.toContain("/product/101");
+});
 
 test("guest redirects and buyer never starts admin requests", async ({ page, baseURL }) => {
   await page.goto("/admin/orders");

@@ -126,12 +126,12 @@ test("giveaway DTOs preserve settings, separate raw product and relations", () =
   expect(response.imageIds).toEqual(giveaway.imageIds);
 });
 
-test("administrative giveaway request stays separate from existing external editor input", () => {
+test("administrative editor explicitly supports GIVEAWAY while wire settings stay unwrapped", () => {
   const request: AdminGiveawayProductRequest = {
     availability: "GIVEAWAY", name: "Розыгрыш", giveaway: settings,
     categoryIds: [3], imageIds: [71], count: null, used: false, currency: "CREATE",
   };
-  const externalEditorAllowsGiveaway: "GIVEAWAY" extends AdminProductInput["availability"] ? true : false = false;
+  const externalEditorAllowsGiveaway: "GIVEAWAY" extends AdminProductInput["availability"] ? true : false = true;
   // Только структурная допустимость по OpenAPI; минимальный валидный payload остаётся B3.
   const sparse: AdminGiveawayProductRequest = { availability: "GIVEAWAY" };
   const sparseSettings: GiveawaySettingsRequest = {};
@@ -140,7 +140,7 @@ test("administrative giveaway request stays separate from existing external edit
   expect(request.giveaway).toEqual(settings);
   expect(sparse).toEqual({ availability: "GIVEAWAY" });
   expect(sparseSettings).toEqual({});
-  expect([externalEditorAllowsGiveaway, badEnabledAllowed, wrappedSettingsAllowed]).toEqual([false, false, false]);
+  expect([externalEditorAllowsGiveaway, badEnabledAllowed, wrappedSettingsAllowed]).toEqual([true, false, false]);
   const availability: Record<Availability, true> = { PURCHASABLE: true, PREORDER: true, EXTERNAL_PRODUCT: true, GIVEAWAY: true };
   const statuses: Record<ProductDto["status"], true> = { ACTIVE: true, AWAITING_GIVEAWAY: true, TIME_EXPIRED: true, BLOCKED: true, DELETED: true };
   expect(Object.keys(availability)).toContain("GIVEAWAY");
