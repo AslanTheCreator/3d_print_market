@@ -9,15 +9,22 @@ const payment = (page: Page) => page.getByRole("dialog", { name: "Подтвер
 const submit = (page: Page) => payment(page).getByRole("button", { name: "Добавить подтверждение к спору", exact: true });
 const openDetails = (page: Page) => page.getByRole("button", { name: "Подробнее о заказе №1", exact: true }).first().click();
 // Вложенный MUI Dialog скрывает родителя от accessibility tree; моделируем его unmount.
-const unmount = async (page: Page) => {
+const unmount = async (page: Page, paymentState: "closed" | "open" = "closed") => {
   const close = page.getByRole("button", { name: "Закрыть детали заказа", exact: true, includeHidden: true });
+  const paymentIncludingHidden = page.getByRole("dialog", { name: "Подтверждение оплаты в споре", exact: true, includeHidden: true });
   await expect(close).toHaveCount(1);
-  if (await payment(page).isVisible()) {
-    await expect.poll(() => close.evaluate(node => !!node.closest('[aria-hidden="true"]'))).toBe(true);
+  if (paymentState === "open") {
+    await expect(payment(page)).toBeVisible();
+    await expect(close.locator('xpath=ancestor::*[@aria-hidden="true"]').first()).toBeAttached();
+    await close.dispatchEvent("click");
+  } else {
+    // Ждём завершения exit transition, а не разового isVisible() уходящего диалога.
+    await expect(paymentIncludingHidden).toHaveCount(0);
+    await page.getByRole("button", { name: "Закрыть детали заказа", exact: true }).click();
   }
-  await close.dispatchEvent("click");
   await expect(page.getByRole("dialog", { name: /Детали заказа №/, includeHidden: true })).toHaveCount(0);
   await expect(payment(page)).toBeHidden();
+  await expect(paymentIncludingHidden).toHaveCount(0);
 };
 
 async function setup(page: Page, baseURL?: string, role: "purchase" | "sales" = "purchase", otherOrder = false) {
@@ -130,7 +137,7 @@ test("pending POST survives remount and blocks duplicate; completed result updat
   const state = await setup(page, baseURL); let release!: () => void; state.postGate = new Promise<void>(resolve => { release = resolve; });
   await fill(page); await submit(page).click();
   try {
-    await expect.poll(() => state.posts.length).toBe(1); await unmount(page); await openDetails(page); await trigger(page).click();
+    await expect.poll(() => state.posts.length).toBe(1); await unmount(page, "open"); await openDetails(page); await trigger(page).click();
     const pending = payment(page).getByRole("button", { name: "Отправка подтверждения…", exact: true });
     await expect(pending).toBeDisabled(); await pending.dispatchEvent("click"); expect(state.posts).toHaveLength(1);
   } finally { release(); }
@@ -161,7 +168,7 @@ for (const mode of ["resolution during upload", "unmount during upload", "prefli
   try {
     if (mode.includes("upload")) await expect.poll(() => state.uploads).toBe(1);
     if (mode === "resolution during POST") await expect.poll(() => state.posts.length).toBe(1);
-    if (mode === "unmount during upload") await unmount(page);
+    if (mode === "unmount during upload") await unmount(page, "open");
     if (mode.startsWith("resolution")) {
       state.order.actualStatus = "FAILED"; state.cases[0].orderStatus = "FAILED"; state.cases[0].orderCase!.state = "RESOLVED";
       state.reject = mode === "resolution during POST";

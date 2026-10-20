@@ -249,9 +249,54 @@ Production build и HTTP smoke дополняют целевые регресс�
 Два первоначальных timeout новых тестов исправлены: родитель вложенного MUI Dialog
 имеет aria-hidden; тесты принудительного unmount учитывают скрытый родитель.
 Перед коммитом оба сценария повторены по пять раз: все 10 запусков успешны,
-без retry и увеличения timeout. Helper явно проверяет aria-hidden родителя
-и фактическое размонтирование обоих диалогов; проверки единственного POST,
-сохранённого ID и остановки цепочки после unmount сохранены.
+без retry и увеличения timeout. Последующая независимая проверка выявила гонку
+этого helper при закрывающемся payment; исправление описано ниже.
+
+## Payment: синхронизация закрытия диалогов этапа 6
+
+В `order-dispute-payment.spec.ts` helper `unmount` различает ожидаемое состояние
+дочернего payment-диалога явно. После обычного «Закрыть» locator assertion ждёт
+удаления диалога, включая скрытые узлы, затем родитель закрывается обычным click.
+Для pending POST и upload явно передаётся `open`: проверяются видимость payment
+и наличие скрывающего родителя `aria-hidden="true"`, затем моделируется unmount.
+Обе ветки проверяют удаление родительского и дочернего диалогов из DOM.
+
+Причина прежнего timeout — разовый `isVisible()` во время exit transition MUI:
+к следующей проверке дочерний Dialog уже удалён, а ModalManager снял `aria-hidden`
+с родителя. Ожидание `true` после этого невыполнимо. Сохранённый trace независимого
+прогона подтверждает этот порядок. Production-код не меняется; assertions
+единственного POST/upload, исходного imageId, recovery и изоляции draft сохранены.
+Timeout, retries, skips и параллельность не меняются.
+
+20.10.2026 проверки выполнялись на свежем production standalone
+`Np-fP2AsQnRovkIzR9GVJ`. JSON-отчёты — `.cache/payment-dialog-sync/`.
+Во всех Chromium прогонах явно заданы `--workers=4 --retries=0`.
+
+| Прогон | Повтор | Passed / failed | Секунды |
+|---|---:|---:|---:|
+| Четыре recovery/draft сценария после закрытия (`closed-repeat-20.json`) | 20 | 80 / 0 | 301.705 |
+| Pending POST и unmount во время upload (`open-repeat-10.json`) | 10 | 20 / 0 | 67.498 |
+| Связанный набор этапа 6 + адресные F1/F2/F3 (`stage6-related-f1-f2-f3.json`) | 1 | 192 / 0 | 513.503 |
+
+Связанный набор включает `order-dispute-payment`, `order-payment`, `order-case-create`,
+`order-cases`, `order-images`, `order-details`, `order-cancel` (model/recovery и browser),
+`open-forms`, `backend-integration-contract-model`, `private-data`, а также пять F1/F3
+и четыре `admin-case-telegram-recovery`. Выбор файлов привязан к началу имени,
+чтобы `order-cases` не захватывал всю очередь `admin-order-cases` этапа 7.
+Все 29 dispute payment проверок и остальные места использования helper пройдены.
+
+Итого 292 успешные попытки Chromium, без failures/flaky/skips/retries и глобальных
+ошибок runner. Timeout создания page и прежний `aria-hidden` timeout не повторились.
+Также успешны 15 HTTP smoke, lint, ESLint изменённого spec, typecheck,
+architecture:check и production build. Self-review и diff-check пройдены;
+полный независимый VP не запускался и остаётся следующим отдельным шагом.
+
+При заданных `TEST_BASE_URL` и `PLAYWRIGHT_FIXTURE_API_URL` повторные проверки:
+
+```bash
+npx playwright test order-dispute-payment.spec --grep 'persists across close/remount|local draft survives' --repeat-each=20 --project=chromium --workers=4 --retries=0
+npx playwright test order-dispute-payment.spec --grep 'pending POST survives remount|unmount during upload preserves proof' --repeat-each=10 --project=chromium --workers=4 --retries=0
+```
 
 ## Backend integration: этап 7
 
@@ -360,8 +405,9 @@ success GET failure и local draft не всегда дожидаются зав
 перед `unmount`. Trace показывает click «Закрыть», затем `isVisible() === true`
 на уходящем диалоге; к проверке родителя его `aria-hidden` уже снят. Это отдельная
 гонка helper, а не ошибка production-кода и не результат изменения F3.
-Spec и его assertions оставлены без изменений; общий VP этапов 4–7 из-за неё
-нельзя считать полностью успешным.
+В рамках F3 spec и его assertions оставлены без изменений; обнаруженная гонка
+потребовала отдельного исправления —
+[синхронизация payment](#payment-синхронизация-закрытия-диалогов-этапа-6).
 
 ## F2: восстановление ADMIN-рассмотрения
 
