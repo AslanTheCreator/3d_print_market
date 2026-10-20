@@ -3,7 +3,7 @@
 ## Административная панель
 
 `app/admin` содержит `/orders`, `/order-cases`, `/products`, `/products/[productId]`, `/agents`,
-`/agents/[agentId]`, `/giveaways` и `/giveaways/[productId]`; `/admin` перенаправляет на заказы. Маршрут бота
+`/agents/[agentId]`, `/giveaways`, `/giveaways/new` и `/giveaways/[productId]`; `/admin` перенаправляет на заказы. Маршрут бота
 собирает три widget через slots, без cross-widget imports. Бот имеет вкладки
 заказов, товаров и настроек. Детали заказа открываются в Drawer, отдельного
 order route нет. Фильтры и страницы хранятся в URL, редактор принимает
@@ -38,7 +38,12 @@ mutations не используются для административной 
 в памяти session-scoped QueryClient. Семь полей, mapping/validation, административный
 API и адресная синхронизация giveaway/product keys принадлежат `entities/product`.
 Обычный редактор и `ProductStatusActions` не восстанавливают и не продлевают GIVEAWAY;
-переход ведёт к настройкам периода и включённости. Создание относится к следующему этапу.
+переход ведёт к настройкам периода и включённости.
+Создание собственного розыгрыша собирается там же: отдельная RHF-форма и session-scoped
+receipt принадлежат той же feature, поля приза и B3 mapper — `entities/product`.
+Переиспользуются настройки этапа 9, категории, валюты, PRODUCT upload и AdminImages;
+seller forms/mutations и их дисковый draft не расширяются. Переходы между созданием
+и историей используют Next Link, сохраняя память QueryClient в административной ветке.
 
 `AdminAccess` после `RequireAuth` проверяет свежий session-scoped профиль.
 Дочерние widgets монтируются только для ADMIN. Правила кэша и API описаны в

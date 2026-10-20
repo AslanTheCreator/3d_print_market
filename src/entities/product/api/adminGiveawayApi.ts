@@ -1,6 +1,6 @@
 import { authClient } from "@/shared/api";
 import { parsePositiveSafeInteger } from "@/shared/lib";
-import type { AdminGiveawayProductResponse, GiveawaySettingsRequest } from "../model/giveaway";
+import type { AdminGiveawayProductRequest, AdminGiveawayProductResponse, GiveawaySettingsRequest } from "../model/giveaway";
 import type { AdminGiveawayProduct } from "../model/giveawaySettings";
 
 const checkId = (id: number) => { if (parsePositiveSafeInteger(id) === null) throw new Error("Некорректный ID розыгрыша"); };
@@ -13,6 +13,9 @@ function checkProduct(product: AdminGiveawayProduct | null | undefined, id?: num
     (product.giveawayWinnersCount != null && !Number.isSafeInteger(product.giveawayWinnersCount))) throw new Error("Некорректные данные розыгрыша");
 }
 export const adminGiveawayApi = {
+  async create(input: AdminGiveawayProductRequest): Promise<void> {
+    await authClient.post("/products", input);
+  },
   async history(page: number, signal?: AbortSignal): Promise<AdminGiveawayProduct[]> {
     if (!Number.isSafeInteger(page) || page < 0) throw new Error("Некорректная страница");
     const { data } = await authClient.get<AdminGiveawayProduct[]>("/admin/actions/giveaways/history", { params: { page, size: 50 }, signal });

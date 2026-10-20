@@ -1,4 +1,4 @@
-# Контракты обращений и розыгрышей: этапы 1–9
+# Контракты обращений и розыгрышей: этапы 1–10
 
 Источники: [backend-требования](./backend-plan/plan_2_formatted.md), окончательные
 [ответы backend B1–B4/N1–N2](./backend-plan/FRONTEND_BACKEND_ANSWERS.md)
@@ -26,8 +26,9 @@ success body для управления UI не используется. Ре�
 Этап 4 подключает чтение истории обращений в деталях заказа; этап 5 — три
 пользовательские формы создания по B1/B2 и обработку N1. Этап 7 подключает очередь,
 Telegram и решения ADMIN на `/admin/order-cases`; этап 8 подключает только публичные
-GET розыгрышей. Этап 9 подключает ADMIN history/detail/settings PUT; создание
-и преобразование товара бота остаются этапам 10–11.
+GET розыгрышей. Этап 9 подключает ADMIN history/detail/settings PUT; этап 10 —
+создание собственного розыгрыша через POST /products. Преобразование товара бота
+остаётся этапу 11.
 Этап 6 добавляет подтверждение оплаты в открытый
 спор через существующий ASSEMBLING POST; lifecycle и recovery описаны в
 [api-and-auth.md](./api-and-auth.md#подтверждение-оплаты-в-споре-этап-6).
@@ -118,7 +119,7 @@ string. `giveawayEnabled` не выводится из `status`.
 `AdminGiveawayProductRequest` — отдельный структурный вариант последней схемы
 с `availability=GIVEAWAY`. Остальные поля optional согласно OpenAPI: это не
 утверждение о минимальном валидном запросе; правила B3 ниже подтверждены отдельно.
-Он пока не подключён к записи.
+Он подключён к POST /products только административной формой этапа 10.
 `ProductCreateModel` и `EditableAvailability` допускают только
 `PURCHASABLE | PREORDER`; runtime seller mapper отклоняет также `GIVEAWAY`.
 Действующий `AdminProductInput` и mapper по-прежнему формируют EXTERNAL_PRODUCT;
@@ -208,7 +209,12 @@ upload/recovery и приватного guard описаны в
 пустой `/cases` не мешает проверить наличие чека по FindOrderResponse.
 После действий перечитываются заказ и `/cases`; одно actualStatus не выявляет OPEN.
 
-### B3: создание GIVEAWAY (требования этапа 10)
+### B3: создание GIVEAWAY (этап 10)
+
+20.10.2026 повторно прочитаны POST /products и CreateOrUpdateProductRequest работающей
+OpenAPI: обязательная Authorization, JSON с вложенным GiveawaySettingsRequest,
+400 GIVEAWAY_WINDOW_OVERLAP. Успешный response body не описан и UI не извлекает из него ID.
+Правила минимального payload ниже подтверждены B3; реальные записи не выполнялись.
 
 ADMIN создаёт через POST /products с availability=GIVEAWAY и вложенным giveaway;
 продавцу приходит 403 ACCESS_DENIED. Продавецкие реквизиты/соцсеть не требуются.

@@ -1,5 +1,63 @@
 # Testing
 
+## Backend integration: этап 10
+
+`admin-giveaway-create.spec.ts` проверяет полный сценарий ADMIN создания собственного
+приза по B3 без seller prerequisites: точный вложенный payload, история с success receipt,
+публичная страница и возврат в заранее открытый список владельца. Покрыты запрет USER,
+валидация, optional категории/фото, выбор валюты, PRODUCT upload error/retry,
+N1 overlap против общего 400, double submit, принятый POST с ошибкой контрольного GET,
+unknown с применением/без применения, совпадающее название в истории, пересоздание
+формы/отзыв роли во время POST и upload, повтор только GET, dirty-navigation и memory-only
+draft, 320/393 px, создание отключённой записи и истечение endAt во время preflight.
+Отдельный seller-сценарий восстанавливает старый draft с GIVEAWAY: форма оставляет
+обычную продажу и отправляет PURCHASABLE без вложенного giveaway.
+История этапа 9 теперь проверяет ссылку создания, вместо прежнего отсутствия этой функции.
+
+`admin-giveaway-create-model.spec.ts` проверяет B3 mapper и отдельный auth POST без
+предположения о success body, настоящий creation hook и общий протокол синхронизации.
+Кэши со staleTime=10 минут включают общий query шапки/списка, активные/неактивные варианты
+размеров/фильтров/сортировки, все страницы истории, public active и несвязанные scope/ботов.
+Проверяются точные чтения/invalidation, отмена позднего старого чтения, guard при
+ошибке обновления владельца, HTTP 408, сохранение unknown/accepted после remount,
+запрет записи USER и поздних результатов после scope teardown, File/upload retry в памяти.
+
+```bash
+npx playwright test admin-giveaway-create --project=chromium --workers=4 --retries=0
+npx playwright test admin-giveaway-create.spec.ts --grep "accepted POST|unknown POST|pending POST|pending PRODUCT|fresh ADMIN|end passing" --repeat-each=3 --project=chromium --workers=4 --retries=0
+```
+
+Браузерные проверки выполняются на свежем production standalone; все изменяющие
+операции подменены. Регрессии включают публичные розыгрыши и настройки этапа 9,
+seller mapping/draft и мобильное создание обычного товара. Сквозной browser-переход
+между витриной и admin сохраняет существующую полную навигацию ради изоляции аналитики;
+синхронизация кэшей в одном QueryClient дополнительно доказывается model/query-тестами.
+
+Итоговый локальный VP 20.10.2026, production build `wM0UCUtO2T9pKSZRVAuCI`:
+
+- **32 новых теста passed** (16 browser, 16 model/query), 59,93 с.
+- **132 связанные регрессии passed**, 138,51 с: admin-giveaway/model, giveaway/model,
+  admin, backend-integration-contract-model, product-form-mapping,
+  editor-boundaries-model, private-data-model, core-images, user-products-stock,
+  catalog-filter-empty.
+- **12 mobile-chromium passed**, 22,76 с: create-product и product-publication.
+- **21 recovery repeat passed** (7 сценариев × 3), 35,0 с.
+- **15 HTTP smoke passed**; lint (включая изменённые specs/helpers), typecheck,
+  architecture:check, production build и diff-check успешны.
+
+В связанном `core-images.spec.ts` обнаружена гонка: ссылка товаров нажималась до
+завершения перехода на `/dashboard`, оставляя тест на обзоре. Первичный общий прогон:
+131 passed / 1 failed; изолированный повтор: 2 passed / 3 failed. Trace подтвердил
+незавершённую навигацию. Добавлены locator/URL assertions готового обзора перед обратным
+переходом; проверки списка, счётчиков и кэша сохранены. После исправления **10/10 passed**
+(29,90 с), затем весь указанный набор из 132 тестов прошёл. Production-код из-за этого
+сбоя не менялся; timeout/retries/skips и произвольные задержки не добавлялись.
+
+Во всех финальных browser/model/repeat-прогонах workers=4, retries=0, нет
+failed/flaky/skipped и глобальных ошибок. Отчёты: `.cache/stage10/new-complete-final.json`,
+`regressions-final.json`, `mobile-final.json`, `recovery-repeat-final.json`,
+`core-images-repeat-fixed.json`. Независимый VP остаётся отдельной проверкой.
+
 ## Backend integration: этап 9
 
 `admin-giveaway.spec.ts` проверяет ADMIN-only историю/детали, 50 записей и пустую

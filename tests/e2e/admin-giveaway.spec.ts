@@ -27,7 +27,7 @@ test("history includes scheduled, running, ended and disabled with independent s
   expect(state.reads).toContain("/admin/actions/giveaways/history?page=1&size=50");
   await page.getByRole("button", { name: "Назад", exact: true }).click();
   await expect(page.getByRole("link", { name: /Настройки розыгрыша #/ })).toHaveCount(50);
-  await expect(page.getByRole("button", { name: /Создать розыгрыш/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Создать розыгрыш", exact: true })).toHaveAttribute("href", "/admin/giveaways/new");
 });
 
 test("USER cannot read history/details or PUT; invalid ID starts no admin giveaway reads", async ({ page, baseURL }) => {

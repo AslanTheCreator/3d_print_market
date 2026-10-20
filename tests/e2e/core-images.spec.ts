@@ -74,6 +74,8 @@ test("own product list and header share core data; image retry and local paginat
   await expect.poll(() => state.reads["/products/my"]).toBe(1);
   expect(state.metadata).toEqual([]);
   await page.locator('a[href="/dashboard"]:visible').first().click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByTestId("profile-overview")).toBeVisible();
   await page.locator('a[href="/dashboard/products"]:visible').first().click();
   await expect(page.getByText("Товар Stage 15 12", { exact: true })).toBeVisible();
   await expect(page.getByText("Товар Stage 15 13", { exact: true })).toHaveCount(0);

@@ -2,6 +2,7 @@
 import { Alert, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import { useAccountSessionKey } from "@/entities/session";
 import { useAdminGiveawayHistory } from "@/entities/product";
+import { GiveawayCreateLink, GiveawayCreationNotice } from "@/features/admin-giveaway-management";
 import { parseNonNegativeSafeInteger } from "@/shared/lib";
 import { useUrlState } from "@/shared/lib";
 import { RequestFeedback } from "@/shared/ui/request-feedback";
@@ -12,10 +13,12 @@ export function AdminGiveaways() {
   const page = parseNonNegativeSafeInteger(params.get("page")) ?? 0;
   const history = useAdminGiveawayHistory(session, page);
   return <Stack spacing={3}>
-    <Stack direction="row" justifyContent="space-between" gap={2}>
+    <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={2}>
       <Typography component="h1" variant="h4">Розыгрыши</Typography>
+      <GiveawayCreateLink session={session} />
       <Button disabled={history.isFetching} onClick={() => void history.refetch()}>Обновить историю</Button>
     </Stack>
+    <GiveawayCreationNotice session={session} />
     <RequestFeedback pending={history.isPending} error={history.error} retry={() => void history.refetch()} />
     {history.isSuccess && !history.data.length && <Alert severity="info">На этой странице розыгрышей нет</Alert>}
     {history.data?.map(product => <Paper key={product.id} variant="outlined" sx={{ p: 2 }}>
