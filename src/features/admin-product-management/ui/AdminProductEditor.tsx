@@ -15,7 +15,7 @@ export function AdminProductEditor({ session, id }: { session: number | null; id
   const [editing, setEditing] = useState(false);
   const product = useAdminProduct(session, id);
   const agents = useAgents(session);
-  const relations = useAdminProductRelations(session, id, !!product.data);
+  const relations = useAdminProductRelations(session, id, !!product.data && product.data.availability !== "GIVEAWAY");
   const baseline = useRef<{ session: number | null; id: number; editor?: AdminProductEditorData }>({ session, id });
   if (baseline.current.session !== session || baseline.current.id !== id) baseline.current = { session, id };
   let editor: AdminProductEditorData | undefined;
@@ -28,6 +28,7 @@ export function AdminProductEditor({ session, id }: { session: number | null; id
   const writesEnabled = !product.error && !agents.error && !relations.error && !mergeError;
   if (!Number.isSafeInteger(id) || id <= 0) return <Alert severity="error">Некорректный ID товара</Alert>;
   if (product.data && product.data.id !== id) return <Alert severity="error">Загруженный товар не соответствует ID страницы. Редактирование недоступно.</Alert>;
+  if (product.data?.availability === "GIVEAWAY") return <Alert severity="info" action={<Button href={`/admin/giveaways/${id}`}>Настройки розыгрыша</Button>}>Розыгрыш управляется через настройки периода и включённости.</Alert>;
   return <Stack spacing={2}>
     <RequestFeedback pending={product.isPending || agents.isPending} error={product.error || agents.error} retry={() => { void product.refetch(); void agents.refetch(); }} />
     {product.data && <><Typography component="h1" variant="h4">{product.data.name}</Typography><Typography color="text.secondary">Товар #{id} · Бот #{product.data.participantId}</Typography>

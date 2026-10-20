@@ -13,7 +13,7 @@ import { useAdminProductSearch } from "../model/useAdminProductSearch";
 const statuses: Record<string, string> = { ACTIVE: "Активные", BLOCKED: "Заблокированные", TIME_EXPIRED: "Истёкшие", DELETED: "Удалённые" };
 const statusLabels: Record<string, string> = { ACTIVE: "Активен", BLOCKED: "Заблокирован", TIME_EXPIRED: "Истёк", DELETED: "Удалён" };
 function ProductPreview({ product, session }: { product: AdminProductDto; session: number | null }) {
-  const relations = useAdminProductRelations(session, product.id);
+  const relations = useAdminProductRelations(session, product.id, product.availability !== "GIVEAWAY");
   const matches = relations.data?.id === product.id && relations.data.participantId === product.participantId;
   const imageId = matches ? relations.data?.imageIds?.[0] ?? null : null;
   const metadata = useQuery({ queryKey: ["admin", session, "preview", imageId], queryFn: ({ signal }) => imageApi.getImageMetadata(imageId, signal), enabled: !!imageId, retry: false });

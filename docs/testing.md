@@ -1,5 +1,61 @@
 # Testing
 
+## Backend integration: этап 9
+
+`admin-giveaway.spec.ts` проверяет ADMIN-only историю/детали, 50 записей и пустую
+следующую страницу без total, раздельные status/enabled, непосредственное тело PUT
+из семи полей без изменения товара, выключение/включение и timezone round-trip.
+Покрыты неверные даты/Telegram/тексты/winnersCount, истёкший endAt при включении
+и отключении, переход времени во время preflight, N1 overlap против общего 400,
+ошибки истории/контрольного GET/списка владельцев, pending/unknown/accepted PUT,
+HTTP 408 как неопределённый результат, повтор только GET,
+сохранение черновика при отзыве роли, поздний GET, конкурирующий baseline,
+dirty-navigation и mobile overflow. Обычные editor/status actions для GIVEAWAY
+не обращаются к публичному /product/{id} и не продлевают/восстанавливают товар.
+
+`admin-giveaway-model.spec.ts` вызывает настоящий operation hook и QueryClient,
+проверяет mapper/валидацию и транспорт. Заранее заполненные кэши со staleTime=10 мин
+доказывают адресный refetch активных и invalidation неактивных запросов: все страницы
+истории текущей сессии, детали одного товара, public active, список только владельца.
+Relations до этапа 11 отменяются/инвалидируются без публичного refetch. Чужие товары,
+сессии, metadata и списки не затронуты. Поздний старый GET не восстанавливает snapshot;
+ошибка control/sync сохраняет guard, подтверждённый unknown становится accepted
+до sync, а принятый PUT инвалидирует связанные данные даже при отказе первого GET.
+SSR probe использует IsRestoringProvider: effects монтирования в SSR не исполняются,
+но проверяемые save/read/recovery выполняют реальные query/mutation функции.
+
+```bash
+npx playwright test admin-giveaway --project=chromium --workers=4 --retries=0
+npx playwright test admin-giveaway.spec.ts --grep "pending PUT|successful PUT.*failed GET|lost PUT|dirty background|preflight detects|role revocation|accepted PUT superseded|end passing|owner list outage|HTTP 408" --repeat-each=3 --project=chromium --workers=4 --retries=0
+```
+
+Браузерные проверки запускаются на свежем production standalone. Все записи
+подменены; реальный backend проверяется только чтением OpenAPI. Независимый VP
+и сквозной переход между двумя редакторами этапа 11 остаются отдельными проверками.
+
+Итоговый локальный VP 20.10.2026, production build `SqEDVj0mnxAorOj5xDrsd`:
+
+- 37 новых тестов: 22 browser и 15 model/query; все прошли.
+- 179 регрессий в общем прогоне с новыми тестами: **216 passed**, 249,65 с.
+  Включены giveaway/model, admin, admin-extended, admin-session-model,
+  admin-order-cases, order-case-recovery, order-dispute-payment,
+  private-data-model, product-form-mapping, backend-integration-contract-model
+  и catalog-filter-empty.
+- Отдельно admin-case-telegram-recovery (F2): **4 passed**, 10,2 с.
+  Всего 183 регрессии; F1/F3 и payment покрыты общим прогоном.
+- 11 recovery-сценариев × 3: **33 passed**, 44,9 с.
+- **15 HTTP smoke passed**, 9,0 с; lint (включая новые specs/helpers),
+  typecheck, architecture:check, production build и diff-check успешны.
+
+Во всех финальных Playwright-прогонах workers=4, retries=0, нет failed/skipped/flaky
+и глобальных ошибок. Отчёты сохранены в `.cache/stage9/complete-final.json`,
+`f2-final.json`, `recovery-repeat-final.json`. При разработке исправлены предпосылки
+новых тестов: SSR probe не должен ждать неисполняемый mount effect; проверку доступа
+обновляет существующий reconnect, а mock ошибки использует общий ApiErrorResponse.
+Assertions не ослаблялись; retries/skips, увеличения timeout и произвольные задержки
+не добавлялись. Ошибки control/sync/владельца, подтверждение unknown до sync и
+HTTP 408 обработаны в реализации и закреплены отдельными регрессиями.
+
 ## Backend integration: этап 1
 
 `backend-integration-contract-model.spec.ts` проверяет полноту полей новых DTO,

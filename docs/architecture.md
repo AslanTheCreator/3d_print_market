@@ -2,8 +2,8 @@
 
 ## Административная панель
 
-`app/admin` содержит `/orders`, `/order-cases`, `/products`, `/products/[productId]`, `/agents`
-и `/agents/[agentId]`; `/admin` перенаправляет на заказы. Последний маршрут
+`app/admin` содержит `/orders`, `/order-cases`, `/products`, `/products/[productId]`, `/agents`,
+`/agents/[agentId]`, `/giveaways` и `/giveaways/[productId]`; `/admin` перенаправляет на заказы. Маршрут бота
 собирает три widget через slots, без cross-widget imports. Бот имеет вкладки
 заказов, товаров и настроек. Детали заказа открываются в Drawer, отдельного
 order route нет. Фильтры и страницы хранятся в URL, редактор принимает
@@ -31,6 +31,14 @@ Widgets `admin-shell`, `admin-orders`, `admin-products`, `admin-agents`,
 `admin-order-action`, `admin-order-case-management`, `admin-agent-settings`. Доменные DTO/API/queries находятся
 в соответствующих entities, включая новую `agent`. Обычные seller forms и
 mutations не используются для административной записи.
+
+История и настройки существующих розыгрышей находятся в `widgets/admin-products`
+под прежним `AdminAccess`; отдельный рекомендуемый widget превысил бы предел Steiger.
+`features/admin-giveaway-management` владеет RHF-формой, черновиком и guard операции
+в памяти session-scoped QueryClient. Семь полей, mapping/validation, административный
+API и адресная синхронизация giveaway/product keys принадлежат `entities/product`.
+Обычный редактор и `ProductStatusActions` не восстанавливают и не продлевают GIVEAWAY;
+переход ведёт к настройкам периода и включённости. Создание относится к следующему этапу.
 
 `AdminAccess` после `RequireAuth` проверяет свежий session-scoped профиль.
 Дочерние widgets монтируются только для ADMIN. Правила кэша и API описаны в

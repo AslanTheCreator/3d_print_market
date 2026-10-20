@@ -5,6 +5,9 @@ import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack
 import { adminProductApi, adminProductKeys, type AdminProductDto } from "@/entities/product";
 import { RequestFeedback } from "@/shared/ui/request-feedback";
 export function ProductStatusActions({ product, session, disabled = false }: { product: AdminProductDto; session: number | null; disabled?: boolean }) {
+  return product.availability === "GIVEAWAY" ? null : <RegularProductStatusActions product={product} session={session} disabled={disabled} />;
+}
+function RegularProductStatusActions({ product, session, disabled }: { product: AdminProductDto; session: number | null; disabled: boolean }) {
   const client = useQueryClient();
   const [action, setAction] = useState<"ACTIVE" | "BLOCKED" | "extend" | null>(null);
   const [busy, setBusy] = useState(false);
