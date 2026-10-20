@@ -66,7 +66,7 @@ docs/         документация
 
 Корневой `app/` отвечает за маршрутизацию. Route-файлы должны оставаться тонкими: получать параметры, настраивать metadata и собирать нижние слои.
 
-Product detail, seller edit и admin product/agent routes проверяют положительный
+Product/giveaway detail, seller edit и admin product/agent routes проверяют положительный
 safe integer до загрузки. Category route проверяет ID каждого slug. Неверный
 синтаксис вызывает `notFound()` вне catch; временная ошибка загрузки остаётся
 ошибкой с retry. Для admin pagination неверный page нормализуется в 0,
@@ -125,6 +125,14 @@ payload — `entities/product`. Они экспортируются через p
 слайсов. Новых entities, маршрутов и HTTP-клиентов на этапе 1 нет.
 Границы типов и источники полей описаны в
 [контрактах интеграции](./backend-integration-contracts.md).
+
+Публичные розыгрыши этапа 8 принадлежат `entities/product`: отдельные public API,
+query keys и модель временного окна. `product-catalog` получает `/active` независимо
+от каталога и передаёт карточку через `leadingContent`, включая error/empty каталога.
+Тонкий `/giveaways/[productId]` собирает отдельный `GiveawayDetailsWidget` внутри
+существующего `widgets/product-details`; новый widget-слайс не создаётся.
+Изображения читаются через public API `entities/image`. Проверка Telegram URL
+общая в `shared/lib`; прежний public API проверки ссылок обращений сохранён.
 
 - route, layout, metadata, error page — `app/`;
 - provider, theme, analytics — `src/app/`;

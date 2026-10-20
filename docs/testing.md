@@ -426,6 +426,68 @@ architecture:check и production build успешны; self-review и diff-check
 Все записи подменены. Реальный backend проверен чтением актуальной OpenAPI;
 серверные переходы и конкурентные записи остаются отдельной приёмкой.
 
+## Backend integration: этап 8
+
+`giveaway-model.spec.ts` проверяет календарные даты и timezone, точные границы
+startAt/endAt, sparse DTO, fail-closed статусы, public GET/AbortSignal, отсутствие
+запроса при invalid ID, чужой/некорректный ответ и преобразование только giveaway
+404 в null. Telegram parser общий с обращениями; проверены схемы, хосты и credentials.
+
+`giveaway.spec.ts` проходит главную → `/giveaways/{productId}` и публичное чтение
+без Authorization, scheduled/start/end, следующий `/active`, stale 200 после end,
+отключение и первичный 404, focus/возврат из фона, error/retry, metadata 404/503,
+пустые изображения, длинные тексты на 393/1280 px, безопасные Telegram-ссылки,
+invalid routes и поздний GET после клиентской навигации. GIVEAWAY из каталога
+и собственных товаров имеет отдельную подпись/ссылку без покупки/корзины.
+Обычные покупка, предзаказ, внешние товары и каталог проверяются регрессиями.
+`catalog-filter-empty.spec.ts` использует серверный fixture розыгрыша вместо mock UI.
+
+Управляемые часы устанавливаются до загрузки, останавливаются после подтверждения
+гидратации и до первой границы. При переходе тест ждёт конкретный GET, затем
+выполняет очередь setTimeout(0) TanStack Query через `clock.runFor(0)`.
+Реальных задержек, повышения timeout, retries или skips для этого нет.
+Проверки количества GET доказывают отсутствие сетевого polling между границами.
+SSR fixture намеренно не поддерживает `/products/find`: гостевой сценарий успешного
+каталога явно выполняет его штатный retry, не меняя SSR-политику приложения.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npm run build
+npx playwright test 'giveaway(-model)?\.spec\.ts$' --project=chromium --workers=4 --retries=0
+npx playwright test giveaway.spec --grep 'crosses start|home drops|stale successful|background tab' --repeat-each=5 --project=chromium --workers=4 --retries=0
+```
+
+Прогоны выполняются на свежем production standalone runtime с заданными
+`TEST_BASE_URL` и `PLAYWRIGHT_FIXTURE_API_URL`; API подменён. Реальная OpenAPI
+прочитана 20.10.2026, розыгрыши и другие записи на backend не создавались.
+HTTP smoke дополняет проверки; полный e2e не запускался.
+
+20.10.2026 финальные проверки выполнены на standalone
+`fw21xZM7WWV6Yfd4Bl3AX`, Chromium, `--workers=4 --retries=0`.
+JSON-отчёты — `.cache/stage8/`:
+
+| Прогон | Passed / failed | Секунды |
+|---|---:|---:|
+| 27 новых browser + 5 model (`giveaway-final.json`) | 32 / 0 | 87.867 |
+| Каталог, покупка, DTO/формы, изображения, routes, Telegram (`regressions.json`) | 67 / 0 | 114.954 |
+| Шесть временных сценариев ×5 (`time-repeat-5.json`) | 30 / 0 | 52.515 |
+
+Регрессия включает catalog-filter-empty, product-search-session, own-product-purchase,
+external-purchase, user-products-stock, product-form-mapping, product-contract-v129,
+core-images, order-cases-model, backend-integration-contract-model,
+cart-card-work-model и route-boundaries. Во всех финальных отчётах отсутствуют
+failures/flaky/skips/retries и глобальные ошибки runner. Lint, отдельный ESLint
+изменённых specs/helpers, typecheck, architecture:check, production build и
+15 HTTP smoke успешны. Скриншоты 393/1280 px проверены, self-review и diff-check пройдены.
+
+Первые прогоны выявили неверную синхронизацию новых clock-тестов, предпосылку
+успешного SSR fixture и selectors alt. Они исправлены без ослабления проверок.
+Также исправлены пустая галерея и обрезание metadata feedback на узкой карточке;
+их регрессии включены в финальные 32 теста. Независимый VP и реальная серверная
+приёмка не подменяются локальным базовым VP.
+
 ## Локальные товары бота
 
 `scripts/seed-agent-products.mjs` создаёт два товара с префиксом `[ТЕСТ]`

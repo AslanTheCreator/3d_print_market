@@ -7,6 +7,7 @@ import {
   ProductGrid,
   ProductGridSkeleton,
   ProductGridItem,
+  getProductPublicPath,
 } from "@/entities/product";
 import { useFavoritesChecks } from "@/entities/favorite";
 import { Product } from "@/entities/product";
@@ -46,8 +47,8 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   const router = useRouter();
   const { isProductInFavorites } = useFavoritesChecks(isAuthenticated);
 
-  const handleCardClick = (productId: number) => {
-    router.push(`/catalog/${productId}/detail`);
+  const handleCardClick = (product: Product) => {
+    router.push(getProductPublicPath(product.id, product.availability));
   };
 
   if (isLoading && products.length === 0 && !isError) {
@@ -62,7 +63,10 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   }
 
   if (isError && products.length === 0) {
-    return <ErrorState type="products" onRetry={onRetry} retryPending={isRetrying} />;
+    return <Box>
+      {leadingContent && <ProductGrid>{leadingContent}</ProductGrid>}
+      <ErrorState type="products" onRetry={onRetry} retryPending={isRetrying} />
+    </Box>;
   }
 
   if (!products || products.length === 0) {
@@ -94,7 +98,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
             <Box sx={{ position: "relative" }}>
               <ProductCard
                 {...product}
-                onCardClick={() => handleCardClick(product.id)}
+                onCardClick={() => handleCardClick(product)}
                 actions={
                   <AddToCartButton
                     productId={product.id}

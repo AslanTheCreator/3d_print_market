@@ -33,6 +33,11 @@ export {
 } from "./lib/productExpirationUtils";
 
 export { productApi } from "./api/productApi";
+export { giveawayApi } from "./api/giveawayApi";
+export { getGiveawayTiming, getGiveawayWindow, parseGiveawayDate, formatGiveawayCountdown } from "./lib/giveawayTiming";
+export type { GiveawayTiming, GiveawayPhase } from "./lib/giveawayTiming";
+export { getProductPublicPath } from "./lib/productPublicPath";
+export { GiveawayCountdown } from "./ui/GiveawayCountdown";
 export { ProductNotFoundError } from "./lib/ProductNotFoundError";
 export { buildProductRequest } from "./lib/buildProductRequest";
 export * from "./model";

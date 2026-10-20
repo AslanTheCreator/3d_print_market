@@ -11,6 +11,7 @@ export {
   normalizeSlugParam,
 } from "./url/parseCategorySlug";
 export { getSafeExternalUrl } from "./url/getSafeExternalUrl";
+export { getSafeTelegramUrl } from "./url/getSafeTelegramUrl";
 export { getImageUrl } from "./image/getImageUrl";
 export type { ImageSize, ImageUrlSource } from "./image/getImageUrl";
 export { useUnsavedChanges, confirmDiscardChanges, useUnsavedChangesNavigation } from "./navigation/useUnsavedChanges";

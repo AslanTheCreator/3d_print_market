@@ -28,6 +28,8 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
   const hasRating =
     rating !== undefined && rating > 0 && (reviewCount ?? 0) > 0;
 
+  if (availability === "GIVEAWAY") return <Typography fontWeight={700} color="primary">Розыгрыш</Typography>;
+
   // Форматирование количества оценок
   const formatReviewCount = (count: number): string => {
     if (count === 1) return "1 оценка";

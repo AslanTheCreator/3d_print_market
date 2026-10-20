@@ -34,6 +34,7 @@ export const setupMobileAccount = async (page: Page, baseURL?: string) => {
     const path = new URL(route.request().url()).pathname;
     const method = route.request().method();
     if (method === "OPTIONS") return fulfillJson(route, null);
+    if (path.startsWith("/giveaways/")) return fulfillJson(route, { message: "Not found" }, 404);
     if (path === "/auth/profile") return fulfillJson(route, { id: 1, login: "mobile-user", fullName: "Тестовый пользователь", role: "USER", email: "user@example.com", imageId: null, image: [], exp: 0, type: "access" });
     if (path === "/participant") return fulfillJson(route, { id: 1, login: "mobile-user", mail: "user@example.com", fullName: "Тестовый пользователь", phoneNumber: "", status: "ACTIVE", sellerStatus: "DEFAULT", imageId: null, image: [], addresses: [], accounts: [{ id: 1 }], transfers: [{ id: 1, status: "ACTIVE" }], socialNetworks: [{ id: 1 }] });
     if (path === "/categories") return fulfillJson(route, state.categoriesStatus === 200 ? categories : { message: "Categories unavailable" }, state.categoriesStatus);
