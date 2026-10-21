@@ -18,7 +18,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     <List aria-label="Разделы администрирования">{items.map(([href, label]) => <ListItemButton key={href} component={Link} prefetch={false} href={href}
       selected={pathname.startsWith(href)} aria-current={pathname.startsWith(href) ? "page" : undefined}
       onClick={() => setOpen(false)} sx={{ borderRadius: 2, mb: 1, minHeight: 48 }}><ListItemText primary={label} /></ListItemButton>)}</List>
-    <Divider /><Button component="a" href="/dashboard" fullWidth sx={{ mt: 2 }}>В личный кабинет</Button>
+    <Divider /><Button component={Link} prefetch={false} href="/dashboard" fullWidth sx={{ mt: 2 }}>В личный кабинет</Button>
   </Box>;
   return <Box sx={{ minHeight: "100dvh", bgcolor: "#fafafa", display: "flex", "& .MuiButton-root": { minHeight: 44 }, "& .MuiIconButton-root": { minWidth: 44, minHeight: 44 } }}>
     <Box component="aside" sx={{ display: { xs: "none", md: "block" }, borderRight: 1, borderColor: "divider", bgcolor: "background.paper", position: "fixed", inset: "0 auto 0 0" }}>{navigation}</Box>

@@ -1,33 +1,45 @@
 "use client";
 import Script from "next/script";
+import { useLayoutEffect, useRef } from "react";
+
+const counterId = 105318220;
+type Metrika = { (...args: unknown[]): void; a?: unknown[][]; l?: number };
 
 export function MetrikaHead() {
+  const active = useRef(false), initialized = useRef(false);
+  useLayoutEffect(() => {
+    if (process.env.NODE_ENV !== "production") return;
+    active.current = true;
+    const target = window as Window & { ym?: Metrika };
+    if (!target.ym) {
+      const queue: Metrika = (...args) => { (queue.a ??= []).push(args); };
+      queue.l = Date.now(); target.ym = queue;
+    }
+    return () => {
+      active.current = false;
+      const ym = target.ym;
+      // Не оставляем отложенный init, если transport ещё загружается.
+      if (ym?.a) ym.a = ym.a.filter(args => args[0] !== counterId);
+      if (initialized.current) ym?.(counterId, "destruct");
+      initialized.current = false;
+    };
+  }, []);
+  const initialize = () => {
+    if (!active.current || initialized.current) return;
+    initialized.current = true;
+    (window as Window & { ym?: Metrika }).ym?.(counterId, "init", {
+      ssr: true, clickmap: true, trackLinks: true, accurateTrackBounce: true,
+      webvisor: true, ecommerce: "dataLayer",
+    });
+  };
   if (process.env.NODE_ENV !== "production") {
     return null;
   }
 
   return (
     <>
-      <Script id="marketplace-metrika" strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function(m,e,t,r,i,k,a){
-              m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-              m[i].l=1*new Date();
-              for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-              k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-            })(window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
-
-            ym(105318220, "init", {
-              ssr: true,
-              clickmap:true,
-              trackLinks:true,
-              accurateTrackBounce:true,
-              webvisor:true,
-              ecommerce:"dataLayer"
-            });
-          `,
-        }}
+      <Script id="marketplace-metrika" src="https://mc.yandex.ru/metrika/tag.js" strategy="afterInteractive"
+        onLoad={initialize} onReady={initialize}
       />
       {/* noscript — тоже в head, но после основного скрипта */}
       <noscript>

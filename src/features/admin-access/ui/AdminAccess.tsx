@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { type ReactNode, type SyntheticEvent, useEffect, useRef } from "react";
 import { Alert, Box, Button, Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { useAuth, useAccountSessionKey } from "@/entities/session";
@@ -33,7 +34,7 @@ export function AdminAccess({ children }: { children: ReactNode }) {
   }, [auth.isInitialized, auth.isAuthenticated]);
   if (!auth.isInitialized || !auth.isAuthenticated || profile.isPending || !profile.isFetchedAfterMount) return <Box p={3}><RequestFeedback pending /></Box>;
   if (profile.error && (!initialized || unauthorized)) return <Box p={3}><RequestFeedback error={profile.error} retry={() => void profile.refetch()} /></Box>;
-  if (profile.data?.role !== "ADMIN") return <Box p={3}><Alert severity="error">Доступ разрешён только администратору.</Alert><Button href="/dashboard">В кабинет</Button></Box>;
+  if (profile.data?.role !== "ADMIN") return <Box p={3}><Alert severity="error">Доступ разрешён только администратору.</Alert><Button component={Link} prefetch={false} href="/dashboard">В кабинет</Button></Box>;
   return <div key={sessionKey}>
     <Dialog open={accessUnverified} aria-labelledby="admin-access-error-title" fullWidth maxWidth="sm">
       <DialogTitle id="admin-access-error-title">Не удалось проверить доступ</DialogTitle>
@@ -53,5 +54,5 @@ export function AdminAccess({ children }: { children: ReactNode }) {
 export function AdminEntryLink() {
   const sessionKey = useAccountSessionKey();
   const profile = useSessionProfile(sessionKey);
-  return profile.data?.role === "ADMIN" ? <Button component="a" href="/admin" variant="outlined" sx={{ mb: 2 }}>Администрирование</Button> : null;
+  return profile.data?.role === "ADMIN" ? <Button component={Link} prefetch={false} href="/admin" variant="outlined" sx={{ mb: 2 }}>Администрирование</Button> : null;
 }

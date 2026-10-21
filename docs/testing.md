@@ -1,5 +1,53 @@
 # Testing
 
+## Повторный VP этапов 8–11: F1 — ADMIN → витрина → ADMIN
+
+`admin-storefront-navigation.spec.ts` проходит три пути Astra через настоящие ссылки
+«В личный кабинет» → логотип витрины → «Профиль» → «Администрирование» и меню формы:
+unknown PUT настроек, unknown POST отключённого GIVEAWAY, unknown PUT преобразования.
+Проверяются прежний document, сохранённые поля и enabled=false, guard после возврата,
+точные POST/PUT, доступный GET recovery и успешная независимая запись. Дополнительно
+проверяются accepted POST/ошибка GET, отзыв/возврат роли и logout/login другого ADMIN
+в том же документе с очисткой старого draft/guard.
+
+Два production-сценария используют исполняемый stub загружаемого tag.js:
+callbacks Next Script onLoad/onReady вызывают init, cleanup — destruct до ADMIN.
+MutationObserver фиксировал бы приватный DOM при работающем счётчике. Удерживаемый
+tag.js освобождается уже в ADMIN: поздний callback не вызывает init; возврат на
+витрину запускает счётчик снова. Assertions прежних тестов не меняются.
+
+```bash
+npx playwright test admin-storefront-navigation.spec.ts --project=chromium --workers=4 --retries=0 --repeat-each=5
+```
+
+Итоговые проверки 21.10.2026 на свежем production standalone
+`K4Jc4ODP3qSiExytlg_ld`:
+
+- **40 passed**, 89,58 с: 8 новых сценариев × 5, включая 15 воспроизведений Astra;
+  workers=4, retries=0, без failed/flaky/skipped/errors (`target-repeat.json`).
+- Связанный Chromium-набор: **229 passed / 1 failed**, 237,86 с (`related.json`).
+  Прошли прежние F1, ADMIN lifecycle/доступ, auth/private scope и F2. Единственный сбой —
+  `giveaway.spec.ts:64`: ожидание ссылки участия после startAt при paused clock;
+  в UI остался pending refetch. Изолированно без изменений теста — **12 passed**, 21,19 с
+  (`giveaway-diagnostic.json`). На отдельном standalone чистого HEAD `68cbe5a` —
+  **24 passed**, 48,3 с (`baseline-giveaway.json`); копия теста имела только afterEach
+  для диагностики после failure, assertions не менялись. Связь единичного сбоя с F1
+  не установлена; он не объявлен исправленным и не исключён из результата набора.
+- Mobile с настроенным SSR fixture: **14 passed / 1 failed**, 35,69 с
+  (`mobile-final.json`). `mobile-rendering.mobile.spec.ts:1260` ожидает поля цены
+  после закрытия overlay при Reset. Тот же сбой воспроизведён на чистом HEAD
+  (`baseline-mobile.json`), поэтому существующий тест/каталог здесь не меняются.
+- **15 HTTP smoke passed**, 7,18 с. Lint (включая новый spec), typecheck,
+  architecture:check, build, self-review и diff-check успешны.
+
+Отчёты — `.cache/admin-storefront-f1/`. В первом мобильном запуске без env SSR fixture
+сработали три прежних conditional skip; повтор с fixture выполнил все 15 тестов.
+При разработке исправлены потеря init при auth remount во время загрузки tag.js
+и неверное предположение нового теста о post-login URL. Временный baseline checkout
+и диагностическая копия spec удалены. Production POST/PUT/recovery, существующие
+assertions, timeout, retries и parallelism не изменены. Общий набор пока не зелёный;
+эти два смежных сбоя остаются явно отмеченными для отдельной проверки.
+
 ## VP этапов 8–11: F1 — навигация и guard
 
 `admin-giveaway-navigation.spec.ts` проходит штатные ссылки истории, sidebar и
