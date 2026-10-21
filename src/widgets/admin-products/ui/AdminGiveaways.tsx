@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { Alert, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import { useAccountSessionKey } from "@/entities/session";
 import { useAdminGiveawayHistory } from "@/entities/product";
@@ -29,7 +30,7 @@ export function AdminGiveaways() {
           <Chip label={`Статус товара: ${product.status ?? "не указан"}`} />
           <Chip label={`Публичный показ: ${product.giveawayEnabled == null ? "не указан" : product.giveawayEnabled ? "включён" : "выключен"}`} />
         </Stack>
-        <Button component="a" href={`/admin/giveaways/${product.id}`} sx={{ alignSelf: "start" }}>Настройки розыгрыша #{product.id}</Button>
+        <Button component={Link} prefetch={false} href={`/admin/giveaways/${product.id}`} sx={{ alignSelf: "start" }}>Настройки розыгрыша #{product.id}</Button>
       </Stack>
     </Paper>)}
     <Stack direction="row" spacing={2} alignItems="center">

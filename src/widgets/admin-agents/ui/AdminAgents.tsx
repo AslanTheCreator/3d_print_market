@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useAccountSessionKey } from "@/entities/session";
 import { useAgents } from "@/entities/agent";
 import { Alert, Button, Chip, Paper, Stack, Typography } from "@mui/material";
@@ -43,7 +44,7 @@ export function AdminAgents() {
               }
               color={agent.status === "ACTIVE" ? "success" : "default"}
             />
-            <Button href={`/admin/agents/${agent.id}`} variant="outlined">
+            <Button component={Link} prefetch={false} href={`/admin/agents/${agent.id}`} variant="outlined">
               Открыть бота
             </Button>
           </Stack>

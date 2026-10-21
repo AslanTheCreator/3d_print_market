@@ -1,6 +1,7 @@
 "use client";
 import { useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import MenuRounded from "@mui/icons-material/MenuRounded";
 import { Box, Button, Divider, Drawer, IconButton, List, ListItemButton, ListItemText, Stack, Typography } from "@mui/material";
 import { useAuth } from "@/entities/session";
@@ -14,7 +15,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const navigation = <Box sx={{ p: 2, width: 232 }}>
     <Typography fontWeight={800} variant="h6" sx={{ px: 2, py: 2 }}>Figurzilla</Typography>
     <Typography variant="overline" color="text.secondary" sx={{ px: 2 }}>Администрирование</Typography>
-    <List aria-label="Разделы администрирования">{items.map(([href, label]) => <ListItemButton key={href} component="a" href={href}
+    <List aria-label="Разделы администрирования">{items.map(([href, label]) => <ListItemButton key={href} component={Link} prefetch={false} href={href}
       selected={pathname.startsWith(href)} aria-current={pathname.startsWith(href) ? "page" : undefined}
       onClick={() => setOpen(false)} sx={{ borderRadius: 2, mb: 1, minHeight: 48 }}><ListItemText primary={label} /></ListItemButton>)}</List>
     <Divider /><Button component="a" href="/dashboard" fullWidth sx={{ mt: 2 }}>В личный кабинет</Button>

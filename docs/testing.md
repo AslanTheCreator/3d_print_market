@@ -1,5 +1,29 @@
 # Testing
 
+## VP этапов 8–11: F1 — навигация и guard
+
+`admin-giveaway-navigation.spec.ts` проходит штатные ссылки истории, sidebar и
+списка товаров после unknown PUT настроек, unknown POST создания и unknown PUT
+преобразования. Проверяются прежний документ, сохранённый draft, disabled submit,
+точное число записей и recovery только чтением. Независимый товар/PUT остаётся
+доступен; совпадение названия не снимает guard создания. Дополнительный сценарий
+проверяет переходы к ботам, вкладки и ссылки возврата в том же документе.
+Ограничения памяти при полной навигации описаны в [architecture.md](./architecture.md).
+
+```bash
+npx playwright test admin-giveaway-navigation.spec.ts --project=chromium --repeat-each=5 --workers=4 --retries=0
+```
+
+21.10.2026: свежий production standalone `orwr36EM6Yw6SF4wUh6_g`; итоговые
+**20 passed** (4 сценария × 5, 35,52 с), workers=4/retries=0. Связанный набор
+admin/giveaway/catalog/private-data — **255 passed**, 198,68 с; HTTP smoke —
+**15 passed**, 6,78 с. Lint (включая новые specs), typecheck, architecture:check,
+build и self-review успешны. Отчёты — `.cache/vp8-11-fixes/f1-repeat-final.json`
+и `related.json`. Failed/flaky/skipped/errors отсутствуют в итоговых прогонах.
+Первый новый locator выбирал другой товар из сортированного списка; теперь проверяет
+конкретную ссылку #101. В новом fixture контрольного GET задан плановый статус
+преобразованного товара. Assertions существующих тестов не менялись.
+
 ## Backend integration: этап 11
 
 `admin.spec.ts`/`admin-extended.spec.ts` расширены преобразованием через точный прежний

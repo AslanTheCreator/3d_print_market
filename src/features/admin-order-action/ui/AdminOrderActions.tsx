@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -114,7 +115,7 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
         {unknown && <Alert severity="warning" action={<Button disabled={busy} onClick={() => void checkResult()}>Проверить результат</Button>}>Ответ не получен. Операция могла выполниться.{action === "CANCEL" && cancel.recoveryMessage && <div>{cancel.recoveryMessage}</div>}</Alert>}
         {action === "CONFIRM" && <>
           <RequestFeedback pending={accounts.isPending} error={accounts.error} retry={() => void accounts.refetch()} />
-          {accounts.data?.length === 0 && <Alert severity="warning">У бота нет реквизитов. <Button href={`/admin/agents/${order.sellerId}?tab=settings`}>Заполнить реквизиты</Button></Alert>}
+          {accounts.data?.length === 0 && <Alert severity="warning">У бота нет реквизитов. <Button component={Link} prefetch={false} href={`/admin/agents/${order.sellerId}?tab=settings`}>Заполнить реквизиты</Button></Alert>}
         </>}
         {action === "CANCEL" && <Alert severity="warning">Отмена заказа не подтверждает возврат денег покупателю.</Alert>}
         <TextField label="Комментарий" multiline minRows={2} {...form.register("comment")} disabled={busy || unknown || accepted} />
