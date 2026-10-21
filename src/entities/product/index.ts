@@ -34,6 +34,7 @@ export {
 
 export { productApi } from "./api/productApi";
 export { giveawayApi } from "./api/giveawayApi";
+export { readGiveawayAfterBoundary } from "./model/readGiveawayAfterBoundary";
 export { getGiveawayTiming, getGiveawayWindow, parseGiveawayDate, formatGiveawayCountdown } from "./lib/giveawayTiming";
 export type { GiveawayTiming, GiveawayPhase } from "./lib/giveawayTiming";
 export { getProductPublicPath } from "./lib/productPublicPath";

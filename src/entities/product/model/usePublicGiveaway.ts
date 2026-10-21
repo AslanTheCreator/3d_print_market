@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { parsePositiveSafeInteger } from "@/shared/lib";
 import { giveawayApi } from "../api/giveawayApi";
 import { getGiveawayTiming, getGiveawayWindow } from "../lib/giveawayTiming";
+import { readGiveawayAfterBoundary } from "./readGiveawayAfterBoundary";
+import type { GiveawayResponse } from "./giveaway";
 
 export const giveawayKeys = {
   all: ["giveaways"] as const,
@@ -12,10 +14,15 @@ export const giveawayKeys = {
 };
 
 export function usePublicGiveaway(productId?: number) {
+  const client = useQueryClient();
   const valid = productId === undefined || parsePositiveSafeInteger(productId) !== null;
+  const queryKey = productId === undefined ? giveawayKeys.active() : giveawayKeys.detail(productId);
   const query = useQuery({
-    queryKey: productId === undefined ? giveawayKeys.active() : giveawayKeys.detail(productId),
-    queryFn: ({ signal }) => productId === undefined ? giveawayApi.active(signal) : giveawayApi.detail(productId, signal),
+    queryKey,
+    queryFn: ({ signal }) => readGiveawayAfterBoundary(
+      () => productId === undefined ? giveawayApi.active(signal) : giveawayApi.detail(productId, signal),
+      signal, client.getQueryData<GiveawayResponse | null>(queryKey),
+    ),
     enabled: valid,
     staleTime: 0,
     refetchOnMount: "always",
@@ -33,22 +40,23 @@ export function usePublicGiveaway(productId?: number) {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let previous = Date.now();
     if (end !== undefined) setCompletion({ id: productId, ended: previous >= end });
-    const refresh = () => { void refetch({ cancelRefetch: false }); };
+    const refresh = () => { void refetch({ cancelRefetch: true }); };
     const tick = () => {
       clearTimeout(timer);
       const now = Date.now();
       setNow(now);
       if (end !== undefined && now >= end) setCompletion({ id: productId, ended: true });
       // Только пересечение границы вызывает GET; секундные тики обновляют лишь UI.
-      if ([start, end].some(boundary => boundary !== undefined && previous < boundary && boundary <= now)) refresh();
+      const crossed = [start, end].some(boundary => boundary !== undefined && previous < boundary && boundary <= now);
+      if (crossed) refresh();
       previous = now;
       const next = [start, end].find(boundary => boundary !== undefined && boundary > now);
       if (next !== undefined) timer = setTimeout(tick, Math.min(1000, next - now));
+      return crossed;
     };
     const resume = () => {
       if (document.visibilityState === "hidden") return;
-      tick();
-      refresh();
+      if (!tick()) refresh();
     };
     tick();
     window.addEventListener("focus", resume);

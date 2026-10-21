@@ -637,6 +637,30 @@ architecture:check и production build успешны; self-review и diff-check
 Все записи подменены. Реальный backend проверен чтением актуальной OpenAPI;
 серверные переходы и конкурентные записи остаются отдельной приёмкой.
 
+## VP этапов 8–11: F2 — чтение после временной границы
+
+`giveaway-boundary.spec.ts` управляет часами и явными сигналами начала/освобождения
+конкретного GET. Для главной и деталей проверяются start/end во время focus GET,
+поздний ответ после свежего чтения, первый GET через границу, следующий приз на
+главной, 503 и явный retry. Assertions включают точное число GET, отсутствие старого
+snapshot и недоступность участия при окончании/ошибке; секундные тики не дают polling.
+`giveaway-boundary-model.spec.ts` проверяет последовательные start/end, ошибку старого
+GET, отсутствие retry свежей ошибки, AbortSignal и ограничение дополнительных чтений.
+Протокол — в [api-and-auth.md](./api-and-auth.md#публичные-розыгрыши-этап-8).
+
+```bash
+npx playwright test giveaway-boundary --project=chromium --repeat-each=5 --workers=4 --retries=0
+```
+
+21.10.2026 на свежем standalone `orwr36EM6Yw6SF4wUh6_g` прошли **80 повторов F2**:
+10 browser + 6 model × 5, в общем прогоне **100 passed**, 201,78 с,
+workers=4/retries=0 (`.cache/vp8-11-fixes/target-repeat.json`). Связанные регрессии —
+**255 passed** (`related.json`), HTTP smoke — **15 passed**. Failed/flaky/skipped/errors
+нет; lint/typecheck/architecture:check/build и self-review успешны. В первом новом
+тесте retry locator уточнён до кнопки внутри error alert; assertions не ослаблялись.
+Ожидания используют сигналы конкретного запроса и управляемые часы; произвольные
+задержки, test retries/skips и изменения timeout/параллельности не добавлялись.
+
 ## Backend integration: этап 8
 
 `giveaway-model.spec.ts` проверяет календарные даты и timezone, точные границы
