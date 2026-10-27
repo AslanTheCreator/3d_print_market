@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { connectDev } from "./backend.mjs";
 import { blockExternalTelemetry } from "./network";
 
-test.beforeEach(async ({ context }) => { await blockExternalTelemetry(context); });
+test.beforeEach(async ({ page }) => { await blockExternalTelemetry(page); });
 
 for (const source of ["new", "converted"]) test(`real standalone ${source} GIVEAWAY crosses start and end without clock or API mocks`, async ({ page }) => {
   const dev = await connectDev();

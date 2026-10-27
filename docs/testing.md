@@ -2,17 +2,22 @@
 
 ## Backend integration: этап 12 — реальный DEV
 
-**Frontend-работы завершены с известными backend-ограничениями; ожидает финального независимого VP.**
+**Frontend-работы завершены с известными backend-ограничениями; P2 финального VP исправлены, ожидает адресного независимого VP.**
 
 Прогоны выполнены 22.10.2026; документальное завершение и итоговая сверка —
-27.10.2026. При завершении документации код и результаты прогонов не менялись.
+27.10.2026. После заключительного VP исправлены два P2; новые прогоны и
+ограничения исходного harness описаны в разделе 8 отчёта этапа 12.
 
 Фактические результаты, матрица требований, ID fixtures и ограничения —
 [отчёт этапа 12](./backend-plan/stage12-results.md). Набор `tests/real` отделён
 от `tests/e2e`; основной Playwright config его не запускает. Он пишет в DEV,
 использует настоящие login/API/browser requests, не регистрирует API routes,
-HAR, mock responses или SSR fixtures. Внешняя Метрика блокируется abort,
-включая отдельный ADMIN context; API не перехватывается. Trace/video/screenshots отключены,
+HAR, mock responses или SSR fixtures. После P2-2 внешняя Метрика блокируется
+CDP Network.setBlockedURLs до goto каждой Page, включая ADMIN. context/page.route
+не используются: даже route только для Метрики включал автоматический 204 для
+preflight. Исторические browser PASS до P2-2 не подтверждают реальный CORS;
+перепроверка без interception — в [протоколе P2-2](./backend-plan/stage12-p2-network.md).
+Trace/video/screenshots отключены,
 чтобы не сохранять credentials и доказательства. Обезличенные статусы/ID
 пишутся в `.cache/backend-stage12/manifests/`; отдельные manifests сохраняются
 и при перезапуске worker после failure.
@@ -62,7 +67,7 @@ production MinIO вместе с фактическим standalone browser-по�
 диалога; до hydration нативная ссылка штатно ведёт в каталог. Modified click
 продолжает проверять fallback в новой вкладке.
 
-Итоги DEV: **32 PASS / 1 FAIL** в финальном real-прогоне (114.862 s),
+Исходные итоги DEV 22.10.2026: **32 PASS / 1 FAIL** в real-прогоне (114.862 s),
 **1085 PASS** в полном desktop/mobile regression (862.972 s), 15 HTTP smoke PASS;
 skip/flaky/retries отсутствуют. Красный CORS preflight не скрыт expected failure.
 Приватные query в backend HTTP-логах выявлены отдельным read-only аудитом.
@@ -82,8 +87,14 @@ Real-команда сохраняет неуспешный exit из-за CORS;
 влияющий на реальный frontend. Same-origin контроль из страницы Swagger прошёл
 без preflight; он не доказывает browser recovery. Next.js proxy и серверного
 refresh нет. Эта диагностика не меняет результаты завершённых наборов.
-Независимый финальный VP ещё не выполнен;
-его можно проводить по текущему diff с этими документированными ограничениями.
+Заключительный независимый VP выявил P2-1/P2-2; их исправления ожидают
+адресного независимого подтверждения. Повтор 27.10.2026 на свежем production
+standalone без interception: **36 PASS / 1 FAIL** из 37 real-сценариев (прежние
+33 + новые 4), 50 PASS смежных UI-регрессий и 1 PASS mobile overlay/Reset,
+15 PASS smoke. Build/lint/typecheck/architecture прошли. Успешный browser refresh
+остаётся BLOCKED; 1085 PASS mock/model не объявляются повтором текущей сборки.
+Регрессии уведомлений проверяют hit-testing, keyboard/focus и возврат после Reset
+на desktop и 393×400; [протокол P2-1](./backend-plan/stage12-p2-notifications.md).
 
 ## Повторный VP этапов 8–11: F1 — ADMIN → витрина → ADMIN
 

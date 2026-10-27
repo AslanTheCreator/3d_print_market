@@ -451,7 +451,11 @@ recovery с вводом — MOCK ONLY. По решению владельца �
 сессии. Origin и header соответствуют backend-контракту; refresh идёт из браузера
 напрямую, без Next.js proxy или серверного refresh. Same-origin Swagger получает
 200 без preflight и поэтому не проверяет browser CORS. Классификация —
-BACKEND CORS BUG. Требования и повторная проверка —
+BACKEND CORS BUG. После удаления Playwright interception (P2-2) это повторно
+подтверждено на свежем production standalone в desktop/mobile: реальные OPTIONS
+403, POST заблокирован, сессия завершается. Успешный recovery остаётся BLOCKED;
+подробности — в [протоколе P2-2](./backend-plan/stage12-p2-network.md).
+Требования и повторная проверка —
 [BACKEND_REQUIRED_FIXES.md](./backend-plan/BACKEND_REQUIRED_FIXES.md); фактическая
 цепочка — в разделе 6 [отчёта этапа 12](./backend-plan/stage12-results.md).
 

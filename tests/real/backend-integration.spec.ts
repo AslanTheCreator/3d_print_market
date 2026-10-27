@@ -14,7 +14,7 @@ test.beforeAll(async () => {
   bot = await dev.product("EXTERNAL_PRODUCT", { externalUrl: `https://example.invalid/${dev.marker}` }, "agent");
 });
 test.afterAll(async () => { if (dev) await dev.save(); });
-test.beforeEach(async ({ context }) => { await blockExternalTelemetry(context); });
+test.beforeEach(async ({ page }) => { await blockExternalTelemetry(page); });
 
 async function unpaid(product = ordinary) {
   const id = await dev.order(product);
@@ -347,8 +347,8 @@ test("real browser request and ADMIN decision synchronize on return", async ({ p
   expect(c.orderCase.openingComment).toBe(dev.marker);
   const adminContext = await browser.newContext();
   try {
-    await blockExternalTelemetry(adminContext);
     const admin = await adminContext.newPage();
+    await blockExternalTelemetry(admin);
     await login(admin, "admin", `/admin/order-cases?case=${c.orderCase.id}`);
     const form = admin.getByRole("form", { name: "Решение обращения" });
     await form.getByLabel("Исход").click(); await admin.getByRole("option", { name: "Отменить заказ", exact: true }).click();
