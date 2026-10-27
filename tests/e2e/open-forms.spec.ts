@@ -211,14 +211,19 @@ for (const status of [200, 409]) test(`pending admin save settles after profile 
     await expect(name).toHaveValue("Название pending-записи");
     expect(await originalForm.evaluate(form => form.isConnected)).toBe(true);
   } finally { gate.resolve(); }
-  await expect(page.getByText(status === 200 ? "Изменения сохранены" : "Конфликт данных", { exact: true })).toBeVisible();
-  expect(state.writes).toHaveLength(1);
+  await expect.poll(() => state.writes.length).toBe(1);
   const save = page.getByRole("button", { name: "Сохранить изменения", exact: true, includeHidden: true });
   await expect(save).toBeDisabled();
   await name.evaluate(input => input.closest("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
   expect(state.writes).toHaveLength(1);
   state.profileStatus = 200;
   await page.getByRole("button", { name: "Повторить", exact: true }).click();
+  await expect(page.getByText(/Не удалось проверить доступ/)).toHaveCount(0);
+  // Сетевой исход PUT не снимает guard без чтения сервера. После восстановления
+  // профиля подтверждаем результат только GET, не повторяя запись.
+  await expect(save).toBeDisabled();
+  await page.getByRole("button", { name: "Проверить актуальные данные", exact: true }).click();
+  await expect(page.getByText(status === 200 ? "Изменения сохранены" : "Конфликт данных", { exact: true })).toBeVisible();
   await expect(save).toBeEnabled();
   await expect(name).toHaveValue("Название pending-записи");
   expect(await originalForm.evaluate(form => form.isConnected)).toBe(true);

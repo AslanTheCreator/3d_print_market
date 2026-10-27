@@ -37,6 +37,7 @@ interface IAuthForm {
   showAgeField?: boolean;
   showLegalConsentNotice?: boolean;
   allowLoginIdentifier?: boolean;
+  submitButtonRef?: React.Ref<HTMLButtonElement>;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -68,6 +69,7 @@ const AuthForm: React.FC<IAuthForm> = ({
   url,
   linkText,
   buttonTitle,
+  submitButtonRef,
   onSubmit,
   isLoading = false,
   onForgotPassword,
@@ -354,6 +356,7 @@ const AuthForm: React.FC<IAuthForm> = ({
           )}
 
           <Button
+            ref={submitButtonRef}
             variant="contained"
             type="submit"
             disabled={isSubmitting || isLoading}

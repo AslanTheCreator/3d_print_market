@@ -84,7 +84,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
           bottom: "calc(max(var(--shell-bottom-offset, 0px), var(--shell-fixed-action-offset, 0px)) + 16px)",
           left: "50%",
           transform: "translateX(-50%)",
-          zIndex: 9999,
+          zIndex: (theme) => theme.zIndex.modal - 1,
           width: { xs: "calc(100% - 32px)", sm: "auto" },
           minWidth: { sm: 400 },
           maxWidth: { xs: "calc(100% - 32px)", sm: 600 },

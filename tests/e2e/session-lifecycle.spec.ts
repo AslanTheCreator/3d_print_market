@@ -571,7 +571,12 @@ interface ObservedWindow extends Window {
 async function observeNavigation(page: Page) {
   const rsc: string[] = [];
   page.on("request", request => {
-    if (request.headers().rsc === "1" && !request.headers()["next-router-prefetch"]) {
+    const headers = request.headers();
+    // Next помечает speculative RSC также purpose/segment headers.
+    // Они не являются навигацией пользователя или post-auth replace.
+    const prefetch = headers["next-router-prefetch"] || headers["next-router-segment-prefetch"] ||
+      headers.purpose === "prefetch" || headers["sec-purpose"]?.includes("prefetch");
+    if (headers.rsc === "1" && !prefetch) {
       rsc.push(request.url());
     }
   });
@@ -621,9 +626,11 @@ async function holdRsc(page: Page, pathname: string) {
   const gate = createDeferred();
   const started = createDeferred();
   const ready = createDeferred();
+  const requests: string[] = [];
   const match = (url: URL) => url.pathname === pathname;
   const handler = async (route: Route) => {
     if (route.request().headers().rsc !== "1") return route.continue();
+    requests.push(new URL(route.request().url()).pathname);
     started.resolve();
     const response = await route.fetch();
     expect(response.status()).toBe(200);
@@ -633,6 +640,7 @@ async function holdRsc(page: Page, pathname: string) {
   };
   await page.route(match, handler);
   return {
+    requests,
     started: started.promise,
     ready: ready.promise,
     release: gate.resolve,
@@ -686,7 +694,10 @@ test("navigation probe detects a pending post-auth replace with unchanged sessio
     await expect(page.getByRole("heading", { name: "Вход в аккаунт", exact: true })).toBeVisible();
     const pending = await snapshot();
     expect(pending.calls.slice(before.calls.length)).toEqual([{ method: "replace", href: new URL("/about", page.url()).href }]);
-    expect(pending.rsc.slice(before.rsc.length).map(url => new URL(url).pathname)).toEqual(["/about"]);
+    // Next может переиспользовать уже начатый prefetch: сетевой запрос
+    // удерживается gate, но не обязан начинаться после snapshot.
+    expect(about.requests).toContain("/about");
+    expect(pending.rsc.slice(before.rsc.length).map(url => new URL(url).pathname).every(path => path === "/about")).toBe(true);
     expect(pending.history).toEqual(before.history);
     const cookies = await getSessionCookies(context);
     const user = await page.evaluate(() => localStorage.getItem("auth-storage"));

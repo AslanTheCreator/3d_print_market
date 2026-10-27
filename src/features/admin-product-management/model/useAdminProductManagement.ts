@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { agentApi, agentKeys } from "@/entities/agent";
-import { userApi } from "@/entities/user";
+import { userApi, useSessionProfile } from "@/entities/user";
 import { imageApi } from "@/entities/image";
 import {
   adminGiveawayKeys, adminProductApi, adminProductKeys, adminProductBaseline, adminProductInputFingerprint, adminProductMatchesInput,
@@ -22,6 +22,9 @@ const empty = (): AdminProductDraft => ({ values: null, baseline: "", revision: 
 
 export function useAdminProductManagement(session: number | null, id: number, initial?: AdminProductEditorData, ready = false) {
   const client = useQueryClient(), scope = usePrivateScope();
+  // Guard сохраняет дочернее дерево при reconnect: форма сама наблюдает
+  // восстановление доступа, чтобы canWrite не оставался старым после retry.
+  const profile = useSessionProfile(session);
   const key = useMemo(() => adminProductOperationKeys.product(session, id), [session, id]);
   const { data: state } = useQuery({ queryKey: key, queryFn: empty, initialData: empty, enabled: false, staleTime: Infinity, gcTime: Infinity });
   useQuery({ queryKey: adminProductOperationKeys.settings(session, id), queryFn: skipToken, enabled: false });
@@ -165,7 +168,7 @@ export function useAdminProductManagement(session: number | null, id: number, in
     finally { update({ busy: false }); }
   }
   return { state, save, check, upload, retryRestore, otherBlocked: other(),
-    canWrite: access() && ready && !!state.values && !state.busy && !state.attempt && !state.restorePending && !state.readFailed && !state.conflict && !other(),
+    canWrite: profile.isSuccess && profile.data.role === "ADMIN" && access() && ready && !!state.values && !state.busy && !state.attempt && !state.restorePending && !state.readFailed && !state.conflict && !other(),
     dirty: !!state.values && !!initial && adminProductInputFingerprint(state.values) !== adminProductInputFingerprint(mapAdminProductToInput(initial)),
     edit: (values: AdminProductInput) => { if (caller() && !get().busy && !get().attempt) update({ values }); },
     convert: () => {

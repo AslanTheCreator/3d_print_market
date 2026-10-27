@@ -133,6 +133,14 @@ upload/cleanup hooks. Generic API дополнительно отклоняет 
 flow. Серверная проверка object-level доступа остаётся обязанностью backend;
 mock-тесты и чтение OpenAPI не подтверждают её выполнение на реальных данных.
 
+На DEV v1.36 этапом 12 проверены участники/ADMIN, посторонний USER, анонимный
+клиент, metadata и DELETE ORDER. Общий GET фильтрует недоступные ORDER ID:
+анонимному и постороннему обычному USER возвращается `200 []`; ограниченный
+AGENT-токен получает 403. Пустой массив не является публичным доступом к файлу.
+Upload возвращает TEMPORARY ID; чтение самого файла проверяется после его
+присоединения к оплате/обращению и перехода в ACTIVE. Детали результатов и
+отложенные backend-ограничения — [отчёт этапа 12](./backend-plan/stage12-results.md).
+
 ## История обращений (этап 4)
 
 `orderCasesApi.list(orderId, signal)` читает только `GET /order/{orderId}/cases`
@@ -408,6 +416,11 @@ Auth API, store, `useAuth`, инициализация и refresh lifecycle пр
 
 Браузер получает `CLIENT_API_BASE_URL` через `GET /api/config`. Local URL в production разрешается только при `ALLOW_LOCAL_API_URL=true`.
 
+При сборке `ALLOW_LOCAL_API_URL=true` также разрешает локальный MinIO
+`localhost:9000`/`127.0.0.1:9000` в CSP img-src и Next Image remotePatterns.
+Без явного opt-in production не разрешает эти источники. Изменение флага
+после сборки не меняет скомпилированную политику изображений.
+
 Загрузка runtime config общая для public/auth clients и `preloadApiConfig`.
 Deadline 10 секунд охватывает fetch и чтение JSON; при истечении transport
 отменяется, а ошибка нормализуется в `ApiError` (`TIMEOUT`, 408). Ошибки HTTP,
@@ -426,6 +439,21 @@ Interceptor назначает Axios `baseURL`, сохраняя endpoint в `ur
 Текущая валидация принимает `http:` и `https:`. Требование HTTPS для публичного browser API пока зафиксировано только в `.env.example`, но не обеспечено кодом. Root-relative URL допустим для browser same-origin proxy, однако server-side `API_BASE_URL` должен быть абсолютным.
 
 ## Текущий auth flow
+
+Реальная проверка v1.36 выявила отложенную backend-проблему: `CorsConfig` разрешает headers
+Authorization/Content-Type/X-Requested-With, но не X-Refresh-Token, который
+требует `/auth/refresh`. Preflight с допустимого `http://localhost:3000`
+возвращает 403 (FAIL). Прямой API refresh работает; реальный browser
+`401 → refresh → retry` с сохранением ввода остаётся BLOCKED, покрытие успешного
+recovery с вводом — MOCK ONLY. По решению владельца проекта проблема передана
+на сторону backend и не блокирует завершение текущих frontend-работ.
+27.10.2026 реальный frontend подтвердил 401 → OPTIONS refresh 403 → завершение
+сессии. Origin и header соответствуют backend-контракту; refresh идёт из браузера
+напрямую, без Next.js proxy или серверного refresh. Same-origin Swagger получает
+200 без preflight и поэтому не проверяет browser CORS. Классификация —
+BACKEND CORS BUG. Требования и повторная проверка —
+[BACKEND_REQUIRED_FIXES.md](./backend-plan/BACKEND_REQUIRED_FIXES.md); фактическая
+цепочка — в разделе 6 [отчёта этапа 12](./backend-plan/stage12-results.md).
 
 - `AuthProvider` регистрирует session adapter и запускает инициализацию auth;
 - `access_token`, `refresh_token` и `token_created_at` хранятся через `js-cookie`;
@@ -919,8 +947,8 @@ Retry подтверждённых отказов сверяет актуаль�
 
 - `PUT /participant/password` сейчас отправляет `oldPassword` и `newPassword` в query string. Для production нужен подтверждённый body-контракт и redaction на proxy/backend.
 - `POST /auth/password/reset` отправляет email в query, а UI может показывать backend message. Backend должен исключать account enumeration и определить rate limit, single-use, expiry и session revocation.
-- Комментарии к заказу и delivery URL в части order endpoints также передаются через query. Чувствительные пользовательские значения должны переноситься в body после согласования контракта.
-- Изображения `ORDER` читаются и загружаются через authClient; перед production требуется проверить серверный object-level доступ по участнику заказа на реальных изолированных данных.
+- Комментарии к заказу и delivery URL в части order endpoints также передаются через query. Чувствительные пользовательские значения должны переноситься в body после согласования контракта. На DEV v1.36 подтверждено попадание query `comment` в HTTP-логи backend (FAIL). Серверная redaction отложена и передана на сторону backend решением владельца проекта; frontend-сериализатор этого не устраняет. Требование централизованной redaction и повторная приёмка — в [BACKEND_REQUIRED_FIXES.md](./backend-plan/BACKEND_REQUIRED_FIXES.md).
+- Изображения `ORDER` читаются и загружаются через authClient; object-level доступ участников/ADMIN и отказ постороннему/anonymous подтверждены реальным DEV API в [этапе 12](./backend-plan/stage12-results.md). Этот результат не подтверждает конфигурацию другого production-стенда.
 - Платёжные реквизиты продавца запрашиваются по `participantId`; backend должен подтверждать object-level доступ в контексте заказа.
 
 ## Env

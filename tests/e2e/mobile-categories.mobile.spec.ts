@@ -38,6 +38,16 @@ const categoriesTrigger = (page: Page) =>
 const categoriesDialog = (page: Page) =>
   page.locator("#mobile-categories-dialog").getByRole("dialog");
 
+const readyCategoriesTrigger = async (page: Page) => {
+  const trigger = categoriesTrigger(page);
+  // До hydration ссылка штатно ведёт в каталог. Сценарии меню требуют
+  // установленного React-обработчика, а не только готового SSR DOM.
+  await expect.poll(() => trigger.evaluate((element) =>
+    Object.keys(element).some((key) => key.startsWith("__reactProps$")),
+  )).toBe(true);
+  return trigger;
+};
+
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 393, height: 727 });
   await page.route("https://mc.yandex.ru/metrika/tag.js", (route) =>
@@ -60,11 +70,8 @@ test("categories opened with Enter show loading and then the taxonomy", async ({
   });
 
   await page.goto("/favorites", { waitUntil: "domcontentloaded" });
-  const trigger = categoriesTrigger(page);
+  const trigger = await readyCategoriesTrigger(page);
   const dialog = categoriesDialog(page);
-  await expect.poll(() => trigger.evaluate((element) =>
-    Object.keys(element).some((key) => key.startsWith("__reactProps$")),
-  )).toBe(true);
   await trigger.focus();
   await trigger.press("Enter");
 
@@ -113,7 +120,7 @@ test("categories error offers Retry and recovers without closing the menu", asyn
   });
 
   await page.goto("/favorites", { waitUntil: "domcontentloaded" });
-  await categoriesTrigger(page).click();
+  await (await readyCategoriesTrigger(page)).click();
   const dialog = categoriesDialog(page);
   await expect(dialog.getByRole("alert")).toBeVisible({ timeout: 15_000 });
   await expect(dialog.getByRole("progressbar")).toBeHidden();
@@ -132,7 +139,7 @@ test("categories error offers Retry and recovers without closing the menu", asyn
 test("empty categories keep product search available", async ({ page }) => {
   await page.route("**/categories", (route) => fulfillJson(route, []));
   await page.goto("/favorites", { waitUntil: "domcontentloaded" });
-  await categoriesTrigger(page).click();
+  await (await readyCategoriesTrigger(page)).click();
   const dialog = categoriesDialog(page);
 
   await expect(dialog.getByText("Категории не найдены")).toBeVisible();
@@ -149,7 +156,7 @@ test("leaf category navigates to its hierarchical route and reopening starts at 
 }) => {
   await page.route("**/categories", (route) => fulfillJson(route, taxonomy));
   await page.goto("/favorites", { waitUntil: "domcontentloaded" });
-  await categoriesTrigger(page).click();
+  await (await readyCategoriesTrigger(page)).click();
   const dialog = categoriesDialog(page);
 
   await dialog.getByRole("button", { name: "Фигурки", exact: true }).click();
@@ -162,7 +169,7 @@ test("leaf category navigates to its hierarchical route and reopening starts at 
     .toBe("/catalog/category/32-фигурки/33-аниме");
   await expect(dialog).toBeHidden();
   await expect(categoriesTrigger(page)).toHaveAttribute("aria-current", "page");
-  await categoriesTrigger(page).click();
+  await (await readyCategoriesTrigger(page)).click();
   await expect(dialog.getByRole("heading", { name: "Категории" })).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Фигурки", exact: true })).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Аниме", exact: true })).toBeHidden();

@@ -1,5 +1,17 @@
 # Контракты обращений и розыгрышей: этапы 1–11
 
+22.10.2026 выполнены реальные DEV API/browser-проверки на v1.36. Их результаты,
+object-level доступ ORDER, серверные переходы/коды и CORS/logging-ограничения
+перечислены в [отчёте этапа 12](./backend-plan/stage12-results.md).
+CORS refresh и приватное HTTP-логирование отложены и переданы на сторону backend
+решением владельца проекта: frontend-работы завершены, FAIL/BLOCKED сохранены,
+независимый финальный VP ещё не выполнен. Диагностика 27.10.2026 подтвердила
+BACKEND CORS BUG v1.36 на штатной цепочке frontend: 401 → OPTIONS refresh 403 →
+завершение сессии. Контракт X-Refresh-Token не меняется. Два открытых требования
+серверной приёмки и проверка после исправлений — в
+[BACKEND_REQUIRED_FIXES.md](./backend-plan/BACKEND_REQUIRED_FIXES.md).
+Ниже сохранены датированные источники контрактов этапов 1–11.
+
 Источники: [backend-требования](./backend-plan/plan_2_formatted.md), окончательные
 [ответы backend B1–B4/N1–N2](./backend-plan/FRONTEND_BACKEND_ANSWERS.md)
 для master на 15.10.2026 и `GET http://localhost:8081/v3/api-docs`, прочитанный 15.10.2026

@@ -1,5 +1,90 @@
 # Testing
 
+## Backend integration: этап 12 — реальный DEV
+
+**Frontend-работы завершены с известными backend-ограничениями; ожидает финального независимого VP.**
+
+Прогоны выполнены 22.10.2026; документальное завершение и итоговая сверка —
+27.10.2026. При завершении документации код и результаты прогонов не менялись.
+
+Фактические результаты, матрица требований, ID fixtures и ограничения —
+[отчёт этапа 12](./backend-plan/stage12-results.md). Набор `tests/real` отделён
+от `tests/e2e`; основной Playwright config его не запускает. Он пишет в DEV,
+использует настоящие login/API/browser requests, не регистрирует API routes,
+HAR, mock responses или SSR fixtures. Внешняя Метрика блокируется abort,
+включая отдельный ADMIN context; API не перехватывается. Trace/video/screenshots отключены,
+чтобы не сохранять credentials и доказательства. Обезличенные статусы/ID
+пишутся в `.cache/backend-stage12/manifests/`; отдельные manifests сохраняются
+и при перезапуске worker после failure.
+
+Перед запуском необходимы существующий DEV backend, локальные учётные записи
+`ADMIN_LOGIN/PASSWORD`, `CODEX_TEST_BUYER_LOGIN/PASSWORD` (продавец ID 18),
+`CODEX_TEST_SELLER_LOGIN/PASSWORD` (покупатель ID 14), боты 2/3 и категория 132.
+Они берутся из `.env.local`; значения не печатаются. Guard проверяет локальные
+DB/S3, SMTP host/port и приветствие локального sink до создания fixtures.
+
+Подготовка SMTP существующего стенда (не создаёт отдельные volumes/сервисы):
+
+```powershell
+node scripts/dev-smtp-sink.mjs
+# В другом терминале; использовать Compose, из которого действительно запущен DEV:
+docker compose -f ../docker-compose.yml -f docker-compose.integration.yml up -d --no-deps backend
+```
+
+Sink принимает письма локально, ничего не пересылает и сохраняет только счётчики.
+Нельзя восстанавливать внешний SMTP посреди прогона. Для production standalone
+задать при build и start `CLIENT_API_BASE_URL=http://localhost:8081`,
+`API_BASE_URL=http://localhost:8081`, `ALLOW_LOCAL_API_URL=true`; запускать
+`npm run build`, затем `npm run start:standalone` с HOSTNAME=localhost/PORT=3000.
+Origin — строго `http://localhost:3000` из-за backend CORS.
+
+```powershell
+$env:FIGURZILLA_DEV_INTEGRATION="true"
+npm run test:integration:real
+```
+
+Набор подтверждает записи последующим чтением, не сбрасывает БД, не удаляет
+чужие записи и не повторяет mutation автоматически. Создаёт маркированные
+товары/заказы/обращения/синтетические изображения; розыгрыши после проверок
+отключаются. Fixtures заказов/обращений остаются для аудита. Повторный запуск
+создаёт новый набор, поэтому выполняется осознанно. Реальный backend-дефект
+остаётся FAIL, а не превращается в skip/expected failure.
+
+Общие fixtures обращений и запреты старых mutation/DELETE ORDER находятся
+в `tests/e2e/helpers/backendContracts.ts`. Session navigation probe различает
+prefetched RSC и реальную навигацию: положительный контроль подтверждает
+router.replace и удержанный RSC, включая переиспользованный prefetch.
+Mobile Reset закрывает фильтр; тест проверяет пустые значения после повторного
+открытия. `order-missing-category` воспроизводит реальный snapshot с
+categories=null на desktop/mobile; `local-images-config-model` проверяет opt-in
+production MinIO вместе с фактическим standalone browser-показом в real-наборе.
+Сценарии mobile categories ожидают hydration React-обработчика перед открытием
+диалога; до hydration нативная ссылка штатно ведёт в каталог. Modified click
+продолжает проверять fallback в новой вкладке.
+
+Итоги DEV: **32 PASS / 1 FAIL** в финальном real-прогоне (114.862 s),
+**1085 PASS** в полном desktop/mobile regression (862.972 s), 15 HTTP smoke PASS;
+skip/flaky/retries отсутствуют. Красный CORS preflight не скрыт expected failure.
+Приватные query в backend HTTP-логах выявлены отдельным read-only аудитом.
+Наборы запускать последовательно: при параллельной нагрузке наблюдались три
+таймаута real browser UI, отдельно они прошли без изменений timeout/assertions.
+История прогонов и self-review приведены в отчёте этапа 12.
+
+Решением владельца проекта CORS refresh (FAIL) и backend-логирование приватных
+query (FAIL read-only аудита) отложены и переданы на сторону backend. Прямой
+API refresh работает; реальный browser `401 → refresh → retry` с сохранением
+ввода остаётся BLOCKED, успешное recovery с вводом подтверждено MOCK ONLY.
+Real-команда сохраняет неуспешный exit из-за CORS; accepted limitation не меняет
+его на PASS/skip/expected failure. Воспроизведение и проверки после исправлений
+зафиксированы в [BACKEND_REQUIRED_FIXES.md](./backend-plan/BACKEND_REQUIRED_FIXES.md).
+Дополнительная диагностика 27.10.2026 в Chromium без API mocks подтвердила
+штатный 401 → OPTIONS refresh 403 → logout: это BACKEND CORS BUG v1.36,
+влияющий на реальный frontend. Same-origin контроль из страницы Swagger прошёл
+без preflight; он не доказывает browser recovery. Next.js proxy и серверного
+refresh нет. Эта диагностика не меняет результаты завершённых наборов.
+Независимый финальный VP ещё не выполнен;
+его можно проводить по текущему diff с этими документированными ограничениями.
+
 ## Повторный VP этапов 8–11: F1 — ADMIN → витрина → ADMIN
 
 `admin-storefront-navigation.spec.ts` проходит три пути Astra через настоящие ссылки

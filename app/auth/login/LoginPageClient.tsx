@@ -1,7 +1,7 @@
 "use client";
 
 import { serializeApiError } from "@/shared/lib/errorHandler";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthForm from "@/widgets/auth-form";
 import {
@@ -19,6 +19,7 @@ import {
 import { useNotification } from "@/shared/ui/notification";
 
 export default function LoginPageClient() {
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = getPostAuthRedirectPath(searchParams.get("redirect"));
@@ -162,6 +163,7 @@ export default function LoginPageClient() {
         url={getAuthSwitchPath("/auth/register", redirectPath)}
         linkText="зарегистрируйтесь"
         buttonTitle="Войти"
+        submitButtonRef={submitButtonRef}
         allowLoginIdentifier
         onSubmit={handleLogin}
         isLoading={isLoading}
@@ -175,6 +177,7 @@ export default function LoginPageClient() {
       />
 
       <VerificationCodeDialog
+        restoreFocusRef={submitButtonRef}
         open={isVerificationOpen}
         onClose={handleCloseVerification}
         onVerify={handleVerifyCode}

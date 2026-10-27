@@ -255,6 +255,18 @@ pending revisions сохраняются, а `needsValidation` требует н
 
 ## UI и формы
 
+AuthDialog измеряет visualViewport после фактического монтирования MUI portal
+через callback ref. AuthForm принимает необязательный submitButtonRef;
+страницы login/register передают его в VerificationCodeDialog как
+restoreFocusRef, чтобы после закрытия вернуть фокус submit, который был
+disabled во время запроса. Уведомления находятся ниже modal z-index и не
+перекрывают действия открытого диалога.
+
+Модель административного редактора товара подписана на session profile:
+восстановление ADMIN после reconnect обновляет доступность сохранения без
+размонтирования формы. Принятый/неизвестный PUT по-прежнему требует чтения
+результата до повторной записи.
+
 Фильтр цены в `product-catalog` открывается кнопкой (click/Enter/Space).
 Draft берётся только из применённого диапазона; доступные цены — placeholders,
 пустая граница остаётся незаданной. Apply и reset закрывают поверхность,

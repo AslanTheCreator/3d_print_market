@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 import type { OrderCaseDetail, OrderCaseKind, OrderStatus } from "@/entities/order";
 import { categories, fulfillJson, image, orderFixture, png } from "./mobileAccount";
+import { backendContractRejection, orderCaseDetailFixture } from "./backendContracts";
 
 export const adminProductFixture = (id = 101, participantId = 2) => ({
   id, participantId, name: `Фигурка дракона ${id}`, description: "Описание товара", price: 4000,
@@ -12,11 +13,10 @@ export const adminOrderFixture = (id = 201, status = "BOOKED", prepayment = 2000
   images: [] as number[],
   product: { ...orderFixture(id, status, 1).product, name: "Фигурка для заказа", sellerId: 2, sellerLogin: "bot-two", availability: "EXTERNAL_PRODUCT", price: 4000, count: 2 },
 });
-export const adminCaseFixture = (id = 301, kind: OrderCaseKind = "DISPUTE", previousOrderStatus: OrderStatus = "AWAITING_PAYMENT", orderId = 201): OrderCaseDetail => ({
-  orderCase: { id, orderId, version: 1, kind, state: "OPEN", previousOrderStatus, openedBy: 10, openingComment: `Причина обращения ${id}`, createdAt: "2026-10-01T10:00:00Z" },
+export const adminCaseFixture = (id = 301, kind: OrderCaseKind = "DISPUTE", previousOrderStatus: OrderStatus = "AWAITING_PAYMENT", orderId = 201): OrderCaseDetail => orderCaseDetailFixture({
   orderStatus: kind === "CANCELLATION_REQUEST" ? previousOrderStatus : "DISPUTED", buyerId: 10, sellerId: 2, productId: 101,
   count: 2, totalPrice: 6000, prepaymentAmount: 2000, currency: "USD", paymentProofImageId: 77, orderImages: [77, 78], caseImages: [79],
-});
+}, { id, orderId, version: 1, kind, state: "OPEN", previousOrderStatus, openedBy: 10, openingComment: `Причина обращения ${id}`, createdAt: "2026-10-01T10:00:00Z" });
 export async function setupAdmin(page: Page, baseURL: string | undefined, role = "ADMIN") {
   if (!baseURL) throw new Error("baseURL required");
   const state = {
@@ -41,6 +41,9 @@ export async function setupAdmin(page: Page, baseURL: string | undefined, role =
     const path = url.pathname;
     const method = route.request().method();
     if (method === "OPTIONS") return fulfillJson(route, null);
+    const privateIds = state.cases.flatMap(detail => [...(detail.orderImages ?? []), ...(detail.caseImages ?? [])]);
+    const rejected = backendContractRejection(method, url, route.request().headers().authorization, privateIds);
+    if (rejected) return fulfillJson(route, rejected.body, rejected.status);
     if (method === "GET") state.reads.push(path + url.search);
     if (path === "/auth/profile") return fulfillJson(route, { id: 1, role: state.role, login: "administrator", imageId: null, exp: 0, type: "access" }, state.profileStatus);
     if (path === "/admin/actions/order-cases") {

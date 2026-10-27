@@ -1,11 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { OrderCaseDetail, OrderStatus } from "@/entities/order";
 import { fulfillJson, orderFixture, setupMobileAccount, expectNoOverflow } from "./helpers/mobileAccount";
+import { orderCaseDetailFixture } from "./helpers/backendContracts";
 
-const detail = (orderId = 1, orderStatus: OrderStatus = "AWAITING_PAYMENT", comment = "Прошу отменить заказ"): OrderCaseDetail => ({
-  orderCase: { id: orderId * 10, orderId, kind: "CANCELLATION_REQUEST", state: "OPEN", openedBy: 10, openingComment: comment, createdAt: "2026-10-01T10:00:00Z" },
+const detail = (orderId = 1, orderStatus: OrderStatus = "AWAITING_PAYMENT", comment = "Прошу отменить заказ"): OrderCaseDetail => orderCaseDetailFixture({
   orderStatus, buyerId: 1, sellerId: 10, currency: "RUB", orderImages: [], caseImages: [],
-});
+}, { id: orderId * 10, orderId, kind: "CANCELLATION_REQUEST", state: "OPEN", openedBy: 10, openingComment: comment, createdAt: "2026-10-01T10:00:00Z" });
 const open = async (page: Page, id = 1) => page.getByRole("button", { name: `Подробнее о заказе №${id}`, exact: true }).first().click();
 const dialog = (page: Page) => page.getByRole("dialog").filter({ has: page.getByText(/Детали заказа №/) });
 const close = async (page: Page) => { await dialog(page).getByRole("button", { name: "Закрыть детали заказа", exact: true }).click(); await expect(dialog(page)).toBeHidden(); };

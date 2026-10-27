@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthForm from "@/widgets/auth-form";
 import { VerificationCodeDialog } from "@/features/auth";
@@ -16,6 +16,7 @@ import { ApiError, serializeApiError } from "@/shared/lib/errorHandler";
 import { useNotification } from "@/shared/ui/notification";
 
 export default function RegisterPageClient() {
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = getPostAuthRedirectPath(searchParams.get("redirect"));
@@ -132,6 +133,7 @@ export default function RegisterPageClient() {
         url={getAuthSwitchPath("/auth/login", redirectPath)}
         linkText="Авторизуйтесь"
         buttonTitle="Зарегистрироваться"
+        submitButtonRef={submitButtonRef}
         onSubmit={handleRegister}
         isLoading={isLoading}
         passwordAutoComplete="new-password"
@@ -140,6 +142,7 @@ export default function RegisterPageClient() {
       />
 
       <VerificationCodeDialog
+        restoreFocusRef={submitButtonRef}
         open={isVerificationOpen}
         onClose={handleCloseVerification}
         onVerify={handleVerifyCode}

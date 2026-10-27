@@ -1,0 +1,12 @@
+# Overlay для существующего DEV backend; не запускает отдельный стенд или volumes.
+# Перед применением запустить node scripts/dev-smtp-sink.mjs.
+services:
+  backend:
+    environment:
+      SPRING_MAIL_HOST: host.docker.internal
+      SPRING_MAIL_PORT: "2525"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "false"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "false"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_CONNECTIONTIMEOUT: "3000"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_TIMEOUT: "3000"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_WRITETIMEOUT: "3000"

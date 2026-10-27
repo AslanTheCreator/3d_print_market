@@ -1,4 +1,5 @@
 import { expect, type Page, type Route } from "@playwright/test";
+import { backendContractRejection } from "./backendContracts";
 
 export const longProductName = "Коллекционная фигурка с очень длинным названием и дополнительным описанием комплектации для проверки мобильной карточки";
 export const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
@@ -31,9 +32,13 @@ export const setupMobileAccount = async (page: Page, baseURL?: string) => {
   await page.route("**/api/config", (route) => fulfillJson(route, { apiUrl: "http://127.0.0.1:9" }));
   await page.route("https://mc.yandex.ru/**", (route) => route.fulfill({ status: 200, body: "" }));
   await page.route("http://127.0.0.1:9/**", async (route) => {
-    const path = new URL(route.request().url()).pathname;
+    const url = new URL(route.request().url());
+    const path = url.pathname;
     const method = route.request().method();
     if (method === "OPTIONS") return fulfillJson(route, null);
+    const rejected = backendContractRejection(method, url, route.request().headers().authorization,
+      [...state.customerOrders, ...state.sellerOrders].flatMap(order => order.images));
+    if (rejected) return fulfillJson(route, rejected.body, rejected.status);
     if (path.startsWith("/giveaways/")) return fulfillJson(route, { message: "Not found" }, 404);
     if (path === "/auth/profile") return fulfillJson(route, { id: 1, login: "mobile-user", fullName: "Тестовый пользователь", role: "USER", email: "user@example.com", imageId: null, image: [], exp: 0, type: "access" });
     if (path === "/participant") return fulfillJson(route, { id: 1, login: "mobile-user", mail: "user@example.com", fullName: "Тестовый пользователь", phoneNumber: "", status: "ACTIVE", sellerStatus: "DEFAULT", imageId: null, image: [], addresses: [], accounts: [{ id: 1 }], transfers: [{ id: 1, status: "ACTIVE" }], socialNetworks: [{ id: 1 }] });
