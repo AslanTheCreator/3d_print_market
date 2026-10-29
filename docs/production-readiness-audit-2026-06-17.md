@@ -70,7 +70,7 @@ Frontend рассматривает `EXTERNAL_ONLY` как read-only тип: ф�
 
 ### Секреты
 
-В tracked `docker-compose.yml` находится plaintext SMTP credential, а также локальные hardcoded credentials. Требуется:
+В ранее tracked `docker-compose.yml` был plaintext SMTP credential, а также локальные hardcoded credentials. Основной Compose теперь находится вне frontend-репозитория; удаление файла не подтверждает ротацию или очистку истории. Требуется:
 
 1. немедленная ротация раскрытого секрета;
 2. удаление из текущего дерева и истории Git;

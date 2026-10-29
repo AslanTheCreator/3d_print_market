@@ -85,31 +85,29 @@ Run image directly:
 docker run --rm -p 3000:3000 --env-file .env.local figurzilla-frontend:latest
 ```
 
-Run the full local stack with Docker Compose:
+Run the local backend infrastructure from the frontend directory:
 
 ```bash
-docker compose up -d
+docker compose -f ../docker-compose.yml up -d
 ```
 
-The compose file is local-only and must not be used as a production template. It starts PostgreSQL, MinIO, backend and frontend together. The frontend runtime image uses Next.js standalone output and runs as the non-root `node` user.
+The main Compose file lives in the parent `3D_print_market` directory, outside this frontend repository. It starts PostgreSQL, MinIO and backend; run the frontend separately with `npm run dev` or the Docker commands above. The frontend runtime image uses Next.js standalone output and runs as the non-root `node` user.
 
-Default local values:
+For a frontend container connected to the local API, set runtime values:
 
 ```bash
-FRONTEND_IMAGE=atupenov/frontend_app:v1.22
-FRONTEND_PORT=3000
 CLIENT_API_BASE_URL=http://localhost:8081
-API_BASE_URL=http://backend:8081
+API_BASE_URL=http://host.docker.internal:8081
 ALLOW_LOCAL_API_URL=true
 ```
 
-The local compose file expects backend init scripts and MinIO data one level above the frontend repository: `../init-scripts` and `../data`.
+These values assume Docker Desktop. The parent Compose file uses `init-scripts/`, `data/`, `keys/` and `.env` relative to its own directory. It is local-only and must not be used as a production template. A standalone frontend clone does not include this infrastructure.
 
-The default frontend/backend image tags are historical and do not validate compatibility with the current release. Set explicit compatible image tags or digests for a release-candidate check.
+The backend image tag does not validate compatibility with the current frontend release. Choose compatible image tags or digests for a release-candidate check.
 
-The tracked compose has a known plaintext credential incident. Rotate the exposed secret and remove it from Git history before sharing or reusing this configuration.
+The former tracked Compose file has a known plaintext credential incident. Removing the file from this repository does not rotate the exposed secret or remove it from Git history.
 
-Use a `.env` file or shell variables when image tags, port or API URLs differ.
+The frontend keeps `docker-compose.integration.yml` as a test overlay for the external backend stack; see [testing.md](./docs/testing.md).
 
 ## CI
 
@@ -124,4 +122,3 @@ GitHub Actions runs:
 - production smoke tests
 - Playwright e2e tests
 - Docker image build
-- Docker Compose config validation

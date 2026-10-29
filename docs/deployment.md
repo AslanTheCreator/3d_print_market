@@ -96,14 +96,14 @@ Git-тег, GitHub Release и Docker-образ должны ссылаться 
 ## Docker Compose
 
 ```bash
-docker compose up -d
+docker compose -f ../docker-compose.yml up -d
 ```
 
-`docker-compose.yml` предназначен только для локального full stack: PostgreSQL, MinIO, backend и frontend. Он ожидает `../init-scripts` и `../data` и не является production-шаблоном.
+Основной Compose находится в родительской папке `3D_print_market`, вне frontend-репозитория. Команда выше выполняется из корня frontend. Стенд запускает PostgreSQL, MinIO и backend; frontend запускается отдельно через `npm run dev` или Docker-команды выше. Каталоги `init-scripts/`, `data/`, `keys/` и `.env` относятся к папке основного Compose. Отдельный clone frontend не содержит эту инфраструктуру. Конфигурация предназначена только для локального запуска.
 
-Tracked compose уже содержит plaintext SMTP credential. Это открытый security incident: требуется удалить значение из дерева и истории Git, ротировать его и проверить историю secret scanner'ом. Локальные hardcoded credentials нельзя переносить в публичную среду.
+Ранее tracked Compose содержал plaintext SMTP credential. Удаление файла из frontend не закрывает инцидент: требуется ротировать раскрытый секрет, удалить его из истории Git и проверить историю secret scanner'ом. Локальные hardcoded credentials нельзя переносить в публичную среду.
 
-Compose defaults используют исторические frontend/backend image tags и не подтверждают совместимость с текущим frontend `1.25.0`. Для проверки release candidate нужно явно задавать оба совместимых image tags/digests.
+Backend image tag внешнего стенда сам по себе не подтверждает совместимость с текущим frontend. Для проверки release candidate нужно выбирать совместимые image tags/digests. Тестовый overlay `docker-compose.integration.yml` остаётся во frontend; порядок применения описан в [testing.md](./testing.md).
 
 ## CI
 
@@ -113,8 +113,9 @@ Compose defaults используют исторические frontend/backend 
 2. typecheck, lint и architecture check;
 3. production build;
 4. `npm run test:standalone` для smoke и e2e;
-5. Docker image build;
-6. `docker compose config`.
+5. Docker image build.
+
+Внешний основной Compose не входит в checkout frontend и не проверяется этим CI. Локальная проверка из корня frontend: `docker compose -f ../docker-compose.yml config --quiet`.
 
 CI использует тот же standalone-формат, что и Docker image.
 

@@ -90,6 +90,3 @@ jobs:
             --build-arg CLIENT_API_BASE_URL="$CLIENT_API_BASE_URL" \
             --build-arg API_BASE_URL="$API_BASE_URL" \
             -t figurzilla-frontend:ci .
-
-      - name: Validate Docker Compose
-        run: docker compose -f docker-compose.yml config
