@@ -10,8 +10,10 @@ Frontend-разработка завершена с известными огр�
 утечка query подтверждена отдельным аудитом и не является вторым failed test.
 Матрица AC и история проверок — в [отчёте этапа 12](./stage12-results.md).
 Заключительный VP выявил P2 frontend/harness; их исправления выделены в отдельные
-коммиты,
-адресный независимый VP ещё ожидается. После P2-2 real-повтор без interception
+коммиты. По заключению Astra, переданному владельцем 29.10.2026, frontend
+этапов 1–12 и P2-1/P2-2 — PASS, новых findings P0–P3 нет. Это не закрывает оба
+требования backend и не подтверждает полную серверную приёмку/production readiness.
+После P2-2 real-повтор без interception
 дал 36 PASS / 1 FAIL, а desktop/mobile probes подтвердили настоящий refresh
 preflight 403. CORS и redaction не исправлены. FAIL/BLOCKED сохраняются до повторной
 проверки исправленного backend; mock/model regression не заменяет её.

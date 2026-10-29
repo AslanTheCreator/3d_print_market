@@ -2,7 +2,8 @@
 
 27.10.2026. База: `ad9715218e5a894c8e501f3cb1c987ac93826315`, ветка
 `feature/backend-integration`. Исправление выделено в отдельный Conventional
-Commit P2-1 по разрешению владельца проекта. Нужен адресный независимый VP.
+Commit P2-1 по разрешению владельца проекта. Итог Astra, переданный владельцем
+29.10.2026: **P2-1 PASS**, новых findings P0–P3 нет; frontend этапов 1–12 PASS.
 
 ## Причина и исправление
 
@@ -59,5 +60,5 @@ auth/session/open-forms/user-products дал **50 PASS**, 0 FAIL/skip/flaky/erro
 - этот документ
 
 Общие результаты этапа и готовность к адресному VP — в
-[stage12-results.md](./stage12-results.md), обновляемом в следующем коммите P2-2.
-Push, merge и rebase не выполняются.
+[stage12-results.md](./stage12-results.md#9-финальная-frontend-приёмка-astra).
+Полная серверная приёмка и production readiness этим VP не подтверждены.
