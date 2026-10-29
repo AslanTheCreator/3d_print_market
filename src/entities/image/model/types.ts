@@ -16,3 +16,4 @@ export interface ImageMetadata {
 }
 
 export type ImageTag = "PARTICIPANT" | "PRODUCT" | "ORDER" | "SYSTEM";
+export type NonOrderImageTag = Exclude<ImageTag, "ORDER">;

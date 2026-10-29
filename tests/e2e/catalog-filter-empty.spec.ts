@@ -180,6 +180,10 @@ test("invalid and overflowing prices block Apply without a new request", async (
 for (const consumer of ["search", "category", "preorder-search", "home"] as const) {
   test(`${consumer}: empty has context/action, loading/error never show empty and leading content survives`, async ({ page, baseURL }) => {
     await setupMobileAccount(page, baseURL);
+    if (consumer === "home") await page.route("**/giveaways/active", route => fulfillJson(route, {
+      productId: 8101, name: "Серверный розыгрыш", homeText: "Серверные условия", imageIds: [],
+      status: "ACTIVE", startAt: "2020-01-01T00:00:00Z", endAt: "2035-01-01T00:00:00Z",
+    }));
     let status = 200;
     const requests: FindRequest[] = [];
     await page.route("**/products/find", route => {
@@ -189,7 +193,8 @@ for (const consumer of ["search", "category", "preorder-search", "home"] as cons
     const url = consumer === "category" ? "/catalog/category/32-figurki" : consumer === "home" ? "/" : `/catalog/search?query=${consumer === "preorder-search" ? "предзаказы" : "missing"}`;
     await page.goto(url);
     if (consumer === "home") {
-      await expect(page.getByText("Розыгрыш фигурки недели", { exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Серверный розыгрыш", exact: true })).toBeVisible();
+      await expect(page.getByRole("link", { name: "Подробнее о розыгрыше", exact: true })).toHaveAttribute("href", "/giveaways/8101");
       await expect(page.getByRole("heading", { name: "Товары не найдены", exact: true })).toHaveCount(0);
       return;
     }

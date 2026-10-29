@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useCallback, useState } from "react";
 import { useAccountSessionKey } from "@/entities/session";
 import { useAgents } from "@/entities/agent";
@@ -84,6 +85,7 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
           Обновить
         </Button>
       </Stack>
+      <Button component={Link} prefetch={false} href="/admin/order-cases" sx={{ alignSelf: "start" }}>Обращения по всем заказам</Button>
       <Stack direction="row" gap={1} flexWrap="wrap">
         {[
           ["BOOKED", "Новые"],

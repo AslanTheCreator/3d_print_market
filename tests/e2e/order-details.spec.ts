@@ -204,6 +204,7 @@ const mockDashboardApi = async (
   await page.route("**/order/seller", (route) =>
     fulfillJson(route, sellerOrders),
   );
+  await page.route("**/order/*/cases", (route) => fulfillJson(route, []));
   await page.route("**/images/metadata?ids=*", (route) =>
     fulfillJson(route, []),
   );
@@ -309,11 +310,14 @@ test.describe("order details", () => {
     await expect(trackingLink).toHaveAttribute("target", "_blank");
     await expect(trackingLink).toHaveAttribute("rel", /noopener/);
     await expect(trackingLink).toHaveAttribute("rel", /noreferrer/);
-    await expect(dialog.getByTestId("order-payment-proof")).toHaveCount(0);
-    expect(requestedProofIds).toEqual([]);
+    await expect(dialog.getByTestId("order-images")).toBeVisible();
+    await expect(dialog.getByTestId("order-cases").getByText("Обращения", { exact: true })).toBeVisible();
+    await expect(dialog.getByTestId("order-cases").getByText("Обращений пока нет.", { exact: true })).toBeVisible();
+    await expect.poll(() => requestedProofIds).toEqual([701]);
+    await expect(dialog.getByText("Подтверждение оплаты", { exact: true })).toHaveCount(0);
   });
 
-  test("shows seller payment proof and the empty proof state without tracking", async ({
+  test("shows protected neutral order images and neutral empty state without tracking", async ({
     context,
     page,
     baseURL,
@@ -403,11 +407,11 @@ test.describe("order details", () => {
     await expect(
       dialog.getByText("История заказа", { exact: true }),
     ).toBeVisible();
-    await expect(dialog.getByTestId("order-payment-proof")).toBeVisible();
+    await expect(dialog.getByTestId("order-images")).toBeVisible();
 
     const proofImage = dialog
       .getByRole("img", {
-        name: "Подтверждение оплаты по заказу #202 1",
+        name: "Изображения заказа #202 1",
         exact: true,
       })
       .first();
@@ -434,8 +438,8 @@ test.describe("order details", () => {
       name: "Детали заказа №203",
     });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByTestId("order-payment-proof")).toContainText(
-      "Подтверждение оплаты для этого заказа не приложено.",
+    await expect(dialog.getByTestId("order-images")).toContainText(
+      "Изображения заказа пока отсутствуют.",
     );
     await expect(
       dialog.getByRole("img", { name: /Подтверждение оплаты/ }),

@@ -12,17 +12,25 @@ import {
   Typography,
 } from "@mui/material";
 import { Refresh } from "@mui/icons-material";
-import { useImagesQuery } from "@/entities/image";
+import { useOrderImagesQuery } from "@/entities/image";
 import {
   ImageGallery,
   type ImageGalleryImage,
 } from "@/shared/ui/image-gallery";
 import type { ImageResponse } from "@/entities/image";
 
-interface OrderPaymentProofProps {
+interface OrderImagesSectionProps {
   orderId: number;
   imageIds: readonly number[];
+  kind?: "order" | "case" | "payment";
+  id?: string;
 }
+
+const labels = {
+  order: { title: "Изображения заказа", subject: "изображения заказа", genitive: "изображений заказа", testId: "order-images" },
+  case: { title: "Изображения обращения", subject: "изображения обращения", genitive: "изображений обращения", testId: "case-images" },
+  payment: { title: "Подтверждение оплаты", subject: "подтверждение оплаты", genitive: "подтверждения оплаты", testId: "payment-proof" },
+};
 
 const IMAGE_CONTENT_TYPE_PATTERN = /^image\/[a-z0-9.+-]+$/i;
 const BASE64_PATTERN =
@@ -60,14 +68,17 @@ const toImageDataUrl = (image: unknown): string | null => {
   return `data:${contentType};base64,${imageData}`;
 };
 
-export const OrderPaymentProof = ({
+export const OrderImagesSection = ({
   orderId,
   imageIds,
-}: OrderPaymentProofProps) => {
+  kind = "order",
+  id,
+}: OrderImagesSectionProps) => {
+  const label = labels[kind];
   const validImageIds = useMemo(
     () => [
       ...new Set(
-        imageIds.filter((imageId) => Number.isInteger(imageId) && imageId > 0),
+        imageIds.filter((imageId) => Number.isSafeInteger(imageId) && imageId > 0),
       ),
     ],
     [imageIds],
@@ -78,7 +89,7 @@ export const OrderPaymentProof = ({
     isError,
     isFetching,
     refetch,
-  } = useImagesQuery(validImageIds);
+  } = useOrderImagesQuery(orderId, validImageIds);
   const galleryImages = useMemo<ImageGalleryImage[]>(
     () =>
       (imageResponses ?? []).flatMap((image) => {
@@ -101,7 +112,7 @@ export const OrderPaymentProof = ({
     if (validImageIds.length === 0) {
       return (
         <Alert severity="info">
-          Подтверждение оплаты для этого заказа не приложено.
+          {kind === "order" ? "Изображения заказа пока отсутствуют." : "Изображения обращения пока отсутствуют."}
         </Alert>
       );
     }
@@ -110,7 +121,7 @@ export const OrderPaymentProof = ({
       return (
         <Stack
           spacing={1.5}
-          aria-label="Загрузка подтверждения оплаты"
+          aria-label={`Загрузка ${label.genitive}`}
           aria-busy="true"
         >
           <Skeleton
@@ -155,7 +166,7 @@ export const OrderPaymentProof = ({
           <Stack direction="row" spacing={1} alignItems="center">
             <CircularProgress size={18} />
             <Typography variant="body2" color="text.secondary">
-              Загружаем подтверждение оплаты...
+              Загружаем {label.subject}...
             </Typography>
           </Stack>
         </Stack>
@@ -180,7 +191,7 @@ export const OrderPaymentProof = ({
             </Button>
           }
         >
-          Не удалось загрузить подтверждение оплаты.
+          Не удалось загрузить {label.subject}.
         </Alert>
       );
     }
@@ -188,7 +199,7 @@ export const OrderPaymentProof = ({
     if (galleryImages.length === 0) {
       return (
         <Alert severity="info">
-          В ответе сервера нет доступных изображений подтверждения оплаты.
+          В ответе сервера нет доступных {label.genitive}.
         </Alert>
       );
     }
@@ -196,7 +207,7 @@ export const OrderPaymentProof = ({
     return (
       <ImageGallery
         images={galleryImages}
-        alt={`Подтверждение оплаты по заказу #${orderId}`}
+        alt={`${label.title} #${orderId}`}
       />
     );
   })();
@@ -204,13 +215,14 @@ export const OrderPaymentProof = ({
   return (
     <Paper
       component="section"
-      data-testid="order-payment-proof"
+      data-testid={label.testId}
+      id={id}
       variant="outlined"
       sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: 2 }}
     >
       <Box sx={{ mb: 2 }}>
         <Typography component="h3" variant="h6" fontWeight={700}>
-          Подтверждение оплаты
+          {label.title}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Заказ #{orderId}

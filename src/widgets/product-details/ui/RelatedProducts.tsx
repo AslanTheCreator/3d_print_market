@@ -10,6 +10,7 @@ import {
   ProductGridSkeleton,
   ProductGridItem,
   useProductsInfinite,
+  getProductPublicPath,
 } from "@/entities/product";
 import { useFavoritesChecks } from "@/entities/favorite";
 import { useEffect, useMemo, useState } from "react";
@@ -50,7 +51,7 @@ const RelatedProductsGrid = ({
           <Box sx={{ position: "relative" }}>
             <ProductCard
               {...product}
-              onCardClick={() => router.push(`/catalog/${product.id}/detail`)}
+              onCardClick={() => router.push(getProductPublicPath(product.id, product.availability))}
               actions={
                 <AddToCartButton
                   productId={product.id}

@@ -16,6 +16,7 @@ export const mockGuestAuth = async (page: Page) => {
   await page.route("**/api/config", route => reply(route, { apiUrl: "http://127.0.0.1:9" }));
   await page.route("http://127.0.0.1:9/**", route => {
     const path = new URL(route.request().url()).pathname;
+    if (path.startsWith("/giveaways/")) return reply(route, { message: "Not found" }, 404);
     if (path === "/auth/login" || path === "/auth/verify-code") {
       return reply(route, { access_token: "guest-flow-access", refresh_token: "guest-flow-refresh" });
     }

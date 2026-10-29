@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode, type RefObject } from "react";
 import { Dialog, IconButton, alpha, useTheme } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -11,6 +11,7 @@ interface AuthDialogProps {
   closeLabel: string;
   busy?: boolean;
   children: ReactNode;
+  restoreFocusRef?: RefObject<HTMLElement | null>;
 }
 
 export const AuthDialog = ({
@@ -20,12 +21,12 @@ export const AuthDialog = ({
   closeLabel,
   busy = false,
   children,
+  restoreFocusRef,
 }: AuthDialogProps) => {
   const theme = useTheme();
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const [dialog, setDialog] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const dialog = dialogRef.current;
     if (!open || !dialog) return;
 
     const viewport = window.visualViewport;
@@ -63,16 +64,19 @@ export const AuthDialog = ({
       mobile.removeEventListener("change", measure);
       dialog.removeEventListener("focusin", measure);
     };
-  }, [open, theme]);
+  }, [open, theme, dialog]);
 
   return (
     <Dialog
-      ref={dialogRef}
+      ref={setDialog}
       open={open}
       onClose={() => { if (!busy) onClose(); }}
       aria-labelledby={titleId}
       maxWidth="sm"
       fullWidth
+      TransitionProps={{ onExited: () => {
+        if (restoreFocusRef?.current?.isConnected) restoreFocusRef.current.focus();
+      } }}
       sx={{
         "& .MuiDialog-container": {
           alignItems: { xs: "flex-end", sm: "center" },
@@ -89,6 +93,7 @@ export const AuthDialog = ({
         sx: {
           borderRadius: { xs: "24px 24px 0 0", sm: "16px" },
           overflow: { xs: "auto", sm: "visible" },
+          scrollPaddingBlock: { xs: "16px", sm: 0 },
           overscrollBehavior: { xs: "contain", sm: "auto" },
           position: "relative",
           m: { xs: 0, sm: 3 },

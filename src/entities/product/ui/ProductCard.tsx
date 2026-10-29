@@ -20,6 +20,7 @@ import { getImageUrl } from "@/shared/lib";
 import { ImageFallback } from "@/shared/ui/image-fallback";
 import { ProductPriceDisplay } from "./ProductPriceDisplay";
 import { PRODUCT_CARD_IMAGE_SIZES } from "../lib/productCardImageSizes";
+import { getProductPublicPath } from "../lib/productPublicPath";
 
 interface ProductCardProps extends Product {
   actions?: React.ReactNode;
@@ -84,7 +85,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       }}
     >
       <Link
-        href={`/catalog/${id}/detail`}
+        href={getProductPublicPath(id, availability)}
         prefetch={false}
         style={{
           textDecoration: "none",

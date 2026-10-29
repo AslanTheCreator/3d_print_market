@@ -1257,6 +1257,13 @@ test("mobile overlays stay accessible and close without losing the page", async 
   await expect(maxPriceInput).toHaveValue("9000");
   await expect(page.getByRole("button", { name: "Готово" })).toBeVisible();
   await page.getByRole("button", { name: "Сбросить" }).click();
+  // Reset применяет пустой диапазон и закрывает поверхность. Проверяем
+  // сохранённый результат при повторном открытии, а не размонтированные inputs.
+  await expect(priceTrigger).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("button", { name: "Готово" })).toBeHidden();
+  await page.setViewportSize({ width: 393, height: 727 });
+  await waitForStableFrame(page);
+  await priceTrigger.click();
   await expect(minPriceInput).toHaveValue("");
   await expect(maxPriceInput).toHaveValue("");
   await expect(page.getByRole("button", { name: "Готово" })).toBeVisible();

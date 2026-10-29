@@ -35,7 +35,7 @@ export const OrderProductPreview = ({
   const productImageSrc = getImageUrl(image, "thumbnail") ?? null;
   const imageSrc =
     productImageSrc && !hasImageError ? productImageSrc : null;
-  const categoryName = order.product.categories[0]?.name ?? "Без категории";
+  const categoryName = order.product.categories?.[0]?.name ?? "Без категории";
   const { quantity } = getOrderPaymentBreakdown(order);
 
   useEffect(() => {

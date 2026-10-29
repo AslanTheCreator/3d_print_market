@@ -39,7 +39,7 @@ interface CustomerActionsProps {
 }
 
 export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps) => {
-  const { actionsAvailable, retry, retryPending } = useOrderActionsRecovery();
+  const { actionsAvailable, retry, retryPending } = useOrderActionsRecovery(order.orderId);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
@@ -260,7 +260,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
             </Alert>
           )}
 
-          <OrderRefreshWarning />
+          <OrderRefreshWarning orderId={order.orderId} />
 
           {!isReceiptStatusCurrent && (
             <Alert severity="info" sx={{ mt: 2 }}>

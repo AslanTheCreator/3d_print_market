@@ -9,6 +9,7 @@ import {
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useCartItemRemoval, useCartQuantity } from "@/entities/cart";
 import { getAuthSwitchPath, useAuth } from "@/entities/session";
 import { useAuthRequired } from "@/shared/hooks";
@@ -29,7 +30,11 @@ interface AddToCartButtonProps {
   stockCount?: number | null;
 }
 
-export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
+export const AddToCartButton: React.FC<AddToCartButtonProps> = (props) => props.availability === "GIVEAWAY"
+  ? <Button component={Link} href={`/giveaways/${props.productId}`} prefetch={false} variant="outlined" fullWidth={props.fullWidth ?? true} size={props.size ?? "medium"} sx={{ minHeight: 44 }}>К розыгрышу</Button>
+  : <PurchasableAddToCartButton {...props} />;
+
+const PurchasableAddToCartButton: React.FC<AddToCartButtonProps> = ({
   productId,
   sellerId,
   variant = "default",

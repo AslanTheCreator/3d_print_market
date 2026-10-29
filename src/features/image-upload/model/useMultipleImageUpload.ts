@@ -5,7 +5,7 @@ import {
   createImagePreview,
   validateImage,
 } from "@/shared/lib";
-import { ImageTag } from "@/entities/image";
+import { NonOrderImageTag } from "@/entities/image";
 import { imageApi } from "@/entities/image";
 
 interface ImageUploadState {
@@ -34,7 +34,7 @@ export interface UseMultipleImageUploadReturn {
 }
 
 export const useMultipleImageUpload = (
-  tag: ImageTag,
+  tag: NonOrderImageTag,
   maxImages: number = 3,
   preservePreview?: (preview: string) => boolean,
 ): UseMultipleImageUploadReturn => {

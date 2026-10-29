@@ -30,6 +30,7 @@ interface VerificationCodeDialogProps {
   onResendCode: () => Promise<VerificationCodeResponse>;
   email: string;
   isLoading?: boolean;
+  restoreFocusRef?: React.RefObject<HTMLElement | null>;
 }
 
 export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
@@ -39,6 +40,7 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
   onResendCode,
   email,
   isLoading = false,
+  restoreFocusRef,
 }) => {
   const theme = useTheme();
   const titleId = useId();
@@ -163,6 +165,7 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
   return (
     <AuthDialog
       open={open}
+      restoreFocusRef={restoreFocusRef}
       onClose={handleClose}
       titleId={titleId}
       closeLabel="Закрыть окно подтверждения email"

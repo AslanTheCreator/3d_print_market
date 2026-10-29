@@ -38,6 +38,7 @@ interface PaymentApiTracker {
   accountsRequestCount: number;
   customerOrdersRequestCount: number;
   deletedImageIds: number[];
+  uploads: { entityId: string | null; authorization: string | undefined; body: string }[];
   statusComments: string[];
   statusHasAccountId: boolean[];
   statusImageIds: number[];
@@ -185,6 +186,7 @@ const mockPaymentApi = async (
     accountsRequestCount: 0,
     customerOrdersRequestCount: 0,
     deletedImageIds: [],
+    uploads: [],
     statusComments: [],
     statusHasAccountId: [],
     statusImageIds: [],
@@ -250,6 +252,7 @@ const mockPaymentApi = async (
     const url = new URL(route.request().url());
 
     if (method === "POST" && url.searchParams.get("tag") === "ORDER") {
+      tracker.uploads.push({ entityId: url.searchParams.get("entityId"), authorization: route.request().headers().authorization, body: route.request().postDataBuffer()?.toString() ?? "" });
       await fulfillJson(route, [uploadImageId]);
       return;
     }
@@ -261,7 +264,7 @@ const mockPaymentApi = async (
           .map(Number)
           .filter((imageId) => Number.isInteger(imageId)),
       );
-      await fulfillJson(route, {});
+      await fulfillJson(route, { message: "ORDER deletion forbidden" }, 403);
       return;
     }
 
@@ -335,7 +338,7 @@ const openPaymentDialog = async (
 const uploadPaymentProof = async (dialog: Locator) => {
   await dialog.locator('input[type="file"]').setInputFiles(paymentProofFile);
   await expect(
-    dialog.getByText("Изображение загружено", { exact: true }),
+    dialog.getByText("Файл выбран", { exact: true }),
   ).toBeVisible();
 };
 
@@ -350,19 +353,20 @@ test.describe("order payment flow", () => {
     await page.goto("/dashboard/purchase");
     const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
     for (const response of [[], [null], [0], [-1], ["9551"], [1.5]]) {
-      await page.route("**/images?tag=ORDER", route => fulfillJson(route, response));
+      await page.route("**/images?tag=ORDER&entityId=551", route => fulfillJson(route, response));
       await dialog.locator('input[type="file"]').setInputFiles(paymentProofFile);
+      await dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true }).click();
       await expect(dialog.getByText("Не удалось загрузить изображение на сервер", { exact: true })).toBeVisible();
-      await expect(dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true })).toBeDisabled();
+      await expect(dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true })).toBeEnabled();
       expect(tracker.statusImageIds).toEqual([]);
     }
-    await page.route("**/images?tag=ORDER", route => fulfillJson(route, [9551]));
+    await page.route("**/images?tag=ORDER&entityId=551", route => fulfillJson(route, [9551]));
     await uploadPaymentProof(dialog);
     await dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true }).click();
     await expect.poll(() => tracker.statusImageIds).toEqual([9551]);
   });
 
-  test("shows quantity-aware preorder amounts, auto-selects one account and deletes an unlinked upload", async ({
+  test("shows quantity-aware amounts and local preview without upload or DELETE on close", async ({
     context,
     page,
     baseURL,
@@ -430,8 +434,9 @@ test.describe("order payment flow", () => {
       .getByRole("button", { name: "Отмена", exact: true })
       .click();
     await expect(prepaymentDialog).toBeHidden();
-    await expect.poll(() => tracker.deletedImageIds).toEqual([9_101]);
+    await expect.poll(() => tracker.deletedImageIds).toEqual([]);
     expect(tracker.statusImageIds).toEqual([]);
+    expect(tracker.uploads).toEqual([]);
 
     const paymentDialog = await openPaymentDialog(
       page,
@@ -519,9 +524,7 @@ test.describe("order payment flow", () => {
         .getByRole("button", { name: "Отмена", exact: true })
         .click();
       await expect(dialog).toBeHidden();
-      await expect.poll(() => tracker.deletedImageIds).toEqual([
-        scenario.orderId + 9_000,
-      ]);
+      await expect.poll(() => tracker.deletedImageIds).toEqual([]);
       expect(tracker.statusImageIds).toEqual([]);
     });
   }
@@ -587,11 +590,11 @@ test.describe("order payment flow", () => {
       .getByRole("button", { name: "Отмена", exact: true })
       .click();
     await expect(dialog).toBeHidden();
-    await expect.poll(() => tracker.deletedImageIds).toEqual([9_201]);
+    await expect.poll(() => tracker.deletedImageIds).toEqual([]);
     expect(tracker.statusImageIds).toEqual([]);
   });
 
-  test("deletes an orphan upload when the customer closes after HTTP 409", async ({
+  test("keeps the uploaded ORDER file when closing after HTTP 409", async ({
     context,
     page,
     baseURL,
@@ -644,7 +647,7 @@ test.describe("order payment flow", () => {
       .getByRole("button", { name: "Отмена", exact: true })
       .click();
     await expect(dialog).toBeHidden();
-    await expect.poll(() => tracker.deletedImageIds).toEqual([9_300]);
+    await expect.poll(() => tracker.deletedImageIds).toEqual([]);
   });
 
   test("keeps proof and mutation pending until reconciliation after a network error", async ({
@@ -789,6 +792,12 @@ test.describe("order payment flow", () => {
     ).toBeVisible();
     await expect(dialog).toBeVisible();
     await expect(commentInput).toHaveValue(comment);
+    expect(tracker.uploads).toHaveLength(1);
+    expect(tracker.uploads[0].entityId).toBe("531");
+    expect(tracker.uploads[0].authorization).toMatch(/^Bearer /);
+    expect(tracker.uploads[0].body).toContain('name="files"');
+    await expect(dialog.locator('input[type="file"]')).toBeDisabled();
+
     await expect(
       dialog.getByText("Изображение загружено", { exact: true }),
     ).toBeVisible();

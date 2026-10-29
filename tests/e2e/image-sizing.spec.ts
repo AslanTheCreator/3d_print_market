@@ -33,6 +33,10 @@ for (const dpr of [1, 2]) {
           id: 9011, originalUrl: imageUrl, mediumUrl: imageUrl, thumbnailUrl: imageUrl,
           width: 1200, height: 1200, contentType: "image/png",
         }]));
+        const fixture = await context.request.get(new URL(imageUrl, baseURL).toString());
+        expect(fixture.status(), "Standalone must serve the generated raster fixture").toBe(200);
+        expect(fixture.headers()["content-type"]).toContain("image/png");
+        expect((await fixture.body()).byteLength).toBeGreaterThan(0);
         const errors: string[] = [];
         const requestedUrls: string[] = [];
         page.on("request", request => requestedUrls.push(decodeURIComponent(request.url())));

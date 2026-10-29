@@ -1,6 +1,17 @@
 ﻿export { orderQueryKeys } from "./model/queryKeys";
 
 // Queries
+export { orderCasesApi } from "./api/orderCasesApi";
+export { adminOrderCasesApi } from "./api/adminOrderCasesApi";
+export { adminOrderCaseKeys, hasAdminOrderCaseAccess, useAdminOrderCases, useAdminOrderCaseDetail } from "./model/adminOrderCaseQueries";
+export { getAdminOrderCaseOutcomes } from "./lib/adminOrderCasePolicy";
+export { useOrderCasesQuery } from "./model/useOrderCasesQuery";
+export { useCreateOrderCase } from "./model/useCreateOrderCase";
+export { getAvailableOrderCaseKinds } from "./lib/orderCaseAvailability";
+export type { OrderCaseAccess } from "./lib/orderCaseAvailability";
+export { getDisputePaymentCase, hasDisputePaymentProof } from "./lib/disputePaymentAvailability";
+export { OrderCaseCard, getSafeCaseTelegramUrl } from "./ui/OrderCaseCard";
+export { getOrderCaseImageGroups } from "./lib/orderCaseImages";
 export {
   useOrderData,
   useSellerOrders,
@@ -34,6 +45,7 @@ export {
   getOrderStatusActionHint,
   getCustomerOrderActionFlags,
   getSellerOrderActionFlags,
+  getAdminOrderActionFlags,
   SELLER_ORDER_ACTION_STATUSES,
   CUSTOMER_ORDER_ACTION_STATUSES,
   ORDER_NEW_STATUSES,
@@ -43,9 +55,21 @@ export {
   ORDER_SHIPPING_STATUSES,
   ORDER_COMPLETED_STATUSES,
   ORDER_DISPUTED_STATUSES,
+  ORDER_CANCELLED_STATUSES,
 } from "./lib/orderStatusMeta";
 
 // Types
+export type {
+  OrderCase,
+  OrderCaseDetail,
+  OrderCaseSummary,
+  OrderCaseKind,
+  OrderCaseState,
+  OrderCaseOutcome,
+  OrderCaseResolutionOutcome,
+  ResolveOrderCaseRequest,
+  CreateOrderCaseRequest,
+} from "./model/orderCase";
 export type { ListOrdersDto, ListOrdersModel, OrderCancel, OrderStatus } from "./model/types";
 export type { OrderProgressStep, OrderUserRole } from "./lib/orderStatusMeta";
 

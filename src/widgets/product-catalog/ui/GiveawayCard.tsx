@@ -1,4 +1,5 @@
-import Image, { type StaticImageData } from "next/image";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Box,
@@ -11,25 +12,22 @@ import {
   alpha,
 } from "@mui/material";
 import { CardGiftcardOutlined } from "@mui/icons-material";
-import { siteLogo } from "@/shared/assets";
+import { ImageMetadataFeedback, useImageMetadataQuery } from "@/entities/image";
+import { GiveawayCountdown, type GiveawayResponse, type GiveawayTiming } from "@/entities/product";
+import { getImageUrl, parsePositiveSafeInteger } from "@/shared/lib";
+import { ImageFallback } from "@/shared/ui/image-fallback";
 
-interface GiveawayMock {
-  title: string;
-  subtitle: string;
-  imageSrc: StaticImageData;
-  productUrl: string;
-}
-
-const giveawayMock: GiveawayMock = {
-  title: "Розыгрыш фигурки недели",
-  subtitle: "Участвуйте бесплатно и получите шанс забрать коллекционную фигурку.",
-  imageSrc: siteLogo,
-  productUrl: "/catalog/1/detail",
-};
-
-export const GiveawayCard = () => {
+export const GiveawayCard = ({ giveaway, timing }: { giveaway: GiveawayResponse; timing: GiveawayTiming }) => {
+  const title = giveaway.name?.trim() || "Розыгрыш";
+  const productId = parsePositiveSafeInteger(giveaway.productId);
+  const metadata = useImageMetadataQuery(giveaway.imageIds?.slice(0, 1));
+  const imageSrc = getImageUrl(metadata.data?.[0], "medium");
+  const [imageError, setImageError] = useState(false);
+  useEffect(() => setImageError(false), [imageSrc]);
   return (
     <Card
+      component="section"
+      aria-label="Розыгрыш на главной"
       sx={{
         height: "100%",
         display: { xs: "grid", sm: "flex" },
@@ -81,13 +79,14 @@ export const GiveawayCard = () => {
           }}
         />
 
-        <Image
-          src={giveawayMock.imageSrc}
-          alt={giveawayMock.title}
-          width={180}
-          height={180}
-          priority
-        />
+        {imageSrc && !imageError ? <Image
+          src={imageSrc}
+          alt={title}
+          width={360}
+          height={360}
+          sizes="(max-width: 599px) 50vw, 360px"
+          onError={() => setImageError(true)}
+        /> : <ImageFallback />}
       </Box>
 
       <CardContent
@@ -122,7 +121,7 @@ export const GiveawayCard = () => {
               color="text.secondary"
               sx={{ whiteSpace: "nowrap" }}
             >
-              Участие бесплатно
+              Участие в Telegram
             </Typography>
           </Stack>
 
@@ -140,7 +139,7 @@ export const GiveawayCard = () => {
                 overflow: "hidden",
               }}
             >
-              {giveawayMock.title}
+              {title}
             </Typography>
 
             <Typography
@@ -148,7 +147,7 @@ export const GiveawayCard = () => {
               color="text.secondary"
               sx={{ display: { xs: "block", sm: "none" } }}
             >
-              Участие бесплатно
+              Участие в Telegram
             </Typography>
 
             <Typography
@@ -162,14 +161,16 @@ export const GiveawayCard = () => {
                 overflow: "hidden",
               }}
             >
-              {giveawayMock.subtitle}
+              {giveaway.homeText || "Подробнее о розыгрыше"}
             </Typography>
+            <GiveawayCountdown timing={timing} />
           </Stack>
         </Stack>
 
-        <Button
+        {productId !== null && <Button
           component={Link}
-          href={giveawayMock.productUrl}
+          href={`/giveaways/${productId}`}
+          prefetch={false}
           variant="contained"
           color="primary"
           startIcon={<CardGiftcardOutlined />}
@@ -192,9 +193,16 @@ export const GiveawayCard = () => {
             },
           }}
         >
-          Участвовать
-        </Button>
+          Подробнее о розыгрыше
+        </Button>}
       </CardContent>
+      {(metadata.isLoading || metadata.isError) && <Box sx={{
+        gridColumn: "1 / -1", p: metadata.isError ? 1.5 : 0,
+        "& .MuiAlert-root": { flexWrap: "wrap" },
+        "& .MuiAlert-message": { minWidth: 0, flex: "1 1 150px" },
+        "& .MuiAlert-action": { m: 0, pl: 0, maxWidth: "100%" },
+        "& .MuiButton-root": { maxWidth: "100%", overflowWrap: "anywhere" },
+      }}><ImageMetadataFeedback query={metadata} /></Box>}
     </Card>
   );
 };

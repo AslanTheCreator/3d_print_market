@@ -35,6 +35,7 @@ import {
   formatExpirationDate,
   isEditableAvailability,
   ProductPriceDisplay,
+  getProductPublicPath,
 } from "@/entities/product";
 import { getImageUrl } from "@/shared/lib";
 import { ImageFallback } from "@/shared/ui/image-fallback";
@@ -69,6 +70,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
   const theme = useTheme();
 
   const expirationStatus = getExpirationStatus(expirationDate);
+  const expiredPublication = availability !== "GIVEAWAY" && expirationStatus.isExpired;
   const isExternallyManaged = !isEditableAvailability(availability);
   const productImage = image?.[0] ?? null;
   const productImageSrc = getImageUrl(productImage, "medium");
@@ -96,6 +98,8 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
 
   const getAvailabilityConfig = () => {
     switch (availability) {
+      case "GIVEAWAY":
+        return { color: "info", label: "Розыгрыш" } as const;
       case "PURCHASABLE":
         return {
           color: "success",
@@ -122,7 +126,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
         maxWidth: "100%",
         width: "100%",
         borderRadius: { xs: 1.5, sm: 2 },
-        boxShadow: expirationStatus.isExpired
+        boxShadow: expiredPublication
           ? `0 0 0 2px ${theme.palette.error.main}`
           : "0 2px 8px rgba(0, 0, 0, 0.06)",
         overflow: "hidden",
@@ -134,17 +138,17 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
         "&:hover": {
           transform: { sm: "translateY(-4px)" },
           boxShadow: {
-            sm: expirationStatus.isExpired
+            sm: expiredPublication
               ? `0 0 0 2px ${theme.palette.error.main}, 0 8px 16px rgba(0, 0, 0, 0.1)`
               : "0 8px 16px rgba(0, 0, 0, 0.1)",
           },
         },
         bgcolor: "background.paper",
-        opacity: expirationStatus.isExpired ? 0.7 : 1,
+        opacity: expiredPublication ? 0.7 : 1,
       }}
     >
       <Link
-        href={`/catalog/${id}/detail`}
+        href={getProductPublicPath(id, availability)}
         style={{
           textDecoration: "none",
           color: "inherit",
@@ -204,7 +208,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
           >
             <Tooltip
               title={
-                isExternallyManaged
+                availability === "GIVEAWAY" ? "Розыгрыш управляется администратором" : isExternallyManaged
                   ? "Товар управляется внешним источником и доступен только для просмотра"
                   : ""
               }
@@ -272,7 +276,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
               reviewCount={totalReviews}
             />
 
-            <Chip
+            {availability !== "GIVEAWAY" && <Chip
               label={count === null ? "Количество не ограничено" : count > 0 ? `${count} шт` : "Нет в наличии"}
               color={count === null || count > 0 ? "default" : "error"}
               size="small"
@@ -282,9 +286,9 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
                 fontWeight: 600,
                 width: "fit-content",
               }}
-            />
+            />}
 
-            <Tooltip
+            {availability !== "GIVEAWAY" && <Tooltip
               title={`Истекает: ${formatExpirationDate(expirationDate)}`}
               arrow
             >
@@ -306,7 +310,7 @@ export const UserProductCard: React.FC<UserProductCardProps> = ({
                   }}
                 />
               </Stack>
-            </Tooltip>
+            </Tooltip>}
           </Stack>
         </CardContent>
       </Link>

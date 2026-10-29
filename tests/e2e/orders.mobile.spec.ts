@@ -4,6 +4,29 @@ import { expectNoOverflow, longProductName, orderFixture, setupMobileAccount } f
 test.setTimeout(90_000);
 const widths = [320, 393, 599, 600, 768, 899, 900];
 
+for (const role of ["purchase", "sales"] as const) test(`${role}: cancelled filter and dispute outcomes stay distinct with no ordinary actions`, async ({ page, baseURL }) => {
+  const state = await setupMobileAccount(page, baseURL);
+  state[role === "purchase" ? "customerOrders" : "sellerOrders"] = [orderFixture(1, "CANCELLED", 1), orderFixture(2, "FAILED", 2), orderFixture(3, "DISPUTED", 3)];
+  await page.goto(`/dashboard/${role}`);
+  for (const [id, label] of [[1, "Отменён"], [2, "Спор решён в пользу покупателя"], [3, "На рассмотрении"]] as const) {
+    const card = page.getByRole("article", { name: `Заказ №${id}`, exact: true });
+    await expect(card.getByText(label, { exact: true }).first()).toBeVisible();
+    await expect(card.getByRole("button")).toHaveCount(1);
+  }
+  await page.setViewportSize({ width: 320, height: 727 });
+  await expectNoOverflow(page);
+  await page.getByRole("button", { name: "Фильтры и сортировка" }).click();
+  await page.getByRole("radio", { name: /Отменены/ }).check();
+  await page.getByRole("button", { name: "Применить", exact: true }).click();
+  await expect(page.getByRole("article")).toHaveCount(1);
+  await expect(page.getByRole("article", { name: "Заказ №1", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Фильтры и сортировка" }).click();
+  await page.getByRole("radio", { name: /Спорные/ }).check();
+  await page.getByRole("button", { name: "Применить", exact: true }).click();
+  await expect(page.getByRole("article")).toHaveCount(2);
+  await expectNoOverflow(page);
+});
+
 test("purchases keep one prioritised list, fit the first action and preserve details across breakpoints", async ({ page, baseURL }) => {
   const state = await setupMobileAccount(page, baseURL);
   state.customerOrders = [orderFixture(1, "COMPLETED", 25), orderFixture(2, "BOOKED", 20), orderFixture(3, "ON_THE_WAY", 15)];

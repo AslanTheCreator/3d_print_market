@@ -12,6 +12,7 @@ export type OrderStatus =
   | "ON_THE_WAY"
   | "DISPUTED"
   | "COMPLETED"
+  | "CANCELLED"
   | "FAILED";
 
 interface OrderTransfer {
@@ -60,6 +61,7 @@ export interface ListOrdersModel {
   product: Product & { count: number };
   transfer: OrderTransfer;
   images: number[];
+  paymentProofImageId?: number | null;
   deliveryUrl: string;
   histories: OrderHistory[];
 }
@@ -69,7 +71,6 @@ export interface ListOrdersDto extends Omit<ListOrdersModel, "product"> {
 }
 
 export interface OrderCancel {
-  orderId: number;
   closureReason: string;
   comment: string;
 }

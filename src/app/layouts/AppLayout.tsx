@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState, useRef } from "react";
+import { ReactNode, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import { Box, GlobalStyles, IconButton } from "@mui/material";
@@ -22,11 +22,11 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
   const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
-  const initialAdmin = useRef(isAdmin);
-  const crossingBoundary = initialAdmin.current !== isAdmin;
-  useEffect(() => {
-    if (crossingBoundary) window.location.replace(window.location.href);
-  }, [crossingBoundary]);
+  const [renderedAdmin, setRenderedAdmin] = useState(isAdmin);
+  const crossingBoundary = renderedAdmin !== isAdmin;
+  // Сначала размонтируем витрину и остановим её счётчик; только затем монтируем
+  // другую ветку. Корневые providers и session-scoped QueryClient остаются живы.
+  useLayoutEffect(() => { setRenderedAdmin(isAdmin); }, [isAdmin]);
   const isGuest = useAuthStore((state) => state.isInitialized && !state.isAuthenticated);
   const mobileChrome = useMemo(
     () => getMobileChromeConfig(pathname, isGuest),

@@ -2,12 +2,22 @@
 
 ## Административная панель
 
-`app/admin` содержит `/orders`, `/products`, `/products/[productId]`, `/agents`
-и `/agents/[agentId]`; `/admin` перенаправляет на заказы. Последний маршрут
+`app/admin` содержит `/orders`, `/order-cases`, `/products`, `/products/[productId]`, `/agents`,
+`/agents/[agentId]`, `/giveaways`, `/giveaways/new` и `/giveaways/[productId]`; `/admin` перенаправляет на заказы. Маршрут бота
 собирает три widget через slots, без cross-widget imports. Бот имеет вкладки
 заказов, товаров и настроек. Детали заказа открываются в Drawer, отдельного
 order route нет. Фильтры и страницы хранятся в URL, редактор принимает
 проверенный локальный `returnTo`.
+
+`/admin/order-cases` собирает `AdminOrderCases` из существующего `widgets/admin-orders`:
+очередь и заказы ботов относятся к одному widget-слайсу.
+Очередь общая для обычных заказов и заказов ботов. В URL находятся state/page
+и выбранное обращение case; детали открываются в адаптивном Drawer.
+`features/admin-order-case-management` владеет формами Telegram/решения и общим
+guard операции, `entities/order` — политикой решений, API и query keys.
+Карточка обращения и приватные `AdminImages` переиспользуются. Переход из списков
+заказов ботов — ссылка, без cross-widget imports. Lifecycle и синхронизация описаны
+в [api-and-auth.md](./api-and-auth.md#административное-рассмотрение-обращений-этап-7).
 
 Поисковое поле `AdminProducts` имеет локальный draft: URL обновляется через
 debounce 300 мс либо Enter со сбросом страницы в 0. Изменения фильтров сохраняют
@@ -18,9 +28,30 @@ debounce 300 мс либо Enter со сбросом страницы в 0. Из
 
 Widgets `admin-shell`, `admin-orders`, `admin-products`, `admin-agents`,
 `admin-agent-details` собирают features `admin-access`, `admin-product-management`,
-`admin-order-action`, `admin-agent-settings`. Доменные DTO/API/queries находятся
+`admin-order-action`, `admin-order-case-management`, `admin-agent-settings`. Доменные DTO/API/queries находятся
 в соответствующих entities, включая новую `agent`. Обычные seller forms и
 mutations не используются для административной записи.
+
+История и настройки существующих розыгрышей находятся в `widgets/admin-products`
+под прежним `AdminAccess`; отдельный рекомендуемый widget превысил бы предел Steiger.
+`features/admin-giveaway-management` владеет RHF-формой, черновиком и guard операции
+в памяти session-scoped QueryClient. Семь полей, mapping/validation, административный
+API и адресная синхронизация giveaway/product keys принадлежат `entities/product`.
+Обычный редактор и `ProductStatusActions` не восстанавливают и не продлевают GIVEAWAY;
+переход ведёт к настройкам периода и включённости.
+Создание собственного розыгрыша собирается там же: отдельная RHF-форма и session-scoped
+receipt принадлежат той же feature, поля приза и B3 mapper — `entities/product`.
+Переиспользуются настройки этапа 9, категории, валюты, PRODUCT upload и AdminImages;
+seller forms/mutations и их дисковый draft не расширяются. Переходы между созданием
+и историей используют Next Link, сохраняя память QueryClient в административной ветке.
+
+Редактор товара бота в `features/admin-product-management` поддерживает явные варианты
+EXTERNAL_PRODUCT/GIVEAWAY, включая преобразование и повторное изменение розыгрыша.
+Он переиспользует entity-поля настроек, загрузку PRODUCT и адресную синхронизацию.
+Черновик, baseline и lifecycle полной записи находятся в session-scoped QueryClient;
+ключи операций обоих редакторов и проверка конкурирующей записи принадлежат entity.
+Cross-feature imports не добавляются. Связи GIVEAWAY читаются из полного admin snapshot,
+а переходы между редакторами сохраняют память и проверенный локальный `returnTo` списка.
 
 `AdminAccess` после `RequireAuth` проверяет свежий session-scoped профиль.
 Дочерние widgets монтируются только для ADMIN. Правила кэша и API описаны в
@@ -29,14 +60,23 @@ mutations не используются для административной 
 `AppLayout` имеет отдельную ветку `/admin` без витринных header/footer/bottom
 navigation, с общим NotificationProvider. Providers и тема остаются общими.
 Desktop от 900 px использует sidebar и таблицы, mobile — Drawer меню и карточки;
-панель заказа на мобильном полноэкранная. Административная навигация между
-страницами — нативные ссылки: уход защищает общий navigation guard;
-данные форм не сохраняются в браузерное хранилище. Изменение query фильтров
+панель заказа на мобильном полноэкранная. Внутренние переходы `/admin` (меню,
+история, редакторы, боты и вкладки), «В личный кабинет», «Администрирование»
+и возврат после отказа ADMIN используют Next Link с prefetch=false.
+Корневой QueryProvider не пересоздаётся: session-scoped draft и guard операции
+сохраняются при размонтировании формы. Уход защищает общий navigation guard;
+данные форм не сохраняются в браузерное хранилище. Hard reload и независимые вкладки
+не защищены этой памятью. Изменение query фильтров
 списка использует router.replace без перезагрузки.
 
 Метрика подключается только в витринной ветке. При клиентском пересечении
-границы витрина/admin контент новой ветки не монтируется до полной навигации,
-чтобы Webvisor не наблюдал административные данные. `/admin` имеет noindex,
+границы витрина/admin AppLayout сначала размонтирует прежнюю ветку, затем
+разрешает новую через layout effect, сохраняя корневые providers. Cleanup Метрики
+выполняет destruct до появления ADMIN DOM; поздний callback загрузки не запускает
+счётчик размонтированной витрины. Возврат на витрину инициализирует счётчик снова,
+включая пересоздание компонента во время загрузки transport. Метод остановки —
+[документированный destruct](https://www.yandex.ru/support/metrica/ru/code/counter-spa-setup).
+Полная навигация для этой границы не нужна. `/admin` имеет noindex,
 запрет в robots и не входит в явный перечень sitemap.
 
 Figurzilla — frontend marketplace на Next.js App Router. Backend находится в отдельном проекте, поэтому новые endpoint'ы, поля и статусы добавляются только по подтверждённому контракту.
@@ -56,7 +96,7 @@ docs/         документация
 
 Корневой `app/` отвечает за маршрутизацию. Route-файлы должны оставаться тонкими: получать параметры, настраивать metadata и собирать нижние слои.
 
-Product detail, seller edit и admin product/agent routes проверяют положительный
+Product/giveaway detail, seller edit и admin product/agent routes проверяют положительный
 safe integer до загрузки. Category route проверяет ID каждого slug. Неверный
 синтаксис вызывает `notFound()` вне catch; временная ошибка загрузки остаётся
 ошибкой с retry. Для admin pagination неверный page нормализуется в 0,
@@ -109,6 +149,21 @@ app layer находится в корневом `app/`, вне `src`.
 
 ## Размещение кода
 
+Модели обращений (`OrderCase`, detail/summary и параметры нового решения)
+принадлежат `entities/order`; DTO розыгрышей и отдельный административный
+payload — `entities/product`. Они экспортируются через public API существующих
+слайсов. Новых entities, маршрутов и HTTP-клиентов на этапе 1 нет.
+Границы типов и источники полей описаны в
+[контрактах интеграции](./backend-integration-contracts.md).
+
+Публичные розыгрыши этапа 8 принадлежат `entities/product`: отдельные public API,
+query keys и модель временного окна. `product-catalog` получает `/active` независимо
+от каталога и передаёт карточку через `leadingContent`, включая error/empty каталога.
+Тонкий `/giveaways/[productId]` собирает отдельный `GiveawayDetailsWidget` внутри
+существующего `widgets/product-details`; новый widget-слайс не создаётся.
+Изображения читаются через public API `entities/image`. Проверка Telegram URL
+общая в `shared/lib`; прежний public API проверки ссылок обращений сохранён.
+
 - route, layout, metadata, error page — `app/`;
 - provider, theme, analytics — `src/app/`;
 - крупный блок страницы — `src/widgets/<slice>`;
@@ -121,8 +176,26 @@ feature и не выбирает auth route. Политика возврата �
 [api-and-auth.md](./api-and-auth.md#текущий-auth-flow).
 
 Доменные DTO размещаются в `model` соответствующих entities. `entities/image`
-владеет image DTO, API, query hooks и связыванием изображений с доменными
-данными. Core DTO профиля, заказов и собственных товаров кэшируются отдельно;
+владеет image DTO, API, query hooks и связыванием изображений с доменными данными,
+включая защищённый транспорт и scoped query ORDER-изображений;
+административный reader переиспользует транспорт, сохраняя admin namespace.
+`widgets/orders` показывает нейтральную галерею файлов заказа, а локальным
+выбором файла и отложенным upload при submit владеет `features/order-payment`.
+`features/order-case-create` собирает формы запроса отмены, спора и оплаты после
+отмены внутри раздела обращений `widgets/orders`. API, mutation и матрица
+доступности принадлежат `entities/order`; feature использует ORDER-upload из
+`entities/image` и scoped профиль из `entities/user`. Guard и черновик операции
+хранятся в памяти существующего QueryClient, server DTO не копируются в Zustand.
+Новых маршрутов и cross-feature импортов нет; recovery описан в
+[api-and-auth.md](./api-and-auth.md#создание-обращений-этап-5).
+Для этапа 6 `widgets/orders` компонует историю с режимом `dispute` существующего
+`PaymentDialog`, передавая контекст в `useDisputePayment`. Матрица и проверка
+imageId принадлежат public API `entities/order`; feature владеет черновиком,
+upload и recovery операции в приватном QueryClient. Импортов между features нет.
+Lifecycle описан в [api-and-auth.md](./api-and-auth.md#подтверждение-оплаты-в-споре-этап-6).
+Общий image-upload/cleanup ограничен NonOrderImageTag. Правила приватности
+и lifecycle описаны в [api-and-auth.md](./api-and-auth.md#изображения-заказа-этап-3).
+Core DTO профиля, заказов и собственных товаров кэшируются отдельно;
 widgets собирают визуальные модели через `mapImageMetadata` и существующий
 image query с локальными loading/error/fallback/retry. Контракты и ключи
 описаны в [api-and-auth.md](./api-and-auth.md#поиск-товаров-и-сессия).
@@ -181,6 +254,18 @@ pending revisions сохраняются, а `needsValidation` требует н
 Для кода из `src/` предпочтителен `@/...`. Новые aliases не добавляются без отдельного решения.
 
 ## UI и формы
+
+AuthDialog измеряет visualViewport после фактического монтирования MUI portal
+через callback ref. AuthForm принимает необязательный submitButtonRef;
+страницы login/register передают его в VerificationCodeDialog как
+restoreFocusRef, чтобы после закрытия вернуть фокус submit, который был
+disabled во время запроса. Уведомления находятся ниже modal z-index и не
+перекрывают действия открытого диалога.
+
+Модель административного редактора товара подписана на session profile:
+восстановление ADMIN после reconnect обновляет доступность сохранения без
+размонтирования формы. Принятый/неизвестный PUT по-прежнему требует чтения
+результата до повторной записи.
 
 Фильтр цены в `product-catalog` открывается кнопкой (click/Enter/Space).
 Draft берётся только из применённого диапазона; доступные цены — placeholders,
@@ -323,8 +408,22 @@ Desktop-композиция переключается CSS; общий диал
 внутри widget. Cancel/review используют только переданный open-state: все способы
 закрытия защищены pending guard, reset выполняется при следующем открытии или после
 выхода анимации того же открытия. Поздний callback не меняет новое открытие.
-`useOrderCancelAction.cancelOrder` возвращает promise settlement и принимает callback
-успеха конкретной операции. Ввод остаётся в локальном состоянии компонентов.
+`useOrderCancelAction` получает актуальный заказ и роль; `cancelOrder` возвращает
+promise settlement и принимает callback успеха конкретной операции. Feature
+повторно проверяет BOOKED по props и scoped query cache, сохраняет состояние
+неопределённого результата и предоставляет отдельный GET-повтор. Ввод остаётся
+в локальном состоянии диалога. Правила отмены и временная ADMIN-политика B4
+описаны в [api-and-auth.md](./api-and-auth.md#отмена-заказа-этап-2).
+
+История обращений этапа 4 принадлежит `entities/order`: public API экспортирует
+`orderCasesApi`, `useOrderCasesQuery`, `OrderCaseCard`, `getOrderCaseImageGroups`
+и cases keys. Карточка получает известные имена участников и slot изображений;
+не импортирует widget или соседнюю entity. `widgets/orders` собирает карточки,
+приватные галереи и синхронизацию статуса со списком. `OrderImagesSection`
+переиспользует защищённый транспорт этапа 3 для нейтральных изображений заказа,
+обращения и отдельного достоверного подтверждения оплаты. Правила запроса,
+идентичности файлов и восстановления описаны в
+[api-and-auth.md](./api-and-auth.md#история-обращений-этап-4).
 
 Admin-редактор сохраняет последнюю подтверждённую базу связей и смонтированную форму
 при ошибке фонового чтения или mapping. Новые save/restore заблокированы до успешной
@@ -395,6 +494,16 @@ UI не размонтируется; подтверждение разреша�
 учитывают изменения фото; подтверждённое сохранение снимает dirty guard.
 Пароли и реквизиты остаются только в памяти. Create сохраняет прежний draft;
 его upload защищён guard без дополнительной персистенции.
+
+## Уведомления и модальные окна
+
+`shared/ui/notification` сохраняет единый `useNotification`. Уведомления через
+MUI Portal размещаются в активном видимом Dialog, внутри его accessibility tree
+и FocusTrap, в потоке содержимого без перекрытия действий. Закрытие уведомления
+с клавиатуры возвращает focus внутрь Dialog. Вне Dialog используется глобальный
+Snackbar со штатным слоем темы. Доменных зависимостей в `shared/ui` нет.
+Браузерные регрессии и причина изменения — в
+[протоколе P2-1](./backend-plan/stage12-p2-notifications.md).
 
 ## Проверки
 

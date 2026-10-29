@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { Alert, Button, Stack, Tab, Tabs, Typography } from "@mui/material";
@@ -23,7 +24,7 @@ export function AdminAgentDetails({
     return <Alert severity="error">Некорректный ID бота</Alert>;
   return (
     <Stack spacing={3}>
-      <Button href="/admin/agents" sx={{ alignSelf: "start" }}>
+      <Button component={Link} prefetch={false} href="/admin/agents" sx={{ alignSelf: "start" }}>
         ← Все боты
       </Button>
       <RequestFeedback
@@ -53,7 +54,8 @@ export function AdminAgentDetails({
             ].map(([value, label]) => (
               <Tab
                 key={value}
-                component="a"
+                component={Link}
+                prefetch={false}
                 href={`/admin/agents/${agent}?tab=${value}`}
                 value={value}
                 label={label}

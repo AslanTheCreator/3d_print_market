@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Dialog,
@@ -22,6 +22,7 @@ import {
   type ListOrdersModel,
 } from "@/entities/order";
 import { useSellerAccounts } from "@/entities/account";
+import { usePrivateScope } from "@/shared/lib/query";
 import { imageApi } from "@/entities/image";
 import {
   createImagePreview,
@@ -32,12 +33,13 @@ import {
 import { serializeApiError, transformToApiError } from "@/shared/lib/errorHandler";
 import { UseMutationResult } from "@tanstack/react-query";
 import { SellerPaymentDetails } from "./SellerPaymentDetails";
+import { DisputePaymentDialog, type DisputePaymentDialogProps } from "./DisputePaymentDialog";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Типы
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type PaymentType = "payment" | "prepayment";
+export type PaymentType = "payment" | "prepayment" | "dispute";
 
 interface PaymentMutationParams {
   orderId: number;
@@ -52,7 +54,7 @@ interface PaymentDialogProps {
   retryPending?: boolean;
   onClose: () => void;
   order: ListOrdersModel;
-  paymentType: PaymentType;
+  paymentType: Exclude<PaymentType, "dispute">;
   paymentMutation: UseMutationResult<
     number,
     unknown,
@@ -84,7 +86,10 @@ const paymentConfig = {
 // Компонент
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const PaymentDialog = ({
+export const PaymentDialog = (props: PaymentDialogProps | DisputePaymentDialogProps) =>
+  props.paymentType === "dispute" ? <DisputePaymentDialog {...props} /> : <NormalPaymentDialog {...props} />;
+
+const NormalPaymentDialog = ({
   open,
   actionsAvailable = true,
   onRetry,
@@ -100,7 +105,11 @@ export const PaymentDialog = ({
   const [imageId, setImageId] = useState<number | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [isDeletingImage, setIsDeletingImage] = useState(false);
+  const scope = usePrivateScope();
+  const lock = useRef(false);
+  const revision = useRef(0);
+  const uploadController = useRef<AbortController | null>(null);
+  const latest = useRef({ order, open, actionsAvailable, selectedAccountId: null as number | null, accountsReady: false });
   const [hasAmbiguousMutationAttempt, setHasAmbiguousMutationAttempt] =
     useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
@@ -179,139 +188,74 @@ export const PaymentDialog = ({
     setImageId(null);
   };
 
-  const deleteUnlinkedImage = async (unlinkedImageId: number) => {
-    try {
-      setIsDeletingImage(true);
-      await imageApi.deleteImages([unlinkedImageId], "ORDER");
-      return true;
-    } catch (error) {
-      console.error("Ошибка при удалении неподтверждённого изображения:", serializeApiError(error));
-      setImageError(
-        "Не удалось удалить предыдущий чек. Повторите попытку, чтобы не создавать лишние файлы.",
-      );
-      return false;
-    } finally {
-      setIsDeletingImage(false);
-    }
-  };
-
-  const handleImageUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-
+    event.target.value = "";
+    if (!file || lock.current || paymentMutation.isPending || imageId || !scope.isCurrent()) return;
     const validation = validateImage(file);
-
     if (!validation.isValid) {
       setImageError(validation.error ?? "Invalid image");
-      event.target.value = "";
       return;
     }
-
-    if (
-      paymentMutation.isPending ||
-      hasAmbiguousMutationError ||
-      hasAmbiguousMutationAttempt
-    ) {
-      setImageError(
-        "Статус платежа уточняется. Повторите подтверждение с тем же чеком.",
-      );
-      event.target.value = "";
-      return;
-    }
-
-    if (imageId) {
-      const wasDeleted = await deleteUnlinkedImage(imageId);
-      if (!wasDeleted) {
-        event.target.value = "";
-        return;
-      }
-
-      paymentMutation.reset();
-    }
-
     setImageError(null);
-    resetImageState();
     setSelectedImage(file);
     setImagePreview(createImagePreview(file));
-
-    try {
-      setIsUploadingImage(true);
-      const response = await imageApi.saveImage(file, "ORDER");
-      setImageId(response[0]);
-    } catch (error) {
-      console.error("Ошибка при загрузке изображения:", serializeApiError(error));
-      setImageError("Не удалось загрузить изображение на сервер");
-      resetImageState();
-    } finally {
-      setIsUploadingImage(false);
-      event.target.value = "";
-    }
   };
 
   // ──────────────────────────────────────────────────────────────────────────
   // Подтверждение оплаты
   // ──────────────────────────────────────────────────────────────────────────
 
-  const handleConfirmPayment = () => {
-    if (!actionsAvailable || paymentMutation.isPending || !selectedAccountId || !isExpectedOrderStatus) {
-      return;
+  const handleConfirmPayment = async () => {
+    if (lock.current || !canConfirmPayment || !scope.isCurrent() || !open) return;
+    lock.current = true;
+    const generation = revision.current;
+    const orderId = order.orderId;
+    const isCurrent = () => scope.isCurrent() && generation === revision.current && latest.current.open && latest.current.order.orderId === orderId;
+    const submittedComment = comment.trim();
+    let submittingStatus = false;
+    try {
+      let proofId = imageId;
+      if (!proofId && selectedImage) {
+        const controller = new AbortController();
+        uploadController.current = controller;
+        setIsUploadingImage(true);
+        setImageError(null);
+        const [uploadedId] = await imageApi.saveOrderImage(selectedImage, orderId, controller.signal);
+        if (!isCurrent()) return;
+        proofId = uploadedId;
+        setImageId(proofId);
+        setIsUploadingImage(false);
+      }
+      if (!isCurrent() || !proofId) return;
+      const current = latest.current;
+      if (!current.actionsAvailable || current.order.actualStatus !== expectedOrderStatus || !current.accountsReady || !current.selectedAccountId) return;
+      submittingStatus = true;
+      await paymentMutation.mutateAsync({ orderId, imageId: proofId, comment: submittedComment });
+      if (isCurrent()) handleClose({ keepUploadedImage: true });
+    } catch (error) {
+      if (!isCurrent()) return;
+      if (!submittingStatus) {
+        console.error("Ошибка при загрузке изображения:", serializeApiError(error));
+        setImageError("Не удалось загрузить изображение на сервер");
+      }
+    } finally {
+      if (generation === revision.current) {
+        lock.current = false;
+        uploadController.current = null;
+        setIsUploadingImage(false);
+      }
     }
-
-    if (!imageId) {
-      setImageError(
-        `Пожалуйста, загрузите подтверждение ${
-          paymentType === "payment" ? "оплаты" : "предоплаты"
-        }`,
-      );
-      return;
-    }
-
-    paymentMutation.mutate(
-      {
-        orderId: order.orderId,
-        imageId: imageId,
-        comment: comment.trim(),
-      },
-      {
-        onSuccess: () => {
-          void handleClose({ keepUploadedImage: true });
-        },
-      },
-    );
   };
 
-  const handleClose = async ({
-    keepUploadedImage = false,
-  }: {
-    keepUploadedImage?: boolean;
-  } = {}) => {
-    if (
-      (!keepUploadedImage && paymentMutation.isPending) ||
-      isUploadingImage ||
-      isDeletingImage
-    ) {
-      return;
-    }
-
-    if (
-      imageId &&
-      !keepUploadedImage &&
-      !hasAmbiguousMutationError &&
-      !hasAmbiguousMutationAttempt
-    ) {
-      const wasDeleted = await deleteUnlinkedImage(imageId);
-      if (!wasDeleted) return;
-    }
-
+  const handleClose = ({ keepUploadedImage = false }: { keepUploadedImage?: boolean } = {}) => {
+    if (!keepUploadedImage && (lock.current || paymentMutation.isPending || isUploadingImage)) return;
+    revision.current++;
+    lock.current = false;
     setComment("");
-    setSelectedImage(null);
-    setImagePreview(null);
-    setImageId(null);
+    resetImageState();
     setImageError(null);
     setIsUploadingImage(false);
-    setIsDeletingImage(false);
     setHasAmbiguousMutationAttempt(false);
     setSelectedAccountId(null);
     paymentMutation.reset();
@@ -323,15 +267,27 @@ export const PaymentDialog = ({
     !!sellerAccounts?.some((account) => account.id === selectedAccountId);
   const accountsArePending = isAccountsLoading || isAccountsFetching;
   const canConfirmPayment =
-    !!imageId &&
+    (!!imageId || !!selectedImage) &&
     hasSelectedAccount &&
     !accountsArePending &&
     !isAccountsError &&
     actionsAvailable &&
     isExpectedOrderStatus &&
     !paymentMutation.isPending &&
-    !isUploadingImage &&
-    !isDeletingImage;
+    !isUploadingImage;
+  latest.current = { order, open, actionsAvailable, selectedAccountId, accountsReady: hasSelectedAccount && !accountsArePending && !isAccountsError };
+
+  useEffect(() => {
+    const currentRevision = revision;
+    currentRevision.current++;
+    lock.current = false;
+    setSelectedImage(null); setImagePreview(null); setImageId(null); setImageError(null);
+    setIsUploadingImage(false); setHasAmbiguousMutationAttempt(false); setComment("");
+    const controller = uploadController.current;
+    controller?.abort();
+    return () => { currentRevision.current++; uploadController.current?.abort(); };
+  }, [open, order.orderId, paymentType, scope.signal]);
+
   const mutationErrorMessage = mutationApiError?.message ?? null;
 
   return (
@@ -453,8 +409,7 @@ export const PaymentDialog = ({
             type="file"
             onChange={handleImageUpload}
             disabled={
-              isUploadingImage ||
-              isDeletingImage ||
+              !!imageId || isUploadingImage ||
               paymentMutation.isPending ||
               hasAmbiguousMutationError ||
               hasAmbiguousMutationAttempt
@@ -477,13 +432,11 @@ export const PaymentDialog = ({
                 },
               }}
             >
-              {isUploadingImage || isDeletingImage ? (
+              {isUploadingImage ? (
                 <Stack alignItems="center" spacing={1}>
                   <CircularProgress size={48} />
                   <Typography variant="body2" color="text.secondary">
-                    {isDeletingImage
-                      ? "Удаление предыдущего изображения..."
-                      : "Загрузка изображения..."}
+                    Загрузка изображения...
                   </Typography>
                 </Stack>
               ) : imagePreview ? (
@@ -503,7 +456,7 @@ export const PaymentDialog = ({
                   />
                   <Typography variant="body2" color="success.main">
                     <CheckCircle sx={{ fontSize: 16, mr: 0.5 }} />
-                    Изображение загружено
+                    {imageId ? "Изображение загружено" : "Файл выбран"}
                   </Typography>
                 </Box>
               ) : (
@@ -519,6 +472,11 @@ export const PaymentDialog = ({
               )}
             </Paper>
           </label>
+
+          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+            <Button disabled={!!imageId || isUploadingImage || paymentMutation.isPending} onClick={() => document.getElementById(fileInputId)?.click()}>Выбрать файл</Button>
+            {selectedImage && !imageId && <Button disabled={isUploadingImage || paymentMutation.isPending} onClick={() => { resetImageState(); setImageError(null); }}>Удалить выбранный файл</Button>}
+          </Stack>
 
           {imageError && (
             <FormHelperText error sx={{ mt: 1 }}>
@@ -539,7 +497,7 @@ export const PaymentDialog = ({
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           sx={{ mb: 1 }}
-          disabled={isUploadingImage || isDeletingImage}
+          disabled={isUploadingImage || paymentMutation.isPending}
         />
       </DialogContent>
 
@@ -548,8 +506,7 @@ export const PaymentDialog = ({
           onClick={() => void handleClose()}
           disabled={
             paymentMutation.isPending ||
-            isUploadingImage ||
-            isDeletingImage
+            isUploadingImage
           }
         >
           Отмена

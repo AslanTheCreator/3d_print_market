@@ -1,5 +1,880 @@
 # Testing
 
+## Backend integration: этап 12 — реальный DEV
+
+**Frontend-приёмка этапов 1–12 — PASS; P2-1 и P2-2 — PASS. BE-12-01 и BE-12-02 — OPEN; полная серверная приёмка и production readiness не подтверждены.**
+
+Прогоны выполнены 22.10.2026; документальное завершение и итоговая сверка —
+27.10.2026. После заключительного VP исправлены два P2; новые прогоны и
+ограничения исходного harness описаны в разделе 8 отчёта этапа 12.
+
+Фактические результаты, матрица требований, ID fixtures и ограничения —
+[отчёт этапа 12](./backend-plan/stage12-results.md). Набор `tests/real` отделён
+от `tests/e2e`; основной Playwright config его не запускает. Он пишет в DEV,
+использует настоящие login/API/browser requests, не регистрирует API routes,
+HAR, mock responses или SSR fixtures. После P2-2 внешняя Метрика блокируется
+CDP Network.setBlockedURLs до goto каждой Page, включая ADMIN. context/page.route
+не используются: даже route только для Метрики включал автоматический 204 для
+preflight. Исторические browser PASS до P2-2 не подтверждают реальный CORS;
+перепроверка без interception — в [протоколе P2-2](./backend-plan/stage12-p2-network.md).
+Trace/video/screenshots отключены,
+чтобы не сохранять credentials и доказательства. Обезличенные статусы/ID
+пишутся в `.cache/backend-stage12/manifests/`; отдельные manifests сохраняются
+и при перезапуске worker после failure.
+
+Перед запуском необходимы существующий DEV backend, локальные учётные записи
+`ADMIN_LOGIN/PASSWORD`, `CODEX_TEST_BUYER_LOGIN/PASSWORD` (продавец ID 18),
+`CODEX_TEST_SELLER_LOGIN/PASSWORD` (покупатель ID 14), боты 2/3 и категория 132.
+Они берутся из `.env.local`; значения не печатаются. Guard проверяет локальные
+DB/S3, SMTP host/port и приветствие локального sink до создания fixtures.
+
+Подготовка SMTP существующего стенда (не создаёт отдельные volumes/сервисы):
+
+Основной Compose находится вне frontend-репозитория, в родительской папке
+`3D_print_market`. Во frontend хранится только тестовый overlay
+`docker-compose.integration.yml`; команды ниже выполняются из корня frontend.
+Пути volumes и основной `.env` разрешаются относительно первого Compose-файла.
+
+```powershell
+node scripts/dev-smtp-sink.mjs
+# В другом терминале; использовать Compose, из которого действительно запущен DEV:
+docker compose -f ../docker-compose.yml -f docker-compose.integration.yml up -d --no-deps backend
+```
+
+Sink принимает письма локально, ничего не пересылает и сохраняет только счётчики.
+Нельзя восстанавливать внешний SMTP посреди прогона. Для production standalone
+задать при build и start `CLIENT_API_BASE_URL=http://localhost:8081`,
+`API_BASE_URL=http://localhost:8081`, `ALLOW_LOCAL_API_URL=true`; запускать
+`npm run build`, затем `npm run start:standalone` с HOSTNAME=localhost/PORT=3000.
+Origin — строго `http://localhost:3000` из-за backend CORS.
+
+```powershell
+$env:FIGURZILLA_DEV_INTEGRATION="true"
+npm run test:integration:real
+```
+
+Набор подтверждает записи последующим чтением, не сбрасывает БД, не удаляет
+чужие записи и не повторяет mutation автоматически. Создаёт маркированные
+товары/заказы/обращения/синтетические изображения; розыгрыши после проверок
+отключаются. Fixtures заказов/обращений остаются для аудита. Повторный запуск
+создаёт новый набор, поэтому выполняется осознанно. Реальный backend-дефект
+остаётся FAIL, а не превращается в skip/expected failure.
+
+Общие fixtures обращений и запреты старых mutation/DELETE ORDER находятся
+в `tests/e2e/helpers/backendContracts.ts`. Session navigation probe различает
+prefetched RSC и реальную навигацию: положительный контроль подтверждает
+router.replace и удержанный RSC, включая переиспользованный prefetch.
+Mobile Reset закрывает фильтр; тест проверяет пустые значения после повторного
+открытия. `order-missing-category` воспроизводит реальный snapshot с
+categories=null на desktop/mobile; `local-images-config-model` проверяет opt-in
+production MinIO вместе с фактическим standalone browser-показом в real-наборе.
+Сценарии mobile categories ожидают hydration React-обработчика перед открытием
+диалога; до hydration нативная ссылка штатно ведёт в каталог. Modified click
+продолжает проверять fallback в новой вкладке.
+
+Исходные итоги DEV 22.10.2026: **32 PASS / 1 FAIL** в real-прогоне (114.862 s),
+**1085 PASS** в полном desktop/mobile regression (862.972 s), 15 HTTP smoke PASS;
+skip/flaky/retries отсутствуют. Красный CORS preflight не скрыт expected failure.
+Приватные query в backend HTTP-логах выявлены отдельным read-only аудитом.
+Наборы запускать последовательно: при параллельной нагрузке наблюдались три
+таймаута real browser UI, отдельно они прошли без изменений timeout/assertions.
+История прогонов и self-review приведены в отчёте этапа 12.
+
+Решением владельца проекта CORS refresh (FAIL) и backend-логирование приватных
+query (FAIL read-only аудита) отложены и переданы на сторону backend. Прямой
+API refresh работает; реальный browser `401 → refresh → retry` с сохранением
+ввода остаётся BLOCKED, успешное recovery с вводом подтверждено MOCK ONLY.
+Real-команда сохраняет неуспешный exit из-за CORS; accepted limitation не меняет
+его на PASS/skip/expected failure. Воспроизведение и проверки после исправлений
+зафиксированы в [BACKEND_REQUIRED_FIXES.md](./backend-plan/BACKEND_REQUIRED_FIXES.md).
+Дополнительная диагностика 27.10.2026 в Chromium без API mocks подтвердила
+штатный 401 → OPTIONS refresh 403 → logout: это BACKEND CORS BUG v1.36,
+влияющий на реальный frontend. Same-origin контроль из страницы Swagger прошёл
+без preflight; он не доказывает browser recovery. Next.js proxy и серверного
+refresh нет. Эта диагностика не меняет результаты завершённых наборов.
+Заключительный адресный VP Astra подтвердил frontend этапов 1–12 и P2-1/P2-2
+(PASS); новых findings P0–P3 нет. Результат передан владельцем 29.10.2026 и
+зафиксирован в разделе 9 отчёта. Backend FAIL/BLOCKED и отсутствие подтверждения
+production readiness сохраняются. Новые прогоны при Git-оформлении не выполнялись.
+Повтор 27.10.2026 на свежем production
+standalone без interception: **36 PASS / 1 FAIL** из 37 real-сценариев (прежние
+33 + новые 4), 50 PASS смежных UI-регрессий и 1 PASS mobile overlay/Reset,
+15 PASS smoke. Build/lint/typecheck/architecture прошли. Успешный browser refresh
+остаётся BLOCKED; 1085 PASS mock/model не объявляются повтором текущей сборки.
+Регрессии уведомлений проверяют hit-testing, keyboard/focus и возврат после Reset
+на desktop и 393×400; [протокол P2-1](./backend-plan/stage12-p2-notifications.md).
+
+## Повторный VP этапов 8–11: F1 — ADMIN → витрина → ADMIN
+
+`admin-storefront-navigation.spec.ts` проходит три пути Astra через настоящие ссылки
+«В личный кабинет» → логотип витрины → «Профиль» → «Администрирование» и меню формы:
+unknown PUT настроек, unknown POST отключённого GIVEAWAY, unknown PUT преобразования.
+Проверяются прежний document, сохранённые поля и enabled=false, guard после возврата,
+точные POST/PUT, доступный GET recovery и успешная независимая запись. Дополнительно
+проверяются accepted POST/ошибка GET, отзыв/возврат роли и logout/login другого ADMIN
+в том же документе с очисткой старого draft/guard.
+
+Два production-сценария используют исполняемый stub загружаемого tag.js:
+callbacks Next Script onLoad/onReady вызывают init, cleanup — destruct до ADMIN.
+MutationObserver фиксировал бы приватный DOM при работающем счётчике. Удерживаемый
+tag.js освобождается уже в ADMIN: поздний callback не вызывает init; возврат на
+витрину запускает счётчик снова. Assertions прежних тестов не меняются.
+
+```bash
+npx playwright test admin-storefront-navigation.spec.ts --project=chromium --workers=4 --retries=0 --repeat-each=5
+```
+
+Итоговые проверки 21.10.2026 на свежем production standalone
+`K4Jc4ODP3qSiExytlg_ld`:
+
+- **40 passed**, 89,58 с: 8 новых сценариев × 5, включая 15 воспроизведений Astra;
+  workers=4, retries=0, без failed/flaky/skipped/errors (`target-repeat.json`).
+- Связанный Chromium-набор: **229 passed / 1 failed**, 237,86 с (`related.json`).
+  Прошли прежние F1, ADMIN lifecycle/доступ, auth/private scope и F2. Единственный сбой —
+  `giveaway.spec.ts:64`: ожидание ссылки участия после startAt при paused clock;
+  в UI остался pending refetch. Изолированно без изменений теста — **12 passed**, 21,19 с
+  (`giveaway-diagnostic.json`). На отдельном standalone чистого HEAD `68cbe5a` —
+  **24 passed**, 48,3 с (`baseline-giveaway.json`); копия теста имела только afterEach
+  для диагностики после failure, assertions не менялись. Связь единичного сбоя с F1
+  не установлена; он не объявлен исправленным и не исключён из результата набора.
+- Mobile с настроенным SSR fixture: **14 passed / 1 failed**, 35,69 с
+  (`mobile-final.json`). `mobile-rendering.mobile.spec.ts:1260` ожидает поля цены
+  после закрытия overlay при Reset. Тот же сбой воспроизведён на чистом HEAD
+  (`baseline-mobile.json`), поэтому существующий тест/каталог здесь не меняются.
+- **15 HTTP smoke passed**, 7,18 с. Lint (включая новый spec), typecheck,
+  architecture:check, build, self-review и diff-check успешны.
+
+Отчёты — `.cache/admin-storefront-f1/`. В первом мобильном запуске без env SSR fixture
+сработали три прежних conditional skip; повтор с fixture выполнил все 15 тестов.
+При разработке исправлены потеря init при auth remount во время загрузки tag.js
+и неверное предположение нового теста о post-login URL. Временный baseline checkout
+и диагностическая копия spec удалены. Production POST/PUT/recovery, существующие
+assertions, timeout, retries и parallelism не изменены. Общий набор пока не зелёный;
+эти два смежных сбоя остаются явно отмеченными для отдельной проверки.
+
+## VP этапов 8–11: F1 — навигация и guard
+
+`admin-giveaway-navigation.spec.ts` проходит штатные ссылки истории, sidebar и
+списка товаров после unknown PUT настроек, unknown POST создания и unknown PUT
+преобразования. Проверяются прежний документ, сохранённый draft, disabled submit,
+точное число записей и recovery только чтением. Независимый товар/PUT остаётся
+доступен; совпадение названия не снимает guard создания. Дополнительный сценарий
+проверяет переходы к ботам, вкладки и ссылки возврата в том же документе.
+Ограничения памяти при полной навигации описаны в [architecture.md](./architecture.md).
+
+```bash
+npx playwright test admin-giveaway-navigation.spec.ts --project=chromium --repeat-each=5 --workers=4 --retries=0
+```
+
+21.10.2026: свежий production standalone `orwr36EM6Yw6SF4wUh6_g`; итоговые
+**20 passed** (4 сценария × 5, 35,52 с), workers=4/retries=0. Связанный набор
+admin/giveaway/catalog/private-data — **255 passed**, 198,68 с; HTTP smoke —
+**15 passed**, 6,78 с. Lint (включая новые specs), typecheck, architecture:check,
+build и self-review успешны. Отчёты — `.cache/vp8-11-fixes/f1-repeat-final.json`
+и `related.json`. Failed/flaky/skipped/errors отсутствуют в итоговых прогонах.
+Первый новый locator выбирал другой товар из сортированного списка; теперь проверяет
+конкретную ссылку #101. В новом fixture контрольного GET задан плановый статус
+преобразованного товара. Assertions существующих тестов не менялись.
+
+## Backend integration: этап 11
+
+`admin.spec.ts`/`admin-extended.spec.ts` расширены преобразованием через точный прежний
+административный PUT: сохраняются товарные поля, used, категории и image IDs,
+count/prepaymentAmount опускаются по B3. Повторное открытие и preview GIVEAWAY используют
+admin GET, без публичного `/product/{id}`. Проверяются AWAITING_GIVEAWAY, подписи,
+safe returnTo, отсутствие продления/восстановления, запрет USER/чужого владельца,
+неполных связей и неподдерживаемого типа; N1 overlap отделён от общего 400.
+
+`admin-giveaway-conversion.spec.ts` проверяет оба направления между редакторами в одном
+QueryClient с ненулевым default staleTime (включая первое преобразование и уже GIVEAWAY).
+Изменение несвязанного поля не возвращает прежние настройки/связи. Dirty-ввод сохраняется,
+изменённый baseline требует явного подтверждения перечитывания. Покрыты lost response
+с применением/без применения, принятый PUT с ошибкой GET, pending/remount, смена владельца,
+отзыв ADMIN во время preflight, истечение endAt, поздний старый preview GET,
+исключение конкурирующего status action, memory-only draft и 320/393 px.
+
+`admin-giveaway-conversion-model.spec.ts` вызывает настоящие hooks и общий протокол
+синхронизации с staleTime=10 минут. Проверяются точный auth transport и union,
+count=0 против null для внешнего товара, отсутствие смешивания admin snapshots,
+отмена старого GET, адресный refetch активных relations/detail/history/list владельца,
+invalidation неактивных страниц, очистка public product detail и каталог только при
+преобразовании. Чужие боты/scope/товары/metadata не затрагиваются. Покрыты unknown/408,
+ошибки control/sync, подтверждение записи до sync, сохранение guard после remount,
+блокировка обоих редакторов и status action, поздний результат после teardown scope.
+Сверка unknown учитывает только отправленный optional used; отдельные assertions
+проверяют явно переданные true/false. Подтверждённая сервером валюта CREATE проходит
+сквозной сценарий редакторов без расширения seller-модели.
+
+В общем admin fixture принятый PUT теперь обновляет categoryIds/imageIds для последующего
+контрольного чтения; прежние assertions загрузки/удаления фото сохранены. Повторное
+восстановление публикации проверяет только отдельный status PUT после фактического
+завершения первой операции, без повторного сохранения товара. Прежние проверки
+этапов 1/9 обновлены под явно введённый union и активный refetch admin relations,
+добавлены положительные assertions нового поведения.
+
+```bash
+npx playwright test admin-giveaway-conversion --project=chromium --workers=4 --retries=0
+npx playwright test admin-giveaway-conversion.spec.ts --grep "both editors|lost conversion|accepted conversion|pending PUT|pending regular|preflight|late old|revoked ADMIN" --repeat-each=3 --project=chromium --workers=4 --retries=0
+```
+
+Все browser-проверки выполняются на свежем production standalone; записи подменены.
+Независимый VP этапов 8–11 и итоговый этап 12 остаются отдельной работой.
+
+Итоговый локальный VP 20.10.2026, production build `Jpv7dHu17RYAcEIG0xR-n`:
+
+- **251 passed**, 466,18 с: 39 новых (20 browser, 19 model/query) и 212 регрессий.
+  Включены admin/admin-extended/admin-session-model, giveaway/model,
+  admin-giveaway/model/create/model/conversion/model, backend-integration-contract-model,
+  product-form-mapping, editor-boundaries-model, private-data-model, core-images,
+  user-products-stock и catalog-filter-empty.
+- **30 recovery repeats passed**, 89,08 с: 10 асинхронных сценариев × 3.
+- **9 external editor repeats passed**, 27,94 с: связи/null/zero, PRODUCT upload,
+  частичное восстановление статуса × 3.
+- **12 mobile-chromium passed**, 38,13 с; **15 HTTP smoke passed**, 7,48 с.
+- Lint (включая изменённые specs/helpers), typecheck, architecture:check,
+  production build и diff-check успешны.
+
+Финальные browser/model/repeat-прогоны: workers=4, retries=0; mobile сохраняет
+существующий fullyParallel=false и использует два worker для двух файлов.
+Нет failed/flaky/skipped и глобальных ошибок. Отчёты: `.cache/stage11/complete-verified.json`,
+`recovery-repeat-final.json`, `external-editor-repeat-final.json`, `mobile-final.json`.
+Прерванный перезапуск без итогового отчёта в результат не включён.
+
+При разработке исправлены неполное применение связей в прежнем fixture и преждевременное
+предупреждение о частичном восстановлении до завершения запроса. В новом тесте pending
+status используется includeHidden для фоновых кнопок под MUI Dialog: native disabled
+assertions сохранены. В прогоне из 250 тестов было 249 passed / 1 failed по этому locator;
+после исправления весь итоговый набор и повторы прошли. Полные переходы между редакторами
+явно подтверждают перечитывание dirty-формы. Timeout/retries/skips, отключение параллельности
+и произвольные задержки не добавлялись; существующие assertions не ослаблялись.
+
+## Backend integration: этап 10
+
+`admin-giveaway-create.spec.ts` проверяет полный сценарий ADMIN создания собственного
+приза по B3 без seller prerequisites: точный вложенный payload, история с success receipt,
+публичная страница и возврат в заранее открытый список владельца. Покрыты запрет USER,
+валидация, optional категории/фото, выбор валюты, PRODUCT upload error/retry,
+N1 overlap против общего 400, double submit, принятый POST с ошибкой контрольного GET,
+unknown с применением/без применения, совпадающее название в истории, пересоздание
+формы/отзыв роли во время POST и upload, повтор только GET, dirty-navigation и memory-only
+draft, 320/393 px, создание отключённой записи и истечение endAt во время preflight.
+Отдельный seller-сценарий восстанавливает старый draft с GIVEAWAY: форма оставляет
+обычную продажу и отправляет PURCHASABLE без вложенного giveaway.
+История этапа 9 теперь проверяет ссылку создания, вместо прежнего отсутствия этой функции.
+
+`admin-giveaway-create-model.spec.ts` проверяет B3 mapper и отдельный auth POST без
+предположения о success body, настоящий creation hook и общий протокол синхронизации.
+Кэши со staleTime=10 минут включают общий query шапки/списка, активные/неактивные варианты
+размеров/фильтров/сортировки, все страницы истории, public active и несвязанные scope/ботов.
+Проверяются точные чтения/invalidation, отмена позднего старого чтения, guard при
+ошибке обновления владельца, HTTP 408, сохранение unknown/accepted после remount,
+запрет записи USER и поздних результатов после scope teardown, File/upload retry в памяти.
+
+```bash
+npx playwright test admin-giveaway-create --project=chromium --workers=4 --retries=0
+npx playwright test admin-giveaway-create.spec.ts --grep "accepted POST|unknown POST|pending POST|pending PRODUCT|fresh ADMIN|end passing" --repeat-each=3 --project=chromium --workers=4 --retries=0
+```
+
+Браузерные проверки выполняются на свежем production standalone; все изменяющие
+операции подменены. Регрессии включают публичные розыгрыши и настройки этапа 9,
+seller mapping/draft и мобильное создание обычного товара. Сквозной browser-переход
+между витриной и admin сохраняет существующую полную навигацию ради изоляции аналитики;
+синхронизация кэшей в одном QueryClient дополнительно доказывается model/query-тестами.
+
+Итоговый локальный VP 20.10.2026, production build `wM0UCUtO2T9pKSZRVAuCI`:
+
+- **32 новых теста passed** (16 browser, 16 model/query), 59,93 с.
+- **132 связанные регрессии passed**, 138,51 с: admin-giveaway/model, giveaway/model,
+  admin, backend-integration-contract-model, product-form-mapping,
+  editor-boundaries-model, private-data-model, core-images, user-products-stock,
+  catalog-filter-empty.
+- **12 mobile-chromium passed**, 22,76 с: create-product и product-publication.
+- **21 recovery repeat passed** (7 сценариев × 3), 35,0 с.
+- **15 HTTP smoke passed**; lint (включая изменённые specs/helpers), typecheck,
+  architecture:check, production build и diff-check успешны.
+
+В связанном `core-images.spec.ts` обнаружена гонка: ссылка товаров нажималась до
+завершения перехода на `/dashboard`, оставляя тест на обзоре. Первичный общий прогон:
+131 passed / 1 failed; изолированный повтор: 2 passed / 3 failed. Trace подтвердил
+незавершённую навигацию. Добавлены locator/URL assertions готового обзора перед обратным
+переходом; проверки списка, счётчиков и кэша сохранены. После исправления **10/10 passed**
+(29,90 с), затем весь указанный набор из 132 тестов прошёл. Production-код из-за этого
+сбоя не менялся; timeout/retries/skips и произвольные задержки не добавлялись.
+
+Во всех финальных browser/model/repeat-прогонах workers=4, retries=0, нет
+failed/flaky/skipped и глобальных ошибок. Отчёты: `.cache/stage10/new-complete-final.json`,
+`regressions-final.json`, `mobile-final.json`, `recovery-repeat-final.json`,
+`core-images-repeat-fixed.json`. Независимый VP остаётся отдельной проверкой.
+
+## Backend integration: этап 9
+
+`admin-giveaway.spec.ts` проверяет ADMIN-only историю/детали, 50 записей и пустую
+следующую страницу без total, раздельные status/enabled, непосредственное тело PUT
+из семи полей без изменения товара, выключение/включение и timezone round-trip.
+Покрыты неверные даты/Telegram/тексты/winnersCount, истёкший endAt при включении
+и отключении, переход времени во время preflight, N1 overlap против общего 400,
+ошибки истории/контрольного GET/списка владельцев, pending/unknown/accepted PUT,
+HTTP 408 как неопределённый результат, повтор только GET,
+сохранение черновика при отзыве роли, поздний GET, конкурирующий baseline,
+dirty-navigation и mobile overflow. Обычные editor/status actions для GIVEAWAY
+не обращаются к публичному /product/{id} и не продлевают/восстанавливают товар.
+
+`admin-giveaway-model.spec.ts` вызывает настоящий operation hook и QueryClient,
+проверяет mapper/валидацию и транспорт. Заранее заполненные кэши со staleTime=10 мин
+доказывают адресный refetch активных и invalidation неактивных запросов: все страницы
+истории текущей сессии, детали одного товара, public active, список только владельца.
+На этапе 11 активные relations перечитываются через admin API. Чужие товары,
+сессии, metadata и списки не затронуты. Поздний старый GET не восстанавливает snapshot;
+ошибка control/sync сохраняет guard, подтверждённый unknown становится accepted
+до sync, а принятый PUT инвалидирует связанные данные даже при отказе первого GET.
+SSR probe использует IsRestoringProvider: effects монтирования в SSR не исполняются,
+но проверяемые save/read/recovery выполняют реальные query/mutation функции.
+
+```bash
+npx playwright test admin-giveaway --project=chromium --workers=4 --retries=0
+npx playwright test admin-giveaway.spec.ts --grep "pending PUT|successful PUT.*failed GET|lost PUT|dirty background|preflight detects|role revocation|accepted PUT superseded|end passing|owner list outage|HTTP 408" --repeat-each=3 --project=chromium --workers=4 --retries=0
+```
+
+Браузерные проверки запускаются на свежем production standalone. Все записи
+подменены; реальный backend проверяется только чтением OpenAPI. Независимый VP
+остаётся отдельной проверкой. Сквозные переходы между двумя редакторами закрыты
+тестами этапа 11, описанными выше.
+
+Итоговый локальный VP 20.10.2026, production build `SqEDVj0mnxAorOj5xDrsd`:
+
+- 37 новых тестов: 22 browser и 15 model/query; все прошли.
+- 179 регрессий в общем прогоне с новыми тестами: **216 passed**, 249,65 с.
+  Включены giveaway/model, admin, admin-extended, admin-session-model,
+  admin-order-cases, order-case-recovery, order-dispute-payment,
+  private-data-model, product-form-mapping, backend-integration-contract-model
+  и catalog-filter-empty.
+- Отдельно admin-case-telegram-recovery (F2): **4 passed**, 10,2 с.
+  Всего 183 регрессии; F1/F3 и payment покрыты общим прогоном.
+- 11 recovery-сценариев × 3: **33 passed**, 44,9 с.
+- **15 HTTP smoke passed**, 9,0 с; lint (включая новые specs/helpers),
+  typecheck, architecture:check, production build и diff-check успешны.
+
+Во всех финальных Playwright-прогонах workers=4, retries=0, нет failed/skipped/flaky
+и глобальных ошибок. Отчёты сохранены в `.cache/stage9/complete-final.json`,
+`f2-final.json`, `recovery-repeat-final.json`. При разработке исправлены предпосылки
+новых тестов: SSR probe не должен ждать неисполняемый mount effect; проверку доступа
+обновляет существующий reconnect, а mock ошибки использует общий ApiErrorResponse.
+Assertions не ослаблялись; retries/skips, увеличения timeout и произвольные задержки
+не добавлялись. Ошибки control/sync/владельца, подтверждение unknown до sync и
+HTTP 408 обработаны в реализации и закреплены отдельными регрессиями.
+
+## Backend integration: этап 1
+
+`backend-integration-contract-model.spec.ts` проверяет полноту полей новых DTO,
+optional/null при чтении, enum, исключение LEGACY из нового решения,
+структуру giveaway request и отсутствие обычных действий у CANCELLED.
+Compile-time assertions входят в `npm run typecheck`; сам Playwright
+транспилирует тесты без проверки типов.
+`product-form-mapping.spec.ts` дополнительно проверяет отказ seller mapper
+для GIVEAWAY при остальных валидных полях и неизменность create/edit типов.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test backend-integration-contract-model product-form-mapping product-contract-v129 editor-boundaries-model order-details-model --project=chromium
+```
+
+Это model/contract проверки без записей в backend. По
+[плану интеграции](./plans/backend-integration.md) production build, smoke
+и полный e2e выполняются на этапе 12; этап 1 не меняет order flow или редакторы.
+Для прогона только этих model specs без служебных webServer можно задать
+`TEST_BASE_URL=http://127.0.0.1:3000` (PowerShell:
+`$env:TEST_BASE_URL = 'http://127.0.0.1:3000'`) в окружении команды Playwright.
+Эти specs не обращаются по указанному URL и не требуют запущенного приложения.
+
+## Backend integration: этап 2
+
+`order-details-model.spec.ts` проверяет пользовательскую отмену только из BOOKED,
+отдельную подтверждённую B4 ADMIN-политику, enum-подписи, terminal progress и фильтры
+без преобразования FAILED. `open-forms.spec.ts` проверяет точный новый URL/body,
+причину в comment, обе роли, смену статуса открытого диалога, двойную отправку,
+отказ, потерю ответа и успех POST при ошибке перечитывания.
+`order-cancel.spec.ts` дополняет проверками desktop-фильтров, истории, отказа
+контрольного GET и восстановления продавца. `orders.mobile.spec.ts` проверяет
+новый фильтр и terminal UI для обеих ролей, включая 320 px.
+
+`order-cancel-recovery.spec.ts` воспроизводит потерю ответа + GET BOOKED:
+покупатель закрывает форму, меняет фильтры и открывает её заново; продавец
+использует другую кнопку того же заказа. Проверяются сохранённый ввод,
+recovery, запрет второго POST и завершение через GET CANCELLED. Дополнительно
+проверяются unmount во время POST, принятый результат после пересоздания формы,
+явный retry после отказа и GET BOOKED, независимость заказов, очистка после
+logout/login и поздние ответы старого scope. `private-data-model.spec.ts`
+включает namespace orderCancel в очистку при logout/expiry/прямой смене аккаунта
+и сохранение при refresh. Новые specs входят в команду `order-cancel` ниже.
+При исправлении P2 браузерные сценарии запускаются
+на свежем `npm run build` через `npm run start:standalone`; API-записи подменены.
+
+`admin-extended.spec.ts` проверяет CANCEL только в BOOKED и запрет остальных статусов,
+точные admin URL/query, CONFIRM/CONFIRM_PREPAYMENT/SHIP, отказ 403/409/500,
+потерю ответа без повторного POST и отсутствие действий для CANCELLED/обычного
+пользователя, смену статуса/владельца при открытой форме, отказ контрольного GET,
+logout и ошибку проверки доступа ADMIN во время GET до POST.
+Успешный mock CANCEL возвращает CANCELLED; отдельная негативная
+проверка не позволяет подменить неожиданно перечитанный статус локальным.
+Возвращённый mock-статус не является приёмкой реального ADMIN CANCEL.
+
+`admin-cancel-recovery.spec.ts` воспроизводит потерю ответа + GET BOOKED и
+незавершённый POST с последующим ADMIN → USER → ADMIN и повторным открытием
+заказа. Проверяются отсутствие второго POST, сохранение комментария и recovery,
+поздний успех/ошибка, восстановление при USER, подтверждённый отказ и другой заказ.
+`admin-cancel-recovery-model.spec.ts` вызывает реальный hook через QueryClient:
+USER не отправляет даже программный вызов, общий busy/accepted/unknown сохраняется,
+ключи изолированы по аккаунту/agentId/orderId, поздний ответ старого scope не
+восстанавливает удалённое состояние. Namespace adminOrderCancel входит также
+в logout/expiry/switch/refresh проверки `private-data-model.spec.ts`.
+Регрессии сохранённого CANCEL проверяют потерю ответа с GET ASSEMBLING и
+AWAITING_PREPAYMENT_APPROVAL: SHIP/CONFIRM_PREPAYMENT выполняются с точным payload,
+включая закрытие и повторное открытие деталей. CANCEL guard и комментарий при этом
+сохраняются даже после последующего GET BOOKED; произвольный статус не считается
+успехом CANCEL. Проверяются CONFIRM после неизвестного CANCEL, запрет конкурирующих
+действий при pending POST и запрет stale CONFIRM после принятого CANCEL с ошибкой
+обновления списка. Model-проверки отделяют busy от сохранённого unknown/accepted
+и проверяют актуальный guard из предыдущего render.
+
+`admin-cancel-close.spec.ts` проверяет путь CANCEL → потеря ответа → GET BOOKED →
+закрытие кнопкой/Escape → CONFIRM без смены роли и размонтирования ADMIN-интерфейса.
+Повторное открытие сохраняет комментарий, recovery и запрет CANCEL; перед CONFIRM
+выполняется свежий GET. Отдельные сценарии проверяют запрет закрытия при pending,
+закрытие принятого CANCEL после ошибки обновления списка и явный retry после отказа.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test open-forms order-cancel order-details order-dialog-lifecycle-model order-payment-model backend-integration-contract-model admin-cancel admin-session-model admin-extended admin.spec private-data-model --project=chromium
+npx playwright test orders.mobile --project=mobile-chromium
+```
+
+Все изменяющие запросы подменяются Playwright; на реальном backend проверяется
+только OpenAPI. По плану интеграции build, smoke и полный e2e — этап 12.
+При завершении B4 15.10.2026 дополнительно выполнены production build и HTTP smoke:
+на свежем standalone runtime прошли 132 целевых/регрессионных теста Chromium,
+6 мобильных и 15 HTTP smoke. Lint, typecheck и architecture:check пройдены.
+После исправлений ADMIN CANCEL и закрытия unknown-формы прошли 162 уникальных
+целевых/регрессионных теста Chromium: общий прогон 141, новые сценарии закрытия 7,
+model-проверки 14. Общий прогон завершился за 5,1 минуты с exit code 0:
+141 passed, 0 failed, 0 skipped, 0 flaky, без зависания. Дополнительно прошли
+6 мобильных и 15 HTTP smoke; браузерные проверки выполнены на свежей production
+standalone-сборке. Lint, typecheck, architecture:check и build успешны.
+Независимый повторный VP и приёмка реальных серверных переходов не подменяются этими результатами.
+
+## Backend integration: этап 3
+
+`order-images-model.spec.ts` проверяет auth-транспорт, AbortSignal, entityId,
+multipart files, upload responses, запрет generic ORDER upload/DELETE и реальный
+private query: refresh сохраняет scope, смена аккаунта отменяет поздний GET
+и очищает приватные/admin данные без удаления публичной metadata.
+`order-images.spec.ts` проверяет обе роли, 403 с retry без публичного fallback,
+нейтральные подписи и фильтрацию невалидного содержимого, замену/удаление
+локального файла без HTTP и освобождение blob URL. Поздние upload после смены
+заказа, статуса и logout не отправляют status mutation и не попадают в новую форму.
+
+`order-payment.spec.ts` проверяет выбор без немедленного upload, отсутствие
+DELETE после закрытия/ошибки, точный ORDER-upload, невалидные ответы и повтор
+того же imageId. `order-details.spec.ts` проверяет нейтральный empty state;
+`open-forms.spec.ts` сохраняет проверки ввода и pending settlement.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test order-images order-payment order-details open-forms avatar-upload-model avatar-replacement image-identity save-confirmation-model private-data-model --project=chromium
+npx playwright test admin.spec --project=chromium --grep "proof uses authorization"
+npx playwright test orders.mobile --project=mobile-chromium
+```
+
+API-записи подменены. На реальном backend прочитан только OpenAPI;
+object-level авторизация требует отдельной серверной приёмки. Build, smoke
+и полный e2e по плану интеграции остаются этапу 12.
+
+## Backend integration: этап 4
+
+`order-cases.spec.ts` проверяет фактическое поведение деталей обеих ролей: отсутствие
+N+1 в списке, OPEN при неизменившемся статусе, завершённые/LEGACY/неизвестные виды,
+безопасную Telegram-ссылку, пустую историю, 403/500 и retry, закрытие/Escape,
+повторное открытие/фокус, смену заказа и поздний ответ, logout/login того же orderId.
+Проверяются уникальный общий блок, нейтральные caseImages, точный payment proof
+среди других ID и вне orderImages, его привязка к обращению, null/отсутствующий ID,
+обновление существующего списка и запрет устаревших действий после закрытия и ошибки,
+сохраняющееся расхождение без цикла GET и optional orderStatus при повторном открытии.
+Чек из FindOrderResponse доступен также до первого обращения и при ошибке истории.
+`order-cases-model.spec.ts` проверяет authClient/AbortSignal, optional B2/N2,
+отклонение чужого ответа, группировку файлов и реальный scoped query при смене аккаунта.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test order-cases order-images order-payment order-details order-cancel open-forms backend-integration-contract-model private-data-model --project=chromium
+npx playwright test orders.mobile --project=mobile-chromium
+npx playwright test admin-cancel --project=chromium
+```
+
+Все API-записи подменяются; серверная object-level авторизация требует реальной
+приёмки. Build/smoke и полный e2e по плану обязательны на этапе 12; для этапа 4
+дополнительно используется свежий production standalone runtime.
+
+15.10.2026 локальный Verification Pass пройден: 141 уникальный Chromium e2e/model
+тест (18 новых браузерных, 3 новых model, 6 contract, 85 прежних регрессий и 29 ADMIN
+CANCEL), 6 мобильных, 15 HTTP smoke. Lint, typecheck, architecture:check и production
+build успешны. Финальные проверки истории выполнены после повторной standalone-сборки
+с защитой optional orderStatus; skips и retries ради результата не добавлялись.
+
+## Backend integration: этап 5
+
+`order-case-create-model.spec.ts` проверяет матрицу B1/B2 по роли, всем статусам,
+наличию paymentProofImageId, null/0 предоплаты, OPEN и прежнему RESOLVED appeal;
+принадлежность и неполные DTO. Проверяются точные private POST, query encoding,
+запрет images у запроса отмены, N1-коды отдельно от произвольного 409, сопоставление
+нового обращения с исходной историей, общий busy/unknown после remount, частичный
+upload, stale cache, refresh и поздний ответ после очистки аккаунта. Отсутствующие
+ID исходной истории не позволяют принять старое обращение за результат нового POST;
+известный отказ с failed GET требует явного контрольного чтения перед повтором.
+
+`order-case-create.spec.ts` проверяет три формы и обе допустимые роли, непустой
+комментарий, optional images, повторяющиеся imageIds без скобок, отсутствие upload
+у запроса отмены, несколько локальных файлов и retry только неудавшегося upload.
+Проверяются сохранение комментария/ID после закрытия, запрет OPEN/прежнего appeal/
+чужого заказа/неизвестного чека, N1 и произвольный 409, конкурентное OPEN, двойной
+submit и remount при pending, потеря ответа с/без принятого обращения, успешный POST
+с failed GET, ошибка preflight и остановка цепочки до POST после unmount при upload.
+Отдельная гонка меняет paymentProofImageId после upload: спор не отправляется,
+а доступный запрос отмены не загружает и не передаёт выбранные ранее файлы.
+`private-data-model.spec.ts` включает namespace orderCaseCreate в очистку при
+logout/expiry/смене аккаунта.
+Базовые пользовательские сценарии включают 393 px и проверку overflow.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test order-case-create order-cases order-images order-payment order-details order-cancel open-forms backend-integration-contract-model private-data-model --project=chromium
+npx playwright test orders.mobile --project=mobile-chromium
+```
+
+Браузерная регрессия выполняется на свежем production standalone runtime;
+API-записи подменены. На реальном backend 16.10.2026 повторно прочитана только
+OpenAPI трёх POST; права и серверные переходы требуют отдельной приёмки.
+Полный e2e по плану остаётся этапу 12.
+
+16.10.2026 lint, typecheck, architecture:check, production build и self-review
+успешны. Общая регрессия — 147 Chromium; после финальных правок повторно прошли
+37 целевых Chromium и 6 мобильных сценариев, отдельно перепроверены model guards.
+Суммарно проверены 149 уникальных Chromium e2e/model и 15 HTTP smoke;
+ошибок, пропусков и повторов ради результата нет. Реальные серверные операции
+и независимый VP этими результатами не подтверждаются.
+
+## Backend integration: этап 6
+
+`order-dispute-payment-model.spec.ts` проверяет матрицу покупатель/свой заказ/
+DISPUTED/OPEN DISPUTE/предыдущий AWAITING_PAYMENT, неполные и чужие DTO,
+точный приватный POST, исходный caseId и отправленный imageId. Guard и черновик
+проверяются в настоящем QueryClient с ненулевым staleTime и включённым default
+mutation retry: pending/remount, принятый POST с ошибкой GET, network/timeout/408/5xx,
+позднее доказательство в RESOLVED, отрицательное чтение без разрешения повтора,
+явный отказ с последующим чтением, сохранённый upload, stale cache, замена спора,
+решение во время upload, отсутствие отложенного offline POST и поздний результат
+после смены аккаунта.
+
+`order-dispute-payment.spec.ts` проверяет форму на 393/1280 px, отсутствие запроса
+реквизитов, отложенный ORDER-upload, сохранение DISPUTED, обновление доказательств,
+запрет повторного POST после закрытия/remount, потерю ответа с/без доказательства,
+успешный POST с failed GET, pending/remount, изоляцию черновиков при выборе другого
+заказа и гонки с решением администратора
+во время upload/POST. Unmount во время upload сохраняет ID, но останавливает POST.
+`private-data-model.spec.ts` включает disputePayment в проверку очистки scope.
+Регрессии обычной оплаты, предоплаты и серверных сумм остаются в существующих specs.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test order-dispute-payment order-payment order-case-create order-cases order-images order-details order-cancel open-forms backend-integration-contract-model private-data-model --project=chromium
+npx playwright test orders.mobile --project=mobile-chromium
+```
+
+Браузерные записи подменяются mock API; реальный backend проверяется только
+чтением OpenAPI. Серверные права и переходы требуют отдельной приёмки.
+Production build и HTTP smoke дополняют целевые регрессии; полный e2e — этап 12.
+
+16.10.2026 lint, typecheck, architecture:check, production build и self-review
+пройдены. Общий прогон — 185 Chromium e2e/model; после правок lifecycle и добавления
+проверок offline/выбора заказа финальный прогон — 71 Chromium. Всего проверены
+187 уникальных Chromium сценариев (29 новых), 6 mobile Chromium и 15 HTTP smoke.
+Финальный прогон выполнен на заново собранном standalone runtime, без skips/retries.
+Два первоначальных timeout новых тестов исправлены: родитель вложенного MUI Dialog
+имеет aria-hidden; тесты принудительного unmount учитывают скрытый родитель.
+Перед коммитом оба сценария повторены по пять раз: все 10 запусков успешны,
+без retry и увеличения timeout. Последующая независимая проверка выявила гонку
+этого helper при закрывающемся payment; исправление описано ниже.
+
+## Payment: синхронизация закрытия диалогов этапа 6
+
+В `order-dispute-payment.spec.ts` helper `unmount` различает ожидаемое состояние
+дочернего payment-диалога явно. После обычного «Закрыть» locator assertion ждёт
+удаления диалога, включая скрытые узлы, затем родитель закрывается обычным click.
+Для pending POST и upload явно передаётся `open`: проверяются видимость payment
+и наличие скрывающего родителя `aria-hidden="true"`, затем моделируется unmount.
+Обе ветки проверяют удаление родительского и дочернего диалогов из DOM.
+
+Причина прежнего timeout — разовый `isVisible()` во время exit transition MUI:
+к следующей проверке дочерний Dialog уже удалён, а ModalManager снял `aria-hidden`
+с родителя. Ожидание `true` после этого невыполнимо. Сохранённый trace независимого
+прогона подтверждает этот порядок. Production-код не меняется; assertions
+единственного POST/upload, исходного imageId, recovery и изоляции draft сохранены.
+Timeout, retries, skips и параллельность не меняются.
+
+20.10.2026 проверки выполнялись на свежем production standalone
+`Np-fP2AsQnRovkIzR9GVJ`. JSON-отчёты — `.cache/payment-dialog-sync/`.
+Во всех Chromium прогонах явно заданы `--workers=4 --retries=0`.
+
+| Прогон | Повтор | Passed / failed | Секунды |
+|---|---:|---:|---:|
+| Четыре recovery/draft сценария после закрытия (`closed-repeat-20.json`) | 20 | 80 / 0 | 301.705 |
+| Pending POST и unmount во время upload (`open-repeat-10.json`) | 10 | 20 / 0 | 67.498 |
+| Связанный набор этапа 6 + адресные F1/F2/F3 (`stage6-related-f1-f2-f3.json`) | 1 | 192 / 0 | 513.503 |
+
+Связанный набор включает `order-dispute-payment`, `order-payment`, `order-case-create`,
+`order-cases`, `order-images`, `order-details`, `order-cancel` (model/recovery и browser),
+`open-forms`, `backend-integration-contract-model`, `private-data`, а также пять F1/F3
+и четыре `admin-case-telegram-recovery`. Выбор файлов привязан к началу имени,
+чтобы `order-cases` не захватывал всю очередь `admin-order-cases` этапа 7.
+Все 29 dispute payment проверок и остальные места использования helper пройдены.
+
+Итого 292 успешные попытки Chromium, без failures/flaky/skips/retries и глобальных
+ошибок runner. Timeout создания page и прежний `aria-hidden` timeout не повторились.
+Также успешны 15 HTTP smoke, lint, ESLint изменённого spec, typecheck,
+architecture:check и production build. Self-review и diff-check пройдены;
+полный независимый VP не запускался и остаётся следующим отдельным шагом.
+
+При заданных `TEST_BASE_URL` и `PLAYWRIGHT_FIXTURE_API_URL` повторные проверки:
+
+```bash
+npx playwright test order-dispute-payment.spec --grep 'persists across close/remount|local draft survives' --repeat-each=20 --project=chromium --workers=4 --retries=0
+npx playwright test order-dispute-payment.spec --grep 'pending POST survives remount|unmount during upload preserves proof' --repeat-each=10 --project=chromium --workers=4 --retries=0
+```
+
+## Backend integration: этап 7
+
+`admin-order-cases-model.spec.ts` исполняет матрицу решений и реальные hooks с
+QueryClient: точные private API/AbortSignal, query encoding, запрет LEGACY,
+Telegram validation, sparse currency/CREATE, общий guard POST/PUT после remount,
+accepted/unknown/rejected, timeout/408/5xx, failed control GET и позднее подтверждение.
+Проверяются потеря ADMIN-доступа до записи, чужое серверное решение, ALREADY_RESOLVED
+с запаздывающим OPEN, отсутствие offline-очереди, refresh/смена аккаунта и поздний POST.
+В одном QueryClient с ненулевым staleTime проверяются обе очереди, admin/user order
+queries и case history: отмена позднего старого GET и отсутствие refetch чужих queries.
+Отдельные model/browser сценарии проверяют конкурентное изменение Telegram URL,
+явный повтор после смены baseline, обновление нетронутого поля из GET без потери
+dirty-ввода и отсутствие PUT уже сохранённой ссылки.
+
+`admin-order-cases.spec.ts` проходит все шесть исходов целиком: очередь → Drawer →
+форма → POST → подтверждение через GET → RESOLVED очередь → повторное открытие.
+Проверяются смешанные обычные/бот-заказы без запроса списка ботов, пагинация/пустая
+страница, обязательный комментарий, Telegram и продолжение рассмотрения,
+неизвестный вид/LEGACY/RESOLVED, N1 для решения и ссылки, concurrent resolve,
+сохранение ввода и единственного запроса после remount, ошибки очереди/деталей,
+недоступность до ADMIN/при смене роли, background access error/retry, keyboard,
+Drawer на 393/1280 px, dirty guard и отсутствие draft в браузерном storage/history.
+`admin-order-cases.mobile.spec.ts` на Pixel 5 проверяет touch/keyboard, сохранение
+ввода на 393/900, мобильное меню, полную цепочку спора и recovery payment appeal
+после lost POST/failed GET и пересоздания Drawer.
+Расширен существующий admin fixture; старые admin specs сохраняются.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npx playwright test admin open-forms order-cases order-dispute-payment order-payment private-data-model backend-integration-contract-model --project=chromium
+npx playwright test orders.mobile admin-order-cases.mobile --project=mobile-chromium
+```
+
+Браузерные проверки выполняются на свежей production standalone сборке.
+Изменяющие запросы подменены; реальный backend проверен только чтением OpenAPI.
+Полный e2e и серверная приёмка остаются этапу 12. AGENTS.md не меняется:
+общие правила проекта сохранены.
+
+16.10.2026 lint, typecheck, architecture:check, production build, HTTP smoke и
+self-review пройдены. Общая регрессия — 240 Chromium e2e/model; после исправления
+stale Telegram baseline финальный прогон — 73 Chromium на новой standalone сборке.
+Всего проверены 242 уникальных Chromium сценария (47 новых), 8 mobile Chromium
+(2 новых) и 15 HTTP smoke. Mobile Drawer дополнительно проверен по скриншоту.
+Ошибки тестовых предпосылок исправлены: тип fixture, точное float-сравнение ширины
+и попытка refetch по focus при отключённом refetchOnWindowFocus. Геометрия проверяется
+после анимации, для повторного GET используется reconnect с проверкой факта запроса.
+Финальные прогоны завершились без failures/skips/retries; реальная серверная
+авторизация и переходы этим не подтверждаются.
+
+## F1: изоляция сверки заказов
+
+`order-case-recovery.spec.ts` проверяет для покупателя и продавца полный переход:
+устойчивое расхождение заказа 1 → допустимый B1 запрос отмены заказа 2 → возврат
+к заблокированному заказу 1 и адресный retry. Отдельно проверяются поздняя сверка
+после смены заказа и logout/login другого аккаунта с тем же orderId.
+
+16.10.2026 пять новых браузерных сценариев F1 и существующие регрессии
+`order-cases` прошли на свежем production standalone runtime
+(`G4BWgHnaA4O8hkPqm-Bcx`). Также прошли 6 `orders.mobile` и 15 HTTP smoke;
+lint, typecheck, architecture:check и production build успешны.
+Промежуточный прогон выявил потерю адресного retry после закрытия деталей:
+предупреждение с orderId восстановлено, существующий тест прошёл без изменений.
+Финальные прогоны — без failures/skips/retries; self-review и diff-check пройдены.
+Все записи подменены; реальная серверная приёмка не заменяется этими проверками.
+
+## F3: детерминированная синхронизация регрессий F1
+
+В `order-case-recovery.spec.ts` начало задержанной сверки определяется сигналом
+перехватчика GET конкретной роли, включённого чтением `/order/1/cases`, и pending
+адресной кнопки сверки. Общий `ordersReads` не используется: он также учитывает
+чтения шапки и другой роли. Повторные GET нужной роли удерживаются тем же gate;
+snapshot снимается при начале запроса, а release ожидает завершения удержанных
+ответов. При смене аккаунта новые чтения проходят независимо от старого gate.
+
+Сценарии добавляют параллельные повторные GET обоих списков до сверки и во время
+ожидания, в разном порядке для покупателя и продавца. Проверки изоляции заказов,
+позднего ответа, B1-действия заказа 2 и сохранения ограничений заказа 1 сохранены.
+Production-код, общий fixture, настройки параллельности и timeout не изменяются.
+
+17.10.2026 проверка выполнена на свежем production standalone
+`zKDD6RQ5_-pFw5i5ivvs6`, Chromium, во всех прогонах `--workers=4 --retries=0`,
+без изменения assertions других specs. JSON-отчёты — в `.cache/f3-order-case-recovery/`.
+
+| Прогон | Повтор | Passed / failed | Секунды |
+|---|---:|---:|---:|
+| `purchase`, `late=true` (`targeted-20.json`) | 20 | 20 / 0 | 79.523 |
+| `sales`, `late=true` (`sales-targeted-20.json`) | 20 | 20 / 0 | 60.435 |
+| Все пять F1 (`f1-repeat-10.json`) | 10 | 50 / 0 | 150.264 |
+| Только F1/F2 и история обращений (`f1-f2.json`) | 1 | 80 / 0 | 165.182 |
+| F1/F2 + `order-dispute-payment` (`related.json`) | 1 | 106 / 3 | 224.363 |
+| Только recovery после закрытия payment и local draft (`aria-close-isolated-5.json`) | 5 | 14 / 6 | 62.953 |
+| Активный payment: pending POST и unmount во время upload (`aria-open-isolated-10.json`) | 10 | 20 / 0 | 54.523 |
+
+Суммарно 319 попыток, без retries/skips и глобальных ошибок runner. Timeout
+создания page не воспроизвёлся; связь с F3 не подтверждена. Lint, отдельный ESLint
+изменённого spec, typecheck, architecture:check и production build успешны.
+Self-review и diff-check пройдены; изменения ограничены spec F1 и документацией.
+
+В расширенном прогоне три отказа относятся к неизменённому
+`order-dispute-payment.spec.ts:16`, не к F1/F2. Изолированный запуск того же spec
+без загрузки F1 повторяет `aria-hidden` timeout: recovery lost with/without proof,
+success GET failure и local draft не всегда дожидаются завершения закрытия payment
+перед `unmount`. Trace показывает click «Закрыть», затем `isVisible() === true`
+на уходящем диалоге; к проверке родителя его `aria-hidden` уже снят. Это отдельная
+гонка helper, а не ошибка production-кода и не результат изменения F3.
+В рамках F3 spec и его assertions оставлены без изменений; обнаруженная гонка
+потребовала отдельного исправления —
+[синхронизация payment](#payment-синхронизация-закрытия-диалогов-этапа-6).
+
+## F2: восстановление ADMIN-рассмотрения
+
+`admin-case-telegram-recovery.spec.ts` проверяет PUT A → failed GET → OPEN/B →
+явное продолжение → resolve без повторного PUT A, включая неизвестный исход PUT,
+закрытие/пересоздание Drawer и выбор другого обращения. Дополнительно проверяются
+pending PUT при отзыве/возврате ADMIN, поздний старый GET, утрата доступа перед
+resolve и уже RESOLVED обращение. Model-тесты сохраняют отдельный guard PUT,
+не приравнивают OPEN/B к отказу записи и проверяют поздний PUT после смены scope.
+
+16.10.2026 четыре новых браузерных и три новых model-сценария F2, существующие
+регрессии `admin-order-cases`, 2 административных mobile и 15 HTTP smoke прошли
+на свежем production standalone runtime (`G4BWgHnaA4O8hkPqm-Bcx`). Lint, typecheck,
+architecture:check и production build успешны; self-review и diff-check пройдены.
+Финальные прогоны — без failures/skips/retries; существующие assertions не ослаблены.
+Все записи подменены. Реальный backend проверен чтением актуальной OpenAPI;
+серверные переходы и конкурентные записи остаются отдельной приёмкой.
+
+## VP этапов 8–11: F2 — чтение после временной границы
+
+`giveaway-boundary.spec.ts` управляет часами и явными сигналами начала/освобождения
+конкретного GET. Для главной и деталей проверяются start/end во время focus GET,
+поздний ответ после свежего чтения, первый GET через границу, следующий приз на
+главной, 503 и явный retry. Assertions включают точное число GET, отсутствие старого
+snapshot и недоступность участия при окончании/ошибке; секундные тики не дают polling.
+`giveaway-boundary-model.spec.ts` проверяет последовательные start/end, ошибку старого
+GET, отсутствие retry свежей ошибки, AbortSignal и ограничение дополнительных чтений.
+Протокол — в [api-and-auth.md](./api-and-auth.md#публичные-розыгрыши-этап-8).
+
+```bash
+npx playwright test giveaway-boundary --project=chromium --repeat-each=5 --workers=4 --retries=0
+```
+
+21.10.2026 на свежем standalone `orwr36EM6Yw6SF4wUh6_g` прошли **80 повторов F2**:
+10 browser + 6 model × 5, в общем прогоне **100 passed**, 201,78 с,
+workers=4/retries=0 (`.cache/vp8-11-fixes/target-repeat.json`). Связанные регрессии —
+**255 passed** (`related.json`), HTTP smoke — **15 passed**. Failed/flaky/skipped/errors
+нет; lint/typecheck/architecture:check/build и self-review успешны. В первом новом
+тесте retry locator уточнён до кнопки внутри error alert; assertions не ослаблялись.
+Ожидания используют сигналы конкретного запроса и управляемые часы; произвольные
+задержки, test retries/skips и изменения timeout/параллельности не добавлялись.
+
+## Backend integration: этап 8
+
+`giveaway-model.spec.ts` проверяет календарные даты и timezone, точные границы
+startAt/endAt, sparse DTO, fail-closed статусы, public GET/AbortSignal, отсутствие
+запроса при invalid ID, чужой/некорректный ответ и преобразование только giveaway
+404 в null. Telegram parser общий с обращениями; проверены схемы, хосты и credentials.
+
+`giveaway.spec.ts` проходит главную → `/giveaways/{productId}` и публичное чтение
+без Authorization, scheduled/start/end, следующий `/active`, stale 200 после end,
+отключение и первичный 404, focus/возврат из фона, error/retry, metadata 404/503,
+пустые изображения, длинные тексты на 393/1280 px, безопасные Telegram-ссылки,
+invalid routes и поздний GET после клиентской навигации. GIVEAWAY из каталога
+и собственных товаров имеет отдельную подпись/ссылку без покупки/корзины.
+Обычные покупка, предзаказ, внешние товары и каталог проверяются регрессиями.
+`catalog-filter-empty.spec.ts` использует серверный fixture розыгрыша вместо mock UI.
+
+Управляемые часы устанавливаются до загрузки, останавливаются после подтверждения
+гидратации и до первой границы. При переходе тест ждёт конкретный GET, затем
+выполняет очередь setTimeout(0) TanStack Query через `clock.runFor(0)`.
+Реальных задержек, повышения timeout, retries или skips для этого нет.
+Проверки количества GET доказывают отсутствие сетевого polling между границами.
+SSR fixture намеренно не поддерживает `/products/find`: гостевой сценарий успешного
+каталога явно выполняет его штатный retry, не меняя SSR-политику приложения.
+
+```bash
+npm run lint
+npm run typecheck
+npm run architecture:check
+npm run build
+npx playwright test 'giveaway(-model)?\.spec\.ts$' --project=chromium --workers=4 --retries=0
+npx playwright test giveaway.spec --grep 'crosses start|home drops|stale successful|background tab' --repeat-each=5 --project=chromium --workers=4 --retries=0
+```
+
+Прогоны выполняются на свежем production standalone runtime с заданными
+`TEST_BASE_URL` и `PLAYWRIGHT_FIXTURE_API_URL`; API подменён. Реальная OpenAPI
+прочитана 20.10.2026, розыгрыши и другие записи на backend не создавались.
+HTTP smoke дополняет проверки; полный e2e не запускался.
+
+20.10.2026 финальные проверки выполнены на standalone
+`fw21xZM7WWV6Yfd4Bl3AX`, Chromium, `--workers=4 --retries=0`.
+JSON-отчёты — `.cache/stage8/`:
+
+| Прогон | Passed / failed | Секунды |
+|---|---:|---:|
+| 27 новых browser + 5 model (`giveaway-final.json`) | 32 / 0 | 87.867 |
+| Каталог, покупка, DTO/формы, изображения, routes, Telegram (`regressions.json`) | 67 / 0 | 114.954 |
+| Шесть временных сценариев ×5 (`time-repeat-5.json`) | 30 / 0 | 52.515 |
+
+Регрессия включает catalog-filter-empty, product-search-session, own-product-purchase,
+external-purchase, user-products-stock, product-form-mapping, product-contract-v129,
+core-images, order-cases-model, backend-integration-contract-model,
+cart-card-work-model и route-boundaries. Во всех финальных отчётах отсутствуют
+failures/flaky/skips/retries и глобальные ошибки runner. Lint, отдельный ESLint
+изменённых specs/helpers, typecheck, architecture:check, production build и
+15 HTTP smoke успешны. Скриншоты 393/1280 px проверены, self-review и diff-check пройдены.
+
+Первые прогоны выявили неверную синхронизацию новых clock-тестов, предпосылку
+успешного SSR fixture и selectors alt. Они исправлены без ослабления проверок.
+Также исправлены пустая галерея и обрезание metadata feedback на узкой карточке;
+их регрессии включены в финальные 32 теста. Независимый VP и реальная серверная
+приёмка не подменяются локальным базовым VP.
+
 ## Локальные товары бота
 
 `scripts/seed-agent-products.mjs` создаёт два товара с префиксом `[ТЕСТ]`
@@ -66,7 +941,9 @@ Stage 25: `npx playwright test image-sizing --project=chromium` и
 границах auto-fill и после max-width. Для настоящего Next image optimizer локальный
 SSR fixture перед запуском приложения создаёт временный
 `public/__playwright-image-sizing.png` (1200×1200); файл игнорируется Git и удаляется
-при штатном shutdown fixture. При внешнем `TEST_BASE_URL` нужен этот же fixture asset.
+при штатном shutdown fixture. Standalone runner ждёт `/health` fixture до копирования
+`public`; image-sizing отдельно проверяет HTTP 200, PNG и непустое тело исходника.
+При внешнем `TEST_BASE_URL` нужен этот же fixture asset.
 Логотип сравнивается с исходным SVG при 44/88 px, сохраняются PNG и JSON attachments;
 mobile rendering проверяет cold loading, CLS/hydration, art direction и SSR без JS.
 Замеры до/после и ограничения описаны в [отчёте B34](./frontend-audit/25-image-sizing.md).
@@ -272,6 +1149,29 @@ npm run test:standalone
 `test:standalone` копирует `public` и `.next/static` в standalone runtime,
 поднимает локальный SSR API fixture и сервер приложения, запускает smoke и
 оба Playwright-проекта, затем останавливает оба процесса.
+Fixture должен стать готов до запуска standalone: иначе в чистом checkout
+копия `public` может не содержать сгенерированный raster.
+
+### CI sharding
+
+Frontend CI выполняет audit, typecheck, lint, architecture, production build и
+Docker build в `checks`. Production standalone, static и public передаются одним
+tar-артефактом четырём E2E jobs; приложение повторно не собирается.
+Каждый job выполняет `npm run test:standalone -- --shard=N/4`: smoke и свою часть
+обоих Playwright-проектов с прежними workers/retries. Runner принимает только
+необязательный `--shard=current/total`; без него выполняется полный набор.
+Jobs изолированы, поэтому порты 3010/3011 не конфликтуют. `fail-fast: false`
+позволяет закончить остальные шарды при ошибке одного; итоговый gate
+`Typecheck, lint, build` успешен только при успехе checks и всей матрицы.
+Он сохраняет имя прежнего общего check для совместимости с защитой ветки.
+Отчёты `playwright-report-N` и `playwright-test-results-N` хранятся 7 дней,
+архив сборки — 1 день. После изменения состава тестов сверять `--list --reporter=json`
+без shard и с каждым `--shard=N/4`: объединение ID/project должно совпадать
+с полным списком без повторов. Mobile `fullyParallel: false` сохраняется.
+
+`controls-focus` ждёт защищённую форму перед измерением контраста:
+инициализация private scope может
+заменить ранний DOM. Проверки контраста, focus, hover и touch target сохранены.
 
 ## Smoke и E2E
 
@@ -567,7 +1467,7 @@ Playwright с mock API должен проверять:
 - ошибки `403`, `409`, `500` и network failure на действиях этапов 2–5 без закрытия диалога и потери введённых данных;
 - перечитывание заказов после сетевой ошибки с неизвестным результатом без имитации успешного перехода;
 - повтор оплаты с тем же `imageId` после отклонённого status mutation;
-- удаление только заведомо непривязанного upload при замене файла или закрытии, а при timeout — отсутствие удаления до подтверждающего refetch;
+- отсутствие DELETE ORDER при замене/закрытии/ошибке; замена и удаление допустимы только для локального файла до upload, а полученный ID сохраняется для повтора;
 - блокировку status request для невалидного tracking URL.
 
 Для изменений order flow выполняются:
@@ -625,7 +1525,7 @@ npm run test:e2e
   product detail проверяется локальным fixture; real-backend сценарий не
   проверяется;
 - coverage threshold, Firefox/WebKit и automated accessibility gate отсутствуют;
-- CI публикует `playwright-report` и `test-results` с retention `7` дней.
+- CI публикует отдельные отчёты и test-results каждого shard с retention `7` дней.
 
 Lab CLS не заменяет production field p75. Набор хорошо ловит frontend
 regressions, но не является production acceptance.
@@ -723,6 +1623,22 @@ cart-quantity-store-model checkout-stock private-data --project=chromium`;
 ## Documentation-only
 
 Если менялись только Markdown-файлы, достаточно проверить diff, ссылки и соответствие коду. Полный test suite не требуется.
+
+## Локальные артефакты и очистка
+
+`.next/` и `tsconfig.tsbuildinfo` пересоздаются инструментами; очищать их можно
+при остановленных dev/build/test-процессах. После удаления `.next/` перед
+production-like запуском требуется `npm run build`.
+
+`playwright-report/` и `test-results/` содержат результаты последнего прогона.
+Перед очисткой сохранять нужные отчёты. При уборке 29.10.2026 эти каталоги
+и `debug.log` перенесены без изменения содержимого в родительскую папку
+`../.local/artifacts/frontend-cleanup-2026-10-29/`, вне frontend-репозитория.
+
+`.cache/` содержит в том числе manifests и свидетельства проверок, на которые
+ссылаются документы. Не удалять её целиком как обычный кеш; сначала сверять
+ссылки и сохранять необходимые материалы. Локальные архивы не входят в clone
+репозитория и сами по себе не подтверждают прохождение нового прогона.
 
 ## Владение приватными данными
 

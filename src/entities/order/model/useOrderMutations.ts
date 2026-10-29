@@ -10,6 +10,7 @@ const invalidateOrdersLists = (
   scope: ReturnType<typeof usePrivateScope>,
 ): Promise<void> =>
   Promise.all([
+    queryClient.invalidateQueries({ queryKey: scope.key(orderQueryKeys.caseHistories()) }),
     queryClient.invalidateQueries({
       queryKey: scope.key(orderQueryKeys.sellerOrders()),
     }),
@@ -164,7 +165,7 @@ export const useCancelOrder = () => {
   const scope = usePrivateScope();
 
   return usePrivateMutation({
-    mutationFn: (orderData: OrderCancel) => orderApi.cancelOrder(orderData),
+    mutationFn: ({ orderId, ...body }: OrderCancel & { orderId: number }) => orderApi.cancelOrder(orderId, body),
     onSuccess: () => invalidateOrdersLists(queryClient, scope),
     onError: logMutationError("Ошибка отмены заказа:"),
   });

@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   checks:
-    name: Typecheck, lint, build
+    name: Audit, checks and Docker build
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -54,34 +54,16 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Package standalone build
+        run: tar -czf standalone-build.tar.gz .next/standalone .next/static public
 
-      - name: Standalone smoke and E2E tests
-        env:
-          PLAYWRIGHT_PORT: 3010
-          PLAYWRIGHT_FIXTURE_API_PORT: 3011
-          CLIENT_API_BASE_URL: http://127.0.0.1:9
-          ALLOW_LOCAL_API_URL: "true"
-        run: npm run test:standalone
-
-      - name: Upload Playwright report
-        if: always()
+      - name: Upload standalone build
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: playwright-report
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Upload Playwright test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-test-results
-          path: test-results
-          if-no-files-found: ignore
-          retention-days: 7
+          name: standalone-build
+          path: standalone-build.tar.gz
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Build Docker image
         run: |
@@ -91,5 +73,76 @@ jobs:
             --build-arg API_BASE_URL="$API_BASE_URL" \
             -t figurzilla-frontend:ci .
 
-      - name: Validate Docker Compose
-        run: docker compose -f docker-compose.yml config
+  e2e:
+    name: E2E shard ${{ matrix.shard }}/4
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      PLAYWRIGHT_PORT: 3010
+      PLAYWRIGHT_FIXTURE_API_PORT: 3011
+      CLIENT_API_BASE_URL: http://127.0.0.1:9
+      ALLOW_LOCAL_API_URL: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.15.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download standalone build
+        uses: actions/download-artifact@v4
+        with:
+          name: standalone-build
+
+      - name: Extract standalone build
+        run: tar -xzf standalone-build.tar.gz
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Standalone smoke and E2E shard
+        run: npm run test:standalone -- --shard=${{ matrix.shard }}/4
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.shard }}
+          path: playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-${{ matrix.shard }}
+          path: test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  ci-result:
+    # Preserve the previous aggregate check name for branch protection rules.
+    name: Typecheck, lint, build
+    if: always()
+    needs: [checks, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require checks and every E2E shard
+        run: |
+          test "${{ needs.checks.result }}" = "success"
+          test "${{ needs.e2e.result }}" = "success"

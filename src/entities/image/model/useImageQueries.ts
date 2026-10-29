@@ -1,10 +1,27 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { usePrivateScope } from "@/shared/lib/query";
 import { imageApi } from "../api/imageApi";
 import type { ImageMetadata, ImageResponse } from "./types";
 
 const IMAGE_QUERY_KEY = "images";
 const IMAGE_METADATA_QUERY_KEY = "imageMetadata";
+
+export const useOrderImagesQuery = (orderId: number, imageIds: readonly number[]) => {
+  const scope = usePrivateScope();
+  const ids = [...new Set(imageIds.filter(id => Number.isSafeInteger(id) && id > 0))].sort((a, b) => a - b);
+  return useQuery({
+    queryKey: scope.key(["orderImages", orderId, ...ids]),
+    queryFn: ({ signal }) => {
+      if (!scope.isCurrent() || !Number.isSafeInteger(orderId) || orderId <= 0) throw new Error("Order images are unavailable outside the current session");
+      return imageApi.getOrderImages(ids, signal);
+    },
+    enabled: scope.id !== null && Number.isSafeInteger(orderId) && orderId > 0 && ids.length > 0,
+    retry: false,
+    staleTime: 0,
+    gcTime: 0,
+  });
+};
 
 const normalizeImageIds = (
   imageIds: number | number[] | null | undefined,

@@ -1,5 +1,7 @@
 import type { Page } from "@playwright/test";
+import type { OrderCaseDetail, OrderCaseKind, OrderStatus } from "@/entities/order";
 import { categories, fulfillJson, image, orderFixture, png } from "./mobileAccount";
+import { backendContractRejection, orderCaseDetailFixture } from "./backendContracts";
 
 export const adminProductFixture = (id = 101, participantId = 2) => ({
   id, participantId, name: `Фигурка дракона ${id}`, description: "Описание товара", price: 4000,
@@ -11,6 +13,10 @@ export const adminOrderFixture = (id = 201, status = "BOOKED", prepayment = 2000
   images: [] as number[],
   product: { ...orderFixture(id, status, 1).product, name: "Фигурка для заказа", sellerId: 2, sellerLogin: "bot-two", availability: "EXTERNAL_PRODUCT", price: 4000, count: 2 },
 });
+export const adminCaseFixture = (id = 301, kind: OrderCaseKind = "DISPUTE", previousOrderStatus: OrderStatus = "AWAITING_PAYMENT", orderId = 201): OrderCaseDetail => orderCaseDetailFixture({
+  orderStatus: kind === "CANCELLATION_REQUEST" ? previousOrderStatus : "DISPUTED", buyerId: 10, sellerId: 2, productId: 101,
+  count: 2, totalPrice: 6000, prepaymentAmount: 2000, currency: "USD", paymentProofImageId: 77, orderImages: [77, 78], caseImages: [79],
+}, { id, orderId, version: 1, kind, state: "OPEN", previousOrderStatus, openedBy: 10, openingComment: `Причина обращения ${id}`, createdAt: "2026-10-01T10:00:00Z" });
 export async function setupAdmin(page: Page, baseURL: string | undefined, role = "ADMIN") {
   if (!baseURL) throw new Error("baseURL required");
   const state = {
@@ -23,6 +29,9 @@ export async function setupAdmin(page: Page, baseURL: string | undefined, role =
     profile: { id: 2, login: "bot-two", status: "ACTIVE", fullName: "Продавец бота", phoneNumber: "", imageId: null, deadlineSending: 1, deadlinePayment: 2 },
     writes: [] as { path: string; method: string; body: Record<string, unknown> | null; search: string }[],
     reads: [] as string[], activeLists: 0, maxLists: 0, listDelay: 0, failedAgent: 0, categories: [1], imageIds: [77], orderReadStatus: 200, failOrderReadAfterAction: false,
+    cases: [adminCaseFixture()], caseReadStatus: 200, caseListStatus: 200, caseWriteStatus: 200, caseWriteCode: "ORDER_CASE_INVALID_TRANSITION",
+    caseAbort: false, caseApplyBeforeAbort: false, caseRecord: true, failCaseReadAfterWrite: false,
+    caseGate: Promise.resolve(), caseReadGate: Promise.resolve(), caseCompeting: null as OrderCaseDetail | null,
   };
   await page.context().addCookies([{ name: "access_token", value: "admin-test-session", url: baseURL }]);
   await page.route("**/api/config", (route) => fulfillJson(route, { apiUrl: "http://127.0.0.1:9" }));
@@ -32,8 +41,42 @@ export async function setupAdmin(page: Page, baseURL: string | undefined, role =
     const path = url.pathname;
     const method = route.request().method();
     if (method === "OPTIONS") return fulfillJson(route, null);
+    const privateIds = state.cases.flatMap(detail => [...(detail.orderImages ?? []), ...(detail.caseImages ?? [])]);
+    const rejected = backendContractRejection(method, url, route.request().headers().authorization, privateIds);
+    if (rejected) return fulfillJson(route, rejected.body, rejected.status);
     if (method === "GET") state.reads.push(path + url.search);
     if (path === "/auth/profile") return fulfillJson(route, { id: 1, role: state.role, login: "administrator", imageId: null, exp: 0, type: "access" }, state.profileStatus);
+    if (path === "/admin/actions/order-cases") {
+      const offset = Number(url.searchParams.get("offset")); const limit = Number(url.searchParams.get("limit"));
+      const cases = state.cases.filter(detail => detail.orderCase?.state === url.searchParams.get("state")).slice(offset, offset + limit);
+      return fulfillJson(route, state.caseListStatus === 200 ? cases.map(detail => ({ caseId: detail.orderCase?.id, orderId: detail.orderCase?.orderId,
+        kind: detail.orderCase?.kind, state: detail.orderCase?.state, openingComment: detail.orderCase?.openingComment, openedBy: detail.orderCase?.openedBy, createdAt: detail.orderCase?.createdAt, orderStatus: detail.orderStatus,
+      })) : { message: "Очередь недоступна" }, state.caseListStatus);
+    }
+    const caseMatch = path.match(/^\/admin\/actions\/order-cases\/(\d+)(?:\/(resolve|telegram-url))?$/);
+    if (caseMatch) {
+      const item = state.cases.find(detail => detail.orderCase?.id === Number(caseMatch[1]));
+      if (method === "GET") {
+        await state.caseReadGate;
+        return fulfillJson(route, state.caseReadStatus === 200 ? item : { message: "Детали недоступны" }, item ? state.caseReadStatus : 404);
+      }
+      state.writes.push({ path, method, body: route.request().postData() ? route.request().postDataJSON() as Record<string, unknown> : null, search: url.search });
+      await state.caseGate;
+      if (item && state.caseCompeting) Object.assign(item, state.caseCompeting);
+      if (item?.orderCase && state.caseRecord && (state.caseWriteStatus === 200 && !state.caseAbort || state.caseApplyBeforeAbort)) {
+        if (caseMatch[2] === "telegram-url") item.orderCase.telegramUrl = url.searchParams.get("url");
+        else {
+          const outcome = url.searchParams.get("outcome") as "BUYER" | "SELLER" | "CANCELLED" | "REJECTED";
+          Object.assign(item.orderCase, { state: "RESOLVED", outcome, resolutionComment: url.searchParams.get("comment"), resolvedBy: 1, resolvedAt: "2026-10-16T10:00:00Z" });
+          item.orderStatus = item.orderCase.kind === "PAYMENT_APPEAL" || outcome === "CANCELLED" ? "CANCELLED" : outcome === "REJECTED" ? item.orderStatus : outcome === "BUYER" ? "FAILED" : "COMPLETED";
+          const order = state.orders.find(order => order.orderId === item.orderCase?.orderId); if (order) order.actualStatus = item.orderStatus!;
+        }
+        item.orderCase.version = (item.orderCase.version ?? 0) + 1;
+      }
+      if (state.failCaseReadAfterWrite) state.caseReadStatus = 500;
+      if (state.caseAbort) return route.abort("connectionfailed");
+      return fulfillJson(route, state.caseWriteStatus === 200 ? item?.orderCase?.id : { code: state.caseWriteCode, message: "Отказ сервера" }, state.caseWriteStatus);
+    }
     if (path === "/categories") return fulfillJson(route, categories);
     if (path === "/images/metadata") return fulfillJson(route, [image]);
     if (path === "/images") {
@@ -51,7 +94,7 @@ export async function setupAdmin(page: Page, baseURL: string | undefined, role =
       if (/\/orders\/\d+\//.test(path)) {
         const id = Number(path.split("/").at(-2)); const action = path.split("/").pop();
         const order = state.orders.find((item) => item.orderId === id);
-        if (order && (state.actionStatus === 200 || state.applyBeforeAbort)) order.actualStatus = action === "CONFIRM" ? (order.prepaymentAmount ? "AWAITING_PREPAYMENT" : "AWAITING_PAYMENT") : action === "CONFIRM_PREPAYMENT" ? "AWAITING_PAYMENT" : action === "SHIP" ? "ON_THE_WAY" : "FAILED";
+        if (order && (state.actionStatus === 200 || state.applyBeforeAbort)) order.actualStatus = action === "CONFIRM" ? (order.prepaymentAmount ? "AWAITING_PREPAYMENT" : "AWAITING_PAYMENT") : action === "CONFIRM_PREPAYMENT" ? "AWAITING_PAYMENT" : action === "SHIP" ? "ON_THE_WAY" : "CANCELLED";
         if (state.actionAbort) return route.abort("connectionfailed");
         if (state.failOrderReadAfterAction) state.orderReadStatus = 500;
         return fulfillJson(route, state.actionStatus === 200 ? id : { code: "ACTION_REJECTED", message: "Действие отклонено" }, state.actionStatus);
@@ -60,6 +103,8 @@ export async function setupAdmin(page: Page, baseURL: string | undefined, role =
         if (state.saveStatus === 200) {
           const product = state.products.find((item) => item.id === Number(path.split("/").pop()));
           if (product) Object.assign(product, body);
+          if (Array.isArray(body?.categoryIds)) state.categories = [...body.categoryIds];
+          if (Array.isArray(body?.imageIds)) state.imageIds = [...body.imageIds];
         }
         return fulfillJson(route, state.saveStatus === 200 ? null : { message: "Сохранение отклонено" }, state.saveStatus);
       }

@@ -1,9 +1,10 @@
 import { createContext, useContext } from "react";
 
-export const OrderActionsContext = createContext<{
+interface OrderActionsRecovery {
   actionsAvailable: boolean;
   retry?: () => void;
   retryPending: boolean;
-}>({ actionsAvailable: true, retryPending: false });
-export const useOrderActionsRecovery = () => useContext(OrderActionsContext);
-export const useOrderActionsAvailable = () => useOrderActionsRecovery().actionsAvailable;
+}
+export const OrderActionsContext = createContext<(orderId: number) => OrderActionsRecovery>(() => ({ actionsAvailable: true, retryPending: false }));
+export const useOrderActionsRecovery = (orderId: number) => useContext(OrderActionsContext)(orderId);
+export const useOrderActionsAvailable = (orderId: number) => useOrderActionsRecovery(orderId).actionsAvailable;

@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const isDevelopment = process.env.NODE_ENV === "development";
+// Явный local-production opt-in используется также для MinIO на DEV-стенде.
+const allowLocalImages = isDevelopment || process.env.ALLOW_LOCAL_API_URL === "true";
 const imageSources = [
   "'self'",
   "data:",
@@ -7,7 +9,7 @@ const imageSources = [
   "https://mc.yandex.ru",
   "https://cdn.figurzilla.ru",
   "http://109.173.73.69:9000",
-  ...(isDevelopment ? ["http://localhost:9000", "http://127.0.0.1:9000"] : []),
+  ...(allowLocalImages ? ["http://localhost:9000", "http://127.0.0.1:9000"] : []),
 ];
 
 const cspDirectives = [
@@ -75,7 +77,7 @@ const nextConfig = {
         hostname: "109.173.73.69",
         port: "9000",
       },
-      ...(isDevelopment
+      ...(allowLocalImages
         ? [
             {
               protocol: "http",
