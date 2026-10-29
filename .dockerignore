@@ -21,6 +21,7 @@ playwright.config.ts
 coverage
 playwright-report
 test-results
+public/__playwright-image-sizing.png
 
 # Исключаем локальные настройки и файлы конфигурации редакторов
 .env*
@@ -31,6 +32,15 @@ test-results
 .eslintcache
 .cache
 .turbo
+.local
+.codex
+.agents
+.npmrc
+**/.npmrc
+*.pem
+*.key
+keys
+secrets
 *.log
 npm-debug.log*
 yarn-debug.log*

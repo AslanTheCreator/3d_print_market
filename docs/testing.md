@@ -1173,6 +1173,16 @@ Jobs изолированы, поэтому порты 3010/3011 не конфл
 инициализация private scope может
 заменить ранний DOM. Проверки контраста, focus, hover и touch target сохранены.
 
+### Проверки тестового релиза
+
+Для текущего стенда без реальных пользователей достаточно успешного полного
+GitHub CI для проверяемой ревизии и smoke самого Docker-образа. Повторять весь
+локальный E2E-набор после успешного CI без изменений кода не требуется.
+После merge проверяется CI финального SHA; Git-тег и образ привязываются к нему.
+Real-backend acceptance и расширенная browser-матрица ниже относятся к будущему
+production; открытые backend-дефекты сохраняют свои FAIL/BLOCKED, но автоматически
+не блокируют тестовый frontend-релиз. Процедура — в [deployment.md](./deployment.md).
+
 ## Smoke и E2E
 
 Smoke находятся в `tests/smoke`, e2e — в `tests/e2e`.
@@ -1532,7 +1542,7 @@ regressions, но не является production acceptance.
 
 ## Release acceptance на staging
 
-Перед публичным MVP один release candidate должен пройти на staging с совместимым backend и изолированными тестовыми данными:
+Перед полноценным production с реальными пользователями один release candidate должен пройти на staging с совместимым backend и изолированными тестовыми данными:
 
 1. register с юридическим уведомлением и ссылками, verify, login, refresh, logout и password reset;
 2. seller settings с success, empty и каждой ошибкой загрузки;
