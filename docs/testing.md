@@ -941,7 +941,9 @@ Stage 25: `npx playwright test image-sizing --project=chromium` и
 границах auto-fill и после max-width. Для настоящего Next image optimizer локальный
 SSR fixture перед запуском приложения создаёт временный
 `public/__playwright-image-sizing.png` (1200×1200); файл игнорируется Git и удаляется
-при штатном shutdown fixture. При внешнем `TEST_BASE_URL` нужен этот же fixture asset.
+при штатном shutdown fixture. Standalone runner ждёт `/health` fixture до копирования
+`public`; image-sizing отдельно проверяет HTTP 200, PNG и непустое тело исходника.
+При внешнем `TEST_BASE_URL` нужен этот же fixture asset.
 Логотип сравнивается с исходным SVG при 44/88 px, сохраняются PNG и JSON attachments;
 mobile rendering проверяет cold loading, CLS/hydration, art direction и SSR без JS.
 Замеры до/после и ограничения описаны в [отчёте B34](./frontend-audit/25-image-sizing.md).
@@ -1147,6 +1149,29 @@ npm run test:standalone
 `test:standalone` копирует `public` и `.next/static` в standalone runtime,
 поднимает локальный SSR API fixture и сервер приложения, запускает smoke и
 оба Playwright-проекта, затем останавливает оба процесса.
+Fixture должен стать готов до запуска standalone: иначе в чистом checkout
+копия `public` может не содержать сгенерированный raster.
+
+### CI sharding
+
+Frontend CI выполняет audit, typecheck, lint, architecture, production build и
+Docker build в `checks`. Production standalone, static и public передаются одним
+tar-артефактом четырём E2E jobs; приложение повторно не собирается.
+Каждый job выполняет `npm run test:standalone -- --shard=N/4`: smoke и свою часть
+обоих Playwright-проектов с прежними workers/retries. Runner принимает только
+необязательный `--shard=current/total`; без него выполняется полный набор.
+Jobs изолированы, поэтому порты 3010/3011 не конфликтуют. `fail-fast: false`
+позволяет закончить остальные шарды при ошибке одного; итоговый gate
+`Typecheck, lint, build` успешен только при успехе checks и всей матрицы.
+Он сохраняет имя прежнего общего check для совместимости с защитой ветки.
+Отчёты `playwright-report-N` и `playwright-test-results-N` хранятся 7 дней,
+архив сборки — 1 день. После изменения состава тестов сверять `--list --reporter=json`
+без shard и с каждым `--shard=N/4`: объединение ID/project должно совпадать
+с полным списком без повторов. Mobile `fullyParallel: false` сохраняется.
+
+`controls-focus` ждёт защищённую форму перед измерением контраста:
+инициализация private scope может
+заменить ранний DOM. Проверки контраста, focus, hover и touch target сохранены.
 
 ## Smoke и E2E
 
@@ -1500,7 +1525,7 @@ npm run test:e2e
   product detail проверяется локальным fixture; real-backend сценарий не
   проверяется;
 - coverage threshold, Firefox/WebKit и automated accessibility gate отсутствуют;
-- CI публикует `playwright-report` и `test-results` с retention `7` дней.
+- CI публикует отдельные отчёты и test-results каждого shard с retention `7` дней.
 
 Lab CLS не заменяет production field p75. Набор хорошо ловит frontend
 regressions, но не является production acceptance.

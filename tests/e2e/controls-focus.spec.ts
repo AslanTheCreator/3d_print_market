@@ -195,6 +195,9 @@ test("account menu icon has contrast and a 44px target in normal, focus and hove
   await page.goto("/dashboard/security");
   const menu = page.getByRole("button", { name: "Открыть меню разделов профиля", exact: true });
   await expect(menu).toBeVisible();
+  // The early header is replaced when auth initializes the private scope.
+  // Measure the live menu only after protected content has mounted.
+  await expect(page.getByLabel("Текущий пароль", { exact: true })).toBeVisible();
   for (const state of ["normal", "focus", "hover"]) {
     if (state === "focus") {
       await page.keyboard.press("Tab");
