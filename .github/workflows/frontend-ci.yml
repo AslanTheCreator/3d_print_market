@@ -68,6 +68,8 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
+            --build-arg APP_VERSION="$(node -p "require('./package.json').version")" \
+            --build-arg VCS_REF="$GITHUB_SHA" \
             --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
             --build-arg CLIENT_API_BASE_URL="$CLIENT_API_BASE_URL" \
             --build-arg API_BASE_URL="$API_BASE_URL" \
