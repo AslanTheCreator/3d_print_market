@@ -100,10 +100,12 @@ for (const delayed of [false, true]) test(`old create ${delayed ? "success" : "r
   await setupMobileAccount(page, baseURL);
   await seed(page);
   const clockTime = new Date("2026-10-06T12:00:00Z");
+  await page.clock.install({ time: clockTime });
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
   let writes = 0;
-  await page.route("**/products", async route => {
+  const createUrl = "http://127.0.0.1:9/products";
+  await page.route(createUrl, async route => {
     if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
     writes++;
     if (delayed) await gate;
@@ -112,10 +114,11 @@ for (const delayed of [false, true]) test(`old create ${delayed ? "success" : "r
   await page.goto("/dashboard/products/new");
   await page.setViewportSize({ width: 1376, height: 900 });
   await expect(page.getByRole("button", { name: "Опубликовать товар", exact: true })).toBeEnabled();
-  await page.clock.install({ time: clockTime });
-  await page.clock.pauseAt(clockTime);
-  const response = page.waitForResponse(response => response.request().method() === "POST" && new URL(response.url()).pathname === "/products");
+  await page.clock.pauseAt(new Date(clockTime.getTime() + 60_000));
+  const document = await page.evaluateHandle(() => window.document);
+  const request = page.waitForRequest(request => request.method() === "POST" && request.url() === createUrl);
   await page.getByRole("button", { name: "Опубликовать товар", exact: true }).click();
+  const submitted = await request;
   await expect.poll(() => writes).toBe(1);
   if (!delayed) await expect(page.getByText("Товар создан. Переходим к списку товаров.")).toBeVisible();
   try {
@@ -123,17 +126,27 @@ for (const delayed of [false, true]) test(`old create ${delayed ? "success" : "r
     await expect(page).toHaveURL(/\/$/);
     await page.clock.resume();
     await page.getByRole("link", { name: "Профиль", exact: true }).first().click();
-    await page.getByRole("link", { name: "Мои товары", exact: true }).first().click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByRole("heading", { name: "Обзор", exact: true })).toBeVisible();
+    await page.locator("main").getByRole("link", { name: "Мои товары", exact: true }).click();
+    await expect(page).toHaveURL(/\/dashboard\/products$/);
+    await expect(page.getByRole("heading", { name: "Мои товары", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Создать товар", exact: true }).first().click();
     const name = page.getByRole("textbox", { name: "Название товара" });
+    await expect(name).toHaveValue(delayed ? values.name : "");
+    // Поздний success проверяется в прежнем документе: document navigation может отменить XHR.
+    expect(await document.evaluate(node => node === window.document)).toBe(true);
     await name.fill("Черновик нового экземпляра");
     await expect.poll(() => page.evaluate(key => JSON.parse(localStorage.getItem(key)!).values.name, draftKey)).toBe("Черновик нового экземпляра");
     release();
-    await response;
+    const response = await submitted.response();
+    expect(response, submitted.failure()?.errorText).not.toBeNull();
+    expect(response!.status()).toBe(200);
+    expect(await response!.finished()).toBeNull();
     await page.clock.runFor(2500);
     await expect(page).toHaveURL(/\/dashboard\/products\/new$/);
     await expect(name).toHaveValue("Черновик нового экземпляра");
     expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!).values.name, draftKey)).toBe("Черновик нового экземпляра");
     expect(writes).toBe(1);
-  } finally { release(); }
+  } finally { release(); await document.dispose(); }
 });
