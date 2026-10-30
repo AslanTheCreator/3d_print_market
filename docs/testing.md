@@ -1095,6 +1095,14 @@ Enter/programmatic submit, блокировку всех редактирующ�
 клиентского перехода. Выполняются также `create-product.mobile.spec.ts` и полный
 `npm run test:e2e`; все записи используют mock API.
 
+В old-create сценариях clock устанавливается до `page.goto`, до появления
+таймеров React/Next.js; после готовности формы время останавливается для проверки
+redirect timer. Каждый переход подтверждается URL и заголовком целевого экрана,
+ссылка кабинета выбирается внутри `main`, восстановление черновика ожидается до ввода.
+Поздний success проверяется только в том же Document и по завершению конкретного
+POST: полная document navigation может отменить XHR, поэтому одного ожидания
+`page.waitForResponse` после перехода недостаточно.
+
 - **`npm audit --omit=dev --audit-level=high`** — проверка runtime-зависимостей, обязательная в Frontend CI после `npm ci`.
 - **`npm run lint`** — ESLint для `app` и `src`.
 - **`npm run typecheck`** — `next typegen` и TypeScript.
