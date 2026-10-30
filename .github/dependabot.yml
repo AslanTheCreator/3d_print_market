@@ -1,0 +1,55 @@
+version: 2
+
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Moscow"
+    open-pull-requests-limit: 5
+    rebase-strategy: "disabled"
+    groups:
+      next-stack:
+        applies-to: "version-updates"
+        patterns:
+          - "next"
+          - "eslint-config-next"
+        update-types: ["minor", "patch"]
+      react-stack:
+        applies-to: "version-updates"
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+        update-types: ["minor", "patch"]
+      production:
+        applies-to: "version-updates"
+        dependency-type: "production"
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      development:
+        applies-to: "version-updates"
+        dependency-type: "development"
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      time: "09:00"
+      timezone: "Europe/Moscow"
+    open-pull-requests-limit: 1
+    rebase-strategy: "disabled"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      time: "09:00"
+      timezone: "Europe/Moscow"
+    open-pull-requests-limit: 1
+    rebase-strategy: "disabled"
