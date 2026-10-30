@@ -1,5 +1,45 @@
 # Testing
 
+## Обслуживание зависимостей
+
+`.github/dependabot.yml` обслуживает default branch `master`: npm — по
+понедельникам в 09:00 Europe/Moscow (до 5 открытых плановых PR), GitHub Actions
+и Docker — ежемесячно (по 1 PR на ecosystem; общий максимум плановых PR — 7).
+Patch/minor npm объединяются отдельно для production и development; более
+приоритетные группы связывают `next` с `eslint-config-next` и React/React DOM
+с их типами независимо от dependency-type. Major остаются отдельными PR для
+ручной оценки. Группировка не гарантирует одинаковых версий: при review
+проверять совместимость Next/ESLint и React/типов, включая закрепления в
+`overrides` (`@types/react`, `@types/react-dom`, `postcss`, `sharp`). Не снимать
+overrides автоматически. `@playwright/test` обновляется с dev-группой; версии
+транзитивных `playwright`/`playwright-core` и устанавливаемого CI Chromium
+нужно проверять вместе. Плановые обновления прямых пакетов могут менять
+транзитивные зависимости lockfile; security fixes могут затрагивать и их.
+
+Security updates запускаются по alerts независимо от расписания и не входят
+в version-группы; общий ignore для major отсутствует. В GitHub **Settings →
+Advanced Security** (раздел Security and quality) проверить **Dependency graph**,
+**Dependabot alerts** и **Dependabot security updates** — включены;
+**Grouped security updates** — выключены, если нужны отдельные security PR.
+Эти настройки не включаются YAML-файлом. Security PR имеют отдельный лимит
+GitHub (10), не расходующий лимит плановых обновлений. Auto-merge не включать;
+автоматический rebase Dependabot отключён.
+
+Docker updates должны сохранять digest pinning и согласованность обеих стадий
+`node:24.15.0-alpine@sha256:…`; смену major Node оценивать вместе с `engines`,
+`@types/node` и CI `node-version`. Версия самого приложения не повышается
+Dependabot; release version меняется отдельно.
+
+Все PR проходят существующий `Frontend CI` по `pull_request`: `npm ci`,
+`npm audit --omit=dev --audit-level=high`, typecheck, lint, architecture check,
+build, Docker build и standalone smoke/E2E в четырёх shards. Итоговый check —
+`Typecheck, lint, build`; его следует требовать правилами защиты `master`.
+Дополнительные tokens/permissions не нужны. Проверять diff manifest/lockfile,
+peer dependencies и результаты CI перед ручным merge; audit не ослаблять.
+
+Справка GitHub: [параметры конфигурации](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference),
+[security updates](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-security-updates).
+
 ## Backend integration: этап 12 — реальный DEV
 
 **Frontend-приёмка этапов 1–12 — PASS; P2-1 и P2-2 — PASS. BE-12-01 и BE-12-02 — OPEN; полная серверная приёмка и production readiness не подтверждены.**
