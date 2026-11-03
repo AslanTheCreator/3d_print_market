@@ -33,7 +33,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 24.15.0
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
@@ -75,6 +75,9 @@ jobs:
             --build-arg API_BASE_URL="$API_BASE_URL" \
             -t figurzilla-frontend:ci .
 
+      - name: Docker runtime smoke
+        run: npm run test:docker -- figurzilla-frontend:ci
+
   e2e:
     name: E2E shard ${{ matrix.shard }}/4
     needs: checks
@@ -98,7 +101,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 24.15.0
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies

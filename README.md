@@ -8,8 +8,8 @@ Current public launch status: **NO-GO**. See the [MVP and production readiness a
 
 ## Requirements
 
-- Node.js 24.15.0
-- npm 11
+- Node.js 26.13.0 LTS
+- npm 11.20.0 (bundled with Node.js)
 
 Use the project Node version:
 

@@ -37,13 +37,19 @@ GitHub (10), не расходующий лимит плановых обнов�
 автоматический rebase Dependabot отключён.
 
 Docker updates должны сохранять digest pinning и согласованность обеих стадий
-`node:24.15.0-alpine@sha256:…`; смену major Node оценивать вместе с `engines`,
+`node:26.13.0-alpine@sha256:…`; смену major Node оценивать вместе с `engines`,
 `@types/node` и CI `node-version`. Версия самого приложения не повышается
 Dependabot; release version меняется отдельно.
 
 Все PR проходят существующий `Frontend CI` по `pull_request`: `npm ci`,
 `npm audit --omit=dev --audit-level=high`, typecheck, lint, architecture check,
-build, Docker build и standalone smoke/E2E в четырёх shards. Итоговый check —
+build, Docker build и standalone smoke/E2E в четырёх shards.
+Оба jobs устанавливают Node из `.nvmrc`: standalone собирается и запускается на
+одной версии Node. После Docker build выполняется `npm run test:docker -- <image>`:
+проверяются пользователь `node`, версия Node/npm, `libatomic`, загрузка sharp,
+оптимизация изображения через Next Image, CSS в SSR и существующий HTTP smoke.
+Контейнер создаётся на случайном локальном порту и удаляется после проверки.
+Итоговый check —
 `Typecheck, lint, build`; его следует требовать правилами защиты `master`.
 Дополнительные tokens/permissions не нужны. Проверять diff manifest/lockfile,
 peer dependencies и результаты CI перед ручным merge; audit не ослаблять.
