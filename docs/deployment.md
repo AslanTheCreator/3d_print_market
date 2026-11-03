@@ -14,7 +14,7 @@ commit, успешный CI, Git-тег, Docker-образ из проверен
 
 ## Требования и env
 
-- Node.js `24.15.0` (`.nvmrc`, Dockerfile), npm `11`, зависимости через `npm ci`.
+- Node.js `26.13.0` LTS (`.nvmrc`, Dockerfile), npm `11.20.0`, зависимости через `npm ci`.
 - Docker Engine/Buildx с поддержкой `linux/amd64`.
 - Версия — `package.json` и обе корневые записи `package-lock.json`.
 - Git- и Docker-теги — `v<version>`; image — `atupenov/frontend_app`.
@@ -87,8 +87,10 @@ hardening учитываются как известные ограничени�
 
 ## Сборка и проверка Docker
 
-Dockerfile использует `node:24.15.0-alpine`, закреплённый OCI index digest
-`sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f`.
+Обе стадии Dockerfile используют `node:26.13.0-alpine` (Alpine 3.24), закреплённый OCI index digest
+`sha256:c6ad9e9c1d80f6eb607c26b4b0a132ff7a2344fad1c78ea3baa2a7d4c8de6d94`.
+Официальный базовый образ уже содержит `libatomic` (требуется Node.js начиная с 25)
+и `libstdc++`; дополнительные compatibility-пакеты не устанавливаются.
 `npm ci` использует lockfile. Runner содержит `public`, `.next/standalone`
 (включая `server.js`, package files и runtime dependencies) и `.next/static`;
 запуск — `node server.js`, пользователь `node`, порт `3000`.
