@@ -1,5 +1,16 @@
 # Testing
 
+## MUI: SSR и hydration
+
+`mui-ssr.spec.ts` проверяет `/about` при ширине 1280 и 393 px:
+CSS Emotion присутствует в server HTML и `<head>`, используется `@layer mui`,
+стили шапки и шрифт сохраняются после hydration без ошибок React;
+после перехода на страницу входа проверяется ввод в форму.
+До hydration используется отдельный browser context с отключённым JavaScript.
+При обновлении `@mui/material-nextjs` запускать этот тест на production build;
+диалоги, меню и уведомления дополнительно покрыты существующими E2E.
+Для Next.js 15 провайдер импортируется из `v15-appRouter`.
+
 ## Обслуживание зависимостей
 
 `.github/dependabot.yml` обслуживает default branch `master`: npm — по
