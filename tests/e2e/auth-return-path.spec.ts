@@ -9,6 +9,8 @@ const completeAuth = async (page: Page, flow: "login" | "register") => {
   await form.getByLabel(/^Пароль/).fill("test-password");
   if (flow === "register") {
     await form.getByLabel(/^Возраст/).fill("25");
+    await form.getByRole("checkbox").nth(0).check();
+    await form.getByRole("checkbox").nth(1).check();
     await form.getByRole("button", { name: "Зарегистрироваться", exact: true }).click();
     const dialog = page.getByRole("dialog");
     for (let digit = 1; digit <= 5; digit++) {
@@ -60,6 +62,8 @@ for (const width of [393, 1280]) {
         await form.getByLabel(/^Пароль/).fill("test-password");
         if (flow === "register") {
           await form.getByLabel(/^Возраст/).fill("25");
+          await form.getByRole("checkbox").nth(0).check();
+          await form.getByRole("checkbox").nth(1).check();
           await form.getByRole("button", { name: "Зарегистрироваться", exact: true }).click();
           const dialog = page.getByRole("dialog");
           for (let digit = 1; digit <= 5; digit++) {

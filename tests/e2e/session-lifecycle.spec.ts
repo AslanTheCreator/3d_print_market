@@ -802,7 +802,11 @@ for (const flow of ["login", "login verification", "registration verification"] 
         await expect(page).toHaveURL(requireBaseUrl(baseURL) + authPath);
         await page.getByLabel(/^Email/).fill("late-A@example.test");
         await page.getByLabel(/^Пароль/).fill("fixture-password");
-        if (isRegistration) await page.getByLabel(/^Возраст/).fill("25");
+        if (isRegistration) {
+          await page.getByLabel(/^Возраст/).fill("25");
+          await page.getByRole("checkbox").nth(0).check();
+          await page.getByRole("checkbox").nth(1).check();
+        }
         await submit.click();
         if (flow !== "login") {
           const dialog = page.getByRole("dialog");
