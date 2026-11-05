@@ -87,6 +87,8 @@ const AuthForm: React.FC<IAuthForm> = ({
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [ageError, setAgeError] = useState("");
+  const [consents, setConsents] = useState({ agreement: false, privacy: false });
+  const [consentErrors, setConsentErrors] = useState({ agreement: "", privacy: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleTogglePassword = () => {
@@ -103,11 +105,25 @@ const AuthForm: React.FC<IAuthForm> = ({
         : "Введите корректный email";
     const nextPasswordError = password ? "" : "Введите пароль";
     const nextAgeError = showAgeField ? getAgeError(age) : "";
+    const nextConsentErrors = {
+      agreement:
+        showLegalConsentNotice && !consents.agreement
+          ? "Необходимо принять пользовательское соглашение"
+          : "",
+      privacy:
+        showLegalConsentNotice && !consents.privacy
+          ? "Необходимо дать согласие на обработку персональных данных"
+          : "",
+    };
     setEmailError(nextEmailError);
     setPasswordError(nextPasswordError);
     setAgeError(nextAgeError);
+    setConsentErrors(nextConsentErrors);
 
-    if (nextEmailError || nextPasswordError || nextAgeError) {
+    if (
+      nextEmailError || nextPasswordError || nextAgeError ||
+      nextConsentErrors.agreement || nextConsentErrors.privacy
+    ) {
       return;
     }
 
@@ -322,7 +338,16 @@ const AuthForm: React.FC<IAuthForm> = ({
             />
           )}
 
-          {showLegalConsentNotice && <LegalConsentNotice />}
+          {showLegalConsentNotice && (
+            <LegalConsentNotice
+              values={consents}
+              errors={consentErrors}
+              onChange={(name, checked) => {
+                setConsents((previous) => ({ ...previous, [name]: checked }));
+                setConsentErrors((previous) => ({ ...previous, [name]: "" }));
+              }}
+            />
+          )}
 
           {/* Кнопка "Забыли пароль?" */}
           {onForgotPassword && (

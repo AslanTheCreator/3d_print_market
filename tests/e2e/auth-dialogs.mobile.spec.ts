@@ -20,6 +20,8 @@ const openVerification = async (page: Page) => {
   await form.getByLabel(/^Email/).fill(email);
   await form.getByLabel(/^Пароль/).fill("password");
   await form.getByLabel(/^Возраст/).fill("25");
+  await form.getByRole("checkbox").nth(0).check();
+  await form.getByRole("checkbox").nth(1).check();
   await form.getByRole("button", { name: "Зарегистрироваться" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
