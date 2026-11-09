@@ -52,7 +52,7 @@
     "@types/react-dom": "19.3.0",
     "cross-env": "^7.0.3",
     "eslint": "^8",
-    "eslint-config-next": "^15.5.27",
+    "eslint-config-next": "^16.4.5",
     "steiger": "^0.8.0",
     "typescript": "^5"
   },
