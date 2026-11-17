@@ -1161,7 +1161,10 @@ POST: полная document navigation может отменить XHR, поэт
 `page.waitForResponse` после перехода недостаточно.
 
 - **`npm audit --omit=dev --audit-level=high`** — проверка runtime-зависимостей, обязательная в Frontend CI после `npm ci`.
-- **`npm run lint`** — ESLint для `app` и `src`.
+- **`npm run lint`** — ESLint с Flat Config (`eslint.config.mjs`) для файлов
+  `.ts` и `.tsx` в `app/` и `src/`. Даже одно предупреждение завершает команду
+  ошибкой (`--max-warnings=0`). Встроенный линт `next build` также проверяет
+  `.jsx` в каталогах сборки Next.js.
 - **`npm run typecheck`** — `next typegen` и TypeScript.
 - **`npm run architecture:check`** — FSD-проверка Steiger для `src`.
 - **`npm run build`** — production build.
