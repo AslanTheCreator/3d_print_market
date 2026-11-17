@@ -43,15 +43,43 @@ test("USER cannot read history/details or PUT; invalid ID starts no admin giveaw
 
 test("exact seven-field PUT, timezone instant round-trip, disable/re-enable, unchanged product fields", async ({ page, baseURL }) => {
   const state = await setupAdminGiveaway(page, baseURL), original = structuredClone(state.products[0]);
+  const enabled = page.getByRole("checkbox", { name: "Розыгрыш включён" });
+  const saved = page.getByText("Настройки сохранены и связанные данные обновлены.", { exact: true });
+  const disabledSettings = {
+    enabled: false,
+    telegramUrl: "https://t.me/original",
+    startAt: "2027-06-01T12:00:00.000Z",
+    endAt: "2027-06-02T12:00:00.000Z",
+    winnersCount: 2,
+    rules: "Новые правила",
+    homeText: "Исходный текст",
+  };
   await open(page);
   await expect(page.getByRole("textbox", { name: "Начало (ISO 8601)", exact: true })).toHaveValue("2027-06-01T15:00:00+03:00");
-  await page.getByRole("checkbox", { name: "Розыгрыш включён" }).uncheck();
+  await enabled.uncheck();
   await rules(page).fill("  Новые правила  "); await save(page).click();
-  await expect(page.getByText("Настройки сохранены и связанные данные обновлены.")).toBeVisible();
-  expect(state.writes).toEqual([{ enabled: false, telegramUrl: "https://t.me/original", startAt: "2027-06-01T12:00:00.000Z", endAt: "2027-06-02T12:00:00.000Z", winnersCount: 2, rules: "Новые правила", homeText: "Исходный текст" }]);
+  await expect(saved).toBeVisible();
+  expect(state.writes).toEqual([disabledSettings]);
   expect(state.products[0]).toMatchObject({ name: original.name, description: original.description, price: original.price, count: original.count, status: original.status, participantId: original.participantId });
-  await page.getByRole("checkbox", { name: "Розыгрыш включён" }).check(); await save(page).click();
-  await expect(save(page)).toBeEnabled(); expect(state.writes).toHaveLength(2); expect(state.writes[1].enabled).toBe(true);
+  await enabled.check();
+  const reenable = deferred();
+  state.putGate = reenable.promise;
+  try {
+    await Promise.all([
+      page.waitForRequest(request => request.method() === "PUT" &&
+        new URL(request.url()).pathname === "/admin/actions/giveaways/8101"),
+      save(page).click(),
+    ]);
+    await expect(save(page)).toBeDisabled();
+    await expect(saved).toBeHidden();
+  } finally {
+    reenable.resolve();
+  }
+  await expect(saved).toBeVisible();
+  await expect(save(page)).toBeEnabled();
+  await expect(enabled).toBeChecked();
+  expect(state.writes).toEqual([disabledSettings, { ...disabledSettings, enabled: true }]);
+  expect(state.products[0].giveawayEnabled).toBe(true);
   expect(state.admin.reads.filter(path => path.startsWith("/product/8101"))).toEqual([]);
 });
 

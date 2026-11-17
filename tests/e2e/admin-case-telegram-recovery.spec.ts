@@ -58,8 +58,23 @@ test("truly pending PUT excludes resolve and replay and survives role unmount", 
     await expect(accept(page)).toBeDisabled(); await expect(proceed(page)).toHaveCount(0); expect(state.writes).toHaveLength(1);
   } finally { release(); }
   await expect(forms(page).getByRole("status")).toContainText("Результат операции подтверждён"); await proceed(page).click();
-  await accept(page).click(); await expect(forms(page).getByRole("status")).toContainText("Результат операции подтверждён");
+  const comment = "Решение независимо от Telegram PUT";
+  await expect(forms(page).getByLabel("Комментарий решения")).toHaveValue(comment);
+  const [resolution] = await Promise.all([
+    page.waitForResponse(response => response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/admin/actions/order-cases/301/resolve"),
+    accept(page).click(),
+  ]);
+  expect(resolution.ok()).toBe(true);
+  const card = drawer(page).getByTestId("order-case-card");
+  await expect(card.getByText("Обращение завершено", { exact: true })).toBeVisible();
+  await expect(card).toContainText(`Комментарий решения: ${comment}`);
+  await expect(forms(page).getByRole("status")).toContainText("Результат операции подтверждён");
+  await expect(check(page)).toHaveCount(0);
   expect(state.writes.map(write => write.method)).toEqual(["PUT", "POST"]);
+  expect(state.writes[1]).toMatchObject({ path: "/admin/actions/order-cases/301/resolve", body: null });
+  expect([...new URLSearchParams(state.writes[1].search)]).toEqual([["outcome", "REJECTED"], ["comment", comment]]);
+  expect(state.cases[0].orderCase).toMatchObject({ state: "RESOLVED", outcome: "REJECTED", resolutionComment: comment });
 });
 
 test("a late pre-PUT GET cannot replace OPEN/B recovery; revoked ADMIN and a resolved case still forbid resolve", async ({ page, baseURL }) => {

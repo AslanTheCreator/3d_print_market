@@ -60,8 +60,22 @@ test("blank comment and invalid Telegram URLs never write; saved URL allows cont
   expect(state.writes[0].method).toBe("PUT"); expect(new URLSearchParams(state.writes[0].search).get("url")).toBe("https://telegram.me/review?x=1&y=2");
   await expect(drawer(page).getByRole("link", { name: "Обсуждение в Telegram" })).toHaveAttribute("href", "https://telegram.me/review?x=1&y=2");
   await forms(page).getByRole("button", { name: "Продолжить рассмотрение" }).click();
-  await expect(forms(page).getByLabel("Комментарий решения")).toHaveValue(comment); await accept(page).click();
-  await expect(forms(page).getByRole("status")).toContainText("Результат операции подтверждён"); expect(state.writes).toHaveLength(2);
+  await expect(forms(page).getByLabel("Комментарий решения")).toHaveValue(comment);
+  const [resolution] = await Promise.all([
+    page.waitForResponse(response => response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/admin/actions/order-cases/301/resolve"),
+    accept(page).click(),
+  ]);
+  expect(resolution.ok()).toBe(true);
+  const card = drawer(page).getByTestId("order-case-card");
+  await expect(card.getByText("Обращение завершено", { exact: true })).toBeVisible();
+  await expect(card).toContainText(`Комментарий решения: ${comment}`);
+  await expect(forms(page).getByRole("status")).toContainText("Результат операции подтверждён");
+  await expect(forms(page).getByRole("button", { name: "Проверить результат операции", exact: true })).toHaveCount(0);
+  expect(state.writes.map(write => write.method)).toEqual(["PUT", "POST"]);
+  expect(state.writes[1]).toMatchObject({ path: "/admin/actions/order-cases/301/resolve", body: null });
+  expect([...new URLSearchParams(state.writes[1].search)]).toEqual([["outcome", "REJECTED"], ["comment", comment]]);
+  expect(state.cases[0].orderCase).toMatchObject({ state: "RESOLVED", outcome: "REJECTED", resolutionComment: comment });
 });
 
 for (const mode of ["unknown kind", "LEGACY", "RESOLVED", "dispute history"] as const) test(`forbidden outcomes: ${mode}`, async ({ page, baseURL }) => {
