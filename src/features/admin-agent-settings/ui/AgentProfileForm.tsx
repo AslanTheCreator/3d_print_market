@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { Alert, Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import { agentApi, useAgentProfile, type AgentProfileInput } from "@/entities/agent";
 import { AdminImages, imageApi } from "@/entities/image";
@@ -14,6 +14,7 @@ export function AgentProfileForm({ session, agent }: { session: number | null; a
 }
 function ProfileForm({ agent, initial, reload, session }: { agent: number; initial: AgentProfileInput; reload: () => Promise<void>; session: number | null }) {
   const form = useForm<AgentProfileInput>({ defaultValues: initial });
+  const imageId = useWatch({ control: form.control, name: "imageId" });
   const [error, setError] = useState<unknown>();
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -29,7 +30,7 @@ function ProfileForm({ agent, initial, reload, session }: { agent: number; initi
     } catch (cause) { setError(cause); }
     finally { lock.current = false; setBusy(false); }
   }
-  return <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}><Stack component="form" spacing={2} onSubmit={form.handleSubmit(save)}>
+  return <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}><Stack component="form" spacing={2} onSubmit={(event) => form.handleSubmit(save)(event)}>
     <Typography variant="h6">Профиль</Typography>
     <RequestFeedback error={error} retry={saved ? () => void reload().then(() => setError(undefined)).catch(setError) : undefined} />
     {saved && <Alert severity="success">Профиль сохранён</Alert>}
@@ -40,14 +41,14 @@ function ProfileForm({ agent, initial, reload, session }: { agent: number; initi
         label={name === "deadlineSending" ? "Срок отправки" : "Срок оплаты"} error={!!fieldState.error} helperText={fieldState.error?.message}
         onChange={(event) => field.onChange(event.target.value === "" ? "" : Number(event.target.value))} />} />)}</Stack>
     <Typography variant="body2" color="text.secondary">Значения сроков сохраняются в единицах сервера.</Typography>
-    <Typography>Изображение профиля: {form.watch("imageId") ?? "не задано"}</Typography>
-    <AdminImages ids={form.watch("imageId") ? [form.watch("imageId")!] : []} session={session} />
+    <Typography>Изображение профиля: {imageId ?? "не задано"}</Typography>
+    <AdminImages ids={imageId ? [imageId] : []} session={session} />
     <Stack direction="row" spacing={1}><Button component="label" disabled={busy}>Загрузить фото<input hidden type="file" accept="image/*" onChange={async (event) => {
       const file = event.target.files?.[0]; event.target.value = ""; if (!file || lock.current) return;
       lock.current = true; setBusy(true); setError(undefined);
       try { const ids = await imageApi.saveImage(file, "PARTICIPANT"); if (!ids.length) throw new Error("Сервер не вернул изображение"); form.setValue("imageId", ids[0], { shouldDirty: true }); }
       catch (cause) { setError(cause); } finally { lock.current = false; setBusy(false); }
-    }} /></Button><Button disabled={busy || form.watch("imageId") === null} onClick={() => form.setValue("imageId", null, { shouldDirty: true })}>Убрать фото</Button></Stack>
+    }} /></Button><Button disabled={busy || imageId === null} onClick={() => form.setValue("imageId", null, { shouldDirty: true })}>Убрать фото</Button></Stack>
     <Button variant="contained" type="submit" disabled={busy || !form.formState.isDirty}>Сохранить профиль</Button>
   </Stack></Paper>;
 }

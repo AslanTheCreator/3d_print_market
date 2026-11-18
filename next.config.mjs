@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const isDevelopment = process.env.NODE_ENV === "development";
 // Явный local-production opt-in используется также для MinIO на DEV-стенде.
-const allowLocalImages = isDevelopment || process.env.ALLOW_LOCAL_API_URL === "true";
+const allowPrivateImageIp = process.env.ALLOW_LOCAL_API_URL === "true";
+const allowLocalImages = isDevelopment || allowPrivateImageIp;
 const imageSources = [
   "'self'",
   "data:",
@@ -65,8 +66,15 @@ const securityHeaders = [
 
 const nextConfig = {
   output: "standalone",
+  outputFileTracingIncludes: {
+    // Turbopack traces the Sharp binding on Windows, but omits its DLLs.
+    "/*": ["./node_modules/@img/sharp-win32-*/lib/*.dll"],
+  },
   poweredByHeader: false,
   images: {
+    qualities: [75, 100],
+    minimumCacheTTL: 60,
+    dangerouslyAllowLocalIP: allowPrivateImageIp,
     remotePatterns: [
       {
         protocol: "https",

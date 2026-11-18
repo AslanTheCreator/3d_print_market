@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import {
   Box,
   Alert,
@@ -45,7 +45,7 @@ export const ChangePasswordForm: React.FC = () => {
     control,
     handleSubmit,
     reset,
-    watch,
+    getValues,
     formState: { errors, isDirty },
   } = useForm<PasswordFormData>({
     defaultValues: {
@@ -55,7 +55,7 @@ export const ChangePasswordForm: React.FC = () => {
     },
   });
 
-  const newPassword = watch("newPassword");
+  const newPassword = useWatch({ control, name: "newPassword" });
   useUnsavedChanges(isDirty, isPending);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -188,7 +188,7 @@ export const ChangePasswordForm: React.FC = () => {
                 message: "Пароль должен содержать минимум 6 символов",
               },
               validate: (value) =>
-                value !== watch("oldPassword") ||
+                value !== getValues("oldPassword") ||
                 "Новый пароль должен отличаться от текущего",
             }}
             render={({ field: { ref, ...field } }) => (
@@ -266,7 +266,7 @@ export const ChangePasswordForm: React.FC = () => {
             rules={{
               required: "Подтвердите новый пароль",
               validate: (value) =>
-                value === newPassword || "Пароли не совпадают",
+                value === getValues("newPassword") || "Пароли не совпадают",
             }}
             render={({ field: { ref, ...field } }) => (
               <TextField

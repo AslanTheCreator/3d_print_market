@@ -4,12 +4,12 @@
 
 `mui-ssr.spec.ts` проверяет `/about` при ширине 1280 и 393 px:
 CSS Emotion присутствует в server HTML и `<head>`, используется `@layer mui`,
-стили шапки и шрифт сохраняются после hydration без ошибок React;
+стили шапки и шрифт сохраняются после hydration и клиентского перехода на `/contacts` без ошибок React;
 после перехода на страницу входа проверяется ввод в форму.
 До hydration используется отдельный browser context с отключённым JavaScript.
 При обновлении `@mui/material-nextjs` запускать этот тест на production build;
 диалоги, меню и уведомления дополнительно покрыты существующими E2E.
-Для Next.js 15 провайдер импортируется из `v15-appRouter`.
+Для Next.js 16 провайдер импортируется из `v16-appRouter`.
 
 ## Обслуживание зависимостей
 
@@ -119,8 +119,9 @@ npm run test:integration:real
 
 Общие fixtures обращений и запреты старых mutation/DELETE ORDER находятся
 в `tests/e2e/helpers/backendContracts.ts`. Session navigation probe различает
-prefetched RSC и реальную навигацию: положительный контроль подтверждает
-router.replace и удержанный RSC, включая переиспользованный prefetch.
+prefetched RSC и реальную навигацию. Наблюдение устанавливается до hydration,
+когда Next.js 16 ещё не скопировал методы `useRouter`. Положительный контроль
+подтверждает `router.replace` и удержанный RSC, включая переиспользованный prefetch.
 Mobile Reset закрывает фильтр; тест проверяет пустые значения после повторного
 открытия. `order-missing-category` воспроизводит реальный snapshot с
 categories=null на desktop/mobile; `local-images-config-model` проверяет opt-in
@@ -1162,12 +1163,18 @@ POST: полная document navigation может отменить XHR, поэт
 
 - **`npm audit --omit=dev --audit-level=high`** — проверка runtime-зависимостей, обязательная в Frontend CI после `npm ci`.
 - **`npm run lint`** — ESLint с Flat Config (`eslint.config.mjs`) для файлов
-  `.ts` и `.tsx` в `app/` и `src/`. Даже одно предупреждение завершает команду
-  ошибкой (`--max-warnings=0`). Встроенный линт `next build` также проверяет
-  `.jsx` в каталогах сборки Next.js.
+  `.js`, `.jsx`, `.ts` и `.tsx` в `app/` и `src/`, а также `proxy.ts`.
+  Даже одно предупреждение завершает команду ошибкой (`--max-warnings=0`).
+  В Next.js 16 линт выполняется отдельным обязательным шагом CI.
+  `eslint-suppressions.json` фиксирует существующие срабатывания четырёх новых
+  диагностик React Hooks 7 по файлам и правилам. Это позволяет перенести
+  Next.js без одновременной переработки guard, форм и восстановления операций.
+  `incompatible-library` имеет уровень error для учёта в этом списке.
+  Устраняйте срабатывания по сценариям с соответствующим E2E и сокращайте
+  список командой `npm run lint -- --prune-suppressions`.
 - **`npm run typecheck`** — `next typegen` и TypeScript.
 - **`npm run architecture:check`** — FSD-проверка Steiger для `src`.
-- **`npm run build`** — production build.
+- **`npm run build`** — production build на Turbopack с выводом `standalone`.
 - **`npm run test:smoke`** — HTTP smoke для уже запущенного приложения.
 - **`npm run test:e2e`** — Playwright; без `TEST_BASE_URL` запускает dev server.
 - **`npm run test:e2e:mobile`** — только curated mobile Chromium scenarios.
@@ -1217,6 +1224,7 @@ npm run test:standalone
 `test:standalone` копирует `public` и `.next/static` в standalone runtime,
 поднимает локальный SSR API fixture и сервер приложения, запускает smoke и
 оба Playwright-проекта, затем останавливает оба процесса.
+На Windows `outputFileTracingIncludes` добавляет DLL Sharp в standalone-артефакт.
 Fixture должен стать готов до запуска standalone: иначе в чистом checkout
 копия `public` может не содержать сгенерированный raster.
 

@@ -109,7 +109,7 @@ export function AdminOrderActions({ order, session, changed, lockPanel }: {
     <Stack direction="row" flexWrap="wrap" gap={1}>{actions.map((item) => <Button key={item} color={item === "CANCEL" ? "error" : "primary"} variant={item === "CANCEL" ? "outlined" : "contained"} disabled={busy || otherUnknown || otherAccepted || (item === "CANCEL" && cancel.accepted)}
       onClick={() => { if (item === "CANCEL") form.reset({ comment: cancel.comment, deliveryUrl: "" }); setAction(item); setError(undefined); }}>{labels[item]}</Button>)}</Stack>
     <Dialog open={!!action} onClose={close} fullWidth maxWidth="sm"><DialogTitle>{action && labels[action]}</DialogTitle>
-      <form onSubmit={form.handleSubmit(submit)}><DialogContent><Stack spacing={2}>
+      <form onSubmit={(event) => form.handleSubmit(submit)(event)}><DialogContent><Stack spacing={2}>
         <RequestFeedback error={error} />
         {accepted && <Alert severity="success" action={<Button onClick={() => void changed().then(() => setAction(null)).catch(setError)}>Обновить список</Button>}>Действие выполнено. Повторная отправка не требуется.</Alert>}
         {unknown && <Alert severity="warning" action={<Button disabled={busy} onClick={() => void checkResult()}>Проверить результат</Button>}>Ответ не получен. Операция могла выполниться.{action === "CANCEL" && cancel.recoveryMessage && <div>{cancel.recoveryMessage}</div>}</Alert>}

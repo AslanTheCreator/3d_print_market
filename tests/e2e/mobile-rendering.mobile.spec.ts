@@ -654,6 +654,9 @@ test("dashboard subroutes keep the contextual account menu", async ({
     page.getByRole("navigation", { name: "Навигация личного кабинета" }),
   ).toHaveCount(0);
 
+  await expect.poll(() => menuTrigger.evaluate((element) =>
+    Object.keys(element).some((key) => key.startsWith("__reactProps$")),
+  )).toBe(true);
   await menuTrigger.click();
   const accountDialog = page
     .locator("#mobile-account-menu")

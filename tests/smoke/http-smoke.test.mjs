@@ -45,6 +45,8 @@ const protectedDashboardRoutes = [
   "/dashboard/security",
 ];
 
+const protectedAdminRoutes = ["/admin", "/admin/products/42"];
+
 describe("frontend smoke", () => {
   for (const route of publicShellRoutes) {
     it(`returns non-empty HTML for ${route}`, async () => {
@@ -52,14 +54,17 @@ describe("frontend smoke", () => {
     });
   }
 
-  for (const route of protectedDashboardRoutes) {
+  for (const route of [...protectedDashboardRoutes, ...protectedAdminRoutes]) {
     it(`redirects anonymous ${route} requests to login`, async () => {
-      const response = await request(route, {
+      const destination = `${route}?tab=payment&tag=a%2Bb&tag=two`;
+      const response = await request(destination, {
         redirect: "manual",
       });
 
-      assert.match(String(response.status), /^30[1278]$/);
-      assert.match(response.headers.get("location") ?? "", /\/auth\/login/);
+      assert.equal(response.status, 307);
+      const location = new URL(response.headers.get("location"), BASE_URL);
+      assert.equal(location.pathname, "/auth/login");
+      assert.deepEqual([...location.searchParams], [["redirect", destination]]);
     });
   }
 

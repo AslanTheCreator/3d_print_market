@@ -580,21 +580,40 @@ async function observeNavigation(page: Page) {
       rsc.push(request.url());
     }
   });
-  await page.evaluate(() => {
+  await page.addInitScript(() => {
     const observed = window as ObservedWindow;
-    const router = observed.next?.router;
-    if (!router) throw new Error("The real Next app router is required for the navigation probe");
     const state = { calls: [] as NavigationCall[], history: [] as HistoryChange[] };
     observed.p01Navigation = state;
     // Делегируем настоящему router без изменения href, options или результата.
     // Вызов фиксируется до startTransition: XHR task не ждёт RSC/commit Next.
-    for (const method of ["push", "replace"] as const) {
-      const original = router[method];
-      router[method] = function (href, options) {
-        state.calls.push({ method, href: new URL(href, location.href).href });
-        return original.call(this, href, options);
-      };
-    }
+    // Next.js 16 копирует методы router в useRouter во время hydration.
+    type NextNamespace = NonNullable<ObservedWindow["next"]>;
+    type Router = NextNamespace["router"];
+    const installRouter = (next: NextNamespace, router: Router) => {
+      for (const method of ["push", "replace"] as const) {
+        const original = router[method];
+        router[method] = function (href, options) {
+          state.calls.push({ method, href: new URL(href, location.href).href });
+          return original.call(this, href, options);
+        };
+      }
+      Object.defineProperty(next, "router", {
+        value: router, configurable: true, enumerable: true, writable: true,
+      });
+    };
+    Object.defineProperty(observed, "next", {
+      configurable: true,
+      set(next: NextNamespace) {
+        Object.defineProperty(observed, "next", {
+          value: next, configurable: true, enumerable: true, writable: true,
+        });
+        if (next.router) installRouter(next, next.router);
+        else Object.defineProperty(next, "router", {
+          configurable: true,
+          set: (router: Router) => installRouter(next, router),
+        });
+      },
+    });
     for (const method of ["pushState", "replaceState"] as const) {
       const original = history[method];
       history[method] = function (...args: Parameters<typeof original>) {
@@ -606,14 +625,21 @@ async function observeNavigation(page: Page) {
     }
     addEventListener("popstate", () => state.history.push({ method: "popstate", href: location.href }));
   });
-  return async (): Promise<NavigationSnapshot> => ({
-    ...await page.evaluate(() => {
-      const state = (window as ObservedWindow).p01Navigation;
-      if (!state) throw new Error("Navigation probe was lost (document navigation)");
-      return { ...state, url: location.href, historyLength: history.length };
-    }),
-    rsc: [...rsc],
-  });
+  let observedDocument: number | undefined;
+  return async (): Promise<NavigationSnapshot> => {
+    const { timeOrigin, ...snapshot } = await page.evaluate(() => {
+      const observed = window as ObservedWindow;
+      if (!observed.p01Navigation || !observed.next?.router) {
+        throw new Error("The real Next app router is required for the navigation probe");
+      }
+      return { ...observed.p01Navigation, url: location.href, historyLength: history.length, timeOrigin: performance.timeOrigin };
+    });
+    if (observedDocument !== undefined && timeOrigin !== observedDocument) {
+      throw new Error("Navigation probe was lost (document navigation)");
+    }
+    observedDocument = timeOrigin;
+    return { ...snapshot, rsc: [...rsc] };
+  };
 }
 
 function assertNoAuthNavigation(before: NavigationSnapshot, after: NavigationSnapshot) {
@@ -678,11 +704,11 @@ test("navigation probe detects a pending post-auth replace with unchanged sessio
   await mockLogin(page, { accessToken: "probe-access", refreshToken: "probe-refresh" });
   await observeAuthSettlement(page, "/auth/login");
   const about = await holdRsc(page, "/about");
+  const snapshot = await observeNavigation(page);
   try {
     await page.goto("/auth/login?redirect=%2Fabout", { waitUntil: "domcontentloaded" });
     const submit = page.getByRole("button", { name: "Войти", exact: true });
     await waitForReactHydration(submit);
-    const snapshot = await observeNavigation(page);
     const before = await snapshot();
     await page.getByLabel(/^Email/).fill("probe@example.test");
     await page.getByLabel(/^Пароль/).fill("fixture-password");
@@ -739,6 +765,7 @@ for (const flow of ["login", "login verification", "registration verification"] 
       // Store, router и auth API приложения не подменяются.
       await observeAuthSettlement(page, endpoint);
       const about = await holdRsc(page, "/about");
+      const snapshot = await observeNavigation(page);
       if (flow !== "login verification") {
         await setSessionCookies(context, baseURL, { accessToken: "access-A", refreshToken: "refresh-A" });
       }
@@ -793,7 +820,6 @@ for (const flow of ["login", "login verification", "registration verification"] 
         await page.goto(authPath, { waitUntil: "domcontentloaded" });
         const submit = page.getByRole("button", { name: isRegistration ? "Зарегистрироваться" : "Войти", exact: true });
         await waitForReactHydration(submit);
-        const snapshot = await observeNavigation(page);
         // Forward позволяет уйти даже из busy verification dialog через браузер.
         // Вся цепочка остаётся в одном документе и сохраняет выполняющийся callback.
         await page.getByRole("link", { name: "Figurzilla", exact: true }).click();

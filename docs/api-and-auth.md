@@ -417,9 +417,9 @@ Auth API, store, `useAuth`, инициализация и refresh lifecycle пр
 Браузер получает `CLIENT_API_BASE_URL` через `GET /api/config`. Local URL в production разрешается только при `ALLOW_LOCAL_API_URL=true`.
 
 При сборке `ALLOW_LOCAL_API_URL=true` также разрешает локальный MinIO
-`localhost:9000`/`127.0.0.1:9000` в CSP img-src и Next Image remotePatterns.
-Без явного opt-in production не разрешает эти источники. Изменение флага
-после сборки не меняет скомпилированную политику изображений.
+`localhost:9000`/`127.0.0.1:9000` в CSP `img-src` и `remotePatterns` Next Image.
+Этот флаг в доверенном DEV-окружении разрешает оптимизатору Next.js 16 обращаться
+к локальным IP. Изменение флага после сборки не меняет политику изображений.
 
 Загрузка runtime config общая для public/auth clients и `preloadApiConfig`.
 Deadline 10 секунд охватывает fetch и чтение JSON; при истечении transport
@@ -467,7 +467,7 @@ BACKEND CORS BUG. После удаления Playwright interception (P2-2) э�
 - после успешного refresh исходный запрос повторяется;
 - при ошибке токены очищаются и пользователь направляется на `/auth/login`;
 - logout сейчас очищает токены только на клиенте;
-- `middleware.ts` предварительно защищает `/dashboard` и `/admin` по наличию cookies; проверка роли админки дополнительно выполняется через backend-профиль.
+- `proxy.ts` предварительно защищает `/dashboard` и `/admin` по наличию cookies. Для гостя `redirect` сохраняет исходный путь и query string. Проверка роли админки выполняется через backend-профиль.
 
 `authStore.refreshToken()` объединяет timer, initialization и конкурентные 401
 в один pending promise текущего поколения. Auth API возвращает access token;

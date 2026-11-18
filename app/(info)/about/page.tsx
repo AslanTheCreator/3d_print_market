@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { SITE_INFO, SITE_ROUTES } from "@/shared/config";
+import { NextLink } from "@/shared/ui/app-link";
 import { InfoPage } from "../_components/InfoPage";
 
 export const metadata: Metadata = {
@@ -49,10 +49,10 @@ export default function AboutPage() {
         </Box>
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-          <Button component={Link} href="/catalog/search" variant="contained">
+          <Button component={NextLink} href="/catalog/search" variant="contained">
             Перейти в каталог
           </Button>
-          <Button component={Link} href={SITE_ROUTES.contacts} variant="outlined">
+          <Button component={NextLink} href={SITE_ROUTES.contacts} variant="outlined">
             Связаться с нами
           </Button>
         </Stack>

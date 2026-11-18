@@ -69,10 +69,11 @@ export const UserProductsList: React.FC = () => {
   } = useUserProductsInfinite(USER_PRODUCTS_PAGE_SIZE, undefined, sortBy);
 
   const coreProducts = data?.pages.flat() ?? [];
+  const coreProductCount = coreProducts.length;
   const visibleProducts = coreProducts.slice(0, visibleCount);
   const imageQuery = useImageMetadataQuery(visibleProducts.map(product => product.imageId));
   const products = mapImageMetadata(visibleProducts, product => product.imageId, imageQuery.data);
-  const canLoadMore = visibleCount < coreProducts.length || hasNextPage;
+  const canLoadMore = visibleCount < coreProductCount || hasNextPage;
 
   const handleFetchNextPage = useCallback(() => {
     if (isLoadMoreBlocked) return;
@@ -83,12 +84,12 @@ export const UserProductsList: React.FC = () => {
 
   const handleLoadMore = useCallback(() => {
     if (isLoadMoreBlocked || hasNextPageError) return;
-    if (visibleCount < coreProducts.length) {
-      setVisibleCount(count => Math.min(count + 12, coreProducts.length));
+    if (visibleCount < coreProductCount) {
+      setVisibleCount(count => Math.min(count + 12, coreProductCount));
     } else if (hasNextPage) {
       handleFetchNextPage();
     }
-  }, [hasNextPage, isLoadMoreBlocked, hasNextPageError, handleFetchNextPage, visibleCount, coreProducts.length]);
+  }, [hasNextPage, isLoadMoreBlocked, hasNextPageError, handleFetchNextPage, visibleCount, coreProductCount]);
 
   const handleOpenDeleteDialog = (product: ProductToDelete) => {
     setProductToDelete(product);

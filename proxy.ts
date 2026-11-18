@@ -10,7 +10,7 @@ const hasAuthCookie = (request: NextRequest): boolean =>
       request.cookies.get(REFRESH_TOKEN_COOKIE)?.value,
   );
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   if (hasAuthCookie(request)) {
     return NextResponse.next();
   }
