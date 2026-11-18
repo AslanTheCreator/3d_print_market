@@ -13,9 +13,11 @@ CSS Emotion присутствует в server HTML и `<head>`, использ�
 
 ## Обслуживание зависимостей
 
-`.github/dependabot.yml` обслуживает default branch `master`: npm — по
-понедельникам в 09:00 Europe/Moscow (до 5 открытых плановых PR), GitHub Actions
-и Docker — ежемесячно (по 1 PR на ecosystem; общий максимум плановых PR — 7).
+`.github/dependabot.yml` обслуживает default branch `master`. Проверка версий
+запускается первого числа каждого месяца в 09:00 Europe/Moscow. Для npm
+открывается до двух плановых PR, для GitHub Actions и Docker — до одного
+на экосистему. Для плановых npm-обновлений cooldown
+составляет 3 дня для patch, 7 для minor и по умолчанию, 30 для major.
 Patch/minor npm объединяются отдельно для production и development; более
 приоритетные группы связывают `next` с `eslint-config-next` и React/React DOM
 с их типами независимо от dependency-type. Major остаются отдельными PR для
@@ -27,8 +29,8 @@ overrides автоматически. `@playwright/test` обновляется 
 нужно проверять вместе. Плановые обновления прямых пакетов могут менять
 транзитивные зависимости lockfile; security fixes могут затрагивать и их.
 
-Security updates запускаются по alerts независимо от расписания и не входят
-в version-группы; общий ignore для major отсутствует. В GitHub **Settings →
+Security updates запускаются по alerts независимо от расписания и cooldown.
+Они не входят в version-группы. Общий ignore для major отсутствует. В GitHub **Settings →
 Advanced Security** (раздел Security and quality) проверить **Dependency graph**,
 **Dependabot alerts** и **Dependabot security updates** — включены;
 **Grouped security updates** — выключены, если нужны отдельные security PR.
