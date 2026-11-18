@@ -62,14 +62,18 @@ try {
   execFileSync(process.execPath, ["--test", "tests/smoke/http-smoke.test.mjs"], {
     env: { ...process.env, TEST_BASE_URL: baseURL }, stdio: "inherit", timeout: 120_000,
   });
-  const optimized = await request("/_next/image?url=%2F__runtime-smoke.png&w=64&q=75");
-  assert.equal(optimized.status, 200, optimized.ok ? undefined : await optimized.text());
-  assert.match(optimized.headers.get("content-type") ?? "", /^image\//);
-  const encoded = Buffer.from(await optimized.arrayBuffer()).toString("base64");
-  const metadata = JSON.parse(inContainer(`require('sharp')(Buffer.from('${encoded}','base64')).metadata().then(m=>console.log(JSON.stringify(m))).catch(e=>{console.error(e);process.exit(1)})`));
-  assert.equal(metadata.width, 64);
-  assert.equal(metadata.height, 32);
-  console.log("Docker runtime PASS: standalone, HTTP smoke, SSR CSS, native sharp and Next Image 64x32");
+  for (const quality of [75, 100]) {
+    const optimized = await request(`/_next/image?url=%2F__runtime-smoke.png&w=64&q=${quality}`);
+    assert.equal(optimized.status, 200, optimized.ok ? undefined : await optimized.text());
+    assert.match(optimized.headers.get("content-type") ?? "", /^image\//);
+    const encoded = Buffer.from(await optimized.arrayBuffer()).toString("base64");
+    const metadata = JSON.parse(inContainer(`require('sharp')(Buffer.from('${encoded}','base64')).metadata().then(m=>console.log(JSON.stringify(m))).catch(e=>{console.error(e);process.exit(1)})`));
+    assert.equal(metadata.width, 64);
+    assert.equal(metadata.height, 32);
+  }
+  const localImage = await request("/_next/image?url=http%3A%2F%2F127.0.0.1%3A9000%2Ffixture.png&w=64&q=75");
+  assert.equal(localImage.status, 400);
+  console.log("Docker runtime PASS: standalone, HTTP smoke, SSR CSS, native sharp and Next Image 64x32 (q=75/100)");
 } finally {
   if (existsSync(fixturePath)) unlinkSync(fixturePath);
   if (created) {

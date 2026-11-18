@@ -35,6 +35,11 @@ for (const width of [1280, 393]) {
       await page.route("https://mc.yandex.ru/**", route => route.abort());
       await page.goto("/about");
       await expect.poll(() => readStyles(page)).toEqual(serverStyles);
+      await page.evaluate(() => { document.documentElement.dataset.muiNavigation = "client"; });
+      await page.getByRole("main").getByRole("link", { name: "Связаться с нами" }).click();
+      await expect(page).toHaveURL(/\/contacts$/);
+      await expect(page.locator("html")).toHaveAttribute("data-mui-navigation", "client");
+      await expect.poll(() => readStyles(page)).toEqual(serverStyles);
       await page.goto("/auth/login");
       await page.getByLabel(/^Email/).fill("mui@example.test");
       await expect(page.getByLabel(/^Email/)).toHaveValue("mui@example.test");

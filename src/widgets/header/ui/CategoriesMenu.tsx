@@ -55,8 +55,6 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
   const currentSlug = getCategorySlug(category);
   const categoryPath = buildCategoryPath(parentSlugs, category);
 
-  const Icon = getCategoryIcon(category.name);
-
   const handleCategoryClick = () => {
     if (hasChildren) {
       setIsExpanded((prev) => !prev);
@@ -131,7 +129,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
               },
             }}
           >
-            <Icon />
+            {React.createElement(getCategoryIcon(category.name))}
           </ListItemIcon>
           <ListItemText
             primary={category.name}

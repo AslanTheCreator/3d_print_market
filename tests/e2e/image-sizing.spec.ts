@@ -4,6 +4,21 @@ import sharp from "sharp";
 import { mockGuestAuth } from "./helpers/guestAuth";
 import { fulfillJson, orderFixture } from "./helpers/mobileAccount";
 
+test("Next Image encodes the local PNG as WebP at both configured qualities", async ({ request }) => {
+  for (const quality of [75, 100]) {
+    const search = new URLSearchParams({
+      url: "/__playwright-image-sizing.png",
+      w: "64",
+      q: String(quality),
+    });
+    const response = await request.get(`/_next/image?${search}`, {
+      headers: { Accept: "image/webp" },
+    });
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toBe("image/webp");
+  }
+});
+
 test.setTimeout(90_000);
 
 const expectDecodedImage = async (image: Locator) => {

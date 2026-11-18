@@ -75,8 +75,9 @@ test("settings: browser Back/Forward restore URL before confirmation, keep draft
   const contactsUrl = page.url();
   dialogs.accept = true;
   await page.evaluate(() => history.back());
+  await expect.poll(() => dialogs.calls.length).toBe(2);
   await expect(page).toHaveURL(/\/dashboard$/);
-  expect(dialogs.calls).toHaveLength(2);
+  expect(dialogs.calls.slice(1)).toEqual([{ type: "confirm", url: contactsUrl }]);
   await page.evaluate(() => history.forward());
   await expect(page).toHaveURL(contactsUrl);
   await headerLeave(page).click();
@@ -94,8 +95,9 @@ test("settings: browser Back/Forward restore URL before confirmation, keep draft
   await expect(contact).toHaveValue("@forward-draft");
   dialogs.accept = true;
   await page.evaluate(() => history.forward());
+  await expect.poll(() => dialogs.calls.length).toBe(count + 2);
   await expect(page).toHaveURL(/\/favorites$/);
-  expect(dialogs.calls).toHaveLength(count + 2);
+  expect(dialogs.calls.slice(count + 1)).toEqual([{ type: "confirm", url: contactsUrl }]);
 });
 
 for (const width of [393, 1280]) test(`profile ${width}px: image-only draft, local close, shell Link and reload`, async ({ page, baseURL }) => {

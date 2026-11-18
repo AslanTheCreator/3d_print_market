@@ -2,7 +2,7 @@
 
 Frontend marketplace for collectible figures and 3D printing products.
 
-Stack: Next.js 15, React 19, TypeScript, Feature-Sliced Design, MUI, React Query, Zustand.
+Stack: Next.js 16, React 19, TypeScript, Feature-Sliced Design, MUI, React Query, Zustand.
 
 Current public launch status: **NO-GO**. See the [MVP and production readiness audit](./docs/production-readiness-audit-2026-06-17.md).
 

@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import { NextLink } from "@/shared/ui/app-link";
 
 export default function NotFound() {
   return (
@@ -50,7 +50,7 @@ export default function NotFound() {
           sx={{ mt: 4, width: { xs: "100%", sm: "auto" } }}
         >
           <Button
-            component={Link}
+            component={NextLink}
             href="/"
             variant="contained"
             size="large"
@@ -59,7 +59,7 @@ export default function NotFound() {
             На главную
           </Button>
           <Button
-            component={Link}
+            component={NextLink}
             href="/catalog/search"
             variant="outlined"
             size="large"

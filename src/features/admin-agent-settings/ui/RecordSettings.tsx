@@ -197,11 +197,11 @@ export function RecordSettings<
               <Stack
                 component="form"
                 spacing={2}
-                onSubmit={handleSubmit((input) => {
+                onSubmit={(event) => handleSubmit((input) => {
                   const previousIds = new Set(query.data?.map((record) => record.id));
                   return write(() => editing === "new" ? api.create(agent, input) : api.update(agent, editing, input),
                     (records) => records.some((record) => (editing === "new" ? !previousIds.has(record.id) : record.id === editing) && JSON.stringify(toInput(record)) === JSON.stringify(input)));
-                })}
+                })(event)}
               >
                 {fields.map((field) => (
                   <Controller

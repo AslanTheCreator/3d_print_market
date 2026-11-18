@@ -1,0 +1,239 @@
+{
+  "src/app/layouts/AppLayout.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/entities/cart/model/useCartQuantity.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/entities/cart/ui/CheckoutCartItemCard.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/entities/product/model/useInfiniteProducts.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/entities/product/model/useProductDetails.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/entities/product/model/usePublicGiveaway.ts": {
+    "react-hooks/purity": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/entities/product/ui/ProductCard.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/admin-access/ui/AdminAccess.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "src/features/admin-giveaway-management/model/useAdminGiveawayCreation.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/features/admin-giveaway-management/model/useAdminGiveawayManagement.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/features/admin-giveaway-management/ui/AdminGiveawayCreateForm.tsx": {
+    "react-hooks/incompatible-library": {
+      "count": 1
+    }
+  },
+  "src/features/admin-giveaway-management/ui/AdminGiveawayEditor.tsx": {
+    "react-hooks/incompatible-library": {
+      "count": 1
+    }
+  },
+  "src/features/admin-order-action/model/useAdminCancelAction.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/features/admin-order-case-management/model/useAdminCaseManagement.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/features/admin-product-management/model/useAdminProductManagement.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/features/admin-product-management/ui/AdminProductEditor.tsx": {
+    "react-hooks/incompatible-library": {
+      "count": 2
+    },
+    "react-hooks/refs": {
+      "count": 4
+    }
+  },
+  "src/features/age-verification/model/useAgeVerification.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/image-upload/model/useMultipleImageUpload.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/features/order-cancel/model/useOrderCancelAction.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/features/order-case-create/model/useOrderCaseCreate.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/features/order-payment/model/useDisputePayment.ts": {
+    "react-hooks/refs": {
+      "count": 1
+    }
+  },
+  "src/features/order-payment/ui/DisputePaymentDialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/order-payment/ui/PaymentDialog.tsx": {
+    "react-hooks/refs": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "src/shared/lib/hooks/useFormInitializer.ts": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "src/shared/lib/hooks/useHideOnScroll.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/shared/ui/image-gallery/MainImage.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/shared/ui/image-gallery/ThumbnailList.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/shared/ui/image-gallery/useFullscreenImageViewer.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "src/widgets/checkout/model/useCheckoutDelivery.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/widgets/checkout/ui/SellerDeliverySelector.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/widgets/create-product-form/model/useCreateProductForm.tsx": {
+    "react-hooks/incompatible-library": {
+      "count": 1
+    }
+  },
+  "src/widgets/create-product-form/model/useProductForm.tsx": {
+    "react-hooks/incompatible-library": {
+      "count": 1
+    }
+  },
+  "src/widgets/create-product-form/model/useProductFormDraftState.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/widgets/dashboard-settings/ui/DashboardSettingsWidget.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/widgets/header/model/useSearch.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/widgets/header/ui/HeaderActions.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/widgets/header/ui/SearchForm.tsx": {
+    "react-hooks/refs": {
+      "count": 5
+    }
+  },
+  "src/widgets/mobile-navigation/ui/MobileCategoriesDialog.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/widgets/orders/model/useLeaveReview.ts": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "src/widgets/orders/model/useOrderDialogLifecycle.ts": {
+    "react-hooks/refs": {
+      "count": 6
+    }
+  },
+  "src/widgets/orders/ui/OrderProductPreview.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/widgets/product-catalog/ui/GiveawayCard.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/widgets/product-details/ui/DeferredProductSection.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/widgets/product-details/ui/RelatedProducts.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/widgets/user-products/ui/UserProductCard.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  }
+}

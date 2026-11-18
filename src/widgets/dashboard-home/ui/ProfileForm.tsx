@@ -190,7 +190,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
           border: `1px solid ${theme.palette.divider}`,
         }}
       >
-        <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Box component="form" onSubmit={(event) => handleSubmit(onSubmit)(event)} noValidate>
           <Box component="fieldset" disabled={isSaved || isPending} sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}>
           <Grid container>
             <Grid

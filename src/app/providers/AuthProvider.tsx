@@ -8,7 +8,7 @@ const expireSession = () => {
   useAuthStore.getState().logout();
 
   if (typeof window !== "undefined") {
-    window.location.href = "/auth/login";
+    window.location.assign(new URL("/auth/login", window.location.origin));
   }
 };
 

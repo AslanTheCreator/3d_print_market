@@ -26,7 +26,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     <Box sx={{ ml: { md: "232px" }, flex: 1, minWidth: 0 }}>
       <Stack component="header" direction="row" alignItems="center" justifyContent="space-between" sx={{ px: { xs: 2, md: 4 }, minHeight: 72, bgcolor: "background.paper", borderBottom: 1, borderColor: "divider" }}>
         <Stack direction="row" alignItems="center" spacing={1}><IconButton aria-label="Открыть меню админки" onClick={() => setOpen(true)} sx={{ display: { md: "none" } }}><MenuRounded /></IconButton><Typography fontWeight={600}>Панель администратора</Typography></Stack>
-        <Button onClick={() => { if (confirmDiscardChanges()) { logout(); window.location.assign("/auth/login"); } }}>Выйти</Button>
+        <Button onClick={() => { if (confirmDiscardChanges()) { logout(); window.location.assign(new URL("/auth/login", window.location.origin)); } }}>Выйти</Button>
       </Stack>
       <Box component="main" sx={{ p: { xs: 2, md: 4 }, maxWidth: 1600, mx: "auto", overflowWrap: "anywhere" }}>{children}</Box>
     </Box>
