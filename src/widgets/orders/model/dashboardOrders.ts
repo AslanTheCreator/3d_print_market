@@ -21,6 +21,7 @@ export type OrdersFilterId =
   | "all"
   | "new"
   | "payment"
+  | "paymentApproval"
   | "processing"
   | "assembling"
   | "shipping"
@@ -48,6 +49,7 @@ const SELLER_FILTERS: readonly OrdersFilterOption[] = [
   { id: "all", label: "Все" },
   { id: "new", label: "Новые" },
   { id: "payment", label: "Ожидают оплату" },
+  { id: "paymentApproval", label: "На проверке оплаты" },
   { id: "assembling", label: "Собрать" },
   { id: "shipping", label: "В пути" },
   { id: "completed", label: "Завершены" },
@@ -72,6 +74,7 @@ const SELLER_FILTER_STATUSES: Record<
   all: undefined,
   new: ORDER_NEW_STATUSES,
   payment: ORDER_PAYMENT_STATUSES,
+  paymentApproval: ["AWAITING_PAYMENT_APPROVAL"],
   processing: ORDER_PROCESSING_STATUSES,
   assembling: ORDER_ASSEMBLING_STATUSES,
   shipping: ORDER_SHIPPING_STATUSES,
@@ -87,6 +90,7 @@ const CUSTOMER_FILTER_STATUSES: Record<
   all: undefined,
   new: ORDER_NEW_STATUSES,
   payment: ORDER_PAYMENT_STATUSES,
+  paymentApproval: ["AWAITING_PAYMENT_APPROVAL"],
   processing: ORDER_PROCESSING_STATUSES,
   assembling: ORDER_ASSEMBLING_STATUSES,
   shipping: ORDER_SHIPPING_STATUSES,

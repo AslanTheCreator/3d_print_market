@@ -128,6 +128,7 @@ const OrderMiniProgress = ({ order }: { order: ListOrdersModel }) => {
         {steps.map((step) => (
           <Typography
             key={step.key}
+            aria-current={step.key === order.actualStatus ? "step" : undefined}
             variant="caption"
             color="text.secondary"
             sx={{

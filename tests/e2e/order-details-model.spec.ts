@@ -18,6 +18,7 @@ import {
   sortOrders,
   filterOrdersByStatus,
   getOrdersFilters,
+  getOrdersStatCounts,
 } from "@/widgets/orders/model/dashboardOrders";
 import {
   getSafeTrackingUrl,
@@ -65,8 +66,56 @@ test.describe("order details model", () => {
       for (const prepayment of [true, false]) expect(shouldShowOrderProgress(status, prepayment)).toBe(false);
     }
     expect(sortOrderHistories([history("FAILED", "2026-10-01T10:00:00Z"), history("CANCELLED", "2026-10-02T10:00:00Z")]).map(item => item.status)).toEqual(["FAILED", "CANCELLED"]);
-    expect(getOrderProgressSteps(false).map(item => item.key)).toEqual(["BOOKED", "AWAITING_PAYMENT", "ASSEMBLING", "ON_THE_WAY", "COMPLETED"]);
-    expect(getOrderProgressSteps(true).map(item => item.key)).toEqual(["BOOKED", "AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL", "AWAITING_PAYMENT", "ASSEMBLING", "ON_THE_WAY", "COMPLETED"]);
+    expect(getOrderProgressSteps(false).map(item => item.key)).toEqual(["BOOKED", "AWAITING_PAYMENT", "AWAITING_PAYMENT_APPROVAL", "ASSEMBLING", "ON_THE_WAY", "COMPLETED"]);
+    expect(getOrderProgressSteps(true).map(item => item.key)).toEqual(["BOOKED", "AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL", "AWAITING_PAYMENT", "AWAITING_PAYMENT_APPROVAL", "ASSEMBLING", "ON_THE_WAY", "COMPLETED"]);
+  });
+
+  test("full payment review stays active without enabling actions for any role", () => {
+    const status = "AWAITING_PAYMENT_APPROVAL";
+    const statuses = [
+      "BOOKED", "AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL",
+      "AWAITING_PAYMENT", status, "ASSEMBLING", "ON_THE_WAY",
+      "DISPUTED", "COMPLETED", "CANCELLED", "FAILED",
+    ] as const;
+    const orders = statuses.map((actualStatus, orderId) => ({ orderId, actualStatus })) as ListOrdersModel[];
+    const active = statuses.slice(0, 7);
+
+    expect(adminOrderStatuses).toEqual(statuses);
+    expect(getOrderStatusMeta(status).label).toBe("Ожидает подтверждения полной оплаты");
+    for (const value of statuses) {
+      expect(isActiveOrderStatus(value), value).toBe(active.some(item => item === value));
+      expect(getCustomerOrderActionFlags(value)).toEqual({
+        canPay: value === "AWAITING_PAYMENT",
+        canPrePay: value === "AWAITING_PREPAYMENT",
+        canConfirmReceipt: value === "ON_THE_WAY",
+        canCancel: value === "BOOKED",
+      });
+      const sellerActions = {
+        canConfirmOrder: value === "BOOKED",
+        canConfirmPreOrder: value === "AWAITING_PREPAYMENT_APPROVAL",
+        canShipOrder: value === "ASSEMBLING",
+        canCancel: value === "BOOKED",
+      };
+      expect(getSellerOrderActionFlags(value)).toEqual(sellerActions);
+      expect(getAdminOrderActionFlags(value)).toEqual(sellerActions);
+    }
+
+    expect(getOrdersStatCounts(orders, "customer")).toEqual({
+      active: 7, attention: 3, completed: 1, sellerConfirm: 2, sellerShipping: 1, customerShipping: 1,
+    });
+    expect(getOrdersStatCounts(orders, "seller")).toEqual(getOrdersStatCounts(orders, "customer"));
+    expect(filterMobileOrders(orders, "active", "customer").map(item => item.actualStatus)).toEqual(active);
+    expect(filterOrdersByStatus(orders, "paymentApproval", "seller").map(item => item.actualStatus)).toEqual([status]);
+    expect(filterOrdersByStatus(orders, "processing", "customer").map(item => item.actualStatus))
+      .toEqual(["BOOKED", "AWAITING_PREPAYMENT_APPROVAL", status, "ASSEMBLING"]);
+    expect(filterOrdersByStatus(orders, "payment", "customer").map(item => item.actualStatus))
+      .toEqual(["AWAITING_PREPAYMENT", "AWAITING_PAYMENT"]);
+    expect(filterMobileOrders(orders, "assembling", "seller").map(item => item.actualStatus)).toEqual(["ASSEMBLING"]);
+    for (const hasPrepayment of [false, true]) {
+      expect(shouldShowOrderProgress(status, hasPrepayment)).toBe(true);
+      expect(getOrderProgressSteps(hasPrepayment).find(step => step.key === status))
+        .toEqual({ key: status, label: "Проверка оплаты" });
+    }
   });
   test("mobile priority keeps action first, then active, then completed without mutating input", () => {
     const orders = [

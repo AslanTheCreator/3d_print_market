@@ -45,6 +45,11 @@ const ORDER_STATUS_META: Record<OrderStatus, OrderStatusMeta> = {
     chipColor: "info",
     isActive: true,
   },
+  AWAITING_PAYMENT_APPROVAL: {
+    label: "Ожидает подтверждения полной оплаты",
+    chipColor: "info",
+    isActive: true,
+  },
   ASSEMBLING: {
     label: "Собирается",
     chipColor: "primary",
@@ -97,6 +102,7 @@ export const ORDER_PAYMENT_STATUSES: readonly OrderStatus[] = [
 export const ORDER_PROCESSING_STATUSES: readonly OrderStatus[] = [
   "BOOKED",
   "AWAITING_PREPAYMENT_APPROVAL",
+  "AWAITING_PAYMENT_APPROVAL",
   "ASSEMBLING",
 ];
 export const ORDER_ASSEMBLING_STATUSES: readonly OrderStatus[] = [
@@ -122,6 +128,7 @@ const CUSTOMER_STATUSES_WITH_TRACKING: readonly OrderStatus[] = [
 const SELLER_STATUSES_WITH_PAYMENT_PROOF: readonly OrderStatus[] = [
   "AWAITING_PREPAYMENT_APPROVAL",
   "AWAITING_PAYMENT",
+  "AWAITING_PAYMENT_APPROVAL",
   "ASSEMBLING",
   "ON_THE_WAY",
   "COMPLETED",
@@ -131,6 +138,7 @@ const SELLER_STATUSES_WITH_PAYMENT_PROOF: readonly OrderStatus[] = [
 const REGULAR_PROGRESS_STEPS: readonly OrderProgressStep[] = [
   { key: "BOOKED", label: "Забронирован", sellerAction: true },
   { key: "AWAITING_PAYMENT", label: "Оплата", customerAction: true },
+  { key: "AWAITING_PAYMENT_APPROVAL", label: "Проверка оплаты" },
   { key: "ASSEMBLING", label: "Сборка", sellerAction: true },
   { key: "ON_THE_WAY", label: "В пути", customerAction: true },
   { key: "COMPLETED", label: "Завершен" },
@@ -145,6 +153,7 @@ const PREPAYMENT_PROGRESS_STEPS: readonly OrderProgressStep[] = [
     sellerAction: true,
   },
   { key: "AWAITING_PAYMENT", label: "Оплата", customerAction: true },
+  { key: "AWAITING_PAYMENT_APPROVAL", label: "Проверка оплаты" },
   { key: "ASSEMBLING", label: "Сборка", sellerAction: true },
   { key: "ON_THE_WAY", label: "В пути", customerAction: true },
   { key: "COMPLETED", label: "Завершен" },
@@ -232,6 +241,10 @@ export const getOrderStatusActionHint = (
       return userRole === "customer"
         ? "Подтвердите оплату, чтобы продавец начал сборку"
         : "Ожидайте оплату от покупателя";
+    case "AWAITING_PAYMENT_APPROVAL":
+      return userRole === "customer"
+        ? "Дождитесь проверки оплаты продавцом"
+        : "Покупатель предъявил подтверждение полной оплаты";
     case "ASSEMBLING":
       return userRole === "seller"
         ? "Отправьте товар после завершения сборки"

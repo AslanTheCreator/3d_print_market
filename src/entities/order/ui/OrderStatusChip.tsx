@@ -24,6 +24,7 @@ const getStatusIcon = (status: OrderStatus) => {
     case "AWAITING_PREPAYMENT":
     case "AWAITING_PREPAYMENT_APPROVAL":
     case "AWAITING_PAYMENT":
+    case "AWAITING_PAYMENT_APPROVAL":
       return <Payment sx={{ fontSize: 16 }} />;
     case "ASSEMBLING":
       return <ShoppingCart sx={{ fontSize: 16 }} />;

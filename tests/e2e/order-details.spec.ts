@@ -5,6 +5,47 @@ import {
   type Route,
   test,
 } from "@playwright/test";
+import { orderFixture, setupMobileAccount } from "./helpers/mobileAccount";
+
+for (const role of ["purchase", "sales"] as const) {
+  test(`${role}: full payment review stays active in a mixed desktop list`, async ({ page, baseURL }) => {
+    const state = await setupMobileAccount(page, baseURL);
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    const status = "AWAITING_PAYMENT_APPROVAL";
+    const label = "Ожидает подтверждения полной оплаты";
+    const regular = orderFixture(401, status, 10);
+    regular.histories.push({ status, comment: null, changedAt: "2026-07-10T10:00:00Z" });
+    const preorder = { ...orderFixture(402, status, 11), prepaymentAmount: 1000 };
+    const orders = [regular, preorder, orderFixture(403, "ASSEMBLING", 12), orderFixture(404, "COMPLETED", 13)];
+    state[role === "purchase" ? "customerOrders" : "sellerOrders"] = orders;
+
+    await page.goto(`/dashboard/${role}`);
+    const active = page.getByText(role === "purchase" ? "Активные" : "Активные продажи", { exact: true });
+    await expect(active.locator("..").getByText("3", { exact: true })).toBeVisible();
+    const list = page.getByText(role === "purchase" ? "Все покупки" : "Все продажи", { exact: true }).locator("..");
+    const detailButton = (orderId: number) => list.getByRole("button", { name: `Подробнее о заказе №${orderId}`, exact: true });
+    await expect(detailButton(403)).toBeVisible();
+    await expect(detailButton(404)).toBeVisible();
+    if (role === "sales") {
+      await expect(detailButton(403).locator("../..").getByRole("button", { name: "Отправить товар", exact: true })).toBeVisible();
+    }
+    await page.getByRole("button", { name: role === "purchase" ? /В обработке/ : /На проверке оплаты/ }).click();
+    await expect(detailButton(404)).toHaveCount(0);
+    for (const orderId of [401, 402]) {
+      const card = detailButton(orderId).locator("../../..");
+      await expect(card.getByText(label, { exact: true })).toBeVisible();
+      await expect(card.locator('[aria-current="step"]')).toHaveText("Проверка оплаты");
+      await expect(card.getByText("Сборка", { exact: true })).not.toHaveAttribute("aria-current", "step");
+      await expect(card.getByRole("button")).toHaveCount(1);
+    }
+    await detailButton(401).click();
+    const dialog = page.getByRole("dialog", { name: "Детали заказа №401" });
+    await expect(dialog.getByText(label, { exact: true })).toHaveCount(2);
+    await expect(dialog.getByText("История заказа", { exact: true })).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

@@ -4,6 +4,33 @@ import { expectNoOverflow, longProductName, orderFixture, setupMobileAccount } f
 test.setTimeout(90_000);
 const widths = [320, 393, 599, 600, 768, 899, 900];
 
+for (const role of ["purchase", "sales"] as const) {
+  test(`${role}: full payment review stays visible and has no mobile action`, async ({ page, baseURL }) => {
+    const state = await setupMobileAccount(page, baseURL);
+    const order = orderFixture(4, "AWAITING_PAYMENT_APPROVAL", 4);
+    order.histories.push({ status: order.actualStatus, comment: null, changedAt: order.createdAt });
+    state[role === "purchase" ? "customerOrders" : "sellerOrders"] = [
+      order, orderFixture(5, "COMPLETED", 5),
+    ];
+    await page.setViewportSize({ width: 320, height: 727 });
+    await page.goto(`/dashboard/${role}`);
+
+    const card = page.getByRole("article", { name: "Заказ №4", exact: true });
+    const status = "Ожидает подтверждения полной оплаты";
+    await expect(card.getByText(status, { exact: true })).toBeVisible();
+    await expect(card.getByRole("button")).toHaveCount(1);
+    await expectNoOverflow(page);
+    await page.getByRole("button", { name: "Фильтры и сортировка" }).click();
+    await page.getByRole("radio", { name: role === "purchase" ? /Активные/ : /На проверке оплаты/ }).check();
+    await page.getByRole("button", { name: "Применить", exact: true }).click();
+    await expect(page.getByRole("article")).toHaveCount(1);
+    await card.getByRole("button", { name: "Подробнее о заказе №4" }).click();
+    const details = page.getByRole("dialog", { name: "Детали заказа №4" });
+    await expect(details.getByText(status, { exact: true })).toHaveCount(2);
+    await expect(details.getByText("История заказа", { exact: true })).toBeVisible();
+  });
+}
+
 for (const role of ["purchase", "sales"] as const) test(`${role}: cancelled filter and dispute outcomes stay distinct with no ordinary actions`, async ({ page, baseURL }) => {
   const state = await setupMobileAccount(page, baseURL);
   state[role === "purchase" ? "customerOrders" : "sellerOrders"] = [orderFixture(1, "CANCELLED", 1), orderFixture(2, "FAILED", 2), orderFixture(3, "DISPUTED", 3)];

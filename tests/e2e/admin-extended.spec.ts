@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { adminOrderFixture, setupAdmin } from "./helpers/admin";
+import { adminCaseFixture, adminOrderFixture, setupAdmin } from "./helpers/admin";
 import { expectNoOverflow, fulfillJson, png } from "./helpers/mobileAccount";
 import { fillConversion, setupGiveawayConversion, botGiveawayFixture } from "./helpers/adminGiveawayConversion";
 
@@ -27,7 +27,47 @@ for (const defect of ["relations", "owner", "type", "USER"]) test(`conversion bl
   expect(state.writes).toEqual([]); if (defect === "relations") expect(state.reads).not.toContain("/product/101"); if (defect === "USER") expect(state.reads).toEqual([]);
 });
 
-const nonBookedStatuses = ["AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL", "AWAITING_PAYMENT", "ASSEMBLING", "ON_THE_WAY", "DISPUTED", "COMPLETED", "CANCELLED", "FAILED"] as const;
+for (const width of [1280, 393]) {
+  test(`ADMIN reads full payment review in lists, order history and case details at ${width}px`, async ({ page, baseURL }) => {
+    const status = "AWAITING_PAYMENT_APPROVAL";
+    const label = "Ожидает подтверждения полной оплаты";
+    const state = await setupAdmin(page, baseURL);
+    const order = adminOrderFixture(201, status);
+    order.histories.push({ status, comment: null, changedAt: order.createdAt });
+    state.orders = [order, adminOrderFixture(202, "ASSEMBLING")];
+    state.cases = [adminCaseFixture(301, "CANCELLATION_REQUEST", status)];
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/admin/orders?status=all");
+    await expect(page.getByText(label, { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Открыть заказ #202" })).toBeVisible();
+    await page.getByRole("combobox", { name: "Статус заказа" }).click();
+    await page.getByRole("option", { name: label, exact: true }).click();
+    await expect.poll(() => state.reads).toContain(`/admin/actions/agent-orders?page=0&size=50&status=${status}`);
+    await expect(page.getByRole("button", { name: "Открыть заказ #201" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Открыть заказ #202" })).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Открыть заказ #201" }).click();
+    const details = page.getByRole("dialog", { name: "Детали заказа", exact: true });
+    await expect(details.getByText(label, { exact: true })).toHaveCount(2);
+    await expect(details.getByRole("button", { name: /Отправить|Подтвердить|Вернуть|Отменить заказ/ })).toHaveCount(0);
+    await expectNoOverflow(page);
+
+    await page.goto(`/admin/agents/2?tab=orders&status=${status}`);
+    const agentOrder = page.getByRole("button", { name: "Открыть заказ #201" });
+    await expect(agentOrder).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Открыть заказ #202" })).toHaveCount(0);
+    expect(state.reads).toContain(`/admin/actions/agents/2/orders?page=0&size=50&status=${status}`);
+
+    await page.goto("/admin/order-cases");
+    await page.getByRole("button", { name: "Открыть обращение #301" }).click();
+    const caseDetails = page.getByRole("dialog", { name: "Обращение №301", exact: true });
+    await expect(caseDetails.getByText(`Предыдущий статус: ${label}`)).toBeVisible();
+    await expect(caseDetails.getByText(`Текущий статус: ${label}`)).toBeVisible();
+    expect(state.writes).toEqual([]);
+  });
+}
+
+const nonBookedStatuses = ["AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL", "AWAITING_PAYMENT", "AWAITING_PAYMENT_APPROVAL", "ASSEMBLING", "ON_THE_WAY", "DISPUTED", "COMPLETED", "CANCELLED", "FAILED"] as const;
 const openAdminCancel = async (page: Page) => {
   await page.goto("/admin/orders?status=all");
   await page.getByRole("button", { name: "Открыть заказ #201" }).click();
