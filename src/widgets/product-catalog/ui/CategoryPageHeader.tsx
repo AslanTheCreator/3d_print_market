@@ -1,10 +1,13 @@
 import { Box, Typography } from "@mui/material";
 import { CategoryBreadcrumbs, type CategoryPath } from "@/entities/category";
-import type { PriceRange } from "@/entities/product";
+import type { PriceRange, SortBy } from "@/entities/product";
 import { PriceRangeFilter } from "./PriceRangeFilter";
+import { ProductSortSelect } from "./ProductSortSelect";
 
 interface CategoryPageHeaderProps {
   categoryPath: CategoryPath;
+  sortBy: SortBy;
+  onSortChange: (sortBy: SortBy) => void;
   priceRange?: PriceRange;
   availablePriceRange?: PriceRange;
   onPriceRangeApply: (value?: PriceRange) => void;
@@ -12,6 +15,8 @@ interface CategoryPageHeaderProps {
 
 export const CategoryPageHeader = ({
   categoryPath,
+  sortBy,
+  onSortChange,
   priceRange,
   availablePriceRange,
   onPriceRangeApply,
@@ -46,6 +51,7 @@ export const CategoryPageHeader = ({
           availableRange={availablePriceRange}
           onApply={onPriceRangeApply}
         />
+        <ProductSortSelect value={sortBy} onChange={onSortChange} />
       </Box>
     </>
   );

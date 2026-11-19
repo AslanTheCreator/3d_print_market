@@ -9,9 +9,11 @@ import {
   ProductGridSkeleton,
   type PriceRange,
   type ProductFilter,
+  type SortBy,
 } from "@/entities/product";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { PriceRangeFilter } from "./PriceRangeFilter";
+import { ProductSortSelect } from "./ProductSortSelect";
 import { ProductCatalog } from "./ProductCatalog";
 import { SEARCH_PRODUCTS_PAGE_SIZE } from "../model/pageSizes";
 
@@ -21,6 +23,7 @@ export const SearchProducts = () => {
   const searchParams = useSearchParams();
   const query = searchParams?.get("query") || "";
   const [priceRange, setPriceRange] = useState<PriceRange | undefined>();
+  const [sortBy, setSortBy] = useState<SortBy>("DATE_DESC");
 
   const filters = useMemo<ProductFilter>(
     () => ({
@@ -42,7 +45,8 @@ export const SearchProducts = () => {
     isFetching,
     isLoading,
     refetch,
-  } = useProductsInfinite(SEARCH_PRODUCTS_PAGE_SIZE, filters, undefined, {
+  } = useProductsInfinite(SEARCH_PRODUCTS_PAGE_SIZE, filters, sortBy, {
+    restartOnCriteriaChange: true,
     sessionKey,
     enabled: isInitialized,
   });
@@ -76,7 +80,7 @@ export const SearchProducts = () => {
   return (
     <Container sx={{ pt: "20px" }}>
       <Typography component="h2" variant="h2">
-        {query ? `Результаты поиска: "${query}"` : "Новинки"}
+        {query ? `Результаты поиска: "${query}"` : sortBy === "DATE_DESC" ? "Новинки" : "Каталог"}
       </Typography>
 
       <Box
@@ -92,6 +96,7 @@ export const SearchProducts = () => {
           availableRange={availablePriceRange}
           onApply={setPriceRange}
         />
+        <ProductSortSelect value={sortBy} onChange={setSortBy} />
       </Box>
 
       <Box pt="20px">

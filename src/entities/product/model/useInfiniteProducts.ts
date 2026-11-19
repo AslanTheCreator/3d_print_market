@@ -4,18 +4,16 @@ import {
   hashKey,
 } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
-import type {
-  FetchProductsParams,
-  ProductFilter,
-  SortBy,
+import {
+  productSortFields,
+  type FetchProductsParams,
+  type Pageable,
+  type ProductFilter,
+  type SortBy,
 } from "./productRequest";
 import type { Product, ProductDto } from "./types";
 
-export interface CursorPageParam {
-  lastCreatedAt?: string;
-  lastPrice?: number;
-  lastId?: number;
-}
+export type CursorPageParam = Pick<Pageable, "lastCreatedAt" | "lastPrice" | "lastSellerRating"> & { lastId: number };
 
 export interface ProductFetchFunction<T extends ProductDto = Product> {
   (params: FetchProductsParams, signal?: AbortSignal): Promise<T[]>;
@@ -60,14 +58,10 @@ export const useInfiniteProducts = <T extends ProductDto = Product>({
   const query = useInfiniteQuery({
     queryKey: fullQueryKey,
     queryFn: ({ pageParam, signal }: { pageParam: CursorPageParam | null; signal: AbortSignal }) => {
-      const { lastCreatedAt, lastPrice, lastId } = pageParam || {};
-
       return fetchFunction({
         size,
         filters,
-        lastCreatedAt,
-        lastPrice,
-        lastId,
+        ...pageParam,
         sortBy,
       }, signal);
     },
@@ -78,11 +72,8 @@ export const useInfiniteProducts = <T extends ProductDto = Product>({
 
       const lastItem = lastPage[lastPage.length - 1];
 
-      return {
-        lastCreatedAt: lastItem.createdAt,
-        lastPrice: lastItem.price,
-        lastId: lastItem.id,
-      };
+      const [productField, cursorField] = productSortFields[sortBy];
+      return { lastId: lastItem.id, [cursorField]: lastItem[productField] };
     },
     initialPageParam: null,
     initialData,

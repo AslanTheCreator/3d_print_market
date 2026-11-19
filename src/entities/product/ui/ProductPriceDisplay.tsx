@@ -11,7 +11,7 @@ interface ProductPriceDisplayProps {
   currency: Product["currency"];
   prepaymentAmount: number;
   availability: Availability;
-  rating?: number;
+  rating?: number | null;
   reviewCount?: number;
 }
 
@@ -26,7 +26,7 @@ export const ProductPriceDisplay: React.FC<ProductPriceDisplayProps> = ({
   const isPreorder = availability === "PREORDER";
 
   const hasRating =
-    rating !== undefined && rating > 0 && (reviewCount ?? 0) > 0;
+    rating != null && rating > 0 && (reviewCount ?? 0) > 0;
 
   if (availability === "GIVEAWAY") return <Typography fontWeight={700} color="primary">Розыгрыш</Typography>;
 

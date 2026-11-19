@@ -158,6 +158,32 @@ const server = createServer((request, response) => {
     return;
   }
 
+  // Home success is opt-in because other specs exercise the guest SSR failure and retry.
+  if (request.method === "POST" && url.pathname === "/products/find") {
+    let body = "";
+    request.on("data", chunk => { body += chunk; });
+    request.on("end", () => {
+      try {
+        const { categoryId, pageable, ...filters } = JSON.parse(body);
+        const firstDatePage = Object.keys(filters).length === 0 &&
+          pageable?.sortBy === "DATE_DESC" && Object.keys(pageable).length === 2;
+        const category = firstDatePage && categoryId === 930 && pageable.size === 20;
+        const home = firstDatePage && categoryId === undefined && pageable.size === 18 &&
+          process.env.PLAYWRIGHT_HOME_CATALOG_FIXTURE === "1";
+        if (category || home) {
+          sendJson(response, 200, [{ ...product, id: home ? 931 : 930,
+            name: home ? "Серверный товар главной F09" : "Серверный товар F09", imageId: 0,
+            sellerId: 77, createdAt: "2026-11-19T01:02:03.123456Z", expirationDate: "2030-01-01T00:00:00Z" }]);
+        } else {
+          sendJson(response, 404, { message: "No matching catalog fixture" });
+        }
+      } catch {
+        sendJson(response, 400, { message: "Invalid catalog request" });
+      }
+    });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === `/product/${product.id}`) {
     sendJson(response, 200, product);
     return;

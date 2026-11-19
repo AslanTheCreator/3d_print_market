@@ -4,11 +4,12 @@ import { useState } from "react";
 import { Alert, Box, Button, Container, Skeleton, Typography } from "@mui/material";
 import { useProductsInfinite, usePublicGiveaway } from "@/entities/product";
 import { useAuth } from "@/entities/session";
-import { ProductGridSkeleton, type Product } from "@/entities/product";
+import { ProductGridSkeleton, type Product, type SortBy } from "@/entities/product";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
 import { ProductCatalog } from "./ProductCatalog";
 import { ProductGridItem } from "@/entities/product";
 import { GiveawayCard } from "./GiveawayCard";
+import { ProductSortSelect } from "./ProductSortSelect";
 
 interface HomeProductsProps {
   initialProducts: Product[];
@@ -32,7 +33,9 @@ export const HomeProducts = ({
       : giveaway.data && (giveaway.timing.phase === "scheduled" || giveaway.timing.phase === "active")
         ? <GiveawayCard giveaway={giveaway.data} timing={giveaway.timing} /> : null;
   const [hasInitialError, setHasInitialError] = useState(initialError);
-  const shouldBlockQuery = hasInitialError && !isAuthenticated;
+  const [sortBy, setSortBy] = useState<SortBy>("DATE_DESC");
+  const isInitialQuery = sortBy === "DATE_DESC";
+  const shouldBlockQuery = isInitialQuery && hasInitialError && !isAuthenticated;
 
   const {
     data,
@@ -46,9 +49,10 @@ export const HomeProducts = ({
     isLoading,
     isError,
     refetch,
-  } = useProductsInfinite(pageSize, undefined, "DATE_DESC", {
+  } = useProductsInfinite(pageSize, undefined, sortBy, {
+    restartOnCriteriaChange: true,
     sessionKey,
-    initialProducts: initialError ? undefined : initialProducts,
+    initialProducts: isInitialQuery && !initialError ? initialProducts : undefined,
     initialDataUpdatedAt,
     enabled: isInitialized && !shouldBlockQuery,
   });
@@ -73,9 +77,16 @@ export const HomeProducts = ({
             fontSize: { xs: "1.75rem", sm: "2rem" },
           }}
         >
-          Новинки
+          {isInitialQuery ? "Новинки" : "Каталог"}
         </Typography>
       )}
+
+      <Box sx={{ mb: 2 }}>
+        <ProductSortSelect value={sortBy} onChange={value => {
+          setHasInitialError(false);
+          setSortBy(value);
+        }} />
+      </Box>
 
       <Box>
         <InfiniteScroll

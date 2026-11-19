@@ -21,7 +21,7 @@ export interface ProductDto {
   availability: Availability;
   externalUrl: string | null;
   sellerLogin: string;
-  sellerRating: number;
+  sellerRating: number | null;
   totalReviews: number;
   createdAt: string;
 }

@@ -17,12 +17,23 @@ export interface ProductFilter {
   dateRange?: DateRange;
 }
 
-export type SortBy = "DATE_DESC" | "PRICE_ASC" | "PRICE_DESC";
+// Each sort uses one DTO field and its corresponding pageable field.
+export const productSortFields = {
+  DATE_DESC: ["createdAt", "lastCreatedAt"],
+  DATE_ASC: ["createdAt", "lastCreatedAt"],
+  PRICE_ASC: ["price", "lastPrice"],
+  PRICE_DESC: ["price", "lastPrice"],
+  SELLER_RATING_ASC: ["sellerRating", "lastSellerRating"],
+  SELLER_RATING_DESC: ["sellerRating", "lastSellerRating"],
+} as const;
+
+export type SortBy = keyof typeof productSortFields;
 
 export interface Pageable {
   size: number;
   lastCreatedAt?: string;
   lastPrice?: number;
+  lastSellerRating?: number | null;
   lastId?: number;
   sortBy?: SortBy;
 }
@@ -31,11 +42,6 @@ export interface ProductRequestModel extends ProductFilter {
   pageable: Pageable;
 }
 
-export interface FetchProductsParams {
-  size: number;
+export interface FetchProductsParams extends Pageable {
   filters?: ProductFilter;
-  lastCreatedAt?: string;
-  lastPrice?: number;
-  lastId?: number;
-  sortBy?: SortBy;
 }

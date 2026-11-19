@@ -1,7 +1,8 @@
 import { usePrivateScope } from "@/shared/lib/query";
 import { parsePositiveSafeInteger } from "@/shared/lib";
 import { ProductNotFoundError } from "../lib/ProductNotFoundError";
-import { useQuery } from "@tanstack/react-query";
+import { hashKey, useQuery } from "@tanstack/react-query";
+import { useId, useState } from "react";
 import { productApi } from "../api/productApi";
 import { productKeys } from "./queryKeys";
 import type { Product, ProductDetail } from "./types";
@@ -17,6 +18,7 @@ interface ProductByIdOptions {
 
 interface ProductsInfiniteOptions {
   sessionKey?: number | null;
+  restartOnCriteriaChange?: boolean;
   initialProducts?: Product[];
   initialDataUpdatedAt?: number;
   staleTime?: number;
@@ -67,15 +69,29 @@ export const useProductsInfinite = (
   options?: ProductsInfiniteOptions,
 ) => {
   const sessionKey = options?.sessionKey ?? null;
+  const catalogId = useId();
+  const criteria = options?.restartOnCriteriaChange
+    ? hashKey([size, filters, sortBy ?? "DATE_DESC"])
+    : null;
+  const [traversal, setTraversal] = useState({ criteria, revision: 0 });
+  let revision = traversal.revision;
+  if (traversal.criteria !== criteria) {
+    revision++;
+    setTraversal({ criteria, revision });
+  }
+
+  const catalogKey = productKeys.catalog(sessionKey);
+  // A new traversal must not restore the pages or SSR seed of an earlier one.
+  const queryKey = revision === 0 ? catalogKey : [...catalogKey, { catalogId, revision }];
 
   return useInfiniteProducts({
     size,
     filters,
     sortBy,
-    fetchFunction: (params) => productApi.getProducts(params, sessionKey !== null),
-    queryKey: productKeys.catalog(sessionKey),
+    fetchFunction: (params, signal) => productApi.getProducts(params, sessionKey !== null, signal),
+    queryKey,
     initialData:
-      sessionKey === null && options?.initialProducts !== undefined
+      revision === 0 && sessionKey === null && options?.initialProducts !== undefined
         ? {
             pages: [options.initialProducts],
             pageParams: [null],

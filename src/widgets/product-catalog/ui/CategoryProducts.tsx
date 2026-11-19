@@ -19,6 +19,7 @@ import {
   type PriceRange,
   type Product,
   type ProductFilter,
+  type SortBy,
 } from "@/entities/product";
 import { CategoryPageHeader } from "./CategoryPageHeader";
 import { ProductCatalog } from "./ProductCatalog";
@@ -39,6 +40,7 @@ export const CategoryProducts = ({
   pageSize,
 }: CategoryProductsProps) => {
   const router = useRouter();
+  const [sortBy, setSortBy] = useState<SortBy>("DATE_DESC");
   const [priceRange, setPriceRange] = useState<PriceRange | undefined>();
   const [hasInitialError, setHasInitialError] = useState(initialError);
   const { isAuthenticated, isInitialized, sessionKey } = useAuth();
@@ -62,10 +64,10 @@ export const CategoryProducts = ({
     };
   }, [categoryPath, priceRange]);
 
-  const isBaseFilter = priceRange === undefined;
+  const isInitialQuery = priceRange === undefined && sortBy === "DATE_DESC";
   const shouldUseInitialProducts =
-    isBaseFilter && !initialError && !isAdultCategory;
-  const shouldBlockQuery = isBaseFilter && hasInitialError && !isAuthenticated;
+    isInitialQuery && !initialError && !isAdultCategory;
+  const shouldBlockQuery = isInitialQuery && hasInitialError && !isAuthenticated;
   const shouldWaitForAuthInitialization =
     isAdultCategory && !isInitialized;
   const shouldRequireAuthentication =
@@ -93,7 +95,8 @@ export const CategoryProducts = ({
     isError,
     error,
     refetch,
-  } = useProductsInfinite(pageSize, filters, "DATE_DESC", {
+  } = useProductsInfinite(pageSize, filters, sortBy, {
+    restartOnCriteriaChange: true,
     sessionKey,
     initialProducts: shouldUseInitialProducts ? initialProducts : undefined,
     initialDataUpdatedAt,
@@ -229,9 +232,17 @@ export const CategoryProducts = ({
       {shouldShowCategoryHeader && (
         <CategoryPageHeader
           categoryPath={categoryPath}
+          sortBy={sortBy}
+          onSortChange={value => {
+            setHasInitialError(false);
+            setSortBy(value);
+          }}
           priceRange={priceRange}
           availablePriceRange={availablePriceRange}
-          onPriceRangeApply={setPriceRange}
+          onPriceRangeApply={value => {
+            setHasInitialError(false);
+            setPriceRange(value);
+          }}
         />
       )}
 

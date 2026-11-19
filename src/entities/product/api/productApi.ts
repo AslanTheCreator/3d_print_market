@@ -13,18 +13,19 @@ const API_URL = `/products`;
 interface ProductSitemapItem {
   id: number;
   createdAt: string;
-  price: number;
 }
 
 const getProductDtos = async (
   params: FetchProductsParams,
   authenticated = false,
+  signal?: AbortSignal,
 ): Promise<ProductDto[]> => {
   const requestData = buildProductRequest(params);
   const client = authenticated ? authClient : publicClient;
   const { data } = await client.post<ProductDto[]>(
     `${API_URL}/find`,
     requestData,
+    { signal },
   );
 
   return data;
@@ -34,10 +35,11 @@ export const productApi = {
   getProducts: async (
     params: FetchProductsParams,
     authenticated = false,
+    signal?: AbortSignal,
   ): Promise<Product[]> => {
-    const data = await getProductDtos(params, authenticated);
+    const data = await getProductDtos(params, authenticated, signal);
 
-    return attachImages<ProductDto, Product>(data, (p) => p.imageId);
+    return attachImages<ProductDto, Product>(data, (p) => p.imageId, signal);
   },
 
   getProductSitemapItems: async (
@@ -48,7 +50,6 @@ export const productApi = {
     return data.map((product) => ({
       id: product.id,
       createdAt: product.createdAt,
-      price: product.price,
     }));
   },
 

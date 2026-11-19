@@ -49,7 +49,6 @@ const getProductEntries = async (
 ): Promise<MetadataRoute.Sitemap> => {
   const entries: MetadataRoute.Sitemap = [];
   let lastCreatedAt: string | undefined;
-  let lastPrice: number | undefined;
   let lastId: number | undefined;
 
   try {
@@ -57,7 +56,6 @@ const getProductEntries = async (
       const products = await productApi.getProductSitemapItems({
         size: PRODUCT_SITEMAP_PAGE_SIZE,
         lastCreatedAt,
-        lastPrice,
         lastId,
         sortBy: "DATE_DESC",
       });
@@ -77,7 +75,6 @@ const getProductEntries = async (
 
       const lastProduct = products[products.length - 1];
       lastCreatedAt = lastProduct.createdAt;
-      lastPrice = lastProduct.price;
       lastId = lastProduct.id;
     }
   } catch {

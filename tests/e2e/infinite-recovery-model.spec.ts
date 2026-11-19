@@ -7,6 +7,8 @@ import type { UseInfiniteProductsOptions } from "@/entities/product/model/useInf
 import type { useInfiniteProducts } from "@/entities/product/model/useInfiniteProducts";
 import type { InfiniteScroll } from "@/shared/ui/infinite-scroll/InfiniteScroll";
 import { productKeys } from "@/entities/product/model/queryKeys";
+import { buildProductRequest } from "@/entities/product/lib/buildProductRequest";
+import { productSortFields, type ProductRequestModel } from "@/entities/product/model/productRequest";
 import type { ProductDto } from "@/entities/product";
 import { orderFixture } from "./helpers/mobileAccount";
 
@@ -58,6 +60,7 @@ function mount(initialOptions: UseInfiniteProductsOptions<ProductDto>) {
   };
   const hook = load<{ useInfiniteProducts: typeof useInfiniteProducts }>("src/entities/product/model/useInfiniteProducts.ts", {
     react,
+    "./productRequest": { productSortFields },
     "@tanstack/react-query": {
       hashKey,
       useInfiniteQuery: (queryOptions: Parameters<InfiniteQueryObserver["setOptions"]>[0]) => {
@@ -144,3 +147,79 @@ for (const retry of [false, 1] as const) {
     } finally { env.close(); }
   });
 }
+
+const timestamp = "2026-11-19T10:12:13.123456789+03:00";
+const catalogItem = (id: number, sellerRating: number | null): ProductDto => ({
+  ...orderFixture(1, "BOOKED", 1).product, status: "ACTIVE", availability: "PURCHASABLE",
+  currency: "RUB", id, price: 10.125, sellerRating, createdAt: timestamp,
+});
+
+for (const [sortBy, field] of [
+  ["DATE_DESC", "lastCreatedAt"], ["DATE_ASC", "lastCreatedAt"],
+  ["PRICE_ASC", "lastPrice"], ["PRICE_DESC", "lastPrice"],
+  ["SELLER_RATING_ASC", "lastSellerRating"], ["SELLER_RATING_DESC", "lastSellerRating"],
+] as const) {
+  test(`${sortBy} sends the exact wire cursor for every page and stops on empty`, async () => {
+    const rows = [catalogItem(13, 4.675), catalogItem(11, 4.675), catalogItem(9, 0), catalogItem(6, null)];
+    const requests: ProductRequestModel[] = [];
+    const filters = { categoryId: 32, name: "test" };
+    const env = mount({
+      queryKey: productKeys.catalog(null), filters, size: 1, sortBy, retry: false,
+      fetchFunction: async params => {
+        const index = requests.length;
+        requests.push(buildProductRequest(params));
+        return rows.slice(index, index + 1);
+      },
+    });
+    try {
+      await expect.poll(() => env.result().isSuccess && !env.result().hasNextPage).toBe(true);
+      const firstPage = { size: 1, sortBy };
+      expect(requests).toEqual([
+        { ...filters, pageable: firstPage },
+        ...rows.map(row => ({ ...filters, pageable: { ...firstPage, lastId: row.id,
+          [field]: field === "lastSellerRating" ? row.sellerRating : field === "lastPrice" ? row.price : row.createdAt,
+        } })),
+      ]);
+      expect(env.result().data?.pages.flat().map(item => item.id)).toEqual(rows.map(item => item.id));
+      const cursor = { lastCreatedAt: timestamp, lastPrice: 10.125, lastSellerRating: null };
+      expect(buildProductRequest({ ...firstPage, ...cursor }).pageable).toEqual(firstPage);
+      expect(buildProductRequest({ ...firstPage, ...cursor, lastId: 6 }).pageable)
+        .toEqual({ ...firstPage, lastId: 6, [field]: cursor[field] });
+    } finally { env.close(); }
+  });
+}
+
+test("changing sort, price and search discards the old cursor and ignores a delayed tail", async () => {
+  let release!: (rows: ProductDto[]) => void;
+  const delayed = new Promise<ProductDto[]>(resolve => { release = resolve; });
+  let tailSignal: AbortSignal | undefined;
+  const requests: ProductRequestModel[] = [];
+  const options: UseInfiniteProductsOptions<ProductDto> = {
+    size: 2, filters: { name: "old" }, sortBy: "PRICE_ASC", queryKey: productKeys.catalog(null),
+    fetchFunction: async (params, signal) => {
+      requests.push(buildProductRequest(params));
+      if (params.lastId === 10) {
+        tailSignal = signal;
+        return delayed;
+      }
+      if (params.lastId === 30) return [catalogItem(20, 3), catalogItem(10, 3)];
+      return params.sortBy === "PRICE_ASC"
+        ? [catalogItem(40, 3), catalogItem(30, 3)] : [catalogItem(51, null)];
+    },
+  };
+  const env = mount(options);
+  try {
+    await expect.poll(() => Boolean(tailSignal)).toBe(true);
+    const filters = [{ name: "old" }, { name: "old", priceRange: { minPrice: 3 } }, { name: "new", priceRange: { minPrice: 3 } }];
+    for (const filter of filters) {
+      env.change({ ...options, filters: filter, sortBy: "DATE_ASC" });
+      await expect.poll(() => env.result().isSuccess && !env.result().hasNextPage).toBe(true);
+      expect(requests.at(-1)).toEqual({ ...filter, pageable: { size: 2, sortBy: "DATE_ASC" } });
+    }
+    expect(tailSignal?.aborted).toBe(true);
+    release([catalogItem(999, 0)]);
+    await delayed;
+    expect(env.result().data?.pages.flat().map(item => item.id)).toEqual([51]);
+    expect(requests).toHaveLength(6);
+  } finally { release([]); env.close(); }
+});

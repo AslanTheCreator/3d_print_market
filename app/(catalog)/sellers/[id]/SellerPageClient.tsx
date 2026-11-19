@@ -7,15 +7,10 @@ import {
   Breadcrumbs,
   Button,
   Container,
-  FormControl,
-  InputLabel,
   Link as MuiLink,
-  MenuItem,
-  Select,
   Stack,
   Typography,
 } from "@mui/material";
-import type { SelectChangeEvent } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { ProductGridSkeleton, useProductsInfinite } from "@/entities/product";
 import { useUserById } from "@/entities/user";
@@ -23,19 +18,13 @@ import { useAuth } from "@/entities/session";
 import type { PriceRange, ProductFilter, SortBy } from "@/entities/product";
 import { EmptyCatalogState, ErrorState } from "@/shared/ui/states";
 import { InfiniteScroll } from "@/shared/ui/infinite-scroll";
-import { PriceRangeFilter, ProductCatalog } from "@/widgets/product-catalog";
+import { PriceRangeFilter, ProductCatalog, ProductSortSelect } from "@/widgets/product-catalog";
 import {
   SellerProfileHeader,
   SellerProfileHeaderSkeleton,
 } from "@/widgets/seller-profile";
 
 const PAGE_SIZE = 12;
-
-const SORT_OPTIONS: Array<{ value: SortBy; label: string }> = [
-  { value: "DATE_DESC", label: "Сначала новые" },
-  { value: "PRICE_ASC", label: "Сначала дешевле" },
-  { value: "PRICE_DESC", label: "Сначала дороже" },
-];
 
 const getAvailablePriceRange = (
   products: Array<{ price: number }>,
@@ -106,6 +95,7 @@ export const SellerPageClient = ({ sellerId }: SellerPageClientProps) => {
     isError: isProductsError,
     refetch: refetchProducts,
   } = useProductsInfinite(PAGE_SIZE, filters, sortBy, {
+    restartOnCriteriaChange: true,
     sessionKey,
     enabled: isInitialized && isSellerIdValid && Boolean(seller),
   });
@@ -124,10 +114,6 @@ export const SellerPageClient = ({ sellerId }: SellerPageClientProps) => {
   const handleProductsRetry = useCallback(() => {
     void refetchProducts();
   }, [refetchProducts]);
-
-  const handleSortChange = (event: SelectChangeEvent<SortBy>) => {
-    setSortBy(event.target.value as SortBy);
-  };
 
   if (!isSellerIdValid) {
     return (
@@ -291,25 +277,7 @@ export const SellerPageClient = ({ sellerId }: SellerPageClientProps) => {
               onApply={setPriceRange}
             />
 
-            <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 190 } }}>
-              <InputLabel id="seller-products-sort-label">Сортировка</InputLabel>
-              <Select
-                labelId="seller-products-sort-label"
-                label="Сортировка"
-                value={sortBy}
-                onChange={handleSortChange}
-                sx={{
-                  borderRadius: 2,
-                  bgcolor: "background.paper",
-                }}
-              >
-                {SORT_OPTIONS.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <ProductSortSelect value={sortBy} onChange={setSortBy} />
           </Stack>
         </Stack>
 
