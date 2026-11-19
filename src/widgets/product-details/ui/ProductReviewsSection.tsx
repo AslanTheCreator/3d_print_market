@@ -19,6 +19,7 @@ import type { Swiper as SwiperType } from "swiper";
 import type { Review } from "@/entities/review";
 import {
   formatAverageRating,
+  formatReviewComment,
   formatReviewDate,
   formatReviewsLabel,
 } from "./productDetailsFormatters";
@@ -117,7 +118,7 @@ function ReviewCard({ review, compact = false }: ReviewCardProps) {
             wordBreak: "break-word",
           }}
         >
-          {review.comment.trim() || "Комментарий отсутствует"}
+          {formatReviewComment(review.comment)}
         </Typography>
       </Stack>
     </Paper>
@@ -282,7 +283,7 @@ export function ProductReviewsSection({
                       wordBreak: "break-word",
                     }}
                   >
-                    {previewReview.comment.trim() || "Комментарий отсутствует"}
+                    {formatReviewComment(previewReview.comment)}
                   </Typography>
                 </Stack>
               </Paper>

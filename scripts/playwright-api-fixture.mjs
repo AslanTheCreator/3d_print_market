@@ -206,6 +206,26 @@ const server = createServer((request, response) => {
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/product/926") {
+    sendJson(response, 200, {
+      ...product,
+      id: 926,
+      name: "Товар с оценками без комментария",
+      imageIds: [],
+      sellerRating: 4,
+      totalReviews: 3,
+      reviews: [null, undefined, ""].map((comment, index) => ({
+        id: 7200 + index,
+        rating: 5 - index,
+        reviewerName: `Автор оценки ${index + 1}`,
+        ...(comment !== undefined && { comment }),
+        imageId: 0,
+        createdAt: "2026-07-28T10:00:00.000Z",
+      })),
+    });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/product/902") {
     sendJson(response, 200, {
       ...product,

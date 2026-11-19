@@ -110,7 +110,7 @@ for (const width of [393, 1280]) {
   });
 }
 
-test("review visible labels describe textarea and rating with validation errors", async ({ page, baseURL }) => {
+test("review labels describe the optional comment, its limit and rating validation", async ({ page, baseURL }) => {
   const state = await setupMobileAccount(page, baseURL);
   state.customerOrders = [orderFixture(1, "COMPLETED", 1)];
   const writes: unknown[] = [];
@@ -125,8 +125,9 @@ test("review visible labels describe textarea and rating with validation errors"
   const comment = dialog.getByRole("textbox", { name: "Комментарий", exact: true });
   await expect(rating).toBeVisible();
   await comment.fill("а");
-  await expect(comment).toHaveAccessibleDescription("Минимум 3 символа");
-  await expect(comment).toHaveAttribute("aria-invalid", "true");
+  await expect(comment).toHaveAccessibleDescription("1/500");
+  await expect(comment).toHaveAttribute("aria-invalid", "false");
+  await expect(comment).toHaveAttribute("maxlength", "500");
   await dialog.locator(`label[for="${await comment.getAttribute("id")}"]`).click();
   await expect(comment).toBeFocused();
   const fifth = rating.locator('input[value="5"]');

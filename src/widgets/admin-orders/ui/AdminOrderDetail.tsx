@@ -3,6 +3,7 @@ import { Button, Divider, Stack, Typography } from "@mui/material";
 import { AdminImages } from "@/entities/image";
 import {
   getOrderStatusMeta,
+  getOrderReviewState,
   OrderStatusChip,
   type AdminOrderDto,
 } from "@/entities/order";
@@ -45,6 +46,9 @@ export function AdminOrderDetail({
       </Stack>
       <OrderStatusChip status={order.actualStatus} />
       <Typography variant="h6">{order.product.name}</Typography>
+      {getOrderReviewState(order, "admin") === "published" && (
+        <Typography variant="body2" color="text.secondary">Отзыв оставлен</Typography>
+      )}
       <Typography>Количество: {order.product.count}</Typography>
       <Typography>
         Бот: {order.sellerLogin} (#{order.sellerId})

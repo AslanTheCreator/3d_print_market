@@ -261,7 +261,6 @@ export const getCustomerOrderActionFlags = (status: OrderStatus) => {
     canPrePay: status === "AWAITING_PREPAYMENT",
     canConfirmReceipt: status === "ON_THE_WAY",
     canCancel: status === "BOOKED",
-    canLeaveReview: status === "COMPLETED",
   };
 };
 

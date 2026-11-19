@@ -1,7 +1,7 @@
 export interface Review {
   id: number;
   rating: number;
-  comment: string;
+  comment?: string | null;
   reviewerName: string;
   imageId: number;
   createdAt: string;
@@ -10,5 +10,5 @@ export interface Review {
 export interface CreateReviewInput {
   orderId: number;
   rating: number;
-  comment: string;
+  comment?: string;
 }

@@ -52,3 +52,6 @@ export const formatReviewDate = (value: string): string => {
     month: "long",
   }).format(date);
 };
+export function formatReviewComment(comment: unknown) {
+  return (typeof comment === "string" && comment.trim()) || "Комментарий отсутствует";
+}

@@ -30,7 +30,7 @@ import { Controller } from "react-hook-form";
 import { Product } from "@/entities/product";
 import { getImageUrl } from "@/shared/lib";
 import { OrderRefreshWarning } from "./OrderRefreshWarning";
-import { useLeaveReview } from "../model/useLeaveReview";
+import type { useLeaveReview } from "../model/useLeaveReview";
 import { REVIEW_VALIDATION, REVIEW_FORM_RULES } from "../model/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,9 +40,7 @@ import { REVIEW_VALIDATION, REVIEW_FORM_RULES } from "../model/types";
 interface LeaveReviewDialogProps {
   orderId: number;
   product: Product;
-  open: boolean;
-  onClose: () => void;
-  onSuccess?: () => void;
+  review: ReturnType<typeof useLeaveReview>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -203,19 +201,11 @@ const ProductHeader: React.FC<{ product: Product }> = ({ product }) => {
 export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
   orderId,
   product,
-  open,
-  onClose,
-  onSuccess,
+  review,
 }) => {
   const theme = useTheme();
 
-  const { dialogState, form, handleSubmit, isPending, isError, closeDialog, onExited, actionsAvailable } =
-    useLeaveReview({
-      orderId,
-      open,
-      onClose,
-      onSuccess,
-    });
+  const { isDialogOpen, dialogState, form, handleSubmit, isPending, isError, closeDialog, onExited, actionsAvailable, canLeaveReview } = review;
   const formId = useId();
   const ratingLabelId = `${formId}-rating-label`;
   const ratingErrorId = `${formId}-rating-error`;
@@ -235,7 +225,7 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
 
   return (
     <Dialog
-      open={open}
+      open={isDialogOpen}
       TransitionProps={{ onExited }}
       onClose={dialogState === "form" ? handleClose : undefined}
       maxWidth="sm"
@@ -406,6 +396,15 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
               </Box>
 
               {/* Ошибка отправки */}
+              {review.isChecking && <Alert severity="info">Проверяем состояние отзыва…</Alert>}
+              {review.needsCheck && (
+                <Alert severity="warning">Результат отправки пока не подтверждён. Проверьте состояние заказа перед повторной отправкой.</Alert>
+              )}
+              {!canLeaveReview && !isPending && !isError && !review.isChecking && !review.needsCheck && (
+                <Alert severity="info">
+                  {review.reviewExists ? "Отзыв оставлен" : "Оставить отзыв для этого заказа сейчас нельзя."}
+                </Alert>
+              )}
               {isError && (
                 <Alert severity="error" sx={{ borderRadius: 2 }}>
                   Не удалось отправить отзыв. Попробуйте ещё раз.
@@ -419,10 +418,15 @@ export const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
             <Button onClick={handleClose} disabled={isPending}>
               Отмена
             </Button>
+            {review.needsCheck && (
+              <Button sx={{ minHeight: 44 }} onClick={() => void review.checkResult()}>
+                Проверить состояние отзыва
+              </Button>
+            )}
             <Button
               onClick={handleSubmit}
               variant="contained"
-              disabled={isPending || !actionsAvailable || currentRating === 0}
+              disabled={isPending || !actionsAvailable || !canLeaveReview || currentRating === 0}
               startIcon={
                 isPending ? (
                   <CircularProgress size={18} color="inherit" />

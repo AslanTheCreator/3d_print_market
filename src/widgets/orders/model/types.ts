@@ -8,7 +8,6 @@ export interface LeaveReviewFormData {
 export const REVIEW_VALIDATION = {
   RATING_MIN: 1,
   RATING_MAX: 5,
-  COMMENT_MIN_LENGTH: 3,
   COMMENT_MAX_LENGTH: 500,
 } as const;
 
@@ -24,13 +23,9 @@ export const REVIEW_FORM_RULES = {
       value: REVIEW_VALIDATION.RATING_MAX,
       message: "Максимальная оценка — 5",
     },
+    validate: (rating: number) => Number.isInteger(rating) || "Выберите целую оценку",
   },
   comment: {
-    required: "Напишите комментарий",
-    minLength: {
-      value: REVIEW_VALIDATION.COMMENT_MIN_LENGTH,
-      message: `Минимум ${REVIEW_VALIDATION.COMMENT_MIN_LENGTH} символа`,
-    },
     maxLength: {
       value: REVIEW_VALIDATION.COMMENT_MAX_LENGTH,
       message: `Максимум ${REVIEW_VALIDATION.COMMENT_MAX_LENGTH} символов`,

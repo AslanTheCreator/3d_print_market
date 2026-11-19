@@ -62,6 +62,8 @@ export interface ListOrdersModel {
   transfer: OrderTransfer;
   images: number[];
   paymentProofImageId?: number | null;
+  canLeaveReview?: boolean;
+  reviewId?: number | null;
   deliveryUrl: string;
   histories: OrderHistory[];
 }

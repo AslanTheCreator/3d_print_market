@@ -1,6 +1,6 @@
 import { expect, test, type Locator } from "@playwright/test";
 import type { Review } from "@/entities/review";
-import { formatReviewDate } from "@/widgets/product-details/ui/productDetailsFormatters";
+import { formatReviewComment, formatReviewDate } from "@/widgets/product-details/ui/productDetailsFormatters";
 
 const fixtureAvailable = !process.env.TEST_BASE_URL || Boolean(process.env.PLAYWRIGHT_FIXTURE_API_URL);
 const fixtureUrl = process.env.PLAYWRIGHT_FIXTURE_API_URL ?? `http://127.0.0.1:${process.env.PLAYWRIGHT_FIXTURE_API_PORT ?? Number(process.env.PLAYWRIGHT_PORT ?? 3000) + 1}`;
@@ -11,6 +11,40 @@ test("review date preserves ISO formatting and safely handles empty/invalid time
     expect(formatReviewDate(value)).toBe("Дата неизвестна");
   }
 });
+
+test("review comment formatter accepts absent, empty and non-string values", () => {
+  for (const value of [null, undefined, "", "  ", 12]) {
+    expect(formatReviewComment(value)).toBe("Комментарий отсутствует");
+  }
+  expect(formatReviewComment("  Текст отзыва  ")).toBe("Текст отзыва");
+});
+
+for (const width of [393, 1280]) {
+  test(`reviews without comments keep authors and ratings at ${width}px`, async ({ page }) => {
+    test.skip(!fixtureAvailable, "Requires local SSR fixture");
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await page.setViewportSize({ width, height: 900 });
+    await page.route("https://mc.yandex.ru/**", route => route.abort());
+    await page.goto("/catalog/926/detail");
+    await expect(page.getByRole("heading", { name: "Товар с оценками без комментария" })).toBeVisible();
+    let reviews = page.locator(".product-reviews-swiper");
+    if (width === 393) {
+      await expect(page.getByText("Комментарий отсутствует", { exact: true }).filter({ visible: true })).toBeVisible();
+      await page.getByRole("button", { name: "Все", exact: true }).click();
+      reviews = page.getByRole("dialog", { name: "Отзывы" })
+        .getByRole("region", { name: "Список отзывов" });
+    }
+    await expect(reviews.getByText("Комментарий отсутствует", { exact: true })).toHaveCount(3);
+    for (const index of [1, 2, 3]) {
+      await expect(reviews.getByText(`Автор оценки ${index}`, { exact: true })).toBeVisible();
+    }
+    for (const rating of [3, 4, 5]) {
+      await expect(reviews.getByRole("img", { name: `${rating} Stars`, exact: true })).toBeVisible();
+    }
+    expect(errors).toEqual([]);
+  });
+}
 
 async function expectUnclippedComment(comment: Locator) {
   await expect(comment).toBeVisible();
@@ -43,7 +77,7 @@ for (const width of [393, 600, 768, 1280]) {
     await page.route("**/products/find", route => route.fulfill({ contentType: "application/json", body: "[]" }));
     const fixture = await request.get(`${fixtureUrl}/product/925`);
     expect(fixture.ok()).toBe(true);
-    const { reviews } = await fixture.json() as { reviews: Review[] };
+    const { reviews } = await fixture.json() as { reviews: (Review & { comment: string })[] };
     const pageErrors: string[] = [];
     page.on("pageerror", error => pageErrors.push(error.message));
     await page.goto("/catalog/925/detail");

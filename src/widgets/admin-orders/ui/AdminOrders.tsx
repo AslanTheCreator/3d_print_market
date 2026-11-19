@@ -6,6 +6,7 @@ import { useAgents } from "@/entities/agent";
 import {
   adminOrderKeys,
   adminOrderStatuses,
+  getOrderReviewState,
   getOrderStatusMeta,
   OrderStatusChip,
   useAdminOrders,
@@ -184,6 +185,9 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
                     <Typography variant="body2" color="text.secondary">
                       {order.product.count} шт.
                     </Typography>
+                    {getOrderReviewState(order, "admin") === "published" && (
+                      <Typography variant="caption" color="text.secondary">Отзыв оставлен</Typography>
+                    )}
                   </TableCell>
                   <TableCell>
                     {order.prepaymentAmount + order.totalPrice}{" "}
@@ -227,6 +231,9 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
                     {order.prepaymentAmount + order.totalPrice}{" "}
                     {order.product.currency}
                   </Typography>
+                  {getOrderReviewState(order, "admin") === "published" && (
+                    <Typography variant="caption" color="text.secondary">Отзыв оставлен</Typography>
+                  )}
                 </Stack>
                 <OrderStatusChip status={order.actualStatus} />
                 <Button

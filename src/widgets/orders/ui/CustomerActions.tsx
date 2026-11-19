@@ -32,6 +32,7 @@ import { LeaveReviewDialog } from "./LeaveReviewDialog";
 import { OrderRefreshWarning } from "./OrderRefreshWarning";
 
 import { useOrderActionsRecovery } from "../model/orderActionsContext";
+import { useLeaveReview } from "../model/useLeaveReview";
 
 interface CustomerActionsProps {
   order: ListOrdersModel;
@@ -42,6 +43,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
   const { actionsAvailable, retry, retryPending } = useOrderActionsRecovery(order.orderId);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const review = useLeaveReview({ order, open: reviewDialogOpen, onClose: () => setReviewDialogOpen(false) });
 
   const paymentAction = useOrderPaymentAction();
   const prepaymentAction = useOrderPrepaymentAction();
@@ -56,7 +58,6 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
     canPrePay,
     canConfirmReceipt,
     canCancel,
-    canLeaveReview,
   } = getCustomerOrderActionFlags(order.actualStatus);
 
   const handleConfirmReceipt = () => {
@@ -120,7 +121,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
                 : "Подтвердить получение"}
             </Button>
           )
-        : canLeaveReview
+        : review.canLeaveReview
           ? (
               <Button
                 variant="contained"
@@ -140,8 +141,15 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
     <>
       <Stack spacing={0.75}>
         {primaryAction}
+        {review.publishedHere && <Typography variant="caption">Отзыв оставлен</Typography>}
+        {review.isChecking && <Typography variant="caption" role="status">Проверяем состояние отзыва…</Typography>}
+        {review.needsCheck && (
+          <Button sx={{ minHeight: 44 }} onClick={() => void review.checkResult()}>
+            Проверить состояние отзыва
+          </Button>
+        )}
 
-        {(secondaryAction || canCancel || (canLeaveReview && !primaryAction)) && (
+        {(secondaryAction || canCancel) && (
           <Box>
             <Stack direction="row" spacing={0.5} flexWrap="wrap" justifyContent="space-between">
               {canCancel && (
@@ -158,19 +166,6 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
                 </Button>
               )}
 
-              {canLeaveReview && !primaryAction && (
-                <Button
-                  variant="text"
-                  color="primary"
-                  startIcon={<RateReview />}
-                  disabled={!actionsAvailable}
-                  onClick={() => setReviewDialogOpen(true)}
-                  size="small"
-                  sx={{ px: 0.5 }}
-                >
-                  Оставить отзыв
-                </Button>
-              )}
               {secondaryAction}
             </Stack>
           </Box>
@@ -297,10 +292,9 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
       />
 
       <LeaveReviewDialog
-        open={reviewDialogOpen}
-        onClose={() => setReviewDialogOpen(false)}
         orderId={order.orderId}
         product={order.product}
+        review={review}
       />
     </>
   );

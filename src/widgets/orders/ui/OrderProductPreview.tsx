@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Box, Chip, Stack, Typography } from "@mui/material";
 import {
   getOrderPaymentBreakdown,
+  getOrderReviewState,
   type ListOrdersModel,
 } from "@/entities/order";
 import { getImageUrl } from "@/shared/lib";
@@ -135,6 +136,9 @@ export const OrderProductPreview = ({
           >
             Количество: {quantity} шт.
           </Typography>
+          {getOrderReviewState(order, userRole) === "published" && (
+            <Typography variant="caption" color="text.secondary">Отзыв оставлен</Typography>
+          )}
         </Stack>
       </Box>
     </Stack>
