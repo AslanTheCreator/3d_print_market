@@ -106,11 +106,11 @@ test("verification is a mobile sheet, preserves desktop and keeps code usable", 
   for (let i = 0; i < 5; i++) await expect(fields.nth(i)).toHaveValue("54321"[i]);
 
   await dialog.getByRole("button", { name: "Отправить повторно" }).click();
-  await expect(dialog.getByRole("status")).toHaveText("Код отправлен повторно");
+  await expect(dialog.getByRole("status")).toHaveText("Запрос на повторную отправку принят");
   for (const field of await fields.all()) await expect(field).toHaveValue("");
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole("button", { name: "Зарегистрироваться" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Продолжить подтверждение email" })).toBeFocused();
 });
 
 test("verification shows one server cooldown and preserves code on a network error", async ({ page }) => {

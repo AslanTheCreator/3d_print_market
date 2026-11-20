@@ -1,7 +1,7 @@
 import { AxiosError, AxiosRequestConfig } from "axios";
 import { publicClient } from "@/shared/api";
 import { tokenStorage } from "@/shared/lib";
-import { transformToApiError } from "@/shared/lib/errorHandler";
+import { ApiError, ErrorCodes, transformToApiError } from "@/shared/lib/errorHandler";
 import { getSessionSignal } from "../model/sessionGeneration";
 import {
   AuthFormModel,
@@ -32,19 +32,28 @@ export const authApi = {
     password,
     age,
   }: RegisterFormModel): Promise<RegisterResponse> {
-    const { status, data } = await publicClient.post<number>(
-      API_URL_REGISTER,
-      { mail, password, age },
-      {
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    try {
+      const { status, data } = await publicClient.post<number>(
+        API_URL_REGISTER,
+        { mail, password, age },
+        {
+          ...skipErrorTransformConfig,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
 
-    if (status === 200) {
-      return { userId: data, isSuccess: true };
+      return status === 200
+        ? { userId: data, isSuccess: true }
+        : { userId: 0, isSuccess: false };
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const body: unknown = error.response?.data;
+        if (isRecord(body) && body.code === ErrorCodes.PARTICIPANT_ALREADY_EXISTS) {
+          throw new ApiError("Этот email уже используется", ErrorCodes.PARTICIPANT_ALREADY_EXISTS, error.response?.status);
+        }
+      }
+      throw transformToApiError(error);
     }
-
-    return { userId: 0, isSuccess: false };
   },
 
   async loginUser({ mail, password }: AuthFormModel): Promise<boolean> {
@@ -105,6 +114,10 @@ export const authApi = {
     } catch (error) {
       if (error instanceof AxiosError && error.response?.status === 429) {
         const errorData: unknown = error.response.data;
+
+        if (isRecord(errorData) && errorData.code === ErrorCodes.VERIFICATION_DAILY_LIMIT) {
+          throw new ApiError("Достигнут дневной лимит отправки кода", ErrorCodes.VERIFICATION_DAILY_LIMIT, 429);
+        }
 
         if (
           isRecord(errorData) &&

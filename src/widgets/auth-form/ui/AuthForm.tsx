@@ -1,7 +1,7 @@
 "use client";
 
 import { serializeApiError } from "@/shared/lib/errorHandler";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Box,
   Stack,
@@ -30,7 +30,8 @@ interface IAuthForm {
   url: string;
   linkText: string;
   buttonTitle: string;
-  onSubmit?: (values: AuthFormSubmitValues) => Promise<void>;
+  onSubmit?: (values: AuthFormSubmitValues) => Promise<void | { emailError: string }>;
+  onContinue?: () => void;
   isLoading?: boolean;
   onForgotPassword?: () => void;
   passwordAutoComplete?: "current-password" | "new-password";
@@ -71,6 +72,7 @@ const AuthForm: React.FC<IAuthForm> = ({
   buttonTitle,
   submitButtonRef,
   onSubmit,
+  onContinue,
   isLoading = false,
   onForgotPassword,
   passwordAutoComplete = "current-password",
@@ -81,6 +83,7 @@ const AuthForm: React.FC<IAuthForm> = ({
   const theme = useTheme();
 
   const [email, setEmail] = useState("");
+  const emailRevision = useRef(0);
   const [password, setPassword] = useState("");
   const [age, setAge] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -97,6 +100,11 @@ const AuthForm: React.FC<IAuthForm> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading || isSubmitting) return;
+    if (onContinue) {
+      onContinue();
+      return;
+    }
     const normalizedEmail = email.trim();
     const nextEmailError = !normalizedEmail
       ? "Введите email"
@@ -135,13 +143,17 @@ const AuthForm: React.FC<IAuthForm> = ({
     setPasswordError("");
 
     if (onSubmit) {
+      const submittedEmailRevision = emailRevision.current;
       try {
         setIsSubmitting(true);
-        await onSubmit({
+        const result = await onSubmit({
           email: normalizedEmail,
           password,
           ...(showAgeField ? { age: Number(normalizedAge) } : {}),
         });
+        if (result?.emailError && emailRevision.current === submittedEmailRevision) {
+          setEmailError(result.emailError);
+        }
       } catch (error) {
         console.error("Authentication error:", serializeApiError(error));
       } finally {
@@ -229,6 +241,7 @@ const AuthForm: React.FC<IAuthForm> = ({
             required
             value={email}
             onChange={(e) => {
+              emailRevision.current++;
               setEmail(e.target.value);
               setEmailError("");
             }}

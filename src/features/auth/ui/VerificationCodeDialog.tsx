@@ -19,7 +19,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Email, CheckCircle } from "@mui/icons-material";
-import { ApiError } from "@/shared/lib/errorHandler";
+import { ApiError, ErrorCodes } from "@/shared/lib/errorHandler";
 import type { VerificationCodeResponse } from "@/entities/session";
 import { AuthDialog, authDialogActionsSx, authDialogContentSx } from "./AuthDialog";
 
@@ -49,18 +49,20 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
 
   const [code, setCode] = useState(["", "", "", "", ""]);
   const [error, setError] = useState("");
-  const [countdown, setCountdown] = useState<number>(0);
+  const [cooldown, setCooldown] = useState<{ email: string; seconds: number } | null>(null);
   const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const resendPending = useRef(false);
+  const countdown = cooldown?.email === email ? cooldown.seconds : 0;
 
   // Countdown таймер
   useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    if (cooldown && cooldown.seconds > 0) {
+      const timer = setTimeout(() => setCooldown({ ...cooldown, seconds: cooldown.seconds - 1 }), 1000);
       return () => clearTimeout(timer);
     }
-  }, [countdown]);
+  }, [cooldown]);
 
   const handleInputChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
@@ -103,7 +105,7 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
   };
 
   const handleVerify = async () => {
-    if (isLoading || isResending) return;
+    if (isLoading || isResending || resendPending.current) return;
     const fullCode = code.join("");
 
     if (fullCode.length !== 5) {
@@ -122,7 +124,8 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
   };
 
   const handleResend = async () => {
-    if (countdown > 0 || isResending || isLoading) return;
+    if (countdown > 0 || isResending || resendPending.current || isLoading) return;
+    resendPending.current = true;
     setIsResending(true);
     setError("");
     setResendMessage("");
@@ -132,23 +135,29 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
 
       if (result.success) {
         setCode(["", "", "", "", ""]);
-        setResendMessage("Код отправлен повторно");
+        setResendMessage("Запрос на повторную отправку принят");
         requestAnimationFrame(() => inputRefs.current[0]?.focus());
       } else {
-        setCountdown(Math.ceil(result.retryAfterSec));
+        setCooldown({ email, seconds: Math.ceil(result.retryAfterSec) });
       }
     } catch (error) {
-      setError("Ошибка при отправке кода. Попробуйте позже");
+      if (error instanceof ApiError && error.isCode(ErrorCodes.VERIFICATION_DAILY_LIMIT)) {
+        setError("Достигнут дневной лимит отправки кода. Попробуйте позже.");
+      } else if (error instanceof ApiError && error.isCode("NETWORK_ERROR")) {
+        setError("Нет соединения с сервером. Повторите попытку после восстановления связи.");
+      } else {
+        setError("Ошибка при отправке кода. Попробуйте позже");
+      }
     } finally {
+      resendPending.current = false;
       setIsResending(false);
     }
   };
 
   const handleClose = () => {
-    if (isLoading || isResending) return;
+    if (isLoading || isResending || resendPending.current) return;
     setCode(["", "", "", "", ""]);
     setError("");
-    setCountdown(0);
     setResendMessage("");
     onClose();
   };
@@ -343,7 +352,7 @@ export const VerificationCodeDialog: React.FC<VerificationCodeDialogProps> = ({
               Повторная отправка доступна через {formatTime(countdown)}
             </Typography>
           )}
-          <Typography role="status" variant="caption" color="text.secondary" sx={{ display: { xs: "block", sm: "none" } }}>
+          <Typography role="status" variant="caption" color="text.secondary" sx={{ display: "block" }}>
             {resendMessage}
           </Typography>
         </Box>

@@ -283,3 +283,26 @@ test("verified WAITING_VERIFY and finite nonnegative cooldown remain supported",
     }
   } finally { publicClient.defaults.adapter = adapter; }
 });
+
+test("registration conflict and daily resend limit preserve a structured code without a message", async () => {
+  const adapter = publicClient.defaults.adapter;
+  let status = 404;
+  let body: unknown = { code: "PARTICIPANT_ALREADY_EXISTS" };
+  publicClient.defaults.adapter = async config => {
+    throw new AxiosError("HTTP failure", "ERR_BAD_REQUEST", config, undefined, {
+      config, status, data: body, statusText: "Failure", headers: {},
+    });
+  };
+  const register = () => authApi.registerUser({ mail: "fixture@example.test", password: "fixture", age: 25 });
+  try {
+    await expect(register()).rejects.toMatchObject({ code: "PARTICIPANT_ALREADY_EXISTS", statusCode: 404 });
+    body = "<h1>Not found</h1>";
+    await expect(register()).rejects.toMatchObject({ code: undefined, statusCode: 404 });
+
+    status = 429;
+    body = { code: "VERIFICATION_DAILY_LIMIT" };
+    await expect(authApi.sendVerificationCode("fixture@example.test")).rejects.toMatchObject({
+      code: "VERIFICATION_DAILY_LIMIT", statusCode: 429,
+    });
+  } finally { publicClient.defaults.adapter = adapter; }
+});

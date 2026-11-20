@@ -17,6 +17,7 @@ import { useNotification } from "@/shared/ui/notification";
 
 export default function RegisterPageClient() {
   const submitButtonRef = useRef<HTMLButtonElement>(null);
+  const registrationPhase = useRef<"idle" | "submitting" | "registered">("idle");
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = getPostAuthRedirectPath(searchParams.get("redirect"));
@@ -38,12 +39,15 @@ export default function RegisterPageClient() {
     password: string;
     age?: number;
   }) => {
+    if (registrationPhase.current !== "idle") return;
+    if (age === undefined) {
+      showNotification("Введите возраст", "warning");
+      return;
+    }
+
+    registrationPhase.current = "submitting";
     try {
       setIsLoading(true);
-      if (age === undefined) {
-        showNotification("Введите возраст", "warning");
-        return;
-      }
 
       const userData: RegisterFormModel = {
         mail,
@@ -55,6 +59,7 @@ export default function RegisterPageClient() {
         await authApi.registerUser(userData);
 
       if (isRegistrationSuccessful && registeredUserId) {
+        registrationPhase.current = "registered";
         setUserId(registeredUserId);
         setUserEmail(mail);
         setIsVerificationOpen(true);
@@ -66,8 +71,9 @@ export default function RegisterPageClient() {
         error instanceof ApiError &&
         error.isCode("PARTICIPANT_ALREADY_EXISTS")
       ) {
-        showNotification(error.message, "warning");
-        return;
+        return {
+          emailError: "Этот email уже используется. Войдите в аккаунт или восстановите пароль на странице входа.",
+        };
       }
 
       showNotification(
@@ -77,6 +83,7 @@ export default function RegisterPageClient() {
         "error",
       );
     } finally {
+      if (registrationPhase.current === "submitting") registrationPhase.current = "idle";
       setIsLoading(false);
     }
   };
@@ -121,8 +128,6 @@ export default function RegisterPageClient() {
 
   const handleCloseVerification = () => {
     setIsVerificationOpen(false);
-    setUserId(null);
-    setUserEmail("");
   };
 
   return (
@@ -132,9 +137,10 @@ export default function RegisterPageClient() {
         subtitle="У вас уже есть учетная запись?"
         url={getAuthSwitchPath("/auth/login", redirectPath)}
         linkText="Авторизуйтесь"
-        buttonTitle="Зарегистрироваться"
+        buttonTitle={userId === null ? "Зарегистрироваться" : "Продолжить подтверждение email"}
         submitButtonRef={submitButtonRef}
         onSubmit={handleRegister}
+        onContinue={userId === null ? undefined : () => setIsVerificationOpen(true)}
         isLoading={isLoading}
         passwordAutoComplete="new-password"
         showAgeField
