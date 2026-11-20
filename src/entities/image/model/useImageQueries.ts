@@ -24,7 +24,7 @@ export const useOrderImagesQuery = (orderId: number, imageIds: readonly number[]
 };
 
 const normalizeImageIds = (
-  imageIds: number | number[] | null | undefined,
+  imageIds: number | (number | null)[] | null | undefined,
 ) => {
   if (!imageIds) {
     return [];
@@ -32,7 +32,7 @@ const normalizeImageIds = (
 
   const ids = Array.isArray(imageIds) ? imageIds : [imageIds];
 
-  return ids.filter((id) => id > 0);
+  return ids.filter((id): id is number => id !== null && id > 0);
 };
 
 export const useImagesQuery = (
@@ -50,7 +50,7 @@ export const useImagesQuery = (
 };
 
 export const useImageMetadataQuery = (
-  imageIds: number | number[] | null | undefined,
+  imageIds: number | (number | null)[] | null | undefined,
 ) => {
   const normalizedIds = useMemo(
     () => [...new Set(normalizeImageIds(imageIds))].sort((a, b) => a - b),

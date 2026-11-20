@@ -3,11 +3,13 @@ import Link from "next/link";
 import { useCallback, useState } from "react";
 import { useAccountSessionKey } from "@/entities/session";
 import { useAgents } from "@/entities/agent";
+import { ImageMetadataFeedback, mapImageMetadata, useImageMetadataQuery } from "@/entities/image";
 import {
   adminOrderKeys,
   adminOrderStatuses,
   getOrderReviewState,
   getOrderStatusMeta,
+  OrderProductThumbnail,
   OrderStatusChip,
   useAdminOrders,
   type AdminOrderDto,
@@ -54,6 +56,8 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
     page,
   });
   const [selected, setSelected] = useState<AdminOrderDto | null>(null);
+  const imageQuery = useImageMetadataQuery(query.data?.map(order => order.product.imageId));
+  const orders = mapImageMetadata(query.data ?? [], order => order.product.imageId, imageQuery.data);
   const [locked, setLocked] = useState(false);
   const [message, setMessage] = useState("");
   const lockPanel = useCallback((value: boolean) => setLocked(value), []);
@@ -148,6 +152,7 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
           void agents.refetch();
         }}
       />
+      <ImageMetadataFeedback query={imageQuery} />
       {message && (
         <Alert severity="success" onClose={() => setMessage("")}>
           {message}
@@ -173,7 +178,7 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
               </TableRow>
             </TableHead>
             <TableBody>
-              {query.data?.map((order) => (
+              {orders.map((order) => (
                 <TableRow
                   key={order.orderId}
                   selected={selected?.orderId === order.orderId}
@@ -181,13 +186,18 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
                   <TableCell>#{order.orderId}</TableCell>
                   <TableCell>{order.sellerLogin}</TableCell>
                   <TableCell sx={{ maxWidth: 260 }}>
-                    {order.product.name}
-                    <Typography variant="body2" color="text.secondary">
-                      {order.product.count} шт.
-                    </Typography>
-                    {getOrderReviewState(order, "admin") === "published" && (
-                      <Typography variant="caption" color="text.secondary">Отзыв оставлен</Typography>
-                    )}
+                    <Stack direction="row" spacing={1.5} alignItems="center">
+                      <OrderProductThumbnail image={order.image[0]} name={order.product.name} size={48} />
+                      <Stack minWidth={0} sx={{ overflowWrap: "anywhere" }}>
+                        <Typography variant="body2">{order.product.name}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {order.product.count} шт.
+                        </Typography>
+                        {getOrderReviewState(order, "admin") === "published" && (
+                          <Typography variant="caption" color="text.secondary">Отзыв оставлен</Typography>
+                        )}
+                      </Stack>
+                    </Stack>
                   </TableCell>
                   <TableCell>
                     {order.prepaymentAmount + order.totalPrice}{" "}
@@ -212,28 +222,31 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
         </TableContainer>
       ) : (
         <Stack spacing={2}>
-          {query.data?.map((order) => (
+          {orders.map((order) => (
             <Paper key={order.orderId} variant="outlined" sx={{ p: 2 }}>
               <Stack
                 direction={{ xs: "column", md: "row" }}
                 spacing={2}
                 alignItems={{ md: "center" }}
               >
-                <Stack flex={1} minWidth={0}>
-                  <Typography fontWeight={600}>
-                    Заказ #{order.orderId} · {order.product.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {order.sellerLogin} · {formatDateTime(order.createdAt)}
-                  </Typography>
-                  <Typography>
-                    {order.product.count} шт. ·{" "}
-                    {order.prepaymentAmount + order.totalPrice}{" "}
-                    {order.product.currency}
-                  </Typography>
-                  {getOrderReviewState(order, "admin") === "published" && (
-                    <Typography variant="caption" color="text.secondary">Отзыв оставлен</Typography>
-                  )}
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <OrderProductThumbnail image={order.image[0]} name={order.product.name} size={64} />
+                  <Stack flex={1} minWidth={0} sx={{ overflowWrap: "anywhere" }}>
+                    <Typography fontWeight={600}>
+                      Заказ #{order.orderId} · {order.product.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {order.sellerLogin} · {formatDateTime(order.createdAt)}
+                    </Typography>
+                    <Typography>
+                      {order.product.count} шт. ·{" "}
+                      {order.prepaymentAmount + order.totalPrice}{" "}
+                      {order.product.currency}
+                    </Typography>
+                    {getOrderReviewState(order, "admin") === "published" && (
+                      <Typography variant="caption" color="text.secondary">Отзыв оставлен</Typography>
+                    )}
+                  </Stack>
                 </Stack>
                 <OrderStatusChip status={order.actualStatus} />
                 <Button
@@ -286,6 +299,7 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
           <AdminOrderDetail
             key={`${selected.orderId}-${selected.actualStatus}`}
             order={selected}
+            productImage={imageQuery.data?.find(image => image.id === selected.product.imageId)}
             session={sessionKey}
             locked={locked}
             lockPanel={lockPanel}

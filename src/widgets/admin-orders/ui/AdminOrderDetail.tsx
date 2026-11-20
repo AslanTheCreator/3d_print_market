@@ -1,9 +1,10 @@
 "use client";
 import { Button, Divider, Stack, Typography } from "@mui/material";
-import { AdminImages } from "@/entities/image";
+import { AdminImages, type ImageMetadata } from "@/entities/image";
 import {
   getOrderStatusMeta,
   getOrderReviewState,
+  OrderProductThumbnail,
   OrderStatusChip,
   type AdminOrderDto,
 } from "@/entities/order";
@@ -20,6 +21,7 @@ const safeUrl = (value: string) => {
 };
 export function AdminOrderDetail({
   order,
+  productImage,
   session,
   locked,
   lockPanel,
@@ -27,6 +29,7 @@ export function AdminOrderDetail({
   close,
 }: {
   order: AdminOrderDto;
+  productImage?: ImageMetadata;
   session: number | null;
   locked: boolean;
   lockPanel: (value: boolean) => void;
@@ -45,11 +48,16 @@ export function AdminOrderDetail({
         </Button>
       </Stack>
       <OrderStatusChip status={order.actualStatus} />
-      <Typography variant="h6">{order.product.name}</Typography>
-      {getOrderReviewState(order, "admin") === "published" && (
-        <Typography variant="body2" color="text.secondary">Отзыв оставлен</Typography>
-      )}
-      <Typography>Количество: {order.product.count}</Typography>
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <OrderProductThumbnail image={productImage} name={order.product.name} size={84} zoomable />
+        <Stack minWidth={0} sx={{ overflowWrap: "anywhere" }}>
+          <Typography variant="h6">{order.product.name}</Typography>
+          {getOrderReviewState(order, "admin") === "published" && (
+            <Typography variant="body2" color="text.secondary">Отзыв оставлен</Typography>
+          )}
+          <Typography>Количество: {order.product.count}</Typography>
+        </Stack>
+      </Stack>
       <Typography>
         Бот: {order.sellerLogin} (#{order.sellerId})
       </Typography>

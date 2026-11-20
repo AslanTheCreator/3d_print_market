@@ -37,7 +37,7 @@ export function FullscreenImageViewer({
     <Dialog
       open={open}
       onClose={onClose}
-      aria-label="Полноэкранная галерея изображений товара"
+      PaperProps={{ "aria-label": "Полноэкранная галерея изображений товара" }}
       maxWidth={false}
       fullScreen
       sx={{

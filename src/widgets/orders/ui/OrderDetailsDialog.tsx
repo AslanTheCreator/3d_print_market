@@ -115,6 +115,7 @@ export const OrderDetailsDialog = ({
               userRole={userRole}
               imageSize={84}
               nameLines="all"
+              zoomable
             />
             <Divider sx={{ my: 1.5 }} />
             <Stack

@@ -529,6 +529,12 @@ callback входа: текущие pathname/query берутся при наж�
 `orderApi.getSellerOrders/getCustomerOrders` кэшируют `ListOrdersDto[]` без
 enrichment, под прежними scoped `orderQueryKeys`. `OrdersWidget` отдельно
 загружает metadata и собирает `ListOrdersModel` для отображения и диалогов.
+Общий список заказов агентов и список конкретного агента запрашивают metadata
+пакетом для текущей страницы. Детали заказа используют результат того же запроса.
+Источник фото для всех трёх ролей — `product.imageId` из снимка заказа. Поле
+допускает `null`. Название, цена и количество берутся из снимка без запроса
+актуального товара. Чеки и доказательства загружаются отдельно через
+авторизованный `GET /images` и не передаются в публичный запрос metadata.
 `productApi.getUserProducts` возвращает `ProductDto[]`; шапка и список используют
 один scoped infinite key: `productKeys.userLists(), 100, undefined, DATE_DESC`.
 Шапка считает продления по первой сотне, как прежде; список показывает по 12

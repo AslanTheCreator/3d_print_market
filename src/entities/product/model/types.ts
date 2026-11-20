@@ -14,7 +14,7 @@ export interface ProductDto {
   prepaymentAmount: number;
   currency: Currency;
   categories: CategoryModel[];
-  imageId: number;
+  imageId: number | null;
   sellerId: number;
   expirationDate: string;
   status: Status;

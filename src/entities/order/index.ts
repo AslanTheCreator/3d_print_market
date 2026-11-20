@@ -32,6 +32,7 @@ export {
 
 export { OrderStatusChip } from "./ui/OrderStatusChip";
 export { OrdersEmptyState } from "./ui/OrdersEmptyState";
+export { OrderProductThumbnail } from "./ui/OrderProductThumbnail";
 export { getOrderPaymentBreakdown } from "./lib/orderPaymentBreakdown";
 export { getOrderReviewState } from "./lib/orderReviewState";
 export type { OrderPaymentBreakdown } from "./lib/orderPaymentBreakdown";

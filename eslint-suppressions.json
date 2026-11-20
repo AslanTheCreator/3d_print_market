@@ -211,11 +211,6 @@
       "count": 6
     }
   },
-  "src/widgets/orders/ui/OrderProductPreview.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "src/widgets/product-catalog/ui/GiveawayCard.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1

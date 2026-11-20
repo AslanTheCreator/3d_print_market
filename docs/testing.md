@@ -1106,6 +1106,12 @@ Stage 15: `npx playwright test core-images own-product-purchase user-products-st
 шапки/списков, локальный fallback/retry профиля, заказов и собственных товаров,
 сохранение ввода профиля, показ товаров по 12 и проверку sellerId при отказе
 аватара и самого профиля. Retry картинки не повторяет core GET/POST.
+`order-product-photos.spec.ts` проверяет фото из снимка заказа у покупателя,
+продавца и администратора. Сценарии охватывают оба административных списка,
+desktop/mobile, детали, просмотр оригинала, пакетное чтение и повторное
+использование metadata. Отдельно проверяются заглушки для `null`, неполного
+ответа, ошибки metadata и недоступного файла, а также запрос чека только через
+защищённый API и карточка каталога с `imageId: null`.
 Дополнительно: `dashboard-home.mobile.spec.ts`, полный `npm run test:e2e`,
 lint, typecheck, architecture:check, build и HTTP smoke. Все API подменены;
 эти сценарии не подтверждают реальный backend.

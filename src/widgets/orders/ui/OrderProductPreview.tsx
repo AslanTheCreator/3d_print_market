@@ -1,14 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
 import { Box, Chip, Stack, Typography } from "@mui/material";
 import {
   getOrderPaymentBreakdown,
   getOrderReviewState,
+  OrderProductThumbnail,
   type ListOrdersModel,
 } from "@/entities/order";
-import { getImageUrl } from "@/shared/lib";
-import { ImageFallback } from "@/shared/ui/image-fallback";
 import {
   getOrderPeerLabel,
   type OrdersUserRole,
@@ -21,6 +19,7 @@ interface OrderProductPreviewProps {
   showCategory?: boolean;
   showOrderId?: boolean;
   nameLines?: 2 | "all";
+  zoomable?: boolean;
 }
 
 export const OrderProductPreview = ({
@@ -30,50 +29,14 @@ export const OrderProductPreview = ({
   showCategory = true,
   showOrderId = true,
   nameLines,
+  zoomable,
 }: OrderProductPreviewProps) => {
-  const [hasImageError, setHasImageError] = useState(false);
-  const image = order.product.image?.[0] ?? null;
-  const productImageSrc = getImageUrl(image, "thumbnail") ?? null;
-  const imageSrc =
-    productImageSrc && !hasImageError ? productImageSrc : null;
   const categoryName = order.product.categories?.[0]?.name ?? "Без категории";
   const { quantity } = getOrderPaymentBreakdown(order);
 
-  useEffect(() => {
-    setHasImageError(false);
-  }, [productImageSrc]);
-
   return (
     <Stack direction="row" spacing={1.5} alignItems="center" minWidth={0}>
-      <Box
-        sx={{
-          width: imageSize,
-          height: imageSize,
-          borderRadius: 1.5,
-          overflow: "hidden",
-          bgcolor: "grey.100",
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {imageSrc ? (
-          <Box
-            component="img"
-            src={imageSrc}
-            alt={order.product.name}
-            sx={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-            onError={() => setHasImageError(true)}
-          />
-        ) : (
-          <ImageFallback compact label="Нет фото" />
-        )}
-      </Box>
+      <OrderProductThumbnail image={order.product.image?.[0]} name={order.product.name} size={imageSize} zoomable={zoomable} />
 
       <Box minWidth={0}>
         {showOrderId && <Typography
