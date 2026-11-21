@@ -14,6 +14,7 @@ export { OrderCaseCard, getSafeCaseTelegramUrl } from "./ui/OrderCaseCard";
 export { getOrderCaseImageGroups } from "./lib/orderCaseImages";
 export {
   useOrderData,
+  usePaymentTermsCheck,
   useSellerOrders,
   useCustomerOrders,
 } from "./model/useOrderQueries";
@@ -33,7 +34,8 @@ export {
 export { OrderStatusChip } from "./ui/OrderStatusChip";
 export { OrdersEmptyState } from "./ui/OrdersEmptyState";
 export { OrderProductThumbnail } from "./ui/OrderProductThumbnail";
-export { getOrderPaymentBreakdown } from "./lib/orderPaymentBreakdown";
+export { OrderCalculationSummary } from "./ui/OrderCalculationSummary";
+export { getOrderPaymentBreakdown, hasOrderPrepayment } from "./lib/orderPaymentBreakdown";
 export { getOrderReviewState } from "./lib/orderReviewState";
 export type { OrderPaymentBreakdown } from "./lib/orderPaymentBreakdown";
 export {
@@ -72,7 +74,7 @@ export type {
   ResolveOrderCaseRequest,
   CreateOrderCaseRequest,
 } from "./model/orderCase";
-export type { ListOrdersDto, ListOrdersModel, OrderCancel, OrderStatus } from "./model/types";
+export type { ListOrdersDto, ListOrdersModel, OrderCalculationDto, OrderCancel, OrderStatus } from "./model/types";
 export type { OrderProgressStep, OrderUserRole } from "./lib/orderStatusMeta";
 
 export { orderApi } from "./api/orderApi";

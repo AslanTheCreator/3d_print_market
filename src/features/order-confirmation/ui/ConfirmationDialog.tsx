@@ -14,10 +14,12 @@ import {
 } from "@mui/material";
 import { Close, CheckCircle } from "@mui/icons-material";
 import {
+  OrderCalculationSummary,
   getOrderPaymentBreakdown,
+  hasOrderPrepayment,
+  usePaymentTermsCheck,
   type ListOrdersModel,
 } from "@/entities/order";
-import { formatPrice } from "@/shared/lib";
 import { transformToApiError } from "@/shared/lib/errorHandler";
 import { UseMutationResult } from "@tanstack/react-query";
 
@@ -96,7 +98,7 @@ const confirmationConfig = {
   prepaymentApproval: {
     title: "Подтвердить предоплату",
     description:
-      "Вы уверены, что хотите подтвердить предоплату по заказу #{orderId}? После подтверждения покупатель сможет перейти к оплате остатка.",
+      "Вы уверены, что хотите подтвердить предоплату по заказу #{orderId}? Состояние оплаты обновится после решения продавца.",
     buttonText: "Подтвердить предоплату",
     buttonLoadingText: "Подтверждение...",
   },
@@ -134,15 +136,17 @@ export const ConfirmationDialog = ({
   confirmationType,
   confirmationMutation,
 }: ConfirmationDialogProps) => {
+  const termsMatch = usePaymentTermsCheck("seller");
   const config = getConfirmationConfig(
     confirmationType,
     order.product.availability === "PREORDER",
-    order.prepaymentAmount > 0,
+    hasOrderPrepayment(order),
   );
   const mutationErrorMessage = confirmationMutation.error
     ? transformToApiError(confirmationMutation.error).message
     : null;
   const paymentBreakdown = getOrderPaymentBreakdown(order);
+  const paymentBlock = confirmationType === "preorder" ? paymentBreakdown.prepaymentBlock : null;
   const expectedOrderStatus =
     confirmationType === "preorder"
       ? "AWAITING_PREPAYMENT_APPROVAL"
@@ -155,10 +159,14 @@ export const ConfirmationDialog = ({
   };
 
   const handleConfirm = () => {
-    if (!actionsAvailable || confirmationMutation.isPending || !isExpectedOrderStatus) {
+    if (!actionsAvailable || confirmationMutation.isPending || !isExpectedOrderStatus || !!paymentBlock) {
       return;
     }
 
+    if (confirmationType === "preorder" && !termsMatch(order)) {
+      onRetry?.();
+      return;
+    }
     if (confirmationType === "order") {
       confirmationMutation.mutate(
         {
@@ -217,6 +225,8 @@ export const ConfirmationDialog = ({
 
       <DialogContent>
         {!actionsAvailable && <Alert severity="warning" action={onRetry && <Button color="inherit" disabled={retryPending} onClick={onRetry}>Повторить загрузку</Button>}>Не удалось обновить заказы. Подтверждение недоступно до успешной загрузки.</Alert>}
+        {confirmationType === "preorder" && <Typography>Суммы по последнему обновлению заказа. До отправки условия могут измениться.</Typography>}
+        {paymentBlock && <Alert severity="warning" action={onRetry && <Button onClick={onRetry} disabled={retryPending}>Обновить заказ</Button>}>{paymentBlock}</Alert>}
         <Paper variant="outlined" sx={{ p: 2, mb: 2.5, bgcolor: "grey.50" }}>
           <Typography variant="subtitle2" gutterBottom>
             Заказ #{order.orderId}
@@ -224,33 +234,7 @@ export const ConfirmationDialog = ({
           <Typography variant="body2" color="text.secondary" gutterBottom>
             {order.product.name}
           </Typography>
-          <Stack spacing={0.25}>
-            <Typography variant="h6" color="text.primary" fontWeight={600}>
-              Стоимость товаров:{" "}
-              {formatPrice(
-                paymentBreakdown.productTotal,
-                order.product.currency,
-              )}
-            </Typography>
-            {paymentBreakdown.hasPrepayment && (
-              <>
-                <Typography variant="body2" color="text.secondary">
-                  Предоплата:{" "}
-                  {formatPrice(
-                    paymentBreakdown.prepaymentTotal,
-                    order.product.currency,
-                  )}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Остаток:{" "}
-                  {formatPrice(
-                    paymentBreakdown.remainingTotal,
-                    order.product.currency,
-                  )}
-                </Typography>
-              </>
-            )}
-          </Stack>
+          <OrderCalculationSummary order={order} />
         </Paper>
 
         <Typography variant="body2" color="text.secondary">
@@ -282,7 +266,7 @@ export const ConfirmationDialog = ({
           onClick={handleConfirm}
           variant="contained"
           disabled={
-            confirmationMutation.isPending || !actionsAvailable || !isExpectedOrderStatus
+            confirmationMutation.isPending || !actionsAvailable || !isExpectedOrderStatus || !!paymentBlock
           }
           startIcon={confirmationMutation.isPending ? null : <CheckCircle />}
         >

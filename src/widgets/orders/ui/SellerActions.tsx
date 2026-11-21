@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Stack, Box } from "@mui/material";
+import { Button, Stack, Box, Typography } from "@mui/material";
 import { CheckCircle, LocalShipping, Cancel } from "@mui/icons-material";
-import { ListOrdersModel, getSellerOrderActionFlags } from "@/entities/order";
+import { ListOrdersModel, getOrderPaymentBreakdown, getSellerOrderActionFlags } from "@/entities/order";
 import {
   ConfirmationDialog,
   useOrderConfirmationAction,
@@ -30,6 +30,7 @@ export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) =>
   const { canConfirmOrder, canConfirmPreOrder, canShipOrder, canCancel } =
     getSellerOrderActionFlags(order.actualStatus);
 
+  const paymentBlock = canConfirmPreOrder ? getOrderPaymentBreakdown(order).prepaymentBlock : null;
   const primaryAction = canConfirmOrder
     ? (
         <Button
@@ -55,7 +56,7 @@ export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) =>
             color="primary"
             startIcon={<CheckCircle />}
             onClick={preOrderConfirmationAction.open}
-            disabled={!actionsAvailable || preOrderConfirmationAction.mutation.isPending}
+            disabled={!actionsAvailable || !!paymentBlock || preOrderConfirmationAction.mutation.isPending}
             size="small"
             fullWidth={true}
           >
@@ -84,6 +85,7 @@ export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) =>
     <>
       <Stack spacing={0.75}>
         {primaryAction}
+        {paymentBlock && <Typography variant="caption">{paymentBlock}</Typography>}
 
         {(secondaryAction || canCancel) && (
           <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap" }}>

@@ -42,17 +42,28 @@ for (const width of [393, 1280]) {
     await dialog.locator('input[type="file"]').setInputFiles({ name: "proof.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
     const confirm = dialog.getByRole("button", { name: "Подтвердить оплату", exact: true });
     await expect(confirm).toBeEnabled();
+    const account = dialog.getByText("TEST", { exact: true });
+    const copy = dialog.getByRole("button", { name: "Скопировать данные поля «Реквизиты»" });
+    const instructions = dialog.getByText(/Выберите реквизиты продавца/);
+    await expect(account).toBeVisible();
+    await expect(copy).toBeVisible();
     state.ordersStatus = 403;
     await reconnect(page);
     await expect(dialog.getByText(/Подтверждение недоступно до успешной загрузки/)).toBeVisible();
     await expect(comment).toHaveValue("Сохранённый комментарий");
     await expect(dialog.getByText("Файл выбран", { exact: true })).toBeVisible();
     await expect(confirm).toBeDisabled();
+    await expect(account).toHaveCount(0);
+    await expect(copy).toHaveCount(0);
+    await expect(instructions).toHaveCount(0);
     await confirm.evaluate(button => button.dispatchEvent(new MouseEvent("click", { bubbles: true })));
     expect(writes).toEqual([]);
     state.ordersStatus = 200;
     await dialog.getByRole("button", { name: "Повторить загрузку", exact: true }).click();
     await expect(confirm).toBeEnabled();
+    await expect(account).toBeVisible();
+    await expect(copy).toBeVisible();
+    await expect(instructions).toBeVisible();
     await expect(comment).toHaveValue("Сохранённый комментарий");
     await expect(dialog.getByText("Файл выбран", { exact: true })).toBeVisible();
     await confirm.click();
@@ -428,4 +439,68 @@ test("review reopen before close transition finishes cannot reset new input", as
   await input.fill("Новый текст");
   await page.waitForTimeout(400);
   await expect(input).toHaveValue("Новый текст");
+});
+
+test("obsolete terms response refreshes the displayed balance without replaying upload or payment", async ({ page, baseURL }) => {
+  const state = await setupMobileAccount(page, baseURL);
+  const order = orderFixture(1, "AWAITING_PAYMENT", 1);
+  state.customerOrders = [order];
+  await page.route("**/accounts/participant/10", route => fulfillJson(route, [{ id: 1, participantId: 10, username: "Seller", entityValue: "TEST", transferMoney: "BANK_CARD" }]));
+  let writes = 0, uploads = 0;
+  await page.route("**/images?tag=ORDER&entityId=1", route => {
+    if (route.request().method() === "POST") uploads++;
+    return fulfillJson(route, [77]);
+  });
+  await page.route("**/order/1/ASSEMBLING?*", route => {
+    if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+    writes++;
+    order.termsVersion = 1;
+    Object.assign(order.calculation!, { deliveryAmount: "800.00", totalAmount: "4800.00", remainingAmount: "3800.00" });
+    return fulfillJson(route, { code: "ORDER_TERMS_STALE", message: "Условия изменились" }, 409);
+  });
+  await page.goto("/dashboard/purchase");
+  await page.getByRole("button", { name: "Подтвердить оплату", exact: true }).first().click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("Осталось оплатить: 3 500,00 ₽")).toBeVisible();
+  await dialog.locator('input[type="file"]').setInputFiles({ name: "proof.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+  await dialog.getByRole("button", { name: "Подтвердить оплату", exact: true }).click();
+  await expect(dialog.getByText("Осталось оплатить: 3 800,00 ₽")).toBeVisible();
+  await expect(dialog.getByText("Условия изменились", { exact: true })).toBeVisible();
+  expect({ uploads, writes }).toEqual({ uploads: 1, writes: 1 });
+});
+
+test("contradictory balance removes payment instructions until the order refreshes", async ({ page, baseURL }) => {
+  const state = await setupMobileAccount(page, baseURL);
+  const order = orderFixture(1, "AWAITING_PAYMENT", 1);
+  state.customerOrders = [order];
+  await page.route("**/accounts/participant/10", route => fulfillJson(route, [
+    { id: 1, participantId: 10, username: "Получатель", entityValue: "TEST-F04", transferMoney: "BANK_CARD" },
+  ]));
+  const posts: string[] = [];
+  page.on("request", request => {
+    if (request.method() === "POST" && /\/(images|order)[/?]/.test(request.url())) posts.push(request.url());
+  });
+  await page.goto("/dashboard/purchase");
+  const open = page.getByRole("button", { name: "Подтвердить оплату", exact: true }).first();
+  await open.click();
+  const dialog = page.getByRole("dialog");
+  const account = dialog.getByText("TEST-F04", { exact: true });
+  await expect(account).toBeVisible();
+  order.calculation!.remainingAmount = "35000.00";
+  await reconnect(page);
+  await expect(dialog.getByText(/превышает итог заказа/).first()).toBeVisible();
+  await expect(dialog.getByText(/35\s*000/)).toHaveCount(0);
+  await expect(account).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: /Скопировать данные/ })).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Отмена" }).click();
+  await expect(open).toBeDisabled();
+  await page.getByRole("button", { name: "Подробнее о заказе №1", exact: true }).first().click();
+  order.calculation!.remainingAmount = "3500.00";
+  await dialog.getByRole("button", { name: "Обновить заказ", exact: true }).click();
+  await expect(dialog.getByText("Осталось оплатить: 3 500,00 ₽")).toBeVisible();
+  await dialog.getByRole("button", { name: "Закрыть детали заказа" }).click();
+  await open.click();
+  await expect(account).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Скопировать данные поля «Реквизиты»" })).toBeVisible();
+  expect(posts).toEqual([]);
 });

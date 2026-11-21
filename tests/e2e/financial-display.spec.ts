@@ -26,6 +26,7 @@ for (const [index, currency] of currencies.entries()) {
         price: 1250.75, prepaymentAmount: preorder ? 250.25 : 0,
         currency, availability: preorder ? "PREORDER" : "PURCHASABLE",
       };
+      order.calculation = { ...order.calculation!, currency, goodsAmount: "1250.75", deliveryAmount: "0.00", totalAmount: "1250.75", confirmedPaidAmount: "0.00", remainingAmount: "1250.75" };
       order.product = { ...product, count: 1 };
       order.prepaymentAmount = product.prepaymentAmount;
       order.totalPrice = preorder ? 1000.5 : 1250.75;
@@ -71,16 +72,36 @@ for (const [index, currency] of currencies.entries()) {
       await page.goto("/dashboard/purchase");
       await page.getByRole("button", { name: preorder ? "Подтвердить предоплату" : "Подтвердить оплату", exact: true }).first().click();
       const dialog = page.getByRole("dialog", { name: preorder ? "Подтверждение предоплаты" : "Подтверждение оплаты" });
-      await expect(dialog.getByText(preorder ? `К предоплате: ${prepayment}` : `К оплате: ${full}`, { exact: true })).toBeVisible();
+      await expect(dialog.getByText(`Осталось оплатить: ${full}`, { exact: true })).toBeVisible();
       if (preorder) {
-        await expect(dialog.getByText(`Остаток после предоплаты: ${remainder}`, { exact: true })).toBeVisible();
-        await expect(dialog.getByText(`Стоимость товаров: ${full}`, { exact: true })).toBeVisible();
+        await expect(dialog.getByText(/Приложите чек согласованной предоплаты/)).toBeVisible();
+        await expect(dialog.getByText(`Товары: ${full}`, { exact: true })).toBeVisible();
         await dialog.getByRole("button", { name: "Отмена", exact: true }).click();
+        order.calculation.confirmedPaidAmount = "250.25";
+        order.calculation.remainingAmount = "1000.50";
         order.actualStatus = "AWAITING_PAYMENT";
         await page.reload();
         await page.getByRole("button", { name: "Подтвердить оплату", exact: true }).first().click();
-        await expect(page.getByRole("dialog").getByText(`Остаток к оплате: ${remainder}`, { exact: true })).toBeVisible();
+        await expect(page.getByRole("dialog").getByText(`Осталось оплатить: 1 000,50 ${symbols[currency]}`, { exact: true })).toBeVisible();
       }
     });
   }
 }
+
+for (const width of [393, 1280]) test("exact JPY decimals and legacy order at " + width, async ({ page, baseURL }) => {
+  await page.setViewportSize({ width, height: 860 });
+  const state = await setupMobileAccount(page, baseURL);
+  const order = orderFixture(101, "AWAITING_PAYMENT", 1);
+  Object.assign(order.calculation!, { currency: "JPY", deliveryAmount: "0.00", confirmedPaidAmount: "0.00",
+    goodsAmount: "9007199254740993.01", totalAmount: "9007199254740993.01", remainingAmount: "9007199254740993.01" });
+  state.customerOrders = [order, orderFixture(102, "AWAITING_PAYMENT", 2, {})];
+  await page.goto("/dashboard/purchase");
+  await page.getByRole("button", { name: "Подробнее о заказе №101" }).first().click();
+  const details = page.getByRole("dialog");
+  await expect(details.getByText("Итого с доставкой: 9 007 199 254 740 993,01 ¥")).toBeVisible();
+  await expect(details.getByText("Доставка: Бесплатно")).toBeVisible();
+  await details.getByRole("button", { name: "Закрыть детали заказа" }).click();
+  await page.getByRole("button", { name: "Подробнее о заказе №102" }).first().click();
+  await expect(details.getByText("Актуальный расчёт не получен")).toBeVisible();
+  await expect(details.getByText(/по старым данным: 2500 RUB/)).toBeVisible();
+});

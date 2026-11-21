@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronRightRounded } from "@mui/icons-material";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
-import { getOrderStatusActionHint, OrderStatusChip, orderNeedsAttention, type ListOrdersModel } from "@/entities/order";
-import { formatPrice } from "@/shared/lib";
+import { OrderStatusChip, orderNeedsAttention, type ListOrdersModel } from "@/entities/order";
+import { getOrderActionHint } from "../model/dashboardOrders";
 import { getOrderPaymentBreakdown } from "@/entities/order";
 import { formatOrderDate, type OrdersSortId, type OrdersUserRole } from "../model/dashboardOrders";
 import { filterMobileOrders, sortMobileOrders, type MobileOrdersFilterId } from "../model/mobileOrders";
@@ -54,7 +54,7 @@ export const MobileOrders = ({ orders, userRole, onOpenDetails }: MobileOrdersPr
         <Stack spacing={1.5}>
           {visibleOrders.map((order) => {
             const needsAttention = orderNeedsAttention(order.actualStatus, userRole);
-            const hint = getOrderStatusActionHint(order.actualStatus, userRole, order.prepaymentAmount > 0);
+            const hint = getOrderActionHint(order, userRole);
             const details = (
               <Button onClick={() => onOpenDetails(order)} aria-label={`Подробнее о заказе №${order.orderId}`} endIcon={<ChevronRightRounded />} sx={{ ml: "auto" }}>Подробнее</Button>
             );
@@ -75,8 +75,8 @@ export const MobileOrders = ({ orders, userRole, onOpenDetails }: MobileOrdersPr
                   </Stack>
                   <OrderProductPreview order={order} userRole={userRole} imageSize={72} showCategory={false} showOrderId={false} nameLines={2} />
                   <Stack direction="row" justifyContent="space-between" gap={1} flexWrap="wrap">
-                    <Typography variant="body2" color="text.secondary">Стоимость товаров</Typography>
-                    <Typography fontWeight={700}>{formatPrice(getOrderPaymentBreakdown(order).productTotal, order.product.currency)}</Typography>
+                    <Typography variant="body2" color="text.secondary">Итого с доставкой</Typography>
+                    <Typography fontWeight={700}>{getOrderPaymentBreakdown(order).totalLabel}</Typography>
                   </Stack>
                   {hint && <Typography variant="body2" color={needsAttention ? "text.primary" : "text.secondary"}>{hint}</Typography>}
                   <Box sx={{ "& .MuiButton-root": { minHeight: 44, textTransform: "none", fontSize: 14 }, "& .MuiButton-startIcon": { display: "none" } }}>

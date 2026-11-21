@@ -1,3 +1,5 @@
+import { orderCalculation } from "./helpers/orderCalculation";
+import { orderFixture, setupMobileAccount } from "./helpers/mobileAccount";
 import {
   expect,
   type BrowserContext,
@@ -96,6 +98,10 @@ const createPreorder = ({
 }) => ({
   orderId,
   actualStatus: status,
+  termsVersion: 0,
+  calculation: { known: true, currency: "RUB", scale: 2, goodsAmount: String(30000 + orderPrepaymentAmount),
+    deliveryAmount: status === "AWAITING_PREPAYMENT" ? null : "600.00", totalAmount: status === "AWAITING_PREPAYMENT" ? null : String(30600 + orderPrepaymentAmount),
+    confirmedPaidAmount: status === "AWAITING_PREPAYMENT" ? "0.00" : String(orderPrepaymentAmount), remainingAmount: status === "AWAITING_PREPAYMENT" ? null : "30600.00" },
   totalPrice: 30_000,
   prepaymentAmount: orderPrepaymentAmount,
   createdAt: "2026-07-20T10:00:00.000Z",
@@ -409,15 +415,10 @@ test.describe("order payment flow", () => {
       page,
       "Подтвердить предоплату",
     );
-    await expect(prepaymentDialog.getByText(/К предоплате:/)).toContainText(
-      /7[\s\u00a0]500[\s\u00a0]*₽/,
-    );
-    await expect(
-      prepaymentDialog.getByText(/^Остаток после предоплаты:/),
-    ).toContainText(/30[\s\u00a0]000[\s\u00a0]*₽/);
-    await expect(
-      prepaymentDialog.getByText(/^Стоимость товаров:/),
-    ).toContainText(/37[\s\u00a0]500[\s\u00a0]*₽/);
+    await expect(prepaymentDialog.getByText(/Приложите чек согласованной предоплаты/)).toBeVisible();
+    await expect(prepaymentDialog.getByText(/К предоплате:/)).toHaveCount(0);
+    await expect(prepaymentDialog.getByText(/^Осталось оплатить:/)).toContainText("Остаток пока неизвестен");
+    await expect(prepaymentDialog.getByText(/^Товары:/)).toContainText(/37\s500,00\s*₽/);
     await expect(
       prepaymentDialog.getByText("TEST-ACCOUNT-501", { exact: true }),
     ).toBeVisible();
@@ -443,10 +444,10 @@ test.describe("order payment flow", () => {
       "Подтвердить оплату",
     );
     await expect(
-      paymentDialog.getByText(/Остаток к оплате:/),
-    ).toContainText(/30[\s\u00a0]000[\s\u00a0]*₽/);
-    await expect(paymentDialog.getByText(/^Предоплата:/)).toContainText(
-      /7[\s\u00a0]500[\s\u00a0]*₽/,
+      paymentDialog.getByText(/^Осталось оплатить:/),
+    ).toContainText(/30\s600,00\s*₽/);
+    await expect(paymentDialog.getByText(/^Подтверждено оплачено:/)).toContainText(
+      /7\s500,00\s*₽/,
     );
     await paymentDialog
       .getByRole("button", { name: "Отмена", exact: true })
@@ -816,9 +817,9 @@ test.describe("order payment flow", () => {
 
 for (const width of [393, 1280]) {
   for (const scenario of [
-    { status: "AWAITING_PREPAYMENT", prepaymentAmount: 1_200, action: "Подтвердить предоплату", amount: /1\s*200/, endpoint: "AWAITING_PREPAYMENT_APPROVAL" },
-    { status: "AWAITING_PAYMENT", prepaymentAmount: 1_200, action: "Подтвердить оплату", amount: /30\s*000/, endpoint: "ASSEMBLING" },
-    { status: "AWAITING_PAYMENT", prepaymentAmount: 0, action: "Подтвердить оплату", amount: /30\s*000/, endpoint: "ASSEMBLING" },
+    { status: "AWAITING_PREPAYMENT", prepaymentAmount: 1_200, action: "Подтвердить предоплату", endpoint: "AWAITING_PREPAYMENT_APPROVAL" },
+    { status: "AWAITING_PAYMENT", prepaymentAmount: 1_200, action: "Подтвердить оплату", endpoint: "ASSEMBLING" },
+    { status: "AWAITING_PAYMENT", prepaymentAmount: 0, action: "Подтвердить оплату", endpoint: "ASSEMBLING" },
   ] as const) {
     test('external payment uses server totals: ' + scenario.status + ', prepayment ' + scenario.prepaymentAmount + ', width ' + width, async ({ context, page, baseURL }) => {
       await page.setViewportSize({ width, height: 900 });
@@ -838,20 +839,11 @@ for (const width of [393, 1280]) {
       const breakdown = details.getByTestId('order-payment-breakdown');
       await expect(breakdown).toContainText(scenario.prepaymentAmount > 0 ? /31\s*200/ : /30\s*000/);
       await expect(breakdown).not.toContainText(/37\s*500/);
-      if (scenario.prepaymentAmount > 0) {
-        await expect(breakdown).toContainText(/1\s*200/);
-        await expect(breakdown).toContainText('Остаток к оплате');
-      } else {
-        await expect(breakdown).not.toContainText('Предоплата');
-      }
+      await expect(breakdown.getByText(/^Подтверждено оплачено:/)).toContainText(scenario.status === "AWAITING_PAYMENT" && scenario.prepaymentAmount > 0 ? /1\s200,00/ : /: 0,00/);
       await details.getByRole('button', { name: 'Закрыть детали заказа' }).click();
       const dialog = await openPaymentDialog(page, scenario.action);
-      await expect(dialog.getByText(/^(К предоплате|К оплате|Сумма к оплате|Остаток к оплате):/)).toContainText(scenario.amount);
-      if (scenario.prepaymentAmount > 0) {
-        await expect(dialog.getByText(/^Предоплата:/)).toContainText(/1\s*200/);
-      } else {
-        await expect(dialog.getByText(/^Предоплата:/)).toHaveCount(0);
-      }
+      await expect(dialog.getByText(/^Осталось оплатить:/)).toContainText(scenario.status === "AWAITING_PAYMENT" ? /30\s600,00/ : "Остаток пока неизвестен");
+      await expect(dialog.getByText(/^К предоплате:/)).toHaveCount(0);
       await uploadPaymentProof(dialog);
       const request = page.waitForRequest((request) => request.method() === 'POST' && new URL(request.url()).pathname === '/order/801/' + scenario.endpoint);
       await dialog.getByRole('button', { name: scenario.action, exact: true }).click();
@@ -861,4 +853,28 @@ for (const width of [393, 1280]) {
       await expect(dialog).toBeHidden();
     });
   }
+}
+
+for (const role of ["purchase", "sales"] as const) {
+  test("missing calculation blocks monetary actions and preserves the order for " + role, async ({ page, baseURL }) => {
+    const state = await setupMobileAccount(page, baseURL);
+    const buyer = role === "purchase";
+    const order = orderFixture(91, buyer ? "AWAITING_PAYMENT" : "AWAITING_PREPAYMENT_APPROVAL", 1, {});
+    state[buyer ? "customerOrders" : "sellerOrders"] = [order];
+    const writes: string[] = [];
+    page.on("request", request => { if (request.method() === "POST" && /\/(order|images)[/?]/.test(request.url())) writes.push(request.url()); });
+    await page.goto("/dashboard/" + role);
+    const action = page.getByRole("button", { name: buyer ? "Подтвердить оплату" : "Подтвердить предоплату", exact: true }).first();
+    await expect(action).toBeDisabled();
+    await page.getByRole("button", { name: "Подробнее о заказе №91" }).first().click();
+    const detail = page.getByRole("dialog");
+    await expect(detail.getByText("Актуальный расчёт не получен", { exact: true })).toBeVisible();
+    await expect(detail.getByText(/по старым данным: 2500 RUB/)).toBeVisible();
+    Object.assign(order, { termsVersion: 0, calculation: orderCalculation({ known: false }) });
+    await detail.getByRole("button", { name: "Обновить заказ" }).click();
+    await expect(detail.getByText("Для оплаты нужна сверка администратором")).toBeVisible();
+    await detail.getByRole("button", { name: "Закрыть детали заказа" }).click();
+    await expect(action).toBeDisabled();
+    expect(writes).toEqual([]);
+  });
 }

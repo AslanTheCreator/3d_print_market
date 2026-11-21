@@ -15,6 +15,7 @@ import {
   getOrderProgressSteps,
   getOrderStatusMeta,
   OrderStatusChip,
+  hasOrderPrepayment,
   shouldShowOrderProgress,
   type ListOrdersModel,
   type OrderProgressStep,
@@ -53,7 +54,7 @@ const getStepIndex = (
 
 const OrderMiniProgress = ({ order }: { order: ListOrdersModel }) => {
   const theme = useTheme();
-  const hasPrepayment = order.prepaymentAmount > 0;
+  const hasPrepayment = hasOrderPrepayment(order);
   const shouldShowProgress = shouldShowOrderProgress(
     order.actualStatus,
     hasPrepayment,
@@ -266,7 +267,7 @@ const OrderCard = ({
             value={order.userInfo.login}
           />
           <OrderInfoItem
-            label="Стоимость товаров"
+            label="Итого с доставкой"
             value={formatOrderPrice(order)}
             highlight
           />

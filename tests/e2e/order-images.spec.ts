@@ -61,7 +61,7 @@ test("local ORDER selection can be replaced and removed without requests and rel
   })).toBe(true);
 });
 
-for (const change of ["order", "status", "logout"] as const) test(`late ORDER upload after ${change} cannot send a status mutation or populate another form`, async ({ page, baseURL }) => {
+for (const change of ["order", "status", "logout", "version", "amount"] as const) test(`late ORDER upload after ${change} cannot send a status mutation or populate another form`, async ({ page, baseURL }) => {
   await page.setViewportSize({ width: 393, height: 900 });
   const state = await setupMobileAccount(page, baseURL);
   state.customerOrders = [orderFixture(31, "AWAITING_PAYMENT", 1)];
@@ -91,17 +91,28 @@ for (const change of ["order", "status", "logout"] as const) test(`late ORDER up
       await expect(page).toHaveURL(/\/auth\/login/);
     } else {
       if (change === "order") state.customerOrders = [orderFixture(32, "AWAITING_PAYMENT", 1)];
+      else if (change === "version") state.customerOrders[0].termsVersion = 1;
+      else if (change === "amount") Object.assign(state.customerOrders[0].calculation!, { deliveryAmount: "900.00", totalAmount: "4900.00", remainingAmount: "3900.00" });
       else state.customerOrders[0].actualStatus = "DISPUTED";
+      const updated = page.waitForResponse(response => new URL(response.url()).pathname === "/order/customer" && response.request().method() === "GET");
       await page.clock.setFixedTime(new Date(await page.evaluate(() => Date.now()) + 180_000));
       await page.evaluate(() => { window.dispatchEvent(new Event("offline")); window.dispatchEvent(new Event("online")); });
+      await updated;
       if (change === "order") {
         await expect(dialog).toBeHidden();
         await page.getByRole("button", { name: "Подтвердить оплату", exact: true }).click();
         await expect(page.getByRole("dialog").getByRole("button", { name: "Подтвердить оплату", exact: true })).toBeDisabled();
-      } else await expect(dialog.getByText(/Статус заказа уже обновился/)).toBeVisible();
+      } else if (change === "amount") await expect(dialog.getByText("Осталось оплатить: 3 900,00 ₽")).toBeVisible();
+      else if (change === "status") {
+        await expect(dialog.getByText(/Статус заказа уже обновился/)).toBeVisible();
+        await expect(dialog.getByText("TEST", { exact: true })).toHaveCount(0);
+        await expect(dialog.getByRole("button", { name: /Скопировать данные/ })).toHaveCount(0);
+        await expect(dialog.getByText(/Выберите реквизиты продавца/)).toHaveCount(0);
+      }
     }
   } finally { release(); }
   await expect.poll(() => completed).toBe(true);
+  if (change === "version" || change === "amount") await expect(dialog.getByText(/Условия заказа изменились/)).toBeVisible();
   expect(statusWrites).toEqual([]);
   expect(deletes).toEqual([]);
   if (change === "order") await expect(page.getByRole("dialog").getByText("Изображение загружено", { exact: true })).toHaveCount(0);

@@ -1,4 +1,6 @@
 import { expect, type Page, type Route } from "@playwright/test";
+import type { OrderCalculationDto } from "@/entities/order";
+import { orderCalculation } from "./orderCalculation";
 import { backendContractRejection } from "./backendContracts";
 
 export const longProductName = "Коллекционная фигурка с очень длинным названием и дополнительным описанием комплектации для проверки мобильной карточки";
@@ -6,7 +8,8 @@ export const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk
 export const image = { id: 77, originalUrl: `data:image/png;base64,${png}`, mediumUrl: `data:image/png;base64,${png}`, thumbnailUrl: `data:image/png;base64,${png}`, contentType: "image/png", width: 1, height: 1 };
 export const categories = [{ id: 1, name: "Фигурки", childs: [{ id: 2, name: "Аниме", childs: [] }, { id: 3, name: "Игры", childs: [] }] }];
 
-export const orderFixture = (orderId: number, actualStatus: string, day: number) => ({
+export const orderFixture = (orderId: number, actualStatus: string, day: number, terms: { calculation?: OrderCalculationDto | null; termsVersion?: number } = { calculation: orderCalculation(), termsVersion: 0 }) => ({
+  ...terms,
   orderId, actualStatus, totalPrice: 2500, prepaymentAmount: 0, createdAt: `2026-07-${String(day).padStart(2, "0")}T10:00:00.000Z`,
   userInfo: { id: 10, imageId: 0, login: "seller", phoneNumber: "+79990000000", mail: "seller@example.com" },
   product: { id: orderId + 100, name: longProductName, count: 2, price: 1250, prepaymentAmount: 0, currency: "RUB", categories,

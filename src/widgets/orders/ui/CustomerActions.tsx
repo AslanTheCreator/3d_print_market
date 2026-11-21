@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { Payment, ThumbUp, Cancel, RateReview } from "@mui/icons-material";
 import {
+  OrderCalculationSummary,
   getOrderPaymentBreakdown,
   ListOrdersModel,
   getCustomerOrderActionFlags,
@@ -26,7 +27,6 @@ import {
 } from "@/features/order-payment";
 import { useOrderReceiptAction } from "@/features/order-receipt";
 import { transformToApiError } from "@/shared/lib/errorHandler";
-import { formatPrice } from "@/shared/lib";
 import { CancelOrderDialog } from "./CancelOrderDialog";
 import { LeaveReviewDialog } from "./LeaveReviewDialog";
 import { OrderRefreshWarning } from "./OrderRefreshWarning";
@@ -51,7 +51,6 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
   const receiptErrorMessage = receiptAction.mutation.error
     ? transformToApiError(receiptAction.mutation.error).message
     : null;
-  const paymentBreakdown = getOrderPaymentBreakdown(order);
   const isReceiptStatusCurrent = order.actualStatus === "ON_THE_WAY";
   const {
     canPay,
@@ -59,6 +58,9 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
     canConfirmReceipt,
     canCancel,
   } = getCustomerOrderActionFlags(order.actualStatus);
+
+  const calculation = getOrderPaymentBreakdown(order);
+  const paymentBlock = canPay ? calculation.paymentBlock : canPrePay ? calculation.prepaymentBlock : null;
 
   const handleConfirmReceipt = () => {
     if (!actionsAvailable || receiptAction.mutation.isPending || !isReceiptStatusCurrent) {
@@ -83,7 +85,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
           variant="contained"
           color="primary"
           startIcon={<Payment />}
-          disabled={!actionsAvailable}
+          disabled={!actionsAvailable || !!paymentBlock}
           onClick={paymentAction.open}
           size="small"
           fullWidth={true}
@@ -97,7 +99,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
             variant="contained"
             color="primary"
             startIcon={<Payment />}
-            disabled={!actionsAvailable}
+            disabled={!actionsAvailable || !!paymentBlock}
             onClick={prepaymentAction.open}
             size="small"
             fullWidth={true}
@@ -141,6 +143,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
     <>
       <Stack spacing={0.75}>
         {primaryAction}
+        {paymentBlock && <Typography variant="caption">{paymentBlock}</Typography>}
         {review.publishedHere && <Typography variant="caption">Отзыв оставлен</Typography>}
         {review.isChecking && <Typography variant="caption" role="status">Проверяем состояние отзыва…</Typography>}
         {review.needsCheck && (
@@ -216,33 +219,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {order.product.name}
             </Typography>
-            <Stack spacing={0.25}>
-              <Typography variant="h6" color="text.primary" fontWeight={600}>
-                Стоимость товаров:{" "}
-                {formatPrice(
-                  paymentBreakdown.productTotal,
-                  order.product.currency,
-                )}
-              </Typography>
-              {paymentBreakdown.hasPrepayment && (
-                <>
-                  <Typography variant="body2" color="text.secondary">
-                    Предоплата:{" "}
-                    {formatPrice(
-                      paymentBreakdown.prepaymentTotal,
-                      order.product.currency,
-                    )}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Остаток:{" "}
-                    {formatPrice(
-                      paymentBreakdown.remainingTotal,
-                      order.product.currency,
-                    )}
-                  </Typography>
-                </>
-              )}
-            </Stack>
+            <OrderCalculationSummary order={order} />
           </Paper>
 
           <Typography variant="body2" color="text.secondary">

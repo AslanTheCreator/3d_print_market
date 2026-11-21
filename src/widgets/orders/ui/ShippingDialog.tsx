@@ -16,7 +16,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Chip,
   Alert,
 } from "@mui/material";
 import {
@@ -27,11 +26,10 @@ import {
   ContentCopy,
 } from "@mui/icons-material";
 import {
-  getOrderPaymentBreakdown,
+  OrderCalculationSummary,
   type ListOrdersModel,
 } from "@/entities/order";
 import { useOrderShippingAction } from "@/features/order-shipping";
-import { formatPrice } from "@/shared/lib";
 import { OrderRefreshWarning } from "./OrderRefreshWarning";
 import { transformToApiError } from "@/shared/lib/errorHandler";
 import { getSafeTrackingUrl } from "../model/orderDetails";
@@ -50,7 +48,6 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
   const [comment, setComment] = useState("");
   const [deliveryService, setDeliveryService] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
-  const paymentBreakdown = getOrderPaymentBreakdown(order);
   const isExpectedOrderStatus = order.actualStatus === "ASSEMBLING";
   const safeDeliveryUrl = getSafeTrackingUrl(deliveryUrl);
   const hasDeliveryUrlError =
@@ -208,65 +205,11 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
                 color="text.secondary"
                 sx={{ display: "block", mb: 0.75 }}
               >
-                Количество: {paymentBreakdown.quantity} шт.
-              </Typography>
-              <Chip label="Оплачено" color="success" size="small" />
-            </Box>
-            <Box textAlign="right">
-              <Typography variant="caption" color="text.secondary">
-                {paymentBreakdown.hasPrepayment
-                  ? "Стоимость товаров"
-                  : "Сумма заказа"}
-              </Typography>
-              <Typography variant="h6" color="text.primary" fontWeight={600}>
-                {formatPrice(
-                  paymentBreakdown.productTotal,
-                  order.product.currency,
-                )}
+                Количество: {order.product.count} шт.
               </Typography>
             </Box>
           </Stack>
-
-          {paymentBreakdown.hasPrepayment && (
-            <Stack
-              data-testid="shipping-payment-breakdown"
-              spacing={0.75}
-              sx={{ mb: 1.5 }}
-            >
-              <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-                spacing={2}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Предоплата
-                </Typography>
-                <Typography variant="body2" fontWeight={700}>
-                  {formatPrice(
-                    paymentBreakdown.prepaymentTotal,
-                    order.product.currency,
-                  )}
-                </Typography>
-              </Stack>
-              <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-                spacing={2}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Оплата остатка
-                </Typography>
-                <Typography variant="body2" fontWeight={700}>
-                  {formatPrice(
-                    paymentBreakdown.remainingTotal,
-                    order.product.currency,
-                  )}
-                </Typography>
-              </Stack>
-            </Stack>
-          )}
+          <Box data-testid="shipping-payment-breakdown"><OrderCalculationSummary order={order} /></Box>
 
           <Box sx={{ p: 1.5, bgcolor: "background.paper", borderRadius: 1 }}>
             <Typography variant="body2" sx={{ mb: 0.75 }}>

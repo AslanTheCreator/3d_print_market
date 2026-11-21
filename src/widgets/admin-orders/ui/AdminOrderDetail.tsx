@@ -5,6 +5,7 @@ import {
   getOrderStatusMeta,
   getOrderReviewState,
   OrderProductThumbnail,
+  OrderCalculationSummary,
   OrderStatusChip,
   type AdminOrderDto,
 } from "@/entities/order";
@@ -24,6 +25,9 @@ export function AdminOrderDetail({
   productImage,
   session,
   locked,
+  readError,
+  inCurrentList,
+  refresh,
   lockPanel,
   changed,
   close,
@@ -32,11 +36,14 @@ export function AdminOrderDetail({
   productImage?: ImageMetadata;
   session: number | null;
   locked: boolean;
+  readError: boolean;
+  inCurrentList: boolean;
+  refresh: () => void;
   lockPanel: (value: boolean) => void;
-  changed: () => Promise<void>;
+  changed: (preserveDraft?: boolean) => Promise<void>;
   close: () => void;
 }) {
-  const trackingUrl = safeUrl(order.deliveryUrl);
+  const trackingUrl = safeUrl(order.deliveryUrl ?? "");
   return (
     <Stack spacing={2} sx={{ p: { xs: 2, md: 4 } }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -65,6 +72,8 @@ export function AdminOrderDetail({
         order={order}
         session={session}
         changed={changed}
+        readError={readError}
+        inCurrentList={inCurrentList}
         lockPanel={lockPanel}
       />
       <Divider />
@@ -74,22 +83,11 @@ export function AdminOrderDetail({
       <Typography>{order.userInfo.mail}</Typography>
       <Divider />
       <Typography variant="h6">Оплата</Typography>
-      <Typography>
-        Стоимость товаров: {order.prepaymentAmount + order.totalPrice}{" "}
-        {order.product.currency}
-      </Typography>
-      <Typography>
-        Предоплата: {order.prepaymentAmount} {order.product.currency}
-      </Typography>
-      <Typography>
-        Остаток: {order.totalPrice} {order.product.currency}
-      </Typography>
+      {inCurrentList ? <OrderCalculationSummary order={order} onRefresh={refresh} refreshDisabled={locked} /> : <Typography>Заказ отсутствует в текущей выборке</Typography>}
       <Divider />
       <Typography variant="h6">Доставка</Typography>
       <Typography>{order.transfer.address}</Typography>
-      <Typography>
-        Стоимость доставки: {order.transfer.price} {order.transfer.currency}
-      </Typography>
+
       {trackingUrl && (
         <Button href={trackingUrl} target="_blank" rel="noopener noreferrer">
           Отследить доставку

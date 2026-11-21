@@ -17,11 +17,10 @@ import {
 } from "@mui/material";
 import { Close, Cancel, Warning } from "@mui/icons-material";
 import {
-  getOrderPaymentBreakdown,
+  OrderCalculationSummary,
   type ListOrdersModel,
 } from "@/entities/order";
 import { useOrderCancelAction } from "@/features/order-cancel";
-import { formatPrice } from "@/shared/lib";
 import { OrderRefreshWarning } from "./OrderRefreshWarning";
 import { useOrderActionsAvailable } from "../model/orderActionsContext";
 import { useOrderDialogLifecycle } from "../model/useOrderDialogLifecycle";
@@ -56,7 +55,6 @@ export const CancelOrderDialog = ({
   order,
   userRole,
 }: CancelOrderDialogProps) => {
-  const paymentBreakdown = getOrderPaymentBreakdown(order);
   const actionsAvailable = useOrderActionsAvailable(order.orderId);
   const lock = useRef(false);
   const cancelOrderAction = useOrderCancelAction({ order, userRole });
@@ -143,31 +141,7 @@ export const CancelOrderDialog = ({
           <Typography variant="body2" color="text.secondary" gutterBottom>
             {order.product.name}
           </Typography>
-          <Typography variant="body2" fontWeight={500}>
-            Стоимость товаров:{" "}
-            {formatPrice(
-              paymentBreakdown.productTotal,
-              order.product.currency,
-            )}
-          </Typography>
-          {paymentBreakdown.hasPrepayment && (
-            <>
-              <Typography variant="body2" color="text.secondary">
-                Предоплата:{" "}
-                {formatPrice(
-                  paymentBreakdown.prepaymentTotal,
-                  order.product.currency,
-                )}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Остаток:{" "}
-                {formatPrice(
-                  paymentBreakdown.remainingTotal,
-                  order.product.currency,
-                )}
-              </Typography>
-            </>
-          )}
+          <OrderCalculationSummary order={order} />
         </Paper>
 
         {/* Предупреждение */}

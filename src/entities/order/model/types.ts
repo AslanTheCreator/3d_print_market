@@ -21,7 +21,7 @@ interface OrderTransfer {
   addressId: number;
   imageId: number;
   address: string;
-  price: number;
+  price: number | null;
   currency: Currency;
 }
 
@@ -52,11 +52,24 @@ export interface OrderGetDataModel {
   sellerTransfers: Transfer[];
 }
 
+export interface OrderCalculationDto {
+  known: boolean;
+  currency: Currency | "CREATE" | null;
+  scale: number;
+  goodsAmount: string | null;
+  deliveryAmount: string | null;
+  totalAmount: string | null;
+  confirmedPaidAmount: string | null;
+  remainingAmount: string | null;
+}
+
 export interface ListOrdersModel {
+  calculation?: OrderCalculationDto | null;
+  termsVersion?: number | null;
   orderId: number;
   actualStatus: OrderStatus;
-  totalPrice: number;
-  prepaymentAmount: number;
+  totalPrice: number | null;
+  prepaymentAmount: number | null;
   createdAt: string;
   userInfo: OrderUserInfo;
   product: Product & { count: number };
@@ -65,7 +78,7 @@ export interface ListOrdersModel {
   paymentProofImageId?: number | null;
   canLeaveReview?: boolean;
   reviewId?: number | null;
-  deliveryUrl: string;
+  deliveryUrl: string | null;
   histories: OrderHistory[];
 }
 

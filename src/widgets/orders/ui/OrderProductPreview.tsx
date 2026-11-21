@@ -2,7 +2,6 @@
 
 import { Box, Chip, Stack, Typography } from "@mui/material";
 import {
-  getOrderPaymentBreakdown,
   getOrderReviewState,
   OrderProductThumbnail,
   type ListOrdersModel,
@@ -32,7 +31,7 @@ export const OrderProductPreview = ({
   zoomable,
 }: OrderProductPreviewProps) => {
   const categoryName = order.product.categories?.[0]?.name ?? "Без категории";
-  const { quantity } = getOrderPaymentBreakdown(order);
+  const quantity = order.product.count;
 
   return (
     <Stack direction="row" spacing={1.5} alignItems="center" minWidth={0}>

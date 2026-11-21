@@ -23,8 +23,8 @@ export function AdminCaseDetail({ caseId, session, close }: { caseId: number; se
       <Typography>Текущий статус: {data.orderStatus ? getOrderStatusMeta(data.orderStatus).label : "Не указан"}</Typography>
       <Typography>Предыдущий статус: {data.orderCase?.previousOrderStatus ? getOrderStatusMeta(data.orderCase.previousOrderStatus).label : "Не указан"}</Typography>
       <Typography>Количество: {data.count ?? "Не указано"}</Typography>
-      <Typography>Сумма к оплате: {formatCaseAmount(data.totalPrice, data.currency)}</Typography>
-      <Typography>Предоплата: {formatCaseAmount(data.prepaymentAmount, data.currency)}</Typography>
+      <Typography>Стоимость товаров за вычетом предусмотренной предоплаты по данным обращения: {formatCaseAmount(data.totalPrice, data.currency)}</Typography>
+      <Typography>Предусмотренная предоплата по данным обращения: {formatCaseAmount(data.prepaymentAmount, data.currency)}</Typography>
       {data.orderCase?.resolvedBy != null && <Typography>Решение принял: участник #{data.orderCase.resolvedBy}</Typography>}
       <OrderCaseCard detail={data} />
       <Divider />

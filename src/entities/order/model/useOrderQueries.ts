@@ -1,7 +1,22 @@
 import { usePrivateScope } from "@/shared/lib/query";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { orderApi } from "../api/orderApi";
+import { getOrderPaymentBreakdown } from "../lib/orderPaymentBreakdown";
 import { orderQueryKeys } from "./queryKeys";
+import type { ListOrdersDto } from "./types";
+
+// Проверяет уже полученный ответ, включая окно между записью в кэш и рендером.
+export function usePaymentTermsCheck(role: "customer" | "seller") {
+  const scope = usePrivateScope();
+  const client = useQueryClient();
+  const key = role === "customer" ? orderQueryKeys.customerOrders() : orderQueryKeys.sellerOrders();
+  return (order: Pick<ListOrdersDto, "orderId" | "actualStatus" | "calculation" | "termsVersion">) => {
+    const query = client.getQueryState<ListOrdersDto[]>(scope.key(key));
+    const cached = query?.data?.find(item => item.orderId === order.orderId);
+    return scope.isCurrent() && query?.status === "success" && cached?.actualStatus === order.actualStatus &&
+      getOrderPaymentBreakdown(cached).fingerprint === getOrderPaymentBreakdown(order).fingerprint;
+  };
+}
 
 interface OrderQueryOptions {
   enabled?: boolean;

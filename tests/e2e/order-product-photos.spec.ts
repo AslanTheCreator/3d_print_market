@@ -110,7 +110,7 @@ for (const [path, ordersEndpoint] of [
       const row = table.getByRole("row").filter({ hasText: name });
       await expect(row.getByRole("img", { name: "Нет фото" })).toBeVisible();
       await expect(row.getByText("2 шт.", { exact: true })).toBeVisible();
-      await expect(row.getByText("8000 RUB", { exact: true })).toBeVisible();
+      await expect(row.getByText("4 500,00 ₽", { exact: true })).toBeVisible();
     }
 
     const detail = page.getByRole("dialog", { name: "Детали заказа", exact: true });
@@ -132,7 +132,7 @@ for (const [path, ordersEndpoint] of [
     await expect(detail.getByRole("img", { name: "Нет фото" })).toBeVisible();
     await expect(detail.getByRole("img", { name: "payment.png" })).toBeVisible();
     await expect(detail.getByText("Снимок без фото", { exact: true })).toBeVisible();
-    await expect(detail.getByText("Стоимость товаров: 8000 RUB")).toBeVisible();
+    await expect(detail.getByText("Товары: 4 000,00 ₽")).toBeVisible();
     await expect(detail.getByText("Количество: 2", { exact: true })).toBeVisible();
     await expect(detail.getByRole("button", { name: "Подтвердить заказ", exact: true })).toBeEnabled();
     await expectNoOverflow(page);

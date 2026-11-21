@@ -10,13 +10,15 @@ for (const role of ["purchase", "sales"] as const) {
     const order = orderFixture(4, "AWAITING_PAYMENT_APPROVAL", 4);
     order.histories.push({ status: order.actualStatus, comment: null, changedAt: order.createdAt });
     state[role === "purchase" ? "customerOrders" : "sellerOrders"] = [
-      order, orderFixture(5, "COMPLETED", 5),
+      order, orderFixture(5, "COMPLETED", 5, {}),
     ];
     await page.setViewportSize({ width: 320, height: 727 });
     await page.goto(`/dashboard/${role}`);
 
     const card = page.getByRole("article", { name: "Заказ №4", exact: true });
     const status = "Ожидает подтверждения полной оплаты";
+    await expect(page.getByRole("article", { name: "Заказ №5", exact: true })).toContainText("Актуальный расчёт не получен");
+    await expect(card).toContainText("4 500,00 ₽");
     await expect(card.getByText(status, { exact: true })).toBeVisible();
     await expect(card.getByRole("button")).toHaveCount(1);
     await expectNoOverflow(page);
@@ -26,6 +28,8 @@ for (const role of ["purchase", "sales"] as const) {
     await expect(page.getByRole("article")).toHaveCount(1);
     await card.getByRole("button", { name: "Подробнее о заказе №4" }).click();
     const details = page.getByRole("dialog", { name: "Детали заказа №4" });
+    await expect(details.getByText("Товары: 4 000,00 ₽")).toBeVisible();
+    await expect(details.getByText("Осталось оплатить: 3 500,00 ₽")).toBeVisible();
     await expect(details.getByText(status, { exact: true })).toHaveCount(2);
     await expect(details.getByText("История заказа", { exact: true })).toBeVisible();
   });
@@ -158,4 +162,17 @@ test("orders loading, retry and empty states keep mobile shell and useful links"
   await expect(page.getByRole("heading", { name: "Продаж пока нет" })).toBeVisible();
   await expect(page.locator("main").getByRole("link", { name: "Мои товары", exact: true })).toHaveAttribute("href", "/dashboard/products");
   await expect(page.locator("main").getByRole("link", { name: "Создать товар", exact: true })).toHaveAttribute("href", "/dashboard/products/new");
+});
+
+test("mobile preserves the decimal part of a large JPY total", async ({ page, baseURL }) => {
+  const state = await setupMobileAccount(page, baseURL);
+  const order = orderFixture(17, "BOOKED", 1);
+  Object.assign(order.calculation!, { currency: "JPY", goodsAmount: "9007199254740993.01",
+    deliveryAmount: "0.00", totalAmount: "9007199254740993.01", confirmedPaidAmount: null, remainingAmount: null });
+  state.customerOrders = [order];
+  await page.goto("/dashboard/purchase");
+  const card = page.getByRole("article", { name: "Заказ №17", exact: true });
+  await expect(card.getByText("9 007 199 254 740 993,01 ¥", { exact: true })).toBeVisible();
+  await card.getByRole("button", { name: "Подробнее о заказе №17" }).click();
+  await expect(page.getByRole("dialog").getByText("Осталось оплатить: Остаток пока неизвестен")).toBeVisible();
 });

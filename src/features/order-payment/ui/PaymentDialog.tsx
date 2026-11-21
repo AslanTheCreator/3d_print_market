@@ -18,7 +18,9 @@ import {
 } from "@mui/material";
 import { Close, CloudUpload, Payment, CheckCircle } from "@mui/icons-material";
 import {
+  OrderCalculationSummary,
   getOrderPaymentBreakdown,
+  usePaymentTermsCheck,
   type ListOrdersModel,
 } from "@/entities/order";
 import { useSellerAccounts } from "@/entities/account";
@@ -26,12 +28,11 @@ import { usePrivateScope } from "@/shared/lib/query";
 import { imageApi } from "@/entities/image";
 import {
   createImagePreview,
-  formatPrice,
   revokeImagePreview,
   validateImage,
 } from "@/shared/lib";
 import { serializeApiError, transformToApiError } from "@/shared/lib/errorHandler";
-import { UseMutationResult } from "@tanstack/react-query";
+import type { UseMutationResult } from "@tanstack/react-query";
 import { SellerPaymentDetails } from "./SellerPaymentDetails";
 import { DisputePaymentDialog, type DisputePaymentDialogProps } from "./DisputePaymentDialog";
 
@@ -72,13 +73,11 @@ const paymentConfig = {
     title: "Подтверждение оплаты",
     buttonText: "Подтвердить оплату",
     buttonLoadingText: "Подтверждение...",
-    amountLabel: "К оплате:",
   },
   prepayment: {
     title: "Подтверждение предоплаты",
     buttonText: "Подтвердить предоплату",
     buttonLoadingText: "Подтверждение...",
-    amountLabel: "К предоплате:",
   },
 };
 
@@ -105,6 +104,7 @@ const NormalPaymentDialog = ({
   const [imageId, setImageId] = useState<number | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const termsMatch = usePaymentTermsCheck("customer");
   const scope = usePrivateScope();
   const lock = useRef(false);
   const revision = useRef(0);
@@ -118,10 +118,7 @@ const NormalPaymentDialog = ({
 
   const config = paymentConfig[paymentType];
   const paymentBreakdown = getOrderPaymentBreakdown(order);
-  const amountToPay =
-    paymentType === "prepayment"
-      ? paymentBreakdown.prepaymentTotal
-      : paymentBreakdown.remainingTotal;
+  const paymentBlock = paymentType === "prepayment" ? paymentBreakdown.prepaymentBlock : paymentBreakdown.paymentBlock;
   const mutationApiError = paymentMutation.error
     ? transformToApiError(paymentMutation.error)
     : null;
@@ -133,6 +130,7 @@ const NormalPaymentDialog = ({
       ? "AWAITING_PREPAYMENT"
       : "AWAITING_PAYMENT";
   const isExpectedOrderStatus = order.actualStatus === expectedOrderStatus;
+  const showPaymentInstructions = actionsAvailable && isExpectedOrderStatus && !paymentBlock;
   const fileInputId = `payment-proof-upload-${paymentType}-${order.orderId}`;
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -146,7 +144,7 @@ const NormalPaymentDialog = ({
     isError: isAccountsError,
     isFetching: isAccountsFetching,
     refetch: refetchSellerAccounts,
-  } = useSellerAccounts(open ? order.userInfo.id : undefined);
+  } = useSellerAccounts(open && showPaymentInstructions ? order.userInfo.id : undefined);
 
   useEffect(() => {
     if (!open || !sellerAccounts) return;
@@ -191,7 +189,7 @@ const NormalPaymentDialog = ({
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file || lock.current || paymentMutation.isPending || imageId || !scope.isCurrent()) return;
+    if (!file || paymentBlock || lock.current || paymentMutation.isPending || imageId || !scope.isCurrent()) return;
     const validation = validateImage(file);
     if (!validation.isValid) {
       setImageError(validation.error ?? "Invalid image");
@@ -215,6 +213,10 @@ const NormalPaymentDialog = ({
     const submittedComment = comment.trim();
     let submittingStatus = false;
     try {
+      if (!termsMatch(order)) {
+        setImageError("Обновите заказ и проверьте расчёт.");
+        return;
+      }
       let proofId = imageId;
       if (!proofId && selectedImage) {
         const controller = new AbortController();
@@ -230,6 +232,10 @@ const NormalPaymentDialog = ({
       if (!isCurrent() || !proofId) return;
       const current = latest.current;
       if (!current.actionsAvailable || current.order.actualStatus !== expectedOrderStatus || !current.accountsReady || !current.selectedAccountId) return;
+      if (!termsMatch(order) || getOrderPaymentBreakdown(current.order).fingerprint !== paymentBreakdown.fingerprint) {
+        setImageError("Условия заказа изменились. Проверьте новый расчёт и подтвердите действие ещё раз.");
+        return;
+      }
       submittingStatus = true;
       await paymentMutation.mutateAsync({ orderId, imageId: proofId, comment: submittedComment });
       if (isCurrent()) handleClose({ keepUploadedImage: true });
@@ -271,8 +277,7 @@ const NormalPaymentDialog = ({
     hasSelectedAccount &&
     !accountsArePending &&
     !isAccountsError &&
-    actionsAvailable &&
-    isExpectedOrderStatus &&
+    showPaymentInstructions &&
     !paymentMutation.isPending &&
     !isUploadingImage;
   latest.current = { order, open, actionsAvailable, selectedAccountId, accountsReady: hasSelectedAccount && !accountsArePending && !isAccountsError };
@@ -322,6 +327,8 @@ const NormalPaymentDialog = ({
 
       <DialogContent>
         {!actionsAvailable && <Alert severity="warning" action={onRetry && <Button color="inherit" disabled={retryPending} onClick={onRetry}>Повторить загрузку</Button>}>Не удалось обновить заказы. Подтверждение недоступно до успешной загрузки.</Alert>}
+        <Typography>Суммы по последнему обновлению заказа. До отправки условия могут измениться.</Typography>
+        {paymentBlock && <Alert severity="warning" action={onRetry && <Button disabled={retryPending} onClick={onRetry}>Обновить заказ</Button>}>{paymentBlock}</Alert>}
         {/* Информация о заказе */}
         <Paper variant="outlined" sx={{ p: 2, mb: 2.5, bgcolor: "grey.50" }}>
           <Typography variant="subtitle2" gutterBottom>
@@ -330,59 +337,31 @@ const NormalPaymentDialog = ({
           <Typography variant="body2" color="text.secondary" gutterBottom>
             {order.product.name}
           </Typography>
-          <Typography variant="h6" color="text.primary" fontWeight={600}>
-            {paymentBreakdown.hasPrepayment && paymentType === "payment"
-              ? "Остаток к оплате:"
-              : config.amountLabel}{" "}
-            {formatPrice(amountToPay, order.product.currency)}
-          </Typography>
-          {paymentBreakdown.hasPrepayment && (
-            <Stack spacing={0.25} sx={{ mt: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Предоплата:{" "}
-                {formatPrice(
-                  paymentBreakdown.prepaymentTotal,
-                  order.product.currency,
-                )}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Остаток после предоплаты:{" "}
-                {formatPrice(
-                  paymentBreakdown.remainingTotal,
-                  order.product.currency,
-                )}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Стоимость товаров:{" "}
-                {formatPrice(
-                  paymentBreakdown.productTotal,
-                  order.product.currency,
-                )}
-              </Typography>
-            </Stack>
-          )}
+          <OrderCalculationSummary order={order} />
+          {showPaymentInstructions && paymentType === "prepayment" && <Typography>Приложите чек согласованной предоплаты. Если сумма ещё не согласована, уточните её у продавца до перевода.</Typography>}
         </Paper>
 
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ display: "block", mb: 2.5 }}
-        >
-          Выберите реквизиты продавца и загрузите чек или скриншот перевода.
-        </Typography>
+        {showPaymentInstructions && (<>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: "block", mb: 2.5 }}
+          >
+            Выберите реквизиты продавца и загрузите чек или скриншот перевода.
+          </Typography>
 
-        {/* ── Реквизиты продавца (список с выбором) ── */}
-        <SellerPaymentDetails
-          accounts={sellerAccounts}
-          isLoading={accountsArePending}
-          isError={isAccountsError}
-          selectedAccountId={selectedAccountId}
-          onSelectAccount={setSelectedAccountId}
-          onRetry={() => {
-            void refetchSellerAccounts();
-          }}
-        />
-
+          {/* ── Реквизиты продавца (список с выбором) ── */}
+          <SellerPaymentDetails
+            accounts={sellerAccounts}
+            isLoading={accountsArePending}
+            isError={isAccountsError}
+            selectedAccountId={selectedAccountId}
+            onSelectAccount={setSelectedAccountId}
+            onRetry={() => {
+              void refetchSellerAccounts();
+            }}
+          />
+        </>)}
         {mutationErrorMessage && (
           <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2 }}>
             {mutationErrorMessage}
@@ -409,7 +388,7 @@ const NormalPaymentDialog = ({
             type="file"
             onChange={handleImageUpload}
             disabled={
-              !!imageId || isUploadingImage ||
+              !!paymentBlock || !!imageId || isUploadingImage ||
               paymentMutation.isPending ||
               hasAmbiguousMutationError ||
               hasAmbiguousMutationAttempt

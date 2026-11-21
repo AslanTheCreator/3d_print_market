@@ -8,6 +8,8 @@ import {
   ORDER_PROCESSING_STATUSES,
   ORDER_SHIPPING_STATUSES,
   getOrderPaymentBreakdown,
+  hasOrderPrepayment,
+  getOrderStatusActionHint,
   isActiveOrderStatus,
   orderNeedsAttention,
   type ListOrdersModel,
@@ -102,8 +104,6 @@ const CUSTOMER_FILTER_STATUSES: Record<
 export const getOrdersTitle = (userRole: OrdersUserRole) =>
   userRole === "seller" ? "Продажи" : "Покупки";
 
-const priceFormatter = new Intl.NumberFormat("ru-RU");
-
 const dateTimeFormatter = new Intl.DateTimeFormat("ru-RU", {
   day: "2-digit",
   month: "2-digit",
@@ -112,10 +112,16 @@ const dateTimeFormatter = new Intl.DateTimeFormat("ru-RU", {
   minute: "2-digit",
 });
 
+export function getOrderActionHint(order: ListOrdersModel, role: OrdersUserRole) {
+  const calculation = getOrderPaymentBreakdown(order);
+  if (role === "customer" && order.actualStatus === "AWAITING_PAYMENT" && calculation.paymentBlock) return calculation.paymentBlock;
+  const prepaymentAction = role === "customer" ? "AWAITING_PREPAYMENT" : "AWAITING_PREPAYMENT_APPROVAL";
+  if (order.actualStatus === prepaymentAction && calculation.prepaymentBlock) return calculation.prepaymentBlock;
+  return getOrderStatusActionHint(order.actualStatus, role, hasOrderPrepayment(order));
+}
+
 export const formatOrderPrice = (order: ListOrdersModel) =>
-  `${priceFormatter.format(getOrderPaymentBreakdown(order).productTotal)} ${
-    order.product.currency
-  }`;
+  getOrderPaymentBreakdown(order).totalLabel;
 
 export const formatOrderDate = (date: string) => {
   const timestamp = parseOrderDateTimestamp(date);

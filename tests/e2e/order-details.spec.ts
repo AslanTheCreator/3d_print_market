@@ -173,6 +173,9 @@ const createOrderFixture = ({
 }: OrderFixtureOptions) => ({
   orderId,
   actualStatus,
+  termsVersion: 0,
+  calculation: { known: true, scale: 2, currency: "RUB", goodsAmount: String(totalPrice + orderPrepaymentAmount), deliveryAmount: "400.00",
+    totalAmount: String(totalPrice + orderPrepaymentAmount + 400), confirmedPaidAmount: String(orderPrepaymentAmount), remainingAmount: String(totalPrice + 400) },
   totalPrice,
   prepaymentAmount: orderPrepaymentAmount,
   createdAt,
@@ -530,12 +533,12 @@ test.describe("order details", () => {
     );
 
     const paymentBreakdown = dialog.getByTestId("order-payment-breakdown");
-    await expect(paymentBreakdown).toContainText("Стоимость товаров");
-    await expect(paymentBreakdown).toContainText("Предоплата");
-    await expect(paymentBreakdown).toContainText("Остаток к оплате");
+    await expect(paymentBreakdown).toContainText("Товары");
+    await expect(paymentBreakdown).toContainText("Подтверждено оплачено");
+    await expect(paymentBreakdown).toContainText("Осталось оплатить");
     await expect(paymentBreakdown).toContainText(/25\s*000/);
     await expect(paymentBreakdown).toContainText(/5\s*000/);
-    await expect(paymentBreakdown).toContainText(/20\s*000/);
+    await expect(paymentBreakdown).toContainText(/20\s*400/);
   });
 
   test("uses preorder-aware confirmation copy and keeps an error dialog open", async ({
@@ -610,7 +613,7 @@ test.describe("order details", () => {
     dialog = page.getByRole("dialog", {
       name: "Подтвердить предоплату",
     });
-    await expect(dialog).toContainText("перейти к оплате остатка");
+    await expect(dialog).toContainText("Состояние оплаты обновится после решения продавца");
   });
 
   test("validates tracking and preserves shipping input after an error", async ({
@@ -661,10 +664,10 @@ test.describe("order details", () => {
       "Количество: 2 шт.",
     );
     await expect(dialog.getByTestId("shipping-payment-breakdown")).toContainText(
-      "Предоплата",
+      "Подтверждено оплачено",
     );
     await expect(dialog.getByTestId("shipping-payment-breakdown")).toContainText(
-      "Оплата остатка",
+      "Осталось оплатить",
     );
 
     await trackingInput.fill("javascript:alert(1)");

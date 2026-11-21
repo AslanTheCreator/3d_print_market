@@ -6,6 +6,7 @@ import { useAgents } from "@/entities/agent";
 import { ImageMetadataFeedback, mapImageMetadata, useImageMetadataQuery } from "@/entities/image";
 import {
   adminOrderKeys,
+  getOrderPaymentBreakdown,
   adminOrderStatuses,
   getOrderReviewState,
   getOrderStatusMeta,
@@ -55,13 +56,20 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
     status,
     page,
   });
-  const [selected, setSelected] = useState<AdminOrderDto | null>(null);
+  const [selection, setSelection] = useState<{ order: AdminOrderDto; session: number | null } | null>(null);
+  const [locked, setLocked] = useState(false);
+  const anchor = selection?.session === sessionKey && (selectedAgent === undefined || selection.order.sellerId === selectedAgent)
+    ? selection.order : null;
+  const currentOrder = anchor && query.data?.find(order =>
+    order.orderId === anchor.orderId && order.sellerId === anchor.sellerId);
+  // Пока операция открыта, сохраняем её форму, даже если заказ выпал из выдачи.
+  const selected = currentOrder ?? (locked ? anchor : null);
+  const setSelected = (order: AdminOrderDto | null) => setSelection(order && { order, session: sessionKey });
   const imageQuery = useImageMetadataQuery(query.data?.map(order => order.product.imageId));
   const orders = mapImageMetadata(query.data ?? [], order => order.product.imageId, imageQuery.data);
-  const [locked, setLocked] = useState(false);
   const [message, setMessage] = useState("");
   const lockPanel = useCallback((value: boolean) => setLocked(value), []);
-  const changed = async () => {
+  const changed = async (preserveDraft = false) => {
     await client.invalidateQueries({
       queryKey: adminOrderKeys.all(sessionKey),
       refetchType: "none",
@@ -69,10 +77,10 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
     const result = await query.refetch();
     if (result.error) throw result.error;
     const current = result.data?.find(
-      (order) => order.orderId === selected?.orderId,
+      (order) => order.orderId === selected?.orderId && order.sellerId === selected?.sellerId,
     );
     if (current) setSelected(current);
-    else {
+    else if (!preserveDraft) {
       setSelected(null);
       setMessage("Список обновлён: заказ больше не входит в текущую выборку.");
     }
@@ -170,7 +178,7 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
           <Table aria-label="Заказы ботов">
             <TableHead>
               <TableRow>
-                {["Заказ", "Бот", "Товар", "Сумма", "Статус", "Действия"].map(
+                {["Заказ", "Бот", "Товар", "Итого с доставкой", "Статус", "Действия"].map(
                   (label) => (
                     <TableCell key={label}>{label}</TableCell>
                   ),
@@ -200,8 +208,7 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
                     </Stack>
                   </TableCell>
                   <TableCell>
-                    {order.prepaymentAmount + order.totalPrice}{" "}
-                    {order.product.currency}
+                    {getOrderPaymentBreakdown(order).totalLabel}
                   </TableCell>
                   <TableCell>
                     <OrderStatusChip status={order.actualStatus} />
@@ -240,8 +247,7 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
                     </Typography>
                     <Typography>
                       {order.product.count} шт. ·{" "}
-                      {order.prepaymentAmount + order.totalPrice}{" "}
-                      {order.product.currency}
+                      Итого с доставкой: {getOrderPaymentBreakdown(order).totalLabel}
                     </Typography>
                     {getOrderReviewState(order, "admin") === "published" && (
                       <Typography variant="caption" color="text.secondary">Отзыв оставлен</Typography>
@@ -297,11 +303,14 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
       >
         {selected && (
           <AdminOrderDetail
-            key={`${selected.orderId}-${selected.actualStatus}`}
+            key={`${sessionKey}-${selected.sellerId}-${selected.orderId}`}
             order={selected}
             productImage={imageQuery.data?.find(image => image.id === selected.product.imageId)}
             session={sessionKey}
             locked={locked}
+            readError={query.isError}
+            inCurrentList={!!currentOrder}
+            refresh={() => void query.refetch()}
             lockPanel={lockPanel}
             changed={changed}
             close={() => setSelected(null)}

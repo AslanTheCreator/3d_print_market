@@ -33,7 +33,7 @@ for (const scenario of [
   const requests: string[] = []; page.on("request", request => { if (request.method() === "POST") requests.push(request.headers().authorization ?? ""); });
   const state = await setup(page, baseURL, scenario.kind, scenario.previous);
   await expect(drawer(page)).toContainText("Покупатель: #10 · Продавец: #2");
-  await expect(drawer(page)).toContainText(/Сумма к оплате:.*6.*000/); await expect(drawer(page)).toContainText("$");
+  await expect(drawer(page)).toContainText(/Стоимость товаров за вычетом предусмотренной предоплаты по данным обращения:.*6.*000/); await expect(drawer(page)).toContainText("$");
   await expect(drawer(page).getByRole("img")).toHaveCount(3);
   await fill(page, scenario.outcome); await accept(page).click();
   await expect(forms(page).getByRole("status")).toContainText("Результат операции подтверждён");

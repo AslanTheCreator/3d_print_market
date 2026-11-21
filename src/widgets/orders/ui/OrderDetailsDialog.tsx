@@ -22,12 +22,11 @@ import {
   PhoneOutlined,
 } from "@mui/icons-material";
 import {
-  getOrderPaymentBreakdown,
+  OrderCalculationSummary,
   OrderStatusChip,
   shouldShowTrackingForRole,
   type ListOrdersModel,
 } from "@/entities/order";
-import { formatPrice } from "@/shared/lib";
 import {
   formatOrderDate,
   getOrderPeerLabel,
@@ -41,6 +40,7 @@ import { OrderHistory } from "./OrderHistory";
 import { OrderCasesSection } from "./OrderCasesSection";
 import type { useOrderCaseHistory } from "../model/useOrderCaseHistory";
 import { OrderProductPreview } from "./OrderProductPreview";
+import { useOrderActionsRecovery } from "../model/orderActionsContext";
 import { OrderTracking } from "./OrderTracking";
 
 interface OrderDetailsDialogProps {
@@ -58,13 +58,12 @@ export const OrderDetailsDialog = ({
   userRole,
   casesState,
 }: OrderDetailsDialogProps) => {
+  const { retry, retryPending } = useOrderActionsRecovery(order.orderId);
   const peerLabel = getOrderPeerLabel(userRole);
   const showTracking = shouldShowTrackingForRole(
     order.actualStatus,
     userRole,
   );
-  const paymentBreakdown = getOrderPaymentBreakdown(order);
-  const orderCurrency = order.product.currency;
 
   return (
     <Dialog
@@ -118,63 +117,9 @@ export const OrderDetailsDialog = ({
               zoomable
             />
             <Divider sx={{ my: 1.5 }} />
-            <Stack
-              data-testid="order-payment-breakdown"
-              spacing={paymentBreakdown.hasPrepayment ? 1 : 0}
-            >
-              <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-                spacing={2}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  {paymentBreakdown.hasPrepayment
-                    ? "Стоимость товаров"
-                    : "Сумма заказа"}
-                </Typography>
-                <Typography variant="h6" fontWeight={800}>
-                  {formatPrice(paymentBreakdown.productTotal, orderCurrency)}
-                </Typography>
-              </Stack>
-
-              {paymentBreakdown.hasPrepayment && (
-                <>
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    spacing={2}
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      Предоплата
-                    </Typography>
-                    <Typography variant="body2" fontWeight={700}>
-                      {formatPrice(
-                        paymentBreakdown.prepaymentTotal,
-                        orderCurrency,
-                      )}
-                    </Typography>
-                  </Stack>
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    spacing={2}
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      Остаток к оплате
-                    </Typography>
-                    <Typography variant="body2" fontWeight={700}>
-                      {formatPrice(
-                        paymentBreakdown.remainingTotal,
-                        orderCurrency,
-                      )}
-                    </Typography>
-                  </Stack>
-                </>
-              )}
-            </Stack>
+            <Box data-testid="order-payment-breakdown">
+              <OrderCalculationSummary order={order} onRefresh={retry} refreshDisabled={retryPending} />
+            </Box>
           </Paper>
 
           <Box
@@ -228,29 +173,11 @@ export const OrderDetailsDialog = ({
                   </Typography>
                 </Box>
               </Stack>
-              <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-                spacing={2}
-                sx={{ mt: 2 }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Стоимость доставки
-                </Typography>
-                <Typography variant="body2" fontWeight={700}>
-                  {order.transfer.price === 0
-                    ? "Бесплатно"
-                    : formatPrice(
-                        order.transfer.price,
-                        order.transfer.currency,
-                      )}
-                </Typography>
-              </Stack>
+
             </OrderDetailsSection>
           </Box>
 
-          {showTracking && <OrderTracking deliveryUrl={order.deliveryUrl} />}
+          {showTracking && <OrderTracking deliveryUrl={order.deliveryUrl ?? ""} />}
 
           <OrderCasesSection key={order.orderId} order={order} state={casesState} userRole={userRole} />
 

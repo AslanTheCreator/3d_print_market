@@ -239,7 +239,7 @@ export const getOrderStatusActionHint = (
         : "Ожидайте подтверждения предоплаты продавцом";
     case "AWAITING_PAYMENT":
       return userRole === "customer"
-        ? "Подтвердите оплату, чтобы продавец начал сборку"
+        ? "Предъявите чек полной оплаты для проверки продавцом"
         : "Ожидайте оплату от покупателя";
     case "AWAITING_PAYMENT_APPROVAL":
       return userRole === "customer"

@@ -12,12 +12,12 @@ import {
 } from "@mui/material";
 import { InfoOutlined } from "@mui/icons-material";
 import {
-  getOrderStatusActionHint,
   OrderStatusChip,
   type ListOrdersModel,
 } from "@/entities/order";
 import {
   formatOrderDate,
+  getOrderActionHint,
   type OrdersUserRole,
 } from "../model/dashboardOrders";
 import { CustomerActions } from "./CustomerActions";
@@ -68,11 +68,7 @@ export const OrdersAttentionSection = ({
         }}
       >
         {orders.map((order) => {
-          const hint = getOrderStatusActionHint(
-            order.actualStatus,
-            userRole,
-            order.prepaymentAmount > 0,
-          );
+          const hint = getOrderActionHint(order, userRole);
 
           return (
             <Paper
