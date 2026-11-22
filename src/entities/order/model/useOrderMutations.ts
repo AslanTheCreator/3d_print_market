@@ -51,6 +51,8 @@ export const useConfirmOrderBySeller = () => {
   const scope = usePrivateScope();
 
   return usePrivateMutation({
+    mutationKey: scope.key(orderQueryKeys.sellerConfirmation("order")),
+    networkMode: "always",
     mutationFn: ({
       orderId,
       comment = "",
@@ -69,6 +71,8 @@ export const useConfirmPreOrderBySeller = () => {
   const scope = usePrivateScope();
 
   return usePrivateMutation({
+    mutationKey: scope.key(orderQueryKeys.sellerConfirmation("preorder")),
+    networkMode: "always",
     mutationFn: ({
       orderId,
       comment = "",
@@ -87,6 +91,7 @@ export const useConfirmPrepaymentByCustomer = () => {
   const scope = usePrivateScope();
 
   return usePrivateMutation({
+    networkMode: "always",
     mutationFn: ({
       orderId,
       imageId,
@@ -107,6 +112,7 @@ export const useConfirmPaymentByCustomer = () => {
   const scope = usePrivateScope();
 
   return usePrivateMutation({
+    networkMode: "always",
     mutationFn: ({
       orderId,
       imageId,

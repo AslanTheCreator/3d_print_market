@@ -15,13 +15,15 @@ import {
 import { Close, CheckCircle } from "@mui/icons-material";
 import {
   OrderCalculationSummary,
+  orderQueryKeys,
   getOrderPaymentBreakdown,
   hasOrderPrepayment,
   usePaymentTermsCheck,
   type ListOrdersModel,
 } from "@/entities/order";
 import { transformToApiError } from "@/shared/lib/errorHandler";
-import { UseMutationResult } from "@tanstack/react-query";
+import { useIsMutating, useQueryClient, type MutationFilters, type UseMutationResult } from "@tanstack/react-query";
+import { usePrivateScope } from "@/shared/lib/query";
 
 // Типы для различных видов подтверждения
 export type ConfirmationType = "order" | "preorder";
@@ -137,6 +139,17 @@ export const ConfirmationDialog = ({
   confirmationMutation,
 }: ConfirmationDialogProps) => {
   const termsMatch = usePaymentTermsCheck("seller");
+  const scope = usePrivateScope();
+  const client = useQueryClient();
+  const filter: MutationFilters = {
+    mutationKey: scope.key(orderQueryKeys.sellerConfirmation(confirmationType)),
+    exact: true,
+    predicate: mutation => {
+      const variables = mutation.state.variables;
+      return typeof variables === "object" && variables !== null && "orderId" in variables && variables.orderId === order.orderId;
+    },
+  };
+  const pending = useIsMutating(filter) > 0;
   const config = getConfirmationConfig(
     confirmationType,
     order.product.availability === "PREORDER",
@@ -154,12 +167,13 @@ export const ConfirmationDialog = ({
   const isExpectedOrderStatus = order.actualStatus === expectedOrderStatus;
 
   const handleClose = () => {
+    if (client.isMutating(filter) > 0) return;
     confirmationMutation.reset();
     onClose();
   };
 
   const handleConfirm = () => {
-    if (!actionsAvailable || confirmationMutation.isPending || !isExpectedOrderStatus || !!paymentBlock) {
+    if (!open || !scope.isCurrent() || !actionsAvailable || client.isMutating(filter) > 0 || !isExpectedOrderStatus || !!paymentBlock) {
       return;
     }
 
@@ -167,29 +181,7 @@ export const ConfirmationDialog = ({
       onRetry?.();
       return;
     }
-    if (confirmationType === "order") {
-      confirmationMutation.mutate(
-        {
-          orderId: order.orderId,
-        },
-        {
-          onSuccess: () => {
-            handleClose();
-          },
-        },
-      );
-    } else {
-      confirmationMutation.mutate(
-        {
-          orderId: order.orderId,
-        },
-        {
-          onSuccess: () => {
-            handleClose();
-          },
-        },
-      );
-    }
+    confirmationMutation.mutate({ orderId: order.orderId }, { onSuccess: handleClose });
   };
 
   return (
@@ -215,7 +207,7 @@ export const ConfirmationDialog = ({
           <IconButton
             onClick={handleClose}
             size="small"
-            disabled={confirmationMutation.isPending}
+            disabled={pending}
             aria-label={`Закрыть окно «${config.title}»`}
           >
             <Close />
@@ -258,7 +250,7 @@ export const ConfirmationDialog = ({
       <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button
           onClick={handleClose}
-          disabled={confirmationMutation.isPending}
+          disabled={pending}
         >
           Отмена
         </Button>
@@ -266,11 +258,11 @@ export const ConfirmationDialog = ({
           onClick={handleConfirm}
           variant="contained"
           disabled={
-            confirmationMutation.isPending || !actionsAvailable || !isExpectedOrderStatus || !!paymentBlock
+            pending || !actionsAvailable || !isExpectedOrderStatus || !!paymentBlock
           }
-          startIcon={confirmationMutation.isPending ? null : <CheckCircle />}
+          startIcon={pending ? null : <CheckCircle />}
         >
-          {confirmationMutation.isPending
+          {pending
             ? config.buttonLoadingText
             : config.buttonText}
         </Button>

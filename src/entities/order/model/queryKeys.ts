@@ -5,5 +5,6 @@ export const orderQueryKeys = {
   orderData: (productId: number) =>
     [...orderQueryKeys.all, "data", productId] as const,
   sellerOrders: () => [...orderQueryKeys.all, "seller"] as const,
+  sellerConfirmation: (kind: "order" | "preorder") => ["sellerConfirmation", kind] as const,
   customerOrders: () => [...orderQueryKeys.all, "customer"] as const,
 };

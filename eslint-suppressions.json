@@ -120,7 +120,7 @@
       "count": 1
     },
     "react-hooks/set-state-in-effect": {
-      "count": 3
+      "count": 2
     }
   },
   "src/shared/lib/hooks/useFormInitializer.ts": {

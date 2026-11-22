@@ -33,6 +33,7 @@ interface PaymentApiOptions {
   uploadImageId: number;
   failFirstMutation?: boolean;
   mutationFailure?: "http-409" | "network";
+  successBody?: string;
   customerOrdersRefetchGate?: Promise<void>;
 }
 
@@ -185,6 +186,7 @@ const mockPaymentApi = async (
     uploadImageId,
     failFirstMutation = false,
     mutationFailure,
+    successBody,
     customerOrdersRefetchGate,
   }: PaymentApiOptions,
 ): Promise<PaymentApiTracker> => {
@@ -216,6 +218,7 @@ const mockPaymentApi = async (
   await page.route("**/favorites/find", (route) => fulfillJson(route, []));
   await page.route("**/products/my", (route) => fulfillJson(route, []));
   await page.route("**/order/customer", async (route) => {
+    if (route.request().method() === "OPTIONS") return fulfillJson(route, {});
     tracker.customerOrdersRequestCount += 1;
 
     if (
@@ -314,7 +317,11 @@ const mockPaymentApi = async (
         return;
       }
 
-      await fulfillJson(route, 1);
+      if (successBody !== undefined) {
+        await route.fulfill({ status: 200, headers: corsHeaders, contentType: "application/json", body: successBody });
+        return;
+      }
+      await fulfillJson(route, Number(url.pathname.split("/")[2]));
     },
   );
 
@@ -663,13 +670,11 @@ test.describe("order payment flow", () => {
       releaseCustomerOrdersRefetch = resolve;
     });
     const sellerId = 97;
+    const order = createPreorder({ orderId: 529, status: "AWAITING_PREPAYMENT", sellerId });
     const tracker = await mockPaymentApi(page, {
       orders: [
-        createPreorder({
-          orderId: 529,
-          status: "AWAITING_PREPAYMENT",
-          sellerId,
-        }),
+        order,
+        createPreorder({ orderId: 530, status: "AWAITING_PAYMENT", sellerId }),
       ],
       accounts: [
         createAccount({
@@ -724,20 +729,116 @@ test.describe("order payment flow", () => {
     await expect(
       dialog.getByText("Нет соединения с сервером", { exact: true }),
     ).toBeVisible();
-    await expect(
-      dialog.getByRole("button", {
-        name: "Подтвердить предоплату",
-        exact: true,
-      }),
-    ).toBeEnabled();
+    const confirm = dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true });
+    const check = dialog.getByRole("button", { name: "Проверить результат" });
+    await expect(confirm).toBeDisabled();
+    await expect(dialog.getByText(/Результат отправки чека неизвестен/)).toBeVisible();
+    const reads = tracker.customerOrdersRequestCount;
+    await check.click();
+    await expect.poll(() => tracker.customerOrdersRequestCount).toBeGreaterThan(reads);
+    await expect(confirm).toBeDisabled();
     await expect(dialog.locator('input[type="file"]')).toBeDisabled();
 
     await dialog
       .getByRole("button", { name: "Отмена", exact: true })
       .click();
     await expect(dialog).toBeHidden();
+    const other = await openPaymentDialog(page, "Подтвердить оплату");
+    await uploadPaymentProof(other);
+    await expect(other.getByRole("button", { name: "Подтвердить оплату", exact: true })).toBeEnabled();
+    await other.getByRole("button", { name: "Отмена", exact: true }).click();
+    await openPaymentDialog(page, "Подтвердить предоплату");
+    await expect(confirm).toBeDisabled();
+    await confirm.evaluate(button => button.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    Object.assign(order, { actualStatus: "AWAITING_PREPAYMENT_APPROVAL", paymentProofImageId: 888 });
+    await check.click();
+    await expect(dialog).toBeHidden();
+    const unknown = page.getByRole("alert").filter({ hasText: "Заказ №529. Результат отправки чека неизвестен" });
+    await expect(unknown).toBeVisible();
+    Object.assign(order, { paymentProofImageId: 9299 });
+    await unknown.getByRole("button", { name: "Проверить результат" }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "Заказ №529. Получение отправленного чека подтверждено данными заказа." })).toBeVisible();
+    await expect(unknown).toHaveCount(0);
+    expect(tracker.statusImageIds).toEqual([9299]);
+    expect(tracker.uploads).toHaveLength(1);
     expect(tracker.deletedImageIds).toEqual([]);
   });
+
+  test("late prepayment review requires this proof and a new history entry for its stage", async ({ page, context, baseURL }) => {
+    await authenticate(context, baseURL);
+    const order = createPreorder({ orderId: 545, status: "AWAITING_PREPAYMENT", sellerId: 97 });
+    const review = { status: "AWAITING_PREPAYMENT_APPROVAL", comment: "", changedAt: "21.07.2026 14:00:00" };
+    order.histories.push(review, { status: "AWAITING_PREPAYMENT", comment: "", changedAt: "21.07.2026 15:00:00" });
+    const tracker = await mockPaymentApi(page, {
+      orders: [order], accounts: [createAccount({ id: 900, participantId: 97, username: "Получатель", entityValue: "TEST-545" })],
+      uploadImageId: 9545, mutationFailure: "network",
+    });
+    await page.goto("/dashboard/purchase");
+    const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
+    await uploadPaymentProof(dialog);
+    await dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true }).click();
+    await expect(dialog.getByText(/Результат отправки чека неизвестен/)).toBeVisible();
+    await dialog.getByRole("button", { name: "Отмена", exact: true }).click();
+    await expect(dialog).toBeHidden();
+    const list = page.getByTestId("desktop-orders");
+    const unknown = list.getByRole("alert").filter({ hasText: /Результат отправки чека неизвестен/ });
+    const check = async () => {
+      await Promise.all([
+        page.waitForResponse(r => r.request().method() === "GET" && new URL(r.url()).pathname === "/order/customer"),
+        unknown.first().getByRole("button", { name: "Проверить результат" }).click(),
+      ]);
+    };
+    const next = createPreorder({ orderId: 545, status: "AWAITING_PAYMENT", sellerId: 97 });
+    Object.assign(order, { actualStatus: next.actualStatus, calculation: next.calculation, paymentProofImageId: 9545 });
+    await check();
+    await expect(list.getByRole("button", { name: "Подтвердить оплату", exact: true }).first()).toBeEnabled();
+    await expect(unknown.first()).toBeVisible();
+    order.histories.push(
+      { ...review, changedAt: "21.07.2026 16:00:00" },
+      { status: "AWAITING_PAYMENT", comment: "", changedAt: "21.07.2026 17:00:00" },
+    );
+    Object.assign(order, { paymentProofImageId: 888 });
+    await check();
+    await expect(unknown.first()).toBeVisible();
+    Object.assign(order, { paymentProofImageId: 9545 });
+    await check();
+    await expect(list.getByRole("alert").filter({ hasText: /Получение отправленного чека подтверждено/ }).first()).toBeVisible();
+    await expect(unknown).toHaveCount(0);
+    expect(tracker.statusImageIds).toEqual([9545]);
+    expect(tracker.uploads).toHaveLength(1);
+  });
+
+  for (const [label, successBody] of [["null", "null"], ["empty", ""], ["another order", "541"], ["string ID", '"540"']]) {
+    test(`HTTP 200 with ${label} keeps a single submission across reads and reopen`, async ({ page, context, baseURL }) => {
+      await authenticate(context, baseURL);
+      const order = createPreorder({ orderId: 540, status: "AWAITING_PAYMENT", sellerId: 97 });
+      const tracker = await mockPaymentApi(page, {
+        orders: [order], accounts: [createAccount({ id: 899, participantId: 97, username: "Получатель", entityValue: "TEST-540" })],
+        uploadImageId: 9540, successBody,
+      });
+      await page.goto("/dashboard/purchase");
+      const dialog = await openPaymentDialog(page, "Подтвердить оплату");
+      await uploadPaymentProof(dialog);
+      const submit = dialog.getByRole("button", { name: "Подтвердить оплату", exact: true });
+      await submit.click();
+      await expect(dialog.getByText(/Результат отправки чека неизвестен/)).toBeVisible();
+      await dialog.getByRole("button", { name: "Отмена", exact: true }).click();
+      await expect(dialog).toBeHidden();
+      await openPaymentDialog(page, "Подтвердить оплату");
+      await Promise.all([
+        page.waitForResponse(r => r.request().method() === "GET" && new URL(r.url()).pathname === "/order/customer"),
+        dialog.getByRole("button", { name: "Проверить результат" }).click(),
+      ]);
+      await expect(dialog.getByText(/Результат отправки чека неизвестен/)).toBeVisible();
+      await expect(dialog.locator('input[type="file"]')).toBeDisabled();
+      await expect(submit).toBeDisabled();
+      await expect(dialog.getByText("TEST-540")).toBeHidden();
+      await expect(dialog.getByRole("button", { name: /Скопировать/ })).toHaveCount(0);
+      await submit.evaluate(button => button.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+      expect(tracker.uploads).toHaveLength(1);
+      expect(tracker.statusImageIds).toEqual([9540]);
+    });
+  }
 
   test("keeps the dialog and uploaded image after a mutation error, then retries with the same imageId", async ({
     context,

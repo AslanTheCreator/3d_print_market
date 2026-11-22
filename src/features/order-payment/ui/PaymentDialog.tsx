@@ -34,6 +34,7 @@ import {
 import { serializeApiError, transformToApiError } from "@/shared/lib/errorHandler";
 import type { UseMutationResult } from "@tanstack/react-query";
 import { SellerPaymentDetails } from "./SellerPaymentDetails";
+import { useCustomerPaymentAttempt } from "../model/useCustomerPaymentAttempt";
 import { DisputePaymentDialog, type DisputePaymentDialogProps } from "./DisputePaymentDialog";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -110,8 +111,9 @@ const NormalPaymentDialog = ({
   const revision = useRef(0);
   const uploadController = useRef<AbortController | null>(null);
   const latest = useRef({ order, open, actionsAvailable, selectedAccountId: null as number | null, accountsReady: false });
-  const [hasAmbiguousMutationAttempt, setHasAmbiguousMutationAttempt] =
-    useState(false);
+  const attempt = useCustomerPaymentAttempt(order, paymentType, actionsAvailable);
+  const unresolved = attempt.phase === "unknown";
+  const sharedPending = attempt.phase === "pending";
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
     null,
   );
@@ -122,15 +124,12 @@ const NormalPaymentDialog = ({
   const mutationApiError = paymentMutation.error
     ? transformToApiError(paymentMutation.error)
     : null;
-  const hasAmbiguousMutationError =
-    mutationApiError?.code === "NETWORK_ERROR" ||
-    mutationApiError?.code === "TIMEOUT";
   const expectedOrderStatus =
     paymentType === "prepayment"
       ? "AWAITING_PREPAYMENT"
       : "AWAITING_PAYMENT";
   const isExpectedOrderStatus = order.actualStatus === expectedOrderStatus;
-  const showPaymentInstructions = actionsAvailable && isExpectedOrderStatus && !paymentBlock;
+  const showPaymentInstructions = actionsAvailable && isExpectedOrderStatus && !paymentBlock && !unresolved && !sharedPending;
   const fileInputId = `payment-proof-upload-${paymentType}-${order.orderId}`;
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -163,12 +162,6 @@ const NormalPaymentDialog = ({
   }, [open, sellerAccounts]);
 
   useEffect(() => {
-    if (hasAmbiguousMutationError) {
-      setHasAmbiguousMutationAttempt(true);
-    }
-  }, [hasAmbiguousMutationError]);
-
-  useEffect(() => {
     return () => {
       if (imagePreview) {
         revokeImagePreview(imagePreview);
@@ -189,7 +182,7 @@ const NormalPaymentDialog = ({
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file || paymentBlock || lock.current || paymentMutation.isPending || imageId || !scope.isCurrent()) return;
+    if (!file || paymentBlock || lock.current || paymentMutation.isPending || imageId || !scope.isCurrent() || attempt.blocked()) return;
     const validation = validateImage(file);
     if (!validation.isValid) {
       setImageError(validation.error ?? "Invalid image");
@@ -205,13 +198,13 @@ const NormalPaymentDialog = ({
   // ──────────────────────────────────────────────────────────────────────────
 
   const handleConfirmPayment = async () => {
-    if (lock.current || !canConfirmPayment || !scope.isCurrent() || !open) return;
+    if (lock.current || !canConfirmPayment || attempt.blocked() || !scope.isCurrent() || !open) return;
     lock.current = true;
     const generation = revision.current;
     const orderId = order.orderId;
     const isCurrent = () => scope.isCurrent() && generation === revision.current && latest.current.open && latest.current.order.orderId === orderId;
     const submittedComment = comment.trim();
-    let submittingStatus = false;
+    let submittedProofId: number | null = null;
     try {
       if (!termsMatch(order)) {
         setImageError("Обновите заказ и проверьте расчёт.");
@@ -236,12 +229,15 @@ const NormalPaymentDialog = ({
         setImageError("Условия заказа изменились. Проверьте новый расчёт и подтвердите действие ещё раз.");
         return;
       }
-      submittingStatus = true;
-      await paymentMutation.mutateAsync({ orderId, imageId: proofId, comment: submittedComment });
-      if (isCurrent()) handleClose({ keepUploadedImage: true });
+      if (!attempt.begin(proofId)) return;
+      submittedProofId = proofId;
+      const response = await paymentMutation.mutateAsync({ orderId, imageId: proofId, comment: submittedComment });
+      const accepted = attempt.finish(proofId, { response });
+      if (accepted && isCurrent()) handleClose({ keepUploadedImage: true });
     } catch (error) {
+      if (submittedProofId !== null) attempt.finish(submittedProofId, { error });
       if (!isCurrent()) return;
-      if (!submittingStatus) {
+      if (submittedProofId === null) {
         console.error("Ошибка при загрузке изображения:", serializeApiError(error));
         setImageError("Не удалось загрузить изображение на сервер");
       }
@@ -262,7 +258,6 @@ const NormalPaymentDialog = ({
     resetImageState();
     setImageError(null);
     setIsUploadingImage(false);
-    setHasAmbiguousMutationAttempt(false);
     setSelectedAccountId(null);
     paymentMutation.reset();
     onClose();
@@ -278,6 +273,7 @@ const NormalPaymentDialog = ({
     !accountsArePending &&
     !isAccountsError &&
     showPaymentInstructions &&
+    !sharedPending &&
     !paymentMutation.isPending &&
     !isUploadingImage;
   latest.current = { order, open, actionsAvailable, selectedAccountId, accountsReady: hasSelectedAccount && !accountsArePending && !isAccountsError };
@@ -287,15 +283,26 @@ const NormalPaymentDialog = ({
     currentRevision.current++;
     lock.current = false;
     setSelectedImage(null); setImagePreview(null); setImageId(null); setImageError(null);
-    setIsUploadingImage(false); setHasAmbiguousMutationAttempt(false); setComment("");
+    setIsUploadingImage(false); setComment("");
     const controller = uploadController.current;
     controller?.abort();
     return () => { currentRevision.current++; uploadController.current?.abort(); };
   }, [open, order.orderId, paymentType, scope.signal]);
 
-  const mutationErrorMessage = mutationApiError?.message ?? null;
+  const mutationErrorMessage = attempt.verified ? null : mutationApiError?.message;
+  const receiptConfirmation = attempt.verified && (
+    <Alert severity="success">Заказ №{order.orderId}. Получение отправленного чека подтверждено данными заказа.</Alert>
+  );
+  const recovery = unresolved && (
+    <Alert severity="warning" action={onRetry && <Button disabled={retryPending} onClick={onRetry}>Проверить результат</Button>}>
+      Заказ №{order.orderId}. Результат отправки чека неизвестен. Повторная отправка заблокирована. Проверьте состояние заказа.
+    </Alert>
+  );
 
   return (
+    <>
+    {!open && recovery}
+    {!open && receiptConfirmation}
     <Dialog
       open={open}
       onClose={() => void handleClose()}
@@ -326,6 +333,9 @@ const NormalPaymentDialog = ({
       </DialogTitle>
 
       <DialogContent>
+        {sharedPending && <Alert severity="info">Чек уже отправляется</Alert>}
+        {recovery}
+        {receiptConfirmation}
         {!actionsAvailable && <Alert severity="warning" action={onRetry && <Button color="inherit" disabled={retryPending} onClick={onRetry}>Повторить загрузку</Button>}>Не удалось обновить заказы. Подтверждение недоступно до успешной загрузки.</Alert>}
         <Typography>Суммы по последнему обновлению заказа. До отправки условия могут измениться.</Typography>
         {paymentBlock && <Alert severity="warning" action={onRetry && <Button disabled={retryPending} onClick={onRetry}>Обновить заказ</Button>}>{paymentBlock}</Alert>}
@@ -376,7 +386,7 @@ const NormalPaymentDialog = ({
         )}
 
         {/* Загрузка чека */}
-        <Box sx={{ mb: 3 }}>
+        <Box hidden={sharedPending || unresolved} sx={{ mb: 3 }}>
           <Typography variant="subtitle2" gutterBottom>
             Чек или скриншот *
           </Typography>
@@ -390,8 +400,7 @@ const NormalPaymentDialog = ({
             disabled={
               !!paymentBlock || !!imageId || isUploadingImage ||
               paymentMutation.isPending ||
-              hasAmbiguousMutationError ||
-              hasAmbiguousMutationAttempt
+              sharedPending || unresolved
             }
           />
 
@@ -453,7 +462,7 @@ const NormalPaymentDialog = ({
           </label>
 
           <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-            <Button disabled={!!imageId || isUploadingImage || paymentMutation.isPending} onClick={() => document.getElementById(fileInputId)?.click()}>Выбрать файл</Button>
+            <Button disabled={!!imageId || isUploadingImage || paymentMutation.isPending || sharedPending || unresolved} onClick={() => document.getElementById(fileInputId)?.click()}>Выбрать файл</Button>
             {selectedImage && !imageId && <Button disabled={isUploadingImage || paymentMutation.isPending} onClick={() => { resetImageState(); setImageError(null); }}>Удалить выбранный файл</Button>}
           </Stack>
 
@@ -476,7 +485,7 @@ const NormalPaymentDialog = ({
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           sx={{ mb: 1 }}
-          disabled={isUploadingImage || paymentMutation.isPending}
+          disabled={isUploadingImage || paymentMutation.isPending || sharedPending || unresolved}
         />
       </DialogContent>
 
@@ -502,5 +511,6 @@ const NormalPaymentDialog = ({
         </Button>
       </DialogActions>
     </Dialog>
+    </>
   );
 };

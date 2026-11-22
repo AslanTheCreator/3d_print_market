@@ -4,6 +4,7 @@ import { renderToString } from "react-dom/server";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createPrivateScope, PrivateScopeContext } from "@/shared/lib/query";
 import { useAuthStore } from "@/entities/session/model/authStore";
+import { useCustomerPaymentAttempt } from "@/features/order-payment/model/useCustomerPaymentAttempt";
 import { bindPrivateDataLifecycle } from "@/app/providers/privateDataLifecycle";
 import { useRemoveFromCart, useUpdateCartQuantity } from "@/entities/cart/model/useCartMutations";
 import { cartApi } from "@/entities/cart/api/cartApi";
@@ -51,6 +52,10 @@ test("all private namespaces are removed on logout, expiry and direct account sw
       expect(scope.isCurrent()).toBe(true);
       expect(draftsCleared).toBe(0);
       const late = deferred<string>();
+      const attempt = captureHook(client, scope, () => useCustomerPaymentAttempt(
+        { orderId: 42, actualStatus: "AWAITING_PAYMENT", histories: [] }, "payment", true,
+      ));
+      expect(attempt.begin(77)).toBe(true);
       let signal!: AbortSignal;
       const request = client.fetchQuery({ queryKey: scope.key(["late"]), queryFn: context => {
         signal = context.signal;
@@ -69,6 +74,55 @@ test("all private namespaces are removed on logout, expiry and direct account sw
     } finally { unbind(); client.clear(); }
   }
   useAuthStore.setState(initial, true);
+});
+
+test("viewing 100 orders retains only attempts that actually need protection", () => {
+  const client = new QueryClient({ defaultOptions: { queries: { gcTime: 300_000 } } });
+  const scope = createPrivateScope(1, () => true);
+  try {
+    for (let orderId = 1; orderId <= 100; orderId++) {
+      const order = { orderId, actualStatus: "AWAITING_PAYMENT" as const, histories: [] };
+      for (const kind of ["payment", "prepayment"] as const) {
+        captureHook(client, scope, () => useCustomerPaymentAttempt(order, kind, true));
+      }
+    }
+    expect(client.getQueryCache().getAll()).toHaveLength(0);
+    const order = { orderId: 42, actualStatus: "AWAITING_PAYMENT" as const, histories: [] };
+    const hook = () => useCustomerPaymentAttempt(order, "payment", true);
+    const attempt = captureHook(client, scope, hook);
+    expect(attempt.begin(77)).toBe(true);
+    expect(client.getQueryCache().getAll().map(query => query.gcTime)).toEqual([Infinity]);
+    expect(attempt.finish(77, { response: undefined })).toBe(false);
+    expect(captureHook(client, scope, hook).phase).toBe("unknown");
+    expect(captureHook(client, scope, hook).begin(78)).toBe(false);
+  } finally { client.clear(); }
+});
+
+test("late payment response cannot recreate the previous session or unlock the next session's attempt", () => {
+  const client = new QueryClient();
+  const previous = createPrivateScope(1, () => true);
+  const current = createPrivateScope(2, () => true);
+  const order = { orderId: 42, actualStatus: "AWAITING_PAYMENT" as const, histories: [] };
+  const payment = () => useCustomerPaymentAttempt(order, "payment", true);
+  try {
+    const original = captureHook(client, previous, payment);
+    expect(original.begin(77)).toBe(true);
+    expect(captureHook(client, previous, payment).begin(88)).toBe(false);
+    const prepayment = captureHook(client, previous, () => useCustomerPaymentAttempt(order, "prepayment", true));
+    expect(prepayment.blocked()).toBe(false);
+
+    previous.dispose();
+    client.removeQueries({ queryKey: previous.key([]) });
+    const next = captureHook(client, current, payment);
+    expect(next.begin(77)).toBe(true);
+    original.finish(77, { response: 42 });
+    original.finish(77, { error: new Error("delayed response") });
+    expect(client.getQueryCache().findAll({ queryKey: previous.key([]) })).toHaveLength(0);
+    expect(next.blocked()).toBe(true);
+    expect(next.finish(77, { response: 42 })).toBe(true);
+    expect(next.blocked()).toBe(false);
+    expect(client.getQueryCache().getAll()).toHaveLength(0);
+  } finally { client.clear(); }
 });
 
 test("late optimistic rollback cannot restore A into B or recreate A cache", async () => {
