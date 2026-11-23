@@ -1,4 +1,5 @@
 import { createStore } from "zustand/vanilla";
+import { isAxiosError } from "axios";
 import { ApiError, ErrorCodes } from "@/shared/lib/errorHandler";
 
 // Only lifecycle flags survive route unmount. No address, comment or order payload.
@@ -16,8 +17,10 @@ export function getCheckoutAttempt(signal: AbortSignal) {
 
 export function isConfirmedOrderRejection(error: unknown): error is ApiError {
   return error instanceof ApiError &&
-    error.statusCode !== undefined && error.statusCode >= 400 && error.statusCode < 500 &&
+    error.statusCode !== undefined && error.statusCode >= 400 && error.statusCode < 500 && error.statusCode !== 408 &&
+    (!isAxiosError(error.originalError) || error.originalError.response?.status === error.statusCode) &&
     [ErrorCodes.COUNT_INVALID, ErrorCodes.OWN_PRODUCT_PURCHASE_FORBIDDEN,
       ErrorCodes.PRODUCT_NOT_PURCHASABLE, ErrorCodes.TRANSFER_NOT_FOUND,
-      ErrorCodes.ACCOUNT_NOT_FOUND].some(code => error.isCode(code));
+      ErrorCodes.ACCOUNT_NOT_FOUND, "OUT_OF_STOCK", "NOT_ENOUGH_STOCK", "INVALID_TRANSFER", "BAD_REQUEST"]
+      .some(code => error.isCode(code));
 }

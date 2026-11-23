@@ -10,7 +10,15 @@ export type CartQuantitySyncStatus =
   | "pending"
   | "needsValidation";
 
+interface CheckoutLine {
+  productName: string;
+  submittedRevision: number;
+  selectionChanged: boolean;
+  settled: boolean;
+}
+
 export interface CartQuantitySyncState {
+  checkout?: CheckoutLine;
   revision: number;
   confirmedRevision: number;
   confirmedQuantity: number;
@@ -30,6 +38,9 @@ export interface CartQuantityState {
   decrementQuantity: (productId: number) => number;
   getQuantity: (productId: number) => number;
   getSyncStatus: (productId: number) => CartQuantitySyncStatus;
+  beginCheckout: (productId: number, productName: string) => void;
+  noteCheckoutSelectionChange: (productId: number) => void;
+  finishCheckout: (productId: number, success: boolean) => boolean;
   removeItem: (productId: number) => void;
   clearQuantities: () => void;
   getAllItems: () => CartQuantityItem[];
@@ -46,6 +57,10 @@ export interface CartQuantityState {
   ) => void;
   rollbackUpdate: (productId: number, revision: number) => boolean;
   markNeedsValidation: (productId: number, revision: number) => void;
+}
+
+function hasCheckoutEdit(sync: CartQuantitySyncState) {
+  return !!sync.checkout && (sync.checkout.selectionChanged || sync.checkout.submittedRevision !== sync.revision);
 }
 
 const replaceQuantity = (
@@ -85,6 +100,7 @@ export const useCartQuantityStore = create<CartQuantityState>()(
               ...state.syncStates,
               [productId]: {
                 revision,
+                ...(currentSyncState?.checkout && !currentSyncState.checkout.settled && { checkout: currentSyncState.checkout }),
                 confirmedRevision: currentSyncState?.confirmedRevision ?? 0,
                 confirmedQuantity:
                   currentSyncState?.confirmedQuantity ??
@@ -130,6 +146,33 @@ export const useCartQuantityStore = create<CartQuantityState>()(
           : "synced";
       },
 
+      beginCheckout: (productId, productName) => {
+        const sync = get().syncStates[productId];
+        if (!sync) return;
+        const checkout = { productName, submittedRevision: sync.revision, selectionChanged: false, settled: false };
+        set(state => ({ syncStates: { ...state.syncStates, [productId]: { ...sync, checkout } } }));
+      },
+
+      noteCheckoutSelectionChange: (productId) => {
+        const sync = get().syncStates[productId];
+        if (!sync?.checkout || sync.checkout.settled || sync.checkout.selectionChanged) return;
+        const checkout = { ...sync.checkout, selectionChanged: true };
+        set(state => ({ syncStates: { ...state.syncStates, [productId]: { ...sync, checkout } } }));
+      },
+
+      finishCheckout: (productId, success) => {
+        const sync = get().syncStates[productId];
+        if (!sync?.checkout) return !sync && success;
+        if (success && !hasCheckoutEdit(sync)) {
+          get().removeItem(productId);
+          return true;
+        }
+        const { checkout, ...rest } = sync;
+        const next = hasCheckoutEdit(sync) ? { ...rest, checkout: { ...checkout, settled: true } } : rest;
+        set(state => ({ syncStates: { ...state.syncStates, [productId]: next } }));
+        return false;
+      },
+
       removeItem: (productId) => {
         set((state) => {
           const { [productId]: _removedSyncState, ...syncStates } =
@@ -170,8 +213,15 @@ export const useCartQuantityStore = create<CartQuantityState>()(
               return localItem;
             }
 
-            const revision = syncState?.revision ?? 0;
+            if (localItem && syncState && hasCheckoutEdit(syncState) && localItem.quantity !== serverItem.count) {
+              nextSyncStates[serverItem.productId] = { ...syncState, status: "needsValidation" };
+              return localItem;
+            }
+
+            let revision = syncState?.revision ?? 0;
+            if (syncState?.checkout && localItem && localItem.quantity !== serverItem.count) revision++;
             nextSyncStates[serverItem.productId] = {
+              ...(syncState?.checkout && !syncState.checkout.settled && { checkout: syncState.checkout }),
               revision,
               confirmedRevision: revision,
               confirmedQuantity: serverItem.count,
@@ -189,10 +239,11 @@ export const useCartQuantityStore = create<CartQuantityState>()(
 
             if (
               !serverProductIds.has(localItem.productId) &&
-              syncState?.status === "pending"
+              syncState && (syncState.status === "pending" || hasCheckoutEdit(syncState))
             ) {
               nextItems.push(localItem);
-              nextSyncStates[localItem.productId] = syncState;
+              nextSyncStates[localItem.productId] = syncState.status === "pending"
+                ? syncState : { ...syncState, status: "needsValidation" };
             }
           });
 
@@ -203,6 +254,7 @@ export const useCartQuantityStore = create<CartQuantityState>()(
               const previousSync = state.syncStates[item.productId];
               const nextSync = nextSyncStates[item.productId];
               return previousItem.productId === item.productId && previousItem.quantity === item.quantity &&
+                previousSync?.checkout === nextSync.checkout &&
                 previousSync?.revision === nextSync.revision &&
                 previousSync?.confirmedRevision === nextSync.confirmedRevision &&
                 previousSync?.confirmedQuantity === nextSync.confirmedQuantity &&
@@ -242,7 +294,7 @@ export const useCartQuantityStore = create<CartQuantityState>()(
             return state;
           }
 
-          if (serverQuantity === undefined) {
+          if (serverQuantity === undefined || (hasCheckoutEdit(syncState) && serverQuantity !== get().getQuantity(productId))) {
             return {
               syncStates: {
                 ...state.syncStates,
@@ -256,6 +308,7 @@ export const useCartQuantityStore = create<CartQuantityState>()(
             syncStates: {
               ...state.syncStates,
               [productId]: {
+                ...(syncState.checkout && !syncState.checkout.settled && { checkout: syncState.checkout }),
                 revision,
                 confirmedRevision: revision,
                 confirmedQuantity: serverQuantity,
@@ -276,6 +329,9 @@ export const useCartQuantityStore = create<CartQuantityState>()(
             return state;
           }
 
+          if (hasCheckoutEdit(syncState)) {
+            return { syncStates: { ...state.syncStates, [productId]: { ...syncState, status: "needsValidation" } } };
+          }
           didRollback = true;
           return {
             items: replaceQuantity(

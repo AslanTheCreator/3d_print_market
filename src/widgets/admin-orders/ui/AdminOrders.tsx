@@ -7,6 +7,7 @@ import { ImageMetadataFeedback, mapImageMetadata, useImageMetadataQuery } from "
 import {
   adminOrderKeys,
   getOrderPaymentBreakdown,
+  OrderDeliverySnapshot,
   adminOrderStatuses,
   getOrderReviewState,
   getOrderStatusMeta,
@@ -198,6 +199,7 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
                       <OrderProductThumbnail image={order.image[0]} name={order.product.name} size={48} />
                       <Stack minWidth={0} sx={{ overflowWrap: "anywhere" }}>
                         <Typography variant="body2">{order.product.name}</Typography>
+                        <OrderDeliverySnapshot order={order} compact />
                         <Typography variant="body2" color="text.secondary">
                           {order.product.count} шт.
                         </Typography>
@@ -245,6 +247,7 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
                     <Typography variant="body2" color="text.secondary">
                       {order.sellerLogin} · {formatDateTime(order.createdAt)}
                     </Typography>
+                    <OrderDeliverySnapshot order={order} compact />
                     <Typography>
                       {order.product.count} шт. ·{" "}
                       Итого с доставкой: {getOrderPaymentBreakdown(order).totalLabel}

@@ -6,6 +6,7 @@ import {
   getOrderReviewState,
   OrderProductThumbnail,
   OrderCalculationSummary,
+  OrderDeliverySnapshot,
   OrderStatusChip,
   type AdminOrderDto,
 } from "@/entities/order";
@@ -86,7 +87,7 @@ export function AdminOrderDetail({
       {inCurrentList ? <OrderCalculationSummary order={order} onRefresh={refresh} refreshDisabled={locked} /> : <Typography>Заказ отсутствует в текущей выборке</Typography>}
       <Divider />
       <Typography variant="h6">Доставка</Typography>
-      <Typography>{order.transfer.address}</Typography>
+      <OrderDeliverySnapshot order={order} />
 
       {trackingUrl && (
         <Button href={trackingUrl} target="_blank" rel="noopener noreferrer">

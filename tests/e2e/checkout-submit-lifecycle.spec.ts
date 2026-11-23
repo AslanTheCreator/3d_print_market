@@ -95,6 +95,36 @@ for (const change of ["quantity", "address", "delivery", "selection", "readiness
   });
 }
 
+test("carrier batch is submitted once and a late success after session change cannot clear the cart", async () => {
+  const env = setup();
+  env.state.carrierDelivery = { deliveryCarrier: "RUSSIAN_POST", deliveryAddress: "  Казань, ПВЗ  " };
+  const original = orderApi.createOrder;
+  const response = deferredRead();
+  const posts: Parameters<typeof original>[0][] = [];
+  orderApi.createOrder = async payload => {
+    posts.push(payload);
+    await response.promise;
+    return [201, 202];
+  };
+  try {
+    const hook = env.mount();
+    env.client.setQueryData(env.scope.key(cartKeys.all), [env.items[0]]);
+    await hook.handleSubmit();
+    expect(posts).toHaveLength(0);
+    env.sync();
+    const pending = hook.handleSubmit();
+    await env.mount().handleSubmit();
+    expect(posts).toEqual([[1, 2].map(productId => ({
+      productId, count: 5, deliveryCarrier: "RUSSIAN_POST", deliveryAddress: "Казань, ПВЗ", comment: "Комментарий",
+    }))]);
+    env.scope.dispose();
+    response.release();
+    await pending;
+    expect(env.notifications()).toBe(0);
+    expect(useCartQuantityStore.getState().items.map(item => item.productId)).toEqual([1, 2]);
+  } finally { response.release(); orderApi.createOrder = original; env.close(); }
+});
+
 test("only confirmed failed positions retry; successful positions never repeat", async () => {
   const env = setup();
   const original = orderApi.createOrder;
@@ -235,6 +265,100 @@ for (const failedRead of ["cart", "orders"] as const) {
     }
   });
 }
+
+for (const mutation of ["increase", "round trip", "selection"] as const) {
+  test(`checkout preserves a newer cart edit through a missing control read: ${mutation}`, async () => {
+    const env = setup();
+    env.items[1].count = 1;
+    env.sync();
+    env.state.carrierDelivery = { deliveryCarrier: "OZON", deliveryAddress: "ПВЗ" };
+    const gate = deferredRead();
+    const original = orderApi.createOrder;
+    const posts: Parameters<typeof original>[0][] = [];
+    orderApi.createOrder = async orders => { posts.push(orders); await gate.promise; return [501, 502]; };
+    const key = env.scope.key(cartKeys.all);
+    const unbind = bindCartQuantityProjection(env.client, env.scope);
+    const third = { ...env.items[1], product: { ...env.items[1].product, id: 3 } };
+    let reads = 0;
+    const observer = new QueryObserver(env.client, { queryKey: key, staleTime: Infinity,
+      queryFn: async () => { reads++; return [third]; } });
+    const unsubscribe = observer.subscribe(() => undefined);
+    try {
+      const pending = env.mount().handleSubmit();
+      expect(posts[0].map(item => [item.productId, item.count])).toEqual([[1, 5], [2, 1]]);
+      const cart = useCartQuantityStore.getState();
+      if (mutation === "selection") cart.noteCheckoutSelectionChange(1);
+      else {
+        cart.setQuantity(1, 6);
+        if (mutation === "round trip") cart.setQuantity(1, 5);
+      }
+      const wanted = mutation === "increase" ? 6 : 5;
+      const revision = useCartQuantityStore.getState().syncStates[1].revision;
+      // The quantity PUT may already be acknowledged before BOOKED finishes.
+      cart.acknowledgeUpdate(1, revision, wanted);
+      cart.validateUpdate(1, revision, wanted);
+      env.client.setQueryData(key, [{ ...env.items[0], count: wanted }, env.items[1], third]);
+      gate.release();
+      const result = await pending;
+      expect(result?.success.map(item => [item.productId, !!item.cartItemChanged])).toEqual([[1, true], [2, false]]);
+      expect(reads).toBe(1);
+      expect(useCartQuantityStore.getState().getQuantity(1)).toBe(wanted);
+      expect(useCartQuantityStore.getState().syncStates[1]).toMatchObject({ revision, status: "needsValidation" });
+      expect(useCartQuantityStore.getState().items.map(item => item.productId).sort()).toEqual([1, 3]);
+      await observer.refetch();
+      expect(useCartQuantityStore.getState().getQuantity(1)).toBe(wanted);
+      env.client.setQueryData(key, [{ ...env.items[0], count: wanted }, third]);
+      expect(useCartQuantityStore.getState().syncStates[1]).toMatchObject({ revision, status: "synced" });
+      expect(useCartQuantityStore.getState().syncStates[1].checkout).toBeUndefined();
+      expect(posts).toHaveLength(1);
+    } finally { gate.release(); unsubscribe(); unbind(); orderApi.createOrder = original; env.close(); }
+  });
+}
+
+for (const changeAccount of [false, true]) {
+  test(`batch stock error respects the active account: switch=${changeAccount}`, async () => {
+    const env = setup();
+    env.state.carrierDelivery = { deliveryCarrier: "OZON", deliveryAddress: "ПВЗ" };
+    const original = orderApi.createOrder;
+    const gate = deferredRead();
+    orderApi.createOrder = async () => { await gate.promise; throw new ApiError("Нет остатка", "NOT_ENOUGH_STOCK", 400); };
+    try {
+      const pending = env.mount().handleSubmit();
+      if (changeAccount) { env.scope.dispose(); useCartQuantityStore.getState().clearQuantities(); }
+      const key = ["products", "list", { sessionKey: changeAccount ? 2 : 1 }];
+      env.client.setQueryData(key, []);
+      gate.release();
+      const result = await pending;
+      expect(env.client.getQueryState(key)?.isInvalidated).toBe(!changeAccount);
+      expect(env.notifications()).toBe(changeAccount ? 0 : 1);
+      if (changeAccount) expect(result).toBeUndefined();
+      else {
+        expect(result?.batchError).toBe("Нет остатка");
+        expect(result?.failed.map(item => [item.status, item.errorMessage])).toEqual([["unknown", undefined], ["unknown", undefined]]);
+        expect(getCheckoutAttempt(env.scope.signal).getState().uncertain).toBe(true);
+      }
+    } finally { gate.release(); orderApi.createOrder = original; env.close(); }
+  });
+}
+
+test("a new quantity edit after confirmed checkout uses normal cart rollback", async () => {
+  const env = setup();
+  const original = orderApi.createOrder;
+  const gate = deferredRead();
+  orderApi.createOrder = async orders => { await gate.promise; return [orders[0].productId]; };
+  try {
+    const pending = env.mount().handleSubmit();
+    const cart = useCartQuantityStore.getState();
+    const revision = cart.setQuantity(1, 6);
+    cart.acknowledgeUpdate(1, revision, 6);
+    cart.validateUpdate(1, revision, 6);
+    gate.release();
+    await pending;
+    const later = cart.setQuantity(1, 7);
+    expect(cart.rollbackUpdate(1, later)).toBe(true);
+    expect(cart.getQuantity(1)).toBe(6);
+  } finally { gate.release(); orderApi.createOrder = original; env.close(); }
+});
 
 function deferredRead() {
   let release!: () => void;

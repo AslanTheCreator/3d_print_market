@@ -19,7 +19,7 @@ export type OrderStatus =
 interface OrderTransfer {
   transferId: number;
   addressId: number;
-  imageId: number;
+  imageId: number | null;
   address: string;
   price: number | null;
   currency: Currency;
@@ -39,13 +39,16 @@ interface OrderUserInfo {
   mail: string;
 }
 
-export interface OrderCreateModel {
+export type OrderCreateModel = {
   productId: number;
   count: number;
-  addressId: number;
-  transferId: number;
-  comment: string;
-}
+  comment?: string;
+} & (
+  | { addressId: number; transferId: number; deliveryCarrier?: never; deliveryAddress?: never }
+  | { deliveryCarrier: DeliveryCarrier; deliveryAddress: string; addressId?: never; transferId?: never }
+);
+
+export type DeliveryCarrier = "OZON" | "YANDEX" | "RUSSIAN_POST";
 
 export interface OrderGetDataModel {
   addresses: Address[];
@@ -64,6 +67,8 @@ export interface OrderCalculationDto {
 }
 
 export interface ListOrdersModel {
+  deliveryCarrier?: DeliveryCarrier | null;
+  deliveryAddress?: string | null;
   calculation?: OrderCalculationDto | null;
   termsVersion?: number | null;
   orderId: number;

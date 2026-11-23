@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { getFailedOrders } from "@/features/order-create/model/orderCreatePayload";
+import { getFailedOrders, hasCreatedOrderIds } from "@/features/order-create/model/orderCreatePayload";
+import { getDeliveryFieldErrors, getOrderDeliveryAddress } from "@/entities/order";
 import {
   markFailedOrdersNonRetryable,
   mergeCheckoutResults,
@@ -9,6 +10,30 @@ import type {
   OrderResult,
   OrderToCreate,
 } from "@/features/order-create";
+import { orderFixture } from "./helpers/mobileAccount";
+
+test("carrier checkout validates each delivery field and the complete response", () => {
+  for (const carrier of ["OZON", "YANDEX", "RUSSIAN_POST"]) {
+    for (const address of ["А", "А".repeat(2000)]) {
+      expect(getDeliveryFieldErrors(carrier, address)).toEqual({ carrier: null, address: null });
+    }
+  }
+  expect(getDeliveryFieldErrors("", "ПВЗ").carrier).toBeTruthy();
+  for (const address of ["", "   ", "А".repeat(2001)]) {
+    expect(getDeliveryFieldErrors("OZON", address).address).toBeTruthy();
+  }
+  expect(hasCreatedOrderIds([501, 502], 2)).toBe(true);
+  for (const invalid of [null, 501, [], [501], [501, 501], [501, "502"], [501, 0], [501, 502.5]]) {
+    expect(hasCreatedOrderIds(invalid, 2)).toBe(false);
+  }
+});
+
+test("saved order address takes precedence and the legacy address remains available", () => {
+  const { transfer } = orderFixture(1, "BOOKED", 1);
+  expect(getOrderDeliveryAddress({ deliveryCarrier: "OZON", deliveryAddress: "ПВЗ 42", transfer: { ...transfer, currency: "RUB" } })).toBe("ПВЗ 42");
+  expect(getOrderDeliveryAddress({ deliveryCarrier: null, deliveryAddress: null, transfer: { ...transfer, currency: "RUB" } })).toBe(transfer.address);
+  expect(getOrderDeliveryAddress({ deliveryCarrier: "YANDEX", deliveryAddress: null, transfer: { ...transfer, currency: "RUB" } })).toBe("Не указан");
+});
 
 const resultItem = (
   productId: number,

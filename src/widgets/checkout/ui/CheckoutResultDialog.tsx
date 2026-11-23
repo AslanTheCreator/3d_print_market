@@ -153,6 +153,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
       </DialogTitle>
 
       <DialogContent>
+        {result.batchError && <Alert severity="warning">Ответ на весь пакет: {result.batchError}</Alert>}
         {retryMessage && <Alert severity="warning" sx={{ mb: 2 }}>{retryMessage}</Alert>}
         <Typography
           variant="body1"
@@ -219,7 +220,10 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle2">Результат неизвестен ({unknown.length})</Typography>
             <List>{unknown.map(item => <ListItem key={item.productId}>
-              <ListItemText primary={item.productName} secondary="Заказ мог быть создан. Не отправляйте его повторно." />
+              <ListItemText
+                primary={item.productName}
+                secondary="Заказ мог быть создан. Не отправляйте его повторно."
+              />
             </ListItem>)}</List>
           </Box>
         )}
@@ -302,7 +306,7 @@ export const CheckoutResultDialog: React.FC<CheckoutResultDialogProps> = ({
           </Button>
         )}
 
-        {result.failed.length > 0 && (
+        {(result.failed.length > 0 || result.success.some(item => item.cartItemChanged)) && (
           <Button
             variant="contained"
             color="primary"

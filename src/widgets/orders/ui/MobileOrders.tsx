@@ -6,7 +6,7 @@ import { ChevronRightRounded } from "@mui/icons-material";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import { OrderStatusChip, orderNeedsAttention, type ListOrdersModel } from "@/entities/order";
 import { getOrderActionHint } from "../model/dashboardOrders";
-import { getOrderPaymentBreakdown } from "@/entities/order";
+import { getOrderPaymentBreakdown, OrderDeliverySnapshot } from "@/entities/order";
 import { formatOrderDate, type OrdersSortId, type OrdersUserRole } from "../model/dashboardOrders";
 import { filterMobileOrders, sortMobileOrders, type MobileOrdersFilterId } from "../model/mobileOrders";
 import { CustomerActions } from "./CustomerActions";
@@ -74,6 +74,7 @@ export const MobileOrders = ({ orders, userRole, onOpenDetails }: MobileOrdersPr
                     <Typography variant="caption" color="text.secondary">№{order.orderId} · {formatOrderDate(order.createdAt).split(",")[0]}</Typography>
                   </Stack>
                   <OrderProductPreview order={order} userRole={userRole} imageSize={72} showCategory={false} showOrderId={false} nameLines={2} />
+                  <OrderDeliverySnapshot order={order} compact />
                   <Stack direction="row" justifyContent="space-between" gap={1} flexWrap="wrap">
                     <Typography variant="body2" color="text.secondary">Итого с доставкой</Typography>
                     <Typography fontWeight={700}>{getOrderPaymentBreakdown(order).totalLabel}</Typography>

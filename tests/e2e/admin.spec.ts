@@ -3,6 +3,28 @@ import { adminOrderFixture, adminProductFixture, setupAdmin } from "./helpers/ad
 import { expectNoOverflow } from "./helpers/mobileAccount";
 import { fillConversion, setupGiveawayConversion } from "./helpers/adminGiveawayConversion";
 
+for (const width of [393, 1280]) {
+  test(`admin sees saved delivery at ${width}px`, async ({ page, baseURL }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const state = await setupAdmin(page, baseURL);
+    const order = state.orders[0];
+    Object.assign(order, {
+      deliveryCarrier: "RUSSIAN_POST", deliveryAddress: "Индекс и адрес отделения",
+      transfer: { ...order.transfer, imageId: null, address: "Старый адрес" },
+      calculation: { ...order.calculation!, deliveryAmount: null, totalAmount: null, remainingAmount: null },
+    });
+    await page.goto("/admin/orders");
+    await expect(page.getByText("Служба доставки: Почта России", { exact: true }).filter({ visible: true })).toBeVisible();
+    await expect(page.getByText("Индекс и адрес отделения", { exact: true }).filter({ visible: true })).toBeVisible();
+    await page.getByRole("button", { name: "Открыть заказ #201" }).click();
+    const details = page.getByRole("dialog");
+    await expect(details.getByText("Служба доставки: Почта России", { exact: true })).toBeVisible();
+    await expect(details.getByText("Индекс и адрес отделения", { exact: true })).toBeVisible();
+    await expect(details).toContainText("Стоимость доставки уточнит продавец");
+    await expect(details).not.toContainText("Старый адрес");
+  });
+}
+
 test("bot conversion uses exact existing PUT, preserves source fields and relations, reopens without public product GET", async ({ page, baseURL }) => {
   const state = await setupGiveawayConversion(page, baseURL);
   const source = structuredClone(state.product);

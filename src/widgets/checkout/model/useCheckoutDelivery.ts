@@ -21,6 +21,7 @@ import type {
 interface UseCheckoutDeliveryProps {
   cartItems: ProductBasket[];
   selectedProductIds: Set<number>;
+  enabled: boolean;
 }
 
 const DELIVERY_ERROR_FALLBACK = "Не удалось загрузить способы доставки";
@@ -28,6 +29,7 @@ const DELIVERY_ERROR_FALLBACK = "Не удалось загрузить спос
 export const useCheckoutDelivery = ({
   cartItems,
   selectedProductIds,
+  enabled,
 }: UseCheckoutDeliveryProps) => {
   const scope = usePrivateScope();
   const [selectedTransfersBySeller, setSelectedTransfersBySeller] = useState<
@@ -59,7 +61,7 @@ export const useCheckoutDelivery = ({
 
           return orderApi.getOrderData(deliveryItem.product.id, signal);
         },
-        enabled: scope.id !== null && deliveryItem !== undefined,
+        enabled: enabled && scope.id !== null && deliveryItem !== undefined,
         staleTime: 5 * 60 * 1000,
         gcTime: 10 * 60 * 1000,
         refetchOnWindowFocus: false,

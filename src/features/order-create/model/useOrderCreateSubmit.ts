@@ -13,7 +13,7 @@ import {
 import { orderApi } from "@/entities/order";
 import { productKeys } from "@/entities/product";
 import { ErrorCodes } from "@/shared/lib/errorHandler";
-import { buildOrderToCreate, getFailedOrders } from "./orderCreatePayload";
+import { buildOrderToCreate, getFailedOrders, hasCreatedOrderIds, toOrderRequest } from "./orderCreatePayload";
 import {
   buildCheckoutResult,
   mergeCheckoutResults,
@@ -138,62 +138,55 @@ export const useOrderCreateSubmit = ({
   );
 
   const createOrderPayload = useCallback(
-    (item: ProductBasket): OrderToCreate => {
+    (item: ProductBasket): OrderToCreate | null => {
       return buildOrderToCreate({
         item,
         quantity: getQuantity(item.product.id),
-        addressId: checkoutState.selectedAddress?.id || 0,
+        addressId: checkoutState.selectedAddress?.id,
         transferId: checkoutState.getTransferIdForSeller(item.product.sellerId),
         comment: checkoutState.comment,
+        carrierDelivery: checkoutState.carrierDelivery,
       });
     },
     [checkoutState, getQuantity],
   );
 
-  const submitSingleOrder = useCallback(
-    async (order: OrderToCreate): Promise<OrderResult> => {
+  const submitOrderBatch = useCallback(
+    async (orders: OrderToCreate[]): Promise<{ positions: OrderResult[]; batchError?: string }> => {
       if (!scope.isCurrent()) throw new Error("Session ended");
+      const positions = orders.map(({ productId, productName }) => ({ productId, productName }));
       try {
-        await orderApi.createOrder([
-          {
-            productId: order.productId,
-            count: order.count,
-            addressId: order.addressId,
-            transferId: order.transferId,
-            comment: order.comment,
-          },
-        ]);
-
-        return {
-          productId: order.productId,
-          productName: order.productName,
-          status: "success",
-        };
+        const response = await orderApi.createOrder(orders.map(toOrderRequest));
+        if (!hasCreatedOrderIds(response, orders.length)) {
+          return { positions: positions.map(position => ({
+            ...position,
+            status: "unknown",
+            errorMessage: "Сервер не подтвердил создание всех заказов. Проверьте покупки.",
+          })) };
+        }
+        return { positions: positions.map(position => ({ ...position, status: "success" })) };
       } catch (error) {
-        if (
-          isConfirmedOrderRejection(error) &&
-          error.isCode(ErrorCodes.PRODUCT_NOT_PURCHASABLE)
-        ) {
-          await refreshNonPurchasableProducts([order.productId]);
-
+        const rejected = isConfirmedOrderRejection(error);
+        const unavailable = rejected && error.isCode(ErrorCodes.PRODUCT_NOT_PURCHASABLE);
+        const insufficientStock = rejected && (error.isCode("OUT_OF_STOCK") || error.isCode("NOT_ENOUGH_STOCK"));
+        if (scope.isCurrent() && (unavailable || insufficientStock)) {
+          await refreshNonPurchasableProducts(positions.map(position => position.productId));
+        }
+        // A batch error does not identify the affected positions or confirm a rollback.
+        if (orders.length > 1) {
           return {
-            productId: order.productId,
-            productName: order.productName,
-            status: "error",
-            errorCode: ErrorCodes.PRODUCT_NOT_PURCHASABLE,
-            errorMessage: NON_PURCHASABLE_PRODUCT_ERROR_MESSAGE,
-            retryable: false,
+            batchError: error instanceof Error ? error.message : UNKNOWN_ERROR_MESSAGE,
+            positions: positions.map(position => ({ ...position, status: "unknown" })),
           };
         }
-
-        return {
-          productId: order.productId,
-          productName: order.productName,
-          status: isConfirmedOrderRejection(error) ? "error" : "unknown",
-          retryable: isConfirmedOrderRejection(error),
-          errorMessage:
-            error instanceof Error ? error.message : UNKNOWN_ERROR_MESSAGE,
-        };
+        return { positions: positions.map(position => ({
+          ...position,
+          status: rejected ? "error" : "unknown",
+          retryable: rejected && !unavailable && !insufficientStock,
+          errorCode: rejected ? error.code : undefined,
+          errorMessage: unavailable ? NON_PURCHASABLE_PRODUCT_ERROR_MESSAGE
+            : error instanceof Error ? error.message : UNKNOWN_ERROR_MESSAGE,
+        })) };
       }
     },
     [refreshNonPurchasableProducts, scope],
@@ -201,18 +194,38 @@ export const useOrderCreateSubmit = ({
 
   const executeOrders = useCallback(
     async (ordersToCreate: OrderToCreate[]): Promise<CheckoutResult> => {
-      const results = await Promise.allSettled(
-        ordersToCreate.map((order) => submitSingleOrder(order)),
+      const cart = useCartQuantityStore.getState();
+      for (const order of ordersToCreate) cart.beginCheckout(order.productId, order.productName);
+      const batches = ordersToCreate[0]?.deliveryCarrier
+        ? [ordersToCreate]
+        : ordersToCreate.map(order => [order]);
+      const results = await Promise.allSettled(batches.map(submitOrderBatch));
+      const positions = results.flatMap<PromiseSettledResult<OrderResult>>((result, index) =>
+        result.status === "fulfilled"
+          ? result.value.positions.map(value => ({ status: "fulfilled", value }))
+          : batches[index].map(() => result),
       );
 
-      return buildCheckoutResult(results, {
+      const result = buildCheckoutResult(positions, {
         totalCount: ordersToCreate.length,
         unknownProductName: UNKNOWN_PRODUCT_NAME,
         networkErrorMessage: NETWORK_ERROR_MESSAGE,
         orders: ordersToCreate,
       });
+      const batch = results[0];
+      if (batch?.status === "fulfilled" && batch.value.batchError) result.batchError = batch.value.batchError;
+      if (!scope.isCurrent()) return result;
+      attempt.setState({ uncertain: result.failed.some(item => item.status === "unknown") });
+      await syncAfterSubmit();
+      if (!scope.isCurrent()) return result;
+      for (const item of result.failed) cart.finishCheckout(item.productId, false);
+      for (const item of result.success) {
+        if (cart.finishCheckout(item.productId, true)) successfulIds.current.add(item.productId);
+        else item.cartItemChanged = true;
+      }
+      return result;
     },
-    [submitSingleOrder],
+    [attempt, scope, submitOrderBatch, syncAfterSubmit],
   );
 
   const handleSubmit = useCallback(async () => {
@@ -241,11 +254,10 @@ export const useOrderCreateSubmit = ({
     setSubmitResult(null);
 
     try {
-      const ordersToCreate = selectedCartItems.map(createOrderPayload);
+      const ordersToCreate = selectedCartItems.map(createOrderPayload).filter(order => order !== null);
+      if (ordersToCreate.length !== selectedCartItems.length) return;
       const checkoutResult = await executeOrders(ordersToCreate);
       if (!scope.isCurrent()) return;
-      attempt.setState({ uncertain: checkoutResult.failed.some(item => item.status === "unknown") });
-      checkoutResult.success.forEach(item => successfulIds.current.add(item.productId));
       resultRef.current = checkoutResult;
 
       failedOrdersRef.current = getFailedOrders(
@@ -253,7 +265,6 @@ export const useOrderCreateSubmit = ({
         checkoutResult.failed,
       );
       setSubmitResult(checkoutResult);
-      await syncAfterSubmit(checkoutResult.success);
       notifySubmitResult(checkoutResult);
 
       return checkoutResult;
@@ -268,7 +279,6 @@ export const useOrderCreateSubmit = ({
     checkoutState.isReadyToSubmit,
     createOrderPayload,
     executeOrders,
-    syncAfterSubmit,
     notifySubmitResult,
   ]);
 
@@ -299,8 +309,9 @@ export const useOrderCreateSubmit = ({
         const item = selectedItems.find(item => item.product.id === order.productId);
         if (!item) return false;
         const current = createOrderPayload(item);
-        return current.count === order.count && current.addressId === order.addressId &&
-          current.transferId === order.transferId && current.comment === order.comment;
+        return current !== null && current.count === order.count && current.addressId === order.addressId &&
+          current.transferId === order.transferId && current.comment === order.comment &&
+          current.deliveryCarrier === order.deliveryCarrier && current.deliveryAddress === order.deliveryAddress;
       });
     if (retryOrders.length === 0) return resultBeforeRetry;
     if (!checkoutState.isReadyToSubmit || !submissionCheck.canSubmit || !unchanged) {
@@ -317,8 +328,6 @@ export const useOrderCreateSubmit = ({
     try {
       const retryResult = await executeOrders(retryOrders);
       if (!scope.isCurrent()) return;
-      attempt.setState({ uncertain: retryResult.failed.some(item => item.status === "unknown") });
-      retryResult.success.forEach(item => successfulIds.current.add(item.productId));
       const updatedResult = mergeCheckoutResults(
         resultBeforeRetry,
         retryResult,
@@ -330,7 +339,6 @@ export const useOrderCreateSubmit = ({
       );
       resultRef.current = updatedResult;
       setSubmitResult(updatedResult);
-      await syncAfterSubmit(retryResult.success);
       notifySubmitResult(updatedResult);
 
       return updatedResult;
@@ -345,7 +353,6 @@ export const useOrderCreateSubmit = ({
     cartItems,
     checkProductsForSubmission,
     executeOrders,
-    syncAfterSubmit,
     notifySubmitResult,
   ]);
 

@@ -9,6 +9,7 @@ import type { SellerCheckoutGroup } from "../model/types";
 import { CheckoutSellerGroupCard } from "./CheckoutSellerGroupCard";
 
 interface CheckoutCartSectionProps {
+  showSellerDelivery: boolean;
   sellerGroups: SellerCheckoutGroup[];
   selectedProductIds: Set<number>;
   isAllSelected: boolean;
@@ -20,6 +21,7 @@ interface CheckoutCartSectionProps {
 }
 
 export const CheckoutCartSection = ({
+  showSellerDelivery,
   sellerGroups,
   selectedProductIds,
   isAllSelected,
@@ -96,6 +98,7 @@ export const CheckoutCartSection = ({
       <Stack spacing={2}>
         {sellerGroups.map((group) => (
           <CheckoutSellerGroupCard
+            showSellerDelivery={showSellerDelivery}
             key={group.sellerId}
             group={group}
             selectedProductIds={selectedProductIds}

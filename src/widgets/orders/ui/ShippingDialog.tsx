@@ -27,6 +27,7 @@ import {
 } from "@mui/icons-material";
 import {
   OrderCalculationSummary,
+  getOrderDeliveryAddress,
   type ListOrdersModel,
 } from "@/entities/order";
 import { useOrderShippingAction } from "@/features/order-shipping";
@@ -213,7 +214,7 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
 
           <Box sx={{ p: 1.5, bgcolor: "background.paper", borderRadius: 1 }}>
             <Typography variant="body2" sx={{ mb: 0.75 }}>
-              {order.transfer.address}
+              {getOrderDeliveryAddress(order)}
             </Typography>
             <Stack
               direction="row"
@@ -229,7 +230,7 @@ const ShippingDialog = ({ open, onClose, order }: ShippingDialogProps) => {
                 aria-label="Скопировать адрес и данные получателя"
                 onClick={() =>
                   copyToClipboard(
-                    `${order.transfer.address}\n${order.userInfo.login}\n${order.userInfo.phoneNumber}`
+                    `${getOrderDeliveryAddress(order)}\n${order.userInfo.login}\n${order.userInfo.phoneNumber}`
                   )
                 }
               >

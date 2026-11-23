@@ -7,6 +7,31 @@ import {
 } from "@playwright/test";
 import { orderFixture, setupMobileAccount } from "./helpers/mobileAccount";
 
+for (const [role, width] of [["purchase", 1280], ["sales", 393]] as const) {
+  test(`${role}: saved delivery snapshot at ${width}px`, async ({ page, baseURL }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const state = await setupMobileAccount(page, baseURL);
+    const order = orderFixture(404, "BOOKED", 1);
+    const snapshot = Object.assign(order, {
+      deliveryCarrier: "YANDEX", deliveryAddress: "Точный адрес ПВЗ №404",
+      transfer: { ...order.transfer, address: "Старый адрес", imageId: null },
+      calculation: { ...order.calculation!, deliveryAmount: null, totalAmount: null, remainingAmount: null },
+    });
+    state[role === "purchase" ? "customerOrders" : "sellerOrders"].push(snapshot);
+    await page.goto(`/dashboard/${role}`);
+    const list = page.getByTestId(width === 393 ? "mobile-orders" : "desktop-orders");
+    await expect(list.getByText("Служба доставки: Яндекс", { exact: true }).first()).toBeVisible();
+    await expect(list.getByText("Точный адрес ПВЗ №404", { exact: true }).first()).toBeVisible();
+    await expect(list.getByText("Стоимость доставки уточнит продавец", { exact: true }).first()).toBeVisible();
+    await list.getByRole("button", { name: "Подробнее о заказе №404" }).first().click();
+    const detail = page.getByRole("dialog");
+    await expect(detail.getByTestId("order-delivery")).toContainText("Точный адрес ПВЗ №404");
+    await expect(detail.getByTestId("order-delivery")).not.toContainText("Старый адрес");
+    await expect(detail.getByTestId("order-payment-breakdown")).toContainText("Стоимость доставки уточнит продавец");
+    await expect(detail).not.toContainText("Бесплатно");
+  });
+}
+
 for (const role of ["purchase", "sales"] as const) {
   test(`${role}: full payment review stays active in a mixed desktop list`, async ({ page, baseURL }) => {
     const state = await setupMobileAccount(page, baseURL);

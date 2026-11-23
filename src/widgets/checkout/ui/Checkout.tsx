@@ -14,7 +14,7 @@ import {
   useOrderCreateSubmit,
   type CheckoutResult,
 } from "@/features/order-create";
-import { useCartProducts } from "@/entities/cart";
+import { useCartProducts, useCartQuantityStore } from "@/entities/cart";
 import { useProfileUser } from "@/entities/user";
 import { useCheckoutState } from "../model/useCheckoutState";
 import { CheckoutResultDialog } from "./CheckoutResultDialog";
@@ -46,6 +46,12 @@ const Checkout = () => {
     isPending: isLoadingCurrentUser,
     isError: isCurrentUserError,
   } = useProfileUser();
+  const syncStates = useCartQuantityStore(state => state.syncStates);
+  const localQuantities = useCartQuantityStore(state => state.items);
+  const unconfirmedEdits = localQuantities.filter(({ productId, quantity }) => {
+    const sync = syncStates[productId];
+    return sync?.checkout?.settled && cartItems?.find(item => item.product.id === productId)?.count !== quantity;
+  });
   const prepaymentProductIdsRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
@@ -94,7 +100,7 @@ const Checkout = () => {
         const nextIds = new Set(currentIds);
 
         for (const order of result.success) {
-          nextIds.add(order.productId);
+          if (!order.cartItemChanged) nextIds.add(order.productId);
         }
 
         return nextIds.size === currentIds.size ? currentIds : nextIds;
@@ -146,7 +152,7 @@ const Checkout = () => {
     setResultDialogOpen(false);
     clearResult();
 
-    if (lastResult?.successCount === lastResult?.totalCount) {
+    if (lastResult?.successCount === lastResult?.totalCount && !lastResult?.success.some(item => item.cartItemChanged)) {
       router.push("/dashboard/purchase");
     }
   };
@@ -168,6 +174,7 @@ const Checkout = () => {
           Результат оформления неизвестен. Заказы могли быть созданы. Повторное оформление
           в текущей сессии заблокировано. Проверьте покупки и корзину; отсутствие заказа
           в списке ещё не подтверждает, что он не был создан.
+          {lastResult?.batchError && <Typography>Ответ на весь пакет: {lastResult.batchError}</Typography>}
         </Alert>
         <Button onClick={handleGoToOrders}>Мои покупки</Button>
         <Button disabled={isCartFetching} onClick={() => void refetchCart()}>Обновить корзину</Button>
@@ -184,8 +191,24 @@ const Checkout = () => {
     return <CheckoutSkeleton />;
   }
 
+  const draftNotice = unconfirmedEdits.length > 0 && (
+    <Alert severity="warning">
+      <Typography>Сервер пока не подтвердил изменения корзины. Сохранено выбранное количество:</Typography>
+      {unconfirmedEdits.map(({ productId, quantity }) => (
+        <Stack key={productId} direction="row" alignItems="center" flexWrap="wrap">
+          <Typography>{syncStates[productId].checkout?.productName} — {quantity} шт.</Typography>
+          <Button disabled={isCartFetching || syncStates[productId].status === "pending"} onClick={() => {
+            useCartQuantityStore.getState().removeItem(productId);
+            void refetchCart();
+          }}>Сбросить локальное изменение</Button>
+        </Stack>
+      ))}
+      <Button disabled={isCartFetching} onClick={() => void refetchCart()}>Обновить корзину</Button>
+    </Alert>
+  );
+
   // После успешного оформления — показываем OrderSuccessState вместо пустой корзины
-  if (checkoutCartItems.length === 0 && orderCompleted) {
+  if (checkoutCartItems.length === 0 && orderCompleted && !draftNotice) {
     if (hasCompletedPrepayment) {
       return (
         <EmptyPageState
@@ -226,14 +249,14 @@ const Checkout = () => {
 
     return (
       <OrderSuccessState
-        orderCount={completedProductIds.size || lastResult?.successCount}
+        orderCount={lastResult?.successCount ?? completedProductIds.size}
         onGoToOrders={handleGoToOrders}
         onGoHome={handleGoHome}
       />
     );
   }
 
-  if (checkoutCartItems.length === 0) {
+  if (checkoutCartItems.length === 0 && !draftNotice) {
     return (
       <EmptyPageState
         icon={
@@ -285,6 +308,7 @@ const Checkout = () => {
         Оформление заказа
       </Typography>
 
+      {draftNotice}
       <CheckoutContent
         checkoutState={checkoutState}
         isSubmitting={isSubmitting}

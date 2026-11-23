@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ProductBasket, useCartQuantityStore } from "@/entities/cart";
+import { getDeliveryFieldErrors, type DeliveryCarrier } from "@/entities/order";
 import { useCheckoutAddress } from "./useCheckoutAddress";
 import { useCheckoutDelivery } from "./useCheckoutDelivery";
 import { useCheckoutSelection } from "./useCheckoutSelection";
@@ -29,6 +30,12 @@ export const useCheckoutState = ({
   const normalizedCartItems = cartItems ?? EMPTY_CART_ITEMS;
   const syncStates = useCartQuantityStore((state) => state.syncStates);
   const [comment, setComment] = useState<string>("");
+  const [deliveryMode, setDeliveryMode] = useState<"legacy" | "carrier">("legacy");
+  const [deliveryCarrier, setDeliveryCarrier] = useState<DeliveryCarrier | "">("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const usesCarrier = deliveryMode === "carrier";
+  const deliveryErrors = getDeliveryFieldErrors(deliveryCarrier, deliveryAddress);
+  const carrierDeliveryError = usesCarrier ? deliveryErrors.carrier ?? deliveryErrors.address : undefined;
   const {
     selectedAddress,
     setSelectedAddress,
@@ -49,6 +56,7 @@ export const useCheckoutState = ({
   const checkoutDelivery = useCheckoutDelivery({
     cartItems: normalizedCartItems,
     selectedProductIds,
+    enabled: !usesCarrier,
   });
   const orderableSelectedItems = selectedItems;
   const hasOwnSelectedItems =
@@ -89,6 +97,7 @@ export const useCheckoutState = ({
       isRefreshingCart:
         isRefreshingCart && orderableSelectedItems.length > 0,
       activeSellerGroups: checkoutDelivery.activeSellerGroups,
+      carrierDeliveryError,
     });
 
   const canRetryStockValidation =
@@ -105,6 +114,14 @@ export const useCheckoutState = ({
     isAddressesError,
     refetchAddresses,
     addressCreation,
+    deliveryMode,
+    setDeliveryMode,
+    deliveryCarrier,
+    setDeliveryCarrier,
+    deliveryAddress,
+    setDeliveryAddress,
+    deliveryErrors,
+    carrierDelivery: usesCarrier ? { deliveryCarrier, deliveryAddress } : undefined,
     comment,
     setComment,
     selectedProductIds,

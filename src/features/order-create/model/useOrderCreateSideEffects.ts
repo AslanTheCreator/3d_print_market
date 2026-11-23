@@ -3,9 +3,9 @@
 import { usePrivateScope } from "@/shared/lib/query";
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { cartKeys, useCartQuantityStore } from "@/entities/cart";
+import { cartKeys } from "@/entities/cart";
 import { orderQueryKeys } from "@/entities/order";
-import type { CheckoutResult, OrderResult } from "./types";
+import type { CheckoutResult } from "./types";
 
 interface UseOrderCreateSideEffectsProps {
   onSuccess: (result: CheckoutResult) => void;
@@ -20,21 +20,17 @@ export const useOrderCreateSideEffects = ({
 }: UseOrderCreateSideEffectsProps) => {
   const scope = usePrivateScope();
   const queryClient = useQueryClient();
-  const { removeItem: removeQuantityItem } = useCartQuantityStore();
 
   const syncAfterSubmit = useCallback(
-    async (successOrders: OrderResult[]) => {
+    async () => {
       if (!scope.isCurrent()) return;
-      for (const order of successOrders) {
-        removeQuantityItem(order.productId);
-      }
-
       await queryClient.invalidateQueries({ queryKey: scope.key(cartKeys.all) });
+      if (!scope.isCurrent()) return;
       await queryClient.invalidateQueries({
         queryKey: scope.key(orderQueryKeys.customerOrders()),
       });
     },
-    [scope, queryClient, removeQuantityItem],
+    [scope, queryClient],
   );
 
   const notifySubmitResult = useCallback(

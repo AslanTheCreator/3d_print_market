@@ -5,7 +5,7 @@ import {
   type Route,
   test,
 } from "@playwright/test";
-import { orderFixture } from "./helpers/mobileAccount";
+import { expectNoOverflow, orderFixture } from "./helpers/mobileAccount";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -312,6 +312,149 @@ const createResponseGate = () => {
   const promise = new Promise<void>((resolve) => { release = resolve; });
   return { promise, release };
 };
+
+for (const scenario of [
+  { carrier: "OZON", label: "Ozon", width: 1280, address: "А", multiple: false, result: "success" },
+  { carrier: "YANDEX", label: "Яндекс", width: 393, address: "Я".repeat(2000), multiple: true, result: "success" },
+  { carrier: "RUSSIAN_POST", label: "Почта России", width: 393, address: "Москва, ПВЗ", multiple: false, result: "stock" },
+  { carrier: "YANDEX", label: "Яндекс", width: 1280, address: "Москва", multiple: true, result: "batch-stock" },
+  { carrier: "OZON", label: "Ozon", width: 1280, address: "Москва, ПВЗ", multiple: false, result: "lost" },
+  { carrier: "YANDEX", label: "Яндекс", width: 1280, address: "Москва, ПВЗ", multiple: true, result: "incomplete" },
+]) {
+  test(`carrier checkout ${scenario.carrier} at ${scenario.width}px: ${scenario.result}`, async ({ context, page, baseURL }) => {
+    await page.setViewportSize({ width: scenario.width, height: 900 });
+    await authenticate(context, baseURL);
+    const first = createCartItem({ id: 1, name: "Фигурка A", count: 2, availableCount: 8, enoughStock: true });
+    const second = createCartItem({ id: 2, name: "Фигурка B", count: 3, availableCount: 8, enoughStock: true, sellerId: 11, sellerLogin: "other-seller" });
+    const controller = await setupCheckoutApi(page, scenario.multiple ? [first, second] : [first]);
+    const posts: unknown[] = [];
+    const orders: unknown[] = [];
+    const gate = createResponseGate();
+    await page.route("**/order/customer", route => fulfillJson(route, orders));
+    await page.route("**/order/BOOKED", async route => {
+      if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+      posts.push(route.request().postDataJSON());
+      await gate.promise;
+      if (scenario.result === "lost") return route.abort("connectionfailed");
+      if (scenario.result === "incomplete") return fulfillJson(route, [501]);
+      if (scenario.result === "stock" || scenario.result === "batch-stock") {
+        return route.fulfill({ status: 400, headers: corsHeaders, json: { code: "NOT_ENOUGH_STOCK", message: "Недостаточно товара на складе" } });
+      }
+      for (const [index, item] of controller.cartItems.entries()) {
+        const order = orderFixture(501 + index, "BOOKED", 1);
+        orders.push({
+          ...order,
+          product: { ...order.product, name: item.product.name, count: item.count },
+          deliveryCarrier: scenario.carrier, deliveryAddress: scenario.address,
+          transfer: { ...order.transfer, imageId: null },
+          calculation: { ...order.calculation!, deliveryAmount: null, totalAmount: null, remainingAmount: null },
+        });
+      }
+      const submitted = route.request().postDataJSON() as { productId: number; count: number }[];
+      controller.cartItems = controller.cartItems.filter(item => !submitted.some(
+        line => line.productId === item.product.id && line.count === item.count,
+      ));
+      return fulfillJson(route, scenario.multiple ? [501, 502] : [501]);
+    });
+    await page.goto("/checkout");
+    const submit = page.getByRole("button", { name: "Оформить заказ", exact: true });
+    await page.getByRole("radio", { name: "Служба доставки и новый адрес" }).check();
+    const carrier = page.getByRole("combobox", { name: /Служба доставки/ });
+    const address = page.getByRole("textbox", { name: /Адрес доставки или ПВЗ/ });
+    await carrier.focus();
+    await page.keyboard.press("Space");
+    await page.getByRole("option", { name: scenario.label, exact: true }).click();
+    await expect(submit).toBeDisabled();
+    await address.fill("   ");
+    await expect(address).toHaveAttribute("aria-invalid", "true");
+    await address.fill("Я".repeat(2001));
+    await expect(page.getByText("Адрес должен содержать не более 2000 символов").first()).toBeVisible();
+    await expect(submit).toBeDisabled();
+    await address.fill(scenario.address);
+    await expect(address).toHaveAttribute("aria-invalid", "false");
+    await expect(page.getByTestId("checkout-summary-delivery-total")).toHaveText("Стоимость доставки уточнит продавец");
+    await expect(page.getByTestId("checkout-summary-order-total")).toHaveText("Пока неизвестно");
+    if (scenario.width === 393) await expectNoOverflow(page);
+    await expect(submit).toBeEnabled();
+    await submit.evaluate(button => { (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click(); });
+    try {
+      await expect.poll(() => posts.length).toBe(1);
+      expect(posts).toEqual([(scenario.multiple ? [first, second] : [first]).map(item => ({
+        productId: item.product.id, count: item.count, deliveryCarrier: scenario.carrier, deliveryAddress: scenario.address,
+      }))]);
+    } finally { gate.release(); }
+    if (scenario.result === "success") {
+      await expect(page.getByRole("heading", { name: "Заказ оформлен!", exact: true })).toBeVisible();
+      await expect(page.getByTestId("checkout-cart-item-1")).toHaveCount(0);
+      expect(controller.cartItems).toHaveLength(0);
+      await page.getByRole("button", { name: "Мои покупки" }).click();
+      const list = page.getByTestId(scenario.width === 393 ? "mobile-orders" : "desktop-orders");
+      await expect(list.getByText(`Служба доставки: ${scenario.label}`, { exact: true }).first()).toBeVisible();
+      await expect(list.getByText(scenario.address, { exact: true }).first()).toBeVisible();
+    } else {
+      const dialog = page.getByRole("dialog");
+      await expect(dialog).toBeVisible();
+      await expect(dialog.getByText(scenario.result === "stock" ? /Недостаточно товара на складе/ : /неизвестен/i).first()).toBeVisible();
+      await expect(page.getByTestId("checkout-cart-item-1")).toBeVisible();
+      expect(controller.cartItems).toHaveLength(scenario.multiple ? 2 : 1);
+      if (scenario.result === "batch-stock") {
+        await expect(dialog.getByText(/Недостаточно товара на складе/)).toHaveCount(1);
+        await expect(dialog.getByRole("listitem").filter({ hasText: /Недостаточно/ })).toHaveCount(0);
+        await expect(dialog.getByText("Результат неизвестен (2)")).toBeVisible();
+      }
+      if (scenario.result !== "stock") {
+        await expect(dialog.getByRole("button", { name: "Мои покупки" })).toBeVisible();
+        await dialog.getByRole("button", { name: "Вернуться к оформлению" }).click();
+        await expect(page.getByRole("status").filter({ hasText: /Результат оформления неизвестен/ })).toBeVisible();
+        await expect(submit).toHaveCount(0);
+      }
+      expect(posts).toHaveLength(1);
+    }
+  });
+}
+
+for (const omitEdited of [false, true]) {
+  test(`carrier checkout keeps the edited quantity and added item after success: missing=${omitEdited}`, async ({ context, page, baseURL }) => {
+    await authenticate(context, baseURL);
+    const item = (id: number, count: number) => createCartItem({ id, name: `Фигурка ${id}`, count, availableCount: 10, enoughStock: true });
+    const controller = await setupCheckoutApi(page, [item(1, 5), item(2, 1)]);
+    const gate = createResponseGate();
+    const posts: unknown[] = [];
+    await page.route("**/order/BOOKED", async route => {
+      if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
+      posts.push(route.request().postDataJSON());
+      await gate.promise;
+      controller.cartItems = controller.cartItems.filter(line => line.product.id !== 2 && !(omitEdited && line.product.id === 1));
+      return fulfillJson(route, [501, 502]);
+    });
+    await page.goto("/checkout");
+    await page.getByRole("radio", { name: "Служба доставки и новый адрес" }).check();
+    await page.getByRole("combobox", { name: /Служба доставки/ }).click();
+    await page.getByRole("option", { name: "Ozon" }).click();
+    await page.getByRole("textbox", { name: /Адрес доставки или ПВЗ/ }).fill("ПВЗ");
+    await page.getByRole("button", { name: "Оформить заказ", exact: true }).click();
+    try {
+      await expect.poll(() => posts.length).toBe(1);
+      expect(posts[0]).toEqual([5, 1].map((count, index) => ({
+        productId: index + 1, count, deliveryCarrier: "OZON", deliveryAddress: "ПВЗ",
+      })));
+      controller.cartItems.push(item(3, 1)); // concurrent addition returned by the quantity control GET
+      await getIncrementButton(page, 1).click();
+      await expect.poll(() => controller.putRequests).toEqual([{ productId: 1, count: 6 }]);
+      await expect(page.getByTestId("checkout-cart-item-3")).toBeVisible();
+    } finally { gate.release(); }
+    await page.getByRole("button", { name: "Вернуться к оформлению" }).click();
+    await expect(page.getByTestId("checkout-cart-item-2")).toHaveCount(0);
+    if (omitEdited) {
+      await expect(page.getByText("Фигурка 1 — 6 шт.")).toBeVisible();
+      controller.cartItems.push(item(1, 6));
+      await page.getByRole("button", { name: "Обновить корзину" }).click();
+    }
+    await expect(getQuantityCounter(page, 1)).toContainText("6");
+    await expect(page.getByTestId("checkout-cart-item-3")).toBeVisible();
+    expect(posts).toHaveLength(1);
+  });
+}
 
 for (const olderPutOutcome of ["success", "failure"] as const) {
   test(`mounted quantity queue preserves the latest edit after older PUT ${olderPutOutcome}, delayed read and validation retry`, async ({

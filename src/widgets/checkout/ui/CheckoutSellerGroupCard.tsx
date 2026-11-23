@@ -15,6 +15,7 @@ import type { SellerCheckoutGroup } from "../model/types";
 import { SellerDeliverySelector } from "./SellerDeliverySelector";
 
 interface CheckoutSellerGroupCardProps {
+  showSellerDelivery: boolean;
   group: SellerCheckoutGroup;
   selectedProductIds: Set<number>;
   onToggleProductSelection: (productId: number, selected: boolean) => void;
@@ -68,6 +69,7 @@ const CheckoutQuantityCartItem = ({
 };
 
 export const CheckoutSellerGroupCard = ({
+  showSellerDelivery,
   group,
   selectedProductIds,
   onToggleProductSelection,
@@ -130,13 +132,13 @@ export const CheckoutSellerGroupCard = ({
         ))}
       </Box>
 
-      <Box sx={{ pt: 2 }}>
+      {showSellerDelivery && <Box sx={{ pt: 2 }}>
         <SellerDeliverySelector
           group={group}
           onSelect={onTransferSelect}
           onRetry={onRetryDelivery}
         />
-      </Box>
+      </Box>}
     </Paper>
   );
 };

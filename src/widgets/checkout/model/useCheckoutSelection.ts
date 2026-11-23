@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ProductBasket } from "@/entities/cart";
+import { ProductBasket, useCartQuantityStore } from "@/entities/cart";
 
 interface UseCheckoutSelectionProps {
   cartItems: ProductBasket[];
@@ -69,6 +69,7 @@ export const useCheckoutSelection = ({
 
   const toggleProductSelection = useCallback(
     (productId: number, selected: boolean) => {
+      useCartQuantityStore.getState().noteCheckoutSelectionChange(productId);
       setSelectedProductIds((prev) => {
         const next = new Set(prev);
 
@@ -86,6 +87,11 @@ export const useCheckoutSelection = ({
 
   const toggleSelectAll = useCallback(
     (selected: boolean) => {
+      for (const item of cartItems) {
+        if (selectedProductIds.has(item.product.id) !== selected) {
+          useCartQuantityStore.getState().noteCheckoutSelectionChange(item.product.id);
+        }
+      }
       if (selected) {
         setSelectedProductIds(new Set(cartItems.map((item) => item.product.id)));
         return;
@@ -93,7 +99,7 @@ export const useCheckoutSelection = ({
 
       setSelectedProductIds(new Set());
     },
-    [cartItems],
+    [cartItems, selectedProductIds],
   );
 
   return {

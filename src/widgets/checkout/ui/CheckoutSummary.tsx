@@ -22,6 +22,7 @@ interface CheckoutSummaryProps {
   cartItems: ProductBasket[];
   sellerDeliveries: SelectedSellerDelivery[];
   hasIncompleteDelivery: boolean;
+  hasUnknownDeliveryCost: boolean;
   isReadyToSubmit: boolean;
   submitBlockerMessage: string | null;
   isSubmitting: boolean;
@@ -34,6 +35,7 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
   cartItems,
   sellerDeliveries,
   hasIncompleteDelivery,
+  hasUnknownDeliveryCost,
   isReadyToSubmit,
   submitBlockerMessage,
   isSubmitting,
@@ -139,7 +141,7 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
             Доставка
           </Typography>
           <Typography data-testid="checkout-summary-delivery-total" variant="body1" fontWeight={500} sx={{ textAlign: "right" }}>
-            {hasIncompleteDelivery ? "Не рассчитана" : formattedDeliveryTotal}
+            {hasUnknownDeliveryCost ? "Стоимость доставки уточнит продавец" : hasIncompleteDelivery ? "Не рассчитана" : formattedDeliveryTotal}
           </Typography>
         </Box>
 
@@ -197,7 +199,7 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
           fontWeight={700}
           color="text.primary"
         >
-          {formattedOrderTotal}
+          {hasUnknownDeliveryCost ? "Пока неизвестно" : formattedOrderTotal}
         </Typography>
       </Box>
 

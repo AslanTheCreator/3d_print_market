@@ -365,6 +365,70 @@ const expectOrderPayload = async (
 };
 
 test.describe("checkout address creation", () => {
+  test("the next account starts with empty carrier and saved-address drafts", async ({ context, page, baseURL }) => {
+    await authenticate(context, baseURL);
+    const controller = await setupCheckoutApi(page);
+    let owner = 999;
+    for (const path of ["/auth/profile", "/participant"]) {
+      await page.route("http://127.0.0.1:9" + path, route => fulfillJson(route, {
+        id: owner, fullName: "Покупатель", login: "buyer-" + owner, role: "USER", status: "ACTIVE",
+        email: "buyer@example.test", mail: "buyer@example.test", imageId: null, image: [],
+        addresses: [], accounts: [], transfers: [], socialNetworks: [],
+      }));
+    }
+    await page.route("http://127.0.0.1:9/auth/login", route => {
+      if (route.request().method() === "POST") owner = 1000;
+      return fulfillJson(route, { access_token: "fixture-new-owner", refresh_token: "fixture-refresh-new-owner" });
+    });
+    await page.goto("/checkout");
+    await openAddressForm(page);
+    await fillAddressForm(page);
+    const carrier = page.getByRole("radio", { name: "Служба доставки и новый адрес" });
+    const address = page.getByRole("textbox", { name: /Адрес доставки или ПВЗ/ });
+    await carrier.check();
+    await address.fill("Частный адрес A");
+    await page.getByTestId("site-header").getByRole("link", { name: "Профиль", exact: true }).click();
+    await page.getByRole("button", { name: "Выход", exact: true }).click();
+    await expect(page).toHaveURL(/\/auth\/login/);
+    await page.getByLabel(/^Email/).fill("b@example.test");
+    await page.getByLabel(/^Пароль/).fill("password");
+    await page.getByRole("button", { name: "Войти", exact: true }).click();
+    await expect.poll(() => owner).toBe(1000);
+    await expect(page).not.toHaveURL(/\/auth\/login/);
+    await page.goto("/checkout");
+    await openAddressForm(page);
+    await expect(getAddressForm(page).getByLabel("Город", { exact: true })).toHaveValue("");
+    await carrier.check();
+    await expect(address).toHaveValue("");
+    expect(controller.postRequests).toEqual([]);
+  });
+
+  for (const width of [393, 1280]) {
+    test(`address draft survives mode switches at ${width}px and clears on cancel`, async ({ context, page, baseURL }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await authenticate(context, baseURL);
+      const controller = await setupCheckoutApi(page);
+      await page.goto("/checkout");
+      await openAddressForm(page);
+      await fillAddressForm(page);
+      const carrierMode = page.getByRole("radio", { name: "Служба доставки и новый адрес" });
+      const legacyMode = page.getByRole("radio", { name: "Сохранённый адрес и доставка продавца" });
+      await carrierMode.check();
+      const freeAddress = page.getByRole("textbox", { name: /Адрес доставки или ПВЗ/ });
+      await expect(freeAddress).toHaveValue("");
+      await freeAddress.fill("Другой ПВЗ");
+      await legacyMode.check();
+      await expectAddressValues(page);
+      await getAddressForm(page).getByRole("button", { name: "Отмена" }).click();
+      await openAddressForm(page);
+      await expect(getAddressForm(page).getByLabel("Город", { exact: true })).toHaveValue("");
+      await carrierMode.check();
+      await expect(freeAddress).toHaveValue("Другой ПВЗ");
+      expect(controller.postRequests).toEqual([]);
+      expect(controller.orderRequests).toEqual([]);
+    });
+  }
+
   test("creates the first address and blocks checkout through POST and the confirming GET", async ({
     context,
     page,

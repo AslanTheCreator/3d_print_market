@@ -23,6 +23,7 @@ import {
 } from "@mui/icons-material";
 import {
   OrderCalculationSummary,
+  OrderDeliverySnapshot,
   OrderStatusChip,
   shouldShowTrackingForRole,
   type ListOrdersModel,
@@ -164,14 +165,7 @@ export const OrderDetailsDialog = ({
                   fontSize="small"
                   sx={{ color: "text.secondary", mt: 0.25 }}
                 />
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Адрес
-                  </Typography>
-                  <Typography variant="body2" fontWeight={600}>
-                    {order.transfer.address?.trim() || "Не указан"}
-                  </Typography>
-                </Box>
+                <OrderDeliverySnapshot order={order} />
               </Stack>
 
             </OrderDetailsSection>

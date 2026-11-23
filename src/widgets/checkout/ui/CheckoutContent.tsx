@@ -3,13 +3,20 @@
 import React from "react";
 import {
   Box,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
   Grid,
+  MenuItem,
+  Radio,
+  RadioGroup,
   TextField,
   Paper,
   Typography,
   alpha,
   useTheme,
 } from "@mui/material";
+import { deliveryCarrierLabels, type DeliveryCarrier } from "@/entities/order";
 import { CheckoutState } from "../model/useCheckoutState";
 import { CheckoutCartSection } from "./CheckoutCartSection";
 import { CheckoutSummary } from "./CheckoutSummary";
@@ -30,26 +37,78 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
 }) => {
   const theme = useTheme();
   const commentLabelId = React.useId();
+  const deliveryLabelId = React.useId();
+  const carrierId = React.useId();
+  const addressId = React.useId();
+  const usesCarrier = checkoutState.deliveryMode === "carrier";
 
   return (
     <Grid container spacing={3}>
       {/* Левая колонка - основной контент */}
       <Grid item xs={12} lg={8}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {/* Адрес доставки */}
-          <AddressCheckoutSelector
-            addresses={checkoutState.addresses}
-            isLoading={checkoutState.isLoadingAddresses}
-            isError={checkoutState.isAddressesError}
-            selectedAddressId={checkoutState.selectedAddress?.id}
-            onAddressSelect={checkoutState.setSelectedAddress}
-            onRetry={() => void checkoutState.refetchAddresses()}
-            addressCreation={checkoutState.addressCreation}
-            isSubmitting={isSubmitting}
-          />
+          <FormControl component="fieldset" disabled={isSubmitting}>
+            <FormLabel component="legend" id={deliveryLabelId}>Способ оформления доставки</FormLabel>
+            <RadioGroup
+              aria-labelledby={deliveryLabelId}
+              value={checkoutState.deliveryMode}
+              onChange={(_, value) => checkoutState.setDeliveryMode(value === "carrier" ? "carrier" : "legacy")}
+            >
+              <FormControlLabel value="legacy" control={<Radio />} label="Сохранённый адрес и доставка продавца" sx={{ minHeight: 44 }} />
+              <FormControlLabel value="carrier" control={<Radio />} label="Служба доставки и новый адрес" sx={{ minHeight: 44 }} />
+            </RadioGroup>
+          </FormControl>
+          {usesCarrier && (
+            <>
+              <TextField
+                id={carrierId}
+                select
+                required
+                fullWidth
+                label="Служба доставки"
+                value={checkoutState.deliveryCarrier}
+                onChange={(event) => checkoutState.setDeliveryCarrier(event.target.value as DeliveryCarrier)}
+                error={checkoutState.deliveryErrors.carrier !== null}
+                helperText={checkoutState.deliveryErrors.carrier}
+                disabled={isSubmitting}
+              >
+                {Object.entries(deliveryCarrierLabels).map(([code, label]) => (
+                  <MenuItem key={code} value={code} sx={{ minHeight: 44 }}>{label}</MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                id={addressId}
+                required
+                fullWidth
+                multiline
+                minRows={2}
+                maxRows={5}
+                label="Адрес доставки или ПВЗ"
+                value={checkoutState.deliveryAddress}
+                onChange={(event) => checkoutState.setDeliveryAddress(event.target.value)}
+                error={checkoutState.deliveryErrors.address !== null}
+                helperText={checkoutState.deliveryErrors.address ?? `${checkoutState.deliveryAddress.length} из 2000 символов`}
+                disabled={isSubmitting}
+                sx={{ "& textarea": { overflowWrap: "anywhere" } }}
+              />
+            </>
+          )}
+          <div hidden={usesCarrier}>
+            <AddressCheckoutSelector
+              addresses={checkoutState.addresses}
+              isLoading={checkoutState.isLoadingAddresses}
+              isError={checkoutState.isAddressesError}
+              selectedAddressId={checkoutState.selectedAddress?.id}
+              onAddressSelect={checkoutState.setSelectedAddress}
+              onRetry={() => void checkoutState.refetchAddresses()}
+              addressCreation={checkoutState.addressCreation}
+              isSubmitting={isSubmitting}
+            />
+          </div>
 
           {/* Товары сгруппированы по продавцам вместе с их доставкой */}
           <CheckoutCartSection
+            showSellerDelivery={!usesCarrier}
             sellerGroups={checkoutState.sellerGroups}
             selectedProductIds={checkoutState.selectedProductIds}
             isAllSelected={checkoutState.isAllSelected}
@@ -102,8 +161,9 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({
       <Grid item xs={12} lg={4}>
         <CheckoutSummary
           cartItems={checkoutState.orderableSelectedItems}
-          sellerDeliveries={checkoutState.selectedSellerDeliveries}
-          hasIncompleteDelivery={checkoutState.sellerGroups.some(
+          sellerDeliveries={usesCarrier ? [] : checkoutState.selectedSellerDeliveries}
+          hasUnknownDeliveryCost={usesCarrier}
+          hasIncompleteDelivery={!usesCarrier && checkoutState.sellerGroups.some(
             (group) => group.isActive && (group.isLoading || group.isError || !group.selectedTransfer),
           )}
           isReadyToSubmit={checkoutState.isReadyToSubmit}

@@ -16,6 +16,7 @@ interface GetCheckoutSubmitReadinessParams {
   hasInsufficientStockSelectedItems?: boolean;
   isRefreshingCart?: boolean;
   activeSellerGroups: SellerCheckoutGroup[];
+  carrierDeliveryError?: string | null;
 }
 
 export interface CheckoutSubmitReadiness {
@@ -38,6 +39,7 @@ export function getCheckoutSubmitReadiness({
   hasInsufficientStockSelectedItems,
   isRefreshingCart,
   activeSellerGroups,
+  carrierDeliveryError,
 }: GetCheckoutSubmitReadinessParams): CheckoutSubmitReadiness {
   const submitBlockerMessage = getSubmitBlockerMessage({
     selectedAddress,
@@ -54,6 +56,7 @@ export function getCheckoutSubmitReadiness({
     hasInsufficientStockSelectedItems,
     isRefreshingCart,
     activeSellerGroups,
+    carrierDeliveryError,
   });
 
   return {
@@ -77,6 +80,7 @@ function getSubmitBlockerMessage({
   hasInsufficientStockSelectedItems = false,
   isRefreshingCart = false,
   activeSellerGroups,
+  carrierDeliveryError,
 }: GetCheckoutSubmitReadinessParams): string | null {
   if (selectedItemsCount === 0) {
     return "Выберите хотя бы один товар";
@@ -92,6 +96,13 @@ function getSubmitBlockerMessage({
 
   if (hasInsufficientStockSelectedItems) {
     return "Недостаточно товара для оформления заказа. Измените количество или снимите товар с выбора";
+  }
+
+  if (carrierDeliveryError !== undefined) {
+    if (isLoadingCurrentUser) return "Проверяем владельцев выбранных товаров";
+    if (isCurrentUserError) return "Не удалось проверить владельцев выбранных товаров";
+    if (hasOwnSelectedItems) return OWN_PRODUCT_MESSAGE;
+    return carrierDeliveryError;
   }
 
   if (isAddressCreationOpen) {
@@ -123,7 +134,7 @@ function getSubmitBlockerMessage({
   }
 
   if (hasOwnSelectedItems) {
-    return "Нельзя оформить заказ на собственный товар. Снимите его выбор или удалите из корзины";
+    return OWN_PRODUCT_MESSAGE;
   }
 
   if (activeSellerGroups.length === 0) {
@@ -152,3 +163,5 @@ function getSubmitBlockerMessage({
 
   return null;
 }
+
+const OWN_PRODUCT_MESSAGE = "Нельзя оформить заказ на собственный товар. Снимите его выбор или удалите из корзины";

@@ -1,5 +1,6 @@
 import type { ProductBasket } from "@/entities/cart";
 import type { Address } from "@/entities/address";
+import type { DeliveryCarrier, OrderCreateModel } from "@/entities/order";
 
 export interface OrderResult {
   productId: number;
@@ -8,18 +9,15 @@ export interface OrderResult {
   errorMessage?: string;
   errorCode?: string;
   retryable?: boolean;
+  cartItemChanged?: boolean;
 }
 
-export interface OrderToCreate {
-  productId: number;
+export type OrderToCreate = OrderCreateModel & {
   productName: string;
-  count: number;
-  addressId: number;
-  transferId: number;
-  comment: string;
-}
+};
 
 export interface CheckoutResult {
+  batchError?: string;
   success: OrderResult[];
   failed: OrderResult[];
   totalCount: number;
@@ -31,6 +29,7 @@ export interface OrderCreateCheckoutState {
   comment: string;
   isReadyToSubmit: boolean;
   getTransferIdForSeller: (sellerId: number) => number | null;
+  carrierDelivery?: { deliveryCarrier: DeliveryCarrier | ""; deliveryAddress: string };
 }
 
 export interface UseOrderCreateSubmitProps {

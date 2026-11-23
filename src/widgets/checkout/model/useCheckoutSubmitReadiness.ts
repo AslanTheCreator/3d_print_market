@@ -23,6 +23,7 @@ interface UseCheckoutSubmitReadinessProps {
   hasInsufficientStockSelectedItems: boolean;
   isRefreshingCart: boolean;
   activeSellerGroups: SellerCheckoutGroup[];
+  carrierDeliveryError?: string | null;
 }
 
 export const useCheckoutSubmitReadiness = ({
@@ -40,6 +41,7 @@ export const useCheckoutSubmitReadiness = ({
   hasInsufficientStockSelectedItems,
   isRefreshingCart,
   activeSellerGroups,
+  carrierDeliveryError,
 }: UseCheckoutSubmitReadinessProps): CheckoutSubmitReadiness => {
   return useMemo(
     () =>
@@ -58,9 +60,11 @@ export const useCheckoutSubmitReadiness = ({
         hasInsufficientStockSelectedItems,
         isRefreshingCart,
         activeSellerGroups,
+        carrierDeliveryError,
       }),
     [
       activeSellerGroups,
+      carrierDeliveryError,
       addressesCount,
       isAddressesError,
       isAddressCreationOpen,

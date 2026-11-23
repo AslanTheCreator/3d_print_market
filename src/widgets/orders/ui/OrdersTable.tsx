@@ -14,6 +14,7 @@ import { InfoOutlined } from "@mui/icons-material";
 import {
   getOrderProgressSteps,
   getOrderStatusMeta,
+  OrderDeliverySnapshot,
   OrderStatusChip,
   hasOrderPrepayment,
   shouldShowOrderProgress,
@@ -254,6 +255,7 @@ const OrderCard = ({
           imageSize={78}
           showCategory={false}
         />
+        <OrderDeliverySnapshot order={order} compact />
 
         <Box
           sx={{
