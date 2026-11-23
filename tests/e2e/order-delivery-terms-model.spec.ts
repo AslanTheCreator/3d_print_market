@@ -2,11 +2,13 @@ import { expect, test } from "@playwright/test";
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { adminOrderCaseKeys, adminOrderStatuses, casesAllowDelivery, editableDeliveryStatus,
   hasTermsVersion, knownOpenAdminCase, normalizeDeliveryAmount } from "@/entities/order";
-import { decodeTermsHistory } from "@/entities/order/lib/orderTermsHistory";
+import { decodeOrderTermsEvents, deliveryEvents } from "@/entities/order/lib/orderTermsHistory";
 import { createPrivateScope } from "@/shared/lib/query";
 import { deliveryAttemptState } from "@/features/order-delivery-terms/model/deliveryTermsAttempt";
 import { invalidateDeliveryReads, orderQueryKeys, orderTermsApi } from "@/entities/order";
 import { authClient } from "@/shared/api";
+
+const decodeTermsHistory = (events: unknown) => deliveryEvents(decodeOrderTermsEvents(JSON.stringify(events)));
 
 test("повреждённый сосед не скрывает корректные события", () => {
   const valid = { kind: "DELIVERY_CHANGED", payload: '{"after":{"deliveryAmount":"12345678901234567.89"}}' };

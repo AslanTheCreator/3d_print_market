@@ -2,6 +2,10 @@
 
 // Queries
 export { orderTermsApi } from "./api/orderTermsApi";
+export { orderPaymentApi } from "./api/orderPaymentApi";
+export { getOrderPaymentActions } from "./model/orderPayment";
+export type { PaymentContext, PaymentStage, SubmitPaymentRequest, ApprovePaymentRequest, ReturnPaymentRequest } from "./model/orderPayment";
+export type { OrderTermsEvent } from "./lib/orderTermsHistory";
 export { knownOpenAdminCase, casesAllowDelivery, readDeliveryOrder, readDeliveryCases, invalidateDeliveryReads } from "./model/orderTermsQueries";
 export { OrderDeliveryTermsHistory } from "./ui/OrderDeliveryTermsHistory";
 export { editableDeliveryStatus, hasAgentId, hasTermsVersion, normalizeDeliveryAmount } from "./model/orderTerms";

@@ -1,17 +1,13 @@
 import { authClient } from "@/shared/api";
-import { decodeTermsHistory } from "../lib/orderTermsHistory";
-import { hasAgentId, type DeliveryHistoryContext, type DeliveryTermsContext, type DeliveryTermsRequest } from "../model/orderTerms";
+import { decodeOrderTermsEvents } from "../lib/orderTermsHistory";
+import type { DeliveryHistoryContext, DeliveryTermsContext, DeliveryTermsRequest } from "../model/orderTerms";
+import { orderPath } from "./orderPath";
+import { orderTextResponse } from "./orderTextResponse";
 
-function orderPath(context: DeliveryHistoryContext, orderId: number) {
-  if (!Number.isSafeInteger(orderId) || orderId <= 0) throw new Error("Некорректный номер заказа");
-  if (context.role !== "admin") return `/order/${orderId}`;
-  if (!hasAgentId(context.agentId)) throw new Error("Некорректный номер агента");
-  return `/admin/actions/agents/${context.agentId}/orders/${orderId}`;
-}
 export const orderTermsApi = {
   async history(context: DeliveryHistoryContext, orderId: number, signal: AbortSignal) {
-    const { data } = await authClient.get<unknown>(orderPath(context, orderId) + "/terms-history", { signal });
-    return decodeTermsHistory(data);
+    const { data } = await authClient.get<unknown>(orderPath(context, orderId) + "/terms-history", { ...orderTextResponse, signal });
+    return decodeOrderTermsEvents(data);
   },
   async update(context: DeliveryTermsContext, orderId: number, body: DeliveryTermsRequest, signal: AbortSignal) {
     const url = orderPath(context, orderId);

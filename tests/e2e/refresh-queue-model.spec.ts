@@ -12,6 +12,9 @@ import { parseRuntimeApiUrl } from "@/shared/config/env";
 import type { useAuthStore as AuthStore } from "@/entities/session/model/authStore";
 import type { tokenRefreshManager as Manager } from "@/shared/lib/token/tokenRefreshManager";
 import type { AuthSessionAdapter } from "@/shared/api/axios/authSessionAdapter";
+import { orderPath } from "@/entities/order/api/orderPath";
+import { orderTextResponse } from "@/entities/order/api/orderTextResponse";
+import { hasTermsVersion } from "@/entities/order/model/orderTerms";
 
 const deferred = <T,>() => {
   let resolve!: (value: T) => void;
@@ -120,7 +123,7 @@ const fixture = () => {
     sent.push(config);
     if (config.headers.Authorization === "Bearer fresh") return response(config, {});
     throw new AxiosError("Unauthorized", "ERR_BAD_REQUEST", config, undefined, {
-      ...response(config, {}), status: 401,
+      ...response(config, '{"code":"TOKEN_INVALID_OR_EXPIRED","message":"Истёк токен"}'), status: 401,
     });
   };
   const fire = (delay: number) => {
@@ -128,10 +131,41 @@ const fixture = () => {
     expect(matches.length).toBeGreaterThan(0);
     return matches.map(([id, timer]) => { timers.delete(id); return timer.callback(); });
   };
-  return { ...clients, store, manager, tokens, refreshes, sent, timers, fire,
+  return { ...clients, store, manager, tokens, refreshes, sent, timers, fire, load,
     expired: () => expired,
   };
 };
+
+test("денежные POST F05 завершаются исходным 401 после refresh без повторной отправки", async () => {
+  const f = fixture();
+  const { orderPaymentApi: api } = f.load<typeof import("@/entities/order/api/orderPaymentApi")>(
+    "src/entities/order/api/orderPaymentApi.ts", {
+      "@/shared/api": f, "./orderPath": { orderPath }, "./orderTextResponse": { orderTextResponse }, "../model/orderTerms": { hasTermsVersion },
+    },
+  );
+  const signal = new AbortController().signal;
+  const version = { expectedVersion: 0 };
+  const buyer = { role: "customer" } as const;
+  const reviewers = [{ role: "seller" }, { role: "admin", agentId: 8 }] as const;
+  const requests = [
+    api.submit(buyer, 42, "prepayment", { ...version, imageId: 7 }, signal),
+    api.submit(buyer, 42, "full", { ...version, imageId: 7 }, signal),
+    ...reviewers.flatMap(context => [
+      api.approve(context, 42, version, signal),
+      api.returnPayment(context, 42, { ...version, reason: "Чек нечитаем" }, signal),
+    ]),
+  ];
+  const results = Promise.allSettled(requests);
+  await expect.poll(() => f.sent.length).toBe(6);
+  await expect.poll(() => f.refreshes.length).toBe(1);
+  f.refreshes[0].resolve("fresh");
+  for (const result of await results) {
+    expect(result).toMatchObject({ status: "rejected", reason: { statusCode: 401, code: "TOKEN_INVALID_OR_EXPIRED" } });
+  }
+  expect(f.tokens.accessToken).toBe("fresh");
+  expect(f.sent).toHaveLength(6);
+  expect(new Set(f.sent.map(config => config.url)).size).toBe(6);
+});
 
 test("timer, initialization and concurrent 401 share one refresh and preserve account scope", async () => {
   const f = fixture();

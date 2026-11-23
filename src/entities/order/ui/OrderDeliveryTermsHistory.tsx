@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePrivateScope } from "@/shared/lib/query";
 import { formatDateTime } from "@/shared/lib";
 import { orderTermsApi } from "../api/orderTermsApi";
+import { deliveryEvents } from "../lib/orderTermsHistory";
 import { orderQueryKeys } from "../model/queryKeys";
 import { adminOrderKeys } from "../model/adminQueries";
 import { hasAdminOrderCaseAccess } from "../model/adminOrderCaseQueries";
@@ -28,6 +29,7 @@ export function OrderDeliveryTermsHistory({ orderId, context, currency }: { orde
       }
       return orderTermsApi.history(context, orderId, signal);
     },
+    select: deliveryEvents,
     enabled: open && scope.id !== null && (context.role !== "admin" || hasAgentId(context.agentId)), retry: false,
   });
   return <Stack spacing={1}>
