@@ -24,6 +24,9 @@ import {
 import {
   OrderCalculationSummary,
   OrderDeliverySnapshot,
+  OrderDeliveryTermsHistory,
+  casesAllowDelivery,
+  hasTermsVersion,
   OrderStatusChip,
   shouldShowTrackingForRole,
   type ListOrdersModel,
@@ -43,6 +46,7 @@ import type { useOrderCaseHistory } from "../model/useOrderCaseHistory";
 import { OrderProductPreview } from "./OrderProductPreview";
 import { useOrderActionsRecovery } from "../model/orderActionsContext";
 import { OrderTracking } from "./OrderTracking";
+import { DeliveryTermsEditor } from "@/features/order-delivery-terms";
 
 interface OrderDetailsDialogProps {
   open: boolean;
@@ -59,7 +63,7 @@ export const OrderDetailsDialog = ({
   userRole,
   casesState,
 }: OrderDetailsDialogProps) => {
-  const { retry, retryPending } = useOrderActionsRecovery(order.orderId);
+  const { retry, retryPending, actionsAvailable } = useOrderActionsRecovery(order.orderId);
   const peerLabel = getOrderPeerLabel(userRole);
   const showTracking = shouldShowTrackingForRole(
     order.actualStatus,
@@ -167,6 +171,11 @@ export const OrderDetailsDialog = ({
                 />
                 <OrderDeliverySnapshot order={order} />
               </Stack>
+              {userRole === "seller" && <DeliveryTermsEditor key={order.orderId} order={order} context={{ role: "seller" }}
+                available={actionsAvailable && casesState.history.isSuccess && casesAllowDelivery(casesState.history.data, order.orderId)} />}
+              {userRole === "customer" && hasTermsVersion(order.termsVersion) &&
+                <Typography variant="caption">Версия условий: {order.termsVersion}</Typography>}
+              <OrderDeliveryTermsHistory context={{ role: userRole }} orderId={order.orderId} currency={order.calculation?.currency} />
 
             </OrderDetailsSection>
           </Box>

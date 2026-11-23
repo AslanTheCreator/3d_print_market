@@ -1,6 +1,11 @@
 ﻿export { orderQueryKeys } from "./model/queryKeys";
 
 // Queries
+export { orderTermsApi } from "./api/orderTermsApi";
+export { knownOpenAdminCase, casesAllowDelivery, readDeliveryOrder, readDeliveryCases, invalidateDeliveryReads } from "./model/orderTermsQueries";
+export { OrderDeliveryTermsHistory } from "./ui/OrderDeliveryTermsHistory";
+export { editableDeliveryStatus, hasAgentId, hasTermsVersion, normalizeDeliveryAmount } from "./model/orderTerms";
+export type { DeliveryTermsContext, DeliveryTermsRequest, TermsOrder } from "./model/orderTerms";
 export { orderCasesApi } from "./api/orderCasesApi";
 export { adminOrderCasesApi } from "./api/adminOrderCasesApi";
 export { adminOrderCaseKeys, hasAdminOrderCaseAccess, useAdminOrderCases, useAdminOrderCaseDetail } from "./model/adminOrderCaseQueries";

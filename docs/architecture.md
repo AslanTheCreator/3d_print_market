@@ -2,6 +2,10 @@
 
 ## Административная панель
 
+Детали заказа продавца и Drawer агента используют общую feature `order-delivery-terms`.
+Она хранит черновик формы и резервирует попытку в памяти QueryClient по сессии, роли, агенту и заказу.
+Ролевые API, чтение обращений и история условий принадлежат `entities/order`.
+
 `app/admin` содержит `/orders`, `/order-cases`, `/products`, `/products/[productId]`, `/agents`,
 `/agents/[agentId]`, `/giveaways`, `/giveaways/new` и `/giveaways/[productId]`; `/admin` перенаправляет на заказы. Маршрут бота
 собирает три widget через slots, без cross-widget imports. Бот имеет вкладки

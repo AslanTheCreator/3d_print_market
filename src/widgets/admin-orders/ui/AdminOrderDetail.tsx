@@ -7,10 +7,14 @@ import {
   OrderProductThumbnail,
   OrderCalculationSummary,
   OrderDeliverySnapshot,
+  OrderDeliveryTermsHistory,
+  hasAgentId,
+  type AdminOrderFilter,
   OrderStatusChip,
   type AdminOrderDto,
 } from "@/entities/order";
 import { AdminOrderActions } from "@/features/admin-order-action";
+import { DeliveryTermsEditor } from "@/features/order-delivery-terms";
 import { formatDateTime } from "@/shared/lib";
 const safeUrl = (value: string) => {
   try {
@@ -24,10 +28,13 @@ const safeUrl = (value: string) => {
 export function AdminOrderDetail({
   order,
   productImage,
+  filter,
+  onEditing,
   session,
   locked,
   readError,
   inCurrentList,
+  locatedForDelivery,
   refresh,
   lockPanel,
   changed,
@@ -35,10 +42,13 @@ export function AdminOrderDetail({
 }: {
   order: AdminOrderDto;
   productImage?: ImageMetadata;
+  filter: AdminOrderFilter;
+  onEditing: (editing: boolean) => void;
   session: number | null;
   locked: boolean;
   readError: boolean;
   inCurrentList: boolean;
+  locatedForDelivery: boolean;
   refresh: () => void;
   lockPanel: (value: boolean) => void;
   changed: (preserveDraft?: boolean) => Promise<void>;
@@ -84,10 +94,15 @@ export function AdminOrderDetail({
       <Typography>{order.userInfo.mail}</Typography>
       <Divider />
       <Typography variant="h6">Оплата</Typography>
-      {inCurrentList ? <OrderCalculationSummary order={order} onRefresh={refresh} refreshDisabled={locked} /> : <Typography>Заказ отсутствует в текущей выборке</Typography>}
+      {inCurrentList || locatedForDelivery ? <OrderCalculationSummary order={order} onRefresh={refresh} refreshDisabled={locked} /> : <Typography>Заказ отсутствует в текущей выборке</Typography>}
       <Divider />
       <Typography variant="h6">Доставка</Typography>
       <OrderDeliverySnapshot order={order} />
+      {hasAgentId(order.sellerId) ? <>
+        <DeliveryTermsEditor order={order} context={{ role: "admin", agentId: order.sellerId, filter }} onEditing={onEditing}
+          available={!locked && !readError && inCurrentList} />
+        <OrderDeliveryTermsHistory context={{ role: "admin", agentId: order.sellerId }} orderId={order.orderId} currency={order.calculation?.currency} />
+      </> : <Typography role="status">Условия и история доставки недоступны: не определён агент заказа.</Typography>}
 
       {trackingUrl && (
         <Button href={trackingUrl} target="_blank" rel="noopener noreferrer">

@@ -6,6 +6,7 @@ import { useAgents } from "@/entities/agent";
 import { ImageMetadataFeedback, mapImageMetadata, useImageMetadataQuery } from "@/entities/image";
 import {
   adminOrderKeys,
+  adminOrderApi,
   getOrderPaymentBreakdown,
   OrderDeliverySnapshot,
   adminOrderStatuses,
@@ -17,7 +18,7 @@ import {
   type AdminOrderDto,
   type OrderStatus,
 } from "@/entities/order";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
   Button,
@@ -59,13 +60,23 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
   });
   const [selection, setSelection] = useState<{ order: AdminOrderDto; session: number | null } | null>(null);
   const [locked, setLocked] = useState(false);
+  const [editingDelivery, setEditingDelivery] = useState(false);
   const anchor = selection?.session === sessionKey && (selectedAgent === undefined || selection.order.sellerId === selectedAgent)
     ? selection.order : null;
   const currentOrder = anchor && query.data?.find(order =>
     order.orderId === anchor.orderId && order.sellerId === anchor.sellerId);
+  const located = useQuery({
+    queryKey: adminOrderKeys.located(sessionKey, anchor?.sellerId, anchor?.orderId),
+    queryFn: ({ signal }) => anchor ? adminOrderApi.find(anchor.sellerId, anchor.orderId, signal) : null,
+    enabled: !!anchor && editingDelivery && query.isSuccess && !currentOrder, retry: false,
+  });
+  const locatedOrder = editingDelivery && located.isSuccess && located.data?.sellerId === anchor?.sellerId ? located.data : null;
   // Пока операция открыта, сохраняем её форму, даже если заказ выпал из выдачи.
-  const selected = currentOrder ?? (locked ? anchor : null);
-  const setSelected = (order: AdminOrderDto | null) => setSelection(order && { order, session: sessionKey });
+  const selected = currentOrder ?? locatedOrder ?? (locked || editingDelivery ? anchor : null);
+  const setSelected = (order: AdminOrderDto | null) => {
+    setEditingDelivery(false);
+    setSelection(order && { order, session: sessionKey });
+  };
   const imageQuery = useImageMetadataQuery(query.data?.map(order => order.product.imageId));
   const orders = mapImageMetadata(query.data ?? [], order => order.product.imageId, imageQuery.data);
   const [message, setMessage] = useState("");
@@ -307,12 +318,15 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
         {selected && (
           <AdminOrderDetail
             key={`${sessionKey}-${selected.sellerId}-${selected.orderId}`}
+            filter={{ agentId: selectedAgent, status, page }}
+            onEditing={setEditingDelivery}
             order={selected}
             productImage={imageQuery.data?.find(image => image.id === selected.product.imageId)}
             session={sessionKey}
             locked={locked}
             readError={query.isError}
             inCurrentList={!!currentOrder}
+            locatedForDelivery={!!locatedOrder}
             refresh={() => void query.refetch()}
             lockPanel={lockPanel}
             changed={changed}

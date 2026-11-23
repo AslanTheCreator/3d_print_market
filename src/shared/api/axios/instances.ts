@@ -31,6 +31,12 @@ import { getAuthSessionAdapter } from "./authSessionAdapter";
 // ТИПЫ
 // ============================================================================
 
+declare module "axios" {
+  interface AxiosRequestConfig {
+    replayAfterRefresh?: boolean;
+  }
+}
+
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
   _sessionSignal?: AbortSignal;
@@ -340,6 +346,7 @@ const setupAuthInterceptor = (instance: AxiosInstance): void => {
         adapter.onSessionExpired();
         throw new ApiError("Сессия истекла", ErrorCodes.TOKEN_INVALID_OR_EXPIRED, 401);
       }
+      if (originalRequest.replayAfterRefresh === false) throw error;
       originalRequest.headers["Authorization"] = "Bearer " + newToken;
       return instance(originalRequest);
     },
