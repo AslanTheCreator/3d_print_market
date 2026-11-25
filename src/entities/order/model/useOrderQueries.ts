@@ -23,7 +23,8 @@ export function usePaymentTermsCheck(role: "customer" | "seller") {
   return (order: Pick<ListOrdersDto, "orderId" | "actualStatus" | "calculation" | "termsVersion" | "deliveryAddress" | "deliveryCarrier">) => {
     const query = client.getQueryState<ListOrdersDto[]>(scope.key(key));
     const cached = query?.data?.find(item => item.orderId === order.orderId);
-    return scope.isCurrent() && query?.status === "success" && cached?.actualStatus === order.actualStatus &&
+    const review = client.getQueryData<{ blocked: boolean }>(scope.key(orderQueryKeys.reviewAttempt(order.orderId)));
+    return !(role === "customer" && review?.blocked) && scope.isCurrent() && query?.status === "success" && cached?.actualStatus === order.actualStatus &&
       (role !== "customer" || (cached.deliveryAddress === order.deliveryAddress && cached.deliveryCarrier === order.deliveryCarrier)) &&
       hasCurrentDeliveryVersion(client, scope, cached) &&
       getOrderPaymentBreakdown(cached).fingerprint === getOrderPaymentBreakdown(order).fingerprint;

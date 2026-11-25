@@ -12,12 +12,11 @@ import {
   Typography,
 } from "@mui/material";
 import { Refresh } from "@mui/icons-material";
-import { useOrderImagesQuery } from "@/entities/image";
+import { toOrderImageDataUrl, useOrderImagesQuery } from "@/entities/image";
 import {
   ImageGallery,
   type ImageGalleryImage,
 } from "@/shared/ui/image-gallery";
-import type { ImageResponse } from "@/entities/image";
 
 interface OrderImagesSectionProps {
   orderId: number;
@@ -30,42 +29,6 @@ const labels = {
   order: { title: "Изображения заказа", subject: "изображения заказа", genitive: "изображений заказа", testId: "order-images" },
   case: { title: "Изображения обращения", subject: "изображения обращения", genitive: "изображений обращения", testId: "case-images" },
   payment: { title: "Подтверждение оплаты", subject: "подтверждение оплаты", genitive: "подтверждения оплаты", testId: "payment-proof" },
-};
-
-const IMAGE_CONTENT_TYPE_PATTERN = /^image\/[a-z0-9.+-]+$/i;
-const BASE64_PATTERN =
-  /^(?:[a-z0-9+/]{4})*(?:[a-z0-9+/]{2}(?:==)?|[a-z0-9+/]{3}=?)?$/i;
-
-const isImageResponse = (value: unknown): value is ImageResponse => {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const image = value as Partial<ImageResponse>;
-
-  return (
-    typeof image.contentType === "string" &&
-    typeof image.imageData === "string"
-  );
-};
-
-const toImageDataUrl = (image: unknown): string | null => {
-  if (!isImageResponse(image)) {
-    return null;
-  }
-
-  const contentType = image.contentType.trim().toLowerCase();
-  const imageData = image.imageData.replace(/\s/g, "");
-
-  if (
-    !IMAGE_CONTENT_TYPE_PATTERN.test(contentType) ||
-    !imageData ||
-    !BASE64_PATTERN.test(imageData)
-  ) {
-    return null;
-  }
-
-  return `data:${contentType};base64,${imageData}`;
 };
 
 export const OrderImagesSection = ({
@@ -93,7 +56,7 @@ export const OrderImagesSection = ({
   const galleryImages = useMemo<ImageGalleryImage[]>(
     () =>
       (imageResponses ?? []).flatMap((image) => {
-        const source = toImageDataUrl(image);
+        const source = toOrderImageDataUrl(image);
 
         return source
           ? [

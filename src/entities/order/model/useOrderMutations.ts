@@ -65,26 +65,6 @@ export const useConfirmOrderBySeller = () => {
   });
 };
 
-// Хук для подтверждения предзаказа продавцом
-export const useConfirmPreOrderBySeller = () => {
-  const queryClient = useQueryClient();
-  const scope = usePrivateScope();
-
-  return usePrivateMutation({
-    mutationKey: scope.key(orderQueryKeys.sellerConfirmation("preorder")),
-    networkMode: "always",
-    mutationFn: ({
-      orderId,
-      comment = "",
-    }: {
-      orderId: number;
-      comment?: string;
-    }) => orderApi.confirmPreOrderBySeller(orderId, comment),
-    onSettled: () => invalidateOrdersLists(queryClient, scope),
-    onError: logMutationError("Ошибка подтверждения предзаказа продавцом:"),
-  });
-};
-
 // Хук для подтверждения получения заказа покупателем
 export const useConfirmReceiptByCustomer = () => {
   const queryClient = useQueryClient();

@@ -1,3 +1,4 @@
+import { exactInteger } from "./exactInteger";
 import { hasTermsVersion, normalizeDeliveryAmount } from "../model/orderTerms";
 
 function record(value: unknown): Record<string, unknown> {
@@ -11,12 +12,6 @@ function snapshot(value: unknown) {
     amount: data.deliveryAmount === null ? null : typeof data.deliveryAmount === "string"
       ? normalizeDeliveryAmount(data.deliveryAmount) : undefined,
   };
-}
-
-// Дробь или экспонента могут дать безопасное целое после JSON.parse. Проверяем и исходную запись.
-function exactInteger(value: unknown, source: string | undefined, minimum: number) {
-  return typeof value === "number" && Number.isSafeInteger(value) && value >= minimum && source === String(value)
-    ? value : undefined;
 }
 
 function readPayload(raw: unknown) {

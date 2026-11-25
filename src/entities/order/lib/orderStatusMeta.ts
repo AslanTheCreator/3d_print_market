@@ -85,6 +85,7 @@ const ORDER_STATUS_META: Record<OrderStatus, OrderStatusMeta> = {
 export const SELLER_ORDER_ACTION_STATUSES: readonly OrderStatus[] = [
   "BOOKED",
   "AWAITING_PREPAYMENT_APPROVAL",
+  "AWAITING_PAYMENT_APPROVAL",
   "ASSEMBLING",
 ];
 
@@ -138,7 +139,7 @@ const SELLER_STATUSES_WITH_PAYMENT_PROOF: readonly OrderStatus[] = [
 const REGULAR_PROGRESS_STEPS: readonly OrderProgressStep[] = [
   { key: "BOOKED", label: "Забронирован", sellerAction: true },
   { key: "AWAITING_PAYMENT", label: "Оплата", customerAction: true },
-  { key: "AWAITING_PAYMENT_APPROVAL", label: "Проверка оплаты" },
+  { key: "AWAITING_PAYMENT_APPROVAL", label: "Проверка оплаты", sellerAction: true },
   { key: "ASSEMBLING", label: "Сборка", sellerAction: true },
   { key: "ON_THE_WAY", label: "В пути", customerAction: true },
   { key: "COMPLETED", label: "Завершен" },
@@ -153,7 +154,7 @@ const PREPAYMENT_PROGRESS_STEPS: readonly OrderProgressStep[] = [
     sellerAction: true,
   },
   { key: "AWAITING_PAYMENT", label: "Оплата", customerAction: true },
-  { key: "AWAITING_PAYMENT_APPROVAL", label: "Проверка оплаты" },
+  { key: "AWAITING_PAYMENT_APPROVAL", label: "Проверка оплаты", sellerAction: true },
   { key: "ASSEMBLING", label: "Сборка", sellerAction: true },
   { key: "ON_THE_WAY", label: "В пути", customerAction: true },
   { key: "COMPLETED", label: "Завершен" },

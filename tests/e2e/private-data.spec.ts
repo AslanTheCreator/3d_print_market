@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
+import { reviewFixture } from "./helpers/sellerPaymentReview";
 import { setupMobileAccount, orderFixture, png } from "./helpers/mobileAccount";
 
 test.setTimeout(90_000);
@@ -9,8 +10,8 @@ const reply = (route: Route, data: unknown, status = 200) => route.fulfill({
   contentType: "application/json", body: route.request().method() === "OPTIONS" ? undefined : JSON.stringify(data),
 });
 
-async function setup(page: Page, baseURL?: string) {
-  await setupMobileAccount(page, baseURL);
+async function setup(page: Page, baseURL?: string, sellerReview = false) {
+  if (!sellerReview) await setupMobileAccount(page, baseURL);
   await page.context().addCookies([{ name: "refresh_token", value: "fixture-refresh", url: baseURL! }, { name: "token_created_at", value: String(Date.now()), url: baseURL! }]);
   const state = { owner: 1, refreshStatus: 200, uploads: 0, refreshes: 0, forceRefresh: false };
   for (const path of ["/auth/profile", "/participant"]) {
@@ -27,7 +28,7 @@ async function setup(page: Page, baseURL?: string) {
     if (route.request().method() !== "OPTIONS") state.refreshes++;
     return reply(route, state.refreshStatus === 200 ? "fixture-refreshed" : { message: "Expired" }, state.refreshStatus);
   });
-  await page.route("http://127.0.0.1:9/images?*", route => {
+  if (!sellerReview) await page.route("http://127.0.0.1:9/images?*", route => {
     if (route.request().method() === "POST") {
       state.uploads++;
       if (state.forceRefresh && state.uploads === 1) return reply(route, { code: "TOKEN_INVALID_OR_EXPIRED" }, 401);
@@ -155,3 +156,52 @@ for (const pending of ["upload", "payment"]) test("смена аккаунта �
   expect(uploads).toEqual([1]);
   expect(posts).toEqual(pending === "payment" ? [1] : []);
 });
+
+for (const point of ["image", "post", "control"] as const) {
+  test("смена продавца во время " + point + " изолирует чек и решение", async ({ page, baseURL }) => {
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    let waiting = false;
+    let posts = 0;
+    const { fixture, dialog, sendBack, reason } = await reviewFixture(page, baseURL, false, async () => {
+      await setup(page, baseURL, true);
+      await page.route("**/images?ids=*", async route => {
+        if (route.request().method() === "GET" && point === "image" && route.request().url().endsWith("700")) {
+          waiting = true;
+          await gate;
+        }
+        return reply(route, [{ fileName: "proof.png", contentType: "image/png", imageData: png }]).catch(() => {});
+      });
+      await page.route("**/order/51/payments/review/return", async route => {
+        if (route.request().method() === "POST") {
+          posts++;
+          if (point === "post") { waiting = true; await gate; }
+        }
+        return reply(route, 51).catch(() => {});
+      });
+      await page.route("**/order/51/terms-history", async route => {
+        if (route.request().method() === "GET" && posts && point === "control") { waiting = true; await gate; }
+        return reply(route, []).catch(() => {});
+      });
+    });
+    try {
+      await reason.fill("Черновик первого продавца");
+      if (point !== "image") await sendBack.click();
+      await expect.poll(() => waiting).toBe(true);
+      await page.getByRole("button", { name: "Выход", exact: true, includeHidden: true }).evaluate(button => (button as HTMLButtonElement).click());
+      await expect(page).toHaveURL(/\/auth\/login/);
+      fixture.order.product.sellerId = 2;
+      fixture.order.paymentProofImageId = 702;
+      await loginB(page);
+      await page.locator('a[href="/dashboard"]').first().click();
+      await expect(page.getByText("account-2", { exact: true }).first()).toBeVisible();
+      await page.locator('a[href="/dashboard/sales"]').first().click();
+      await page.getByRole("button", { name: "Проверить оплату", exact: true }).last().click();
+      await expect(dialog.getByAltText("Текущий чек №702")).toBeVisible();
+    } finally { release(); }
+    await expect(reason).toHaveValue("");
+    await expect(dialog.getByAltText("Текущий чек №700")).toHaveCount(0);
+    await expect(dialog.getByRole("button", { name: "Проверить результат" })).toHaveCount(0);
+    expect(posts).toBe(point === "image" ? 0 : 1);
+  });
+}

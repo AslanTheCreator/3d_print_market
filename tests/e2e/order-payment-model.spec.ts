@@ -58,7 +58,7 @@ test("missing, unknown, partial and malformed calculations remain distinct", () 
   expect(read({ deliveryAmount: null, totalAmount: null, remainingAmount: null }).prepaymentBlock).toBeNull();
   expect(read({ deliveryAmount: null, totalAmount: null, remainingAmount: null }).paymentBlock).toContain("неизвестен");
   expect(read({ deliveryAmount: "0.00" }).format("deliveryAmount")).toMatch(/^0,00/);
-  expect(read({ remainingAmount: "0.00" }).paymentBlock).toContain("не требуется");
+  expect(read({ confirmedPaidAmount: "4500.00", remainingAmount: "0.00" }).paymentBlock).toContain("не требуется");
   expect(read({ confirmedPaidAmount: null, remainingAmount: null }).format("totalAmount")).toMatch(/4\s500,00/);
   for (const value of [42, "4.001", "-1", "4e3", ""]) {
     const invalid = read({ goodsAmount: value as string });
@@ -171,4 +171,19 @@ test("сверка всех переходов от исходного чека 
   }
   expect(sameProofCycle(decode(rows.slice(0, 4)), 0, 4)).toBe(false);
   expect(sameProofCycle(decode([event(10, "DELIVERY_CHANGED", 0, 0), event(12, "DELIVERY_CHANGED", 1, 0)]), 0, 2)).toBe(true);
+});
+
+test("exact three-amount invariant preserves partial and inconsistent server data", () => {
+  for (const [currency, scale, totalAmount, confirmedPaidAmount, remainingAmount, valid] of [
+    ["RUB", 2, "4500.00", "1000.00", "3500.00", true],
+    ["RUB", 2, "4500.00", "1000.00", "2500.00", false],
+    ["JPY", 0, "0", "0", "0", true],
+    ["USD", 3, "9007199254740993.003", "9007199254740993.001", "0.002", true],
+    ["USD", 3, "9007199254740993.003", "9007199254740993.001", "0.001", false],
+  ] as const) {
+    const calculation = orderCalculation({ currency, scale, totalAmount, confirmedPaidAmount, remainingAmount });
+    const breakdown = getOrderPaymentBreakdown({ calculation, termsVersion: 0 });
+    expect(breakdown.prepaymentBlock === null).toBe(valid);
+    expect(breakdown.amounts.remainingAmount).toBe(remainingAmount);
+  }
 });

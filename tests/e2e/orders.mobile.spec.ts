@@ -5,7 +5,7 @@ test.setTimeout(90_000);
 const widths = [320, 393, 599, 600, 768, 899, 900];
 
 for (const role of ["purchase", "sales"] as const) {
-  test(`${role}: full payment review stays visible and has no mobile action`, async ({ page, baseURL }) => {
+  test(`${role}: full payment review stays visible and requires an eligible seller`, async ({ page, baseURL }) => {
     const state = await setupMobileAccount(page, baseURL);
     const order = orderFixture(4, "AWAITING_PAYMENT_APPROVAL", 4);
     order.histories.push({ status: order.actualStatus, comment: null, changedAt: order.createdAt });
@@ -20,7 +20,8 @@ for (const role of ["purchase", "sales"] as const) {
     await expect(page.getByRole("article", { name: "Заказ №5", exact: true })).toContainText("Актуальный расчёт не получен");
     await expect(card).toContainText("4 500,00 ₽");
     await expect(card.getByText(status, { exact: true })).toBeVisible();
-    await expect(card.getByRole("button")).toHaveCount(1);
+    await expect(card.getByRole("button")).toHaveCount(role === "sales" ? 2 : 1);
+    if (role === "sales") await expect(card.getByRole("button", { name: "Проверить оплату" })).toBeDisabled();
     await expectNoOverflow(page);
     await page.getByRole("button", { name: "Фильтры и сортировка" }).click();
     await page.getByRole("radio", { name: role === "purchase" ? /Активные/ : /На проверке оплаты/ }).check();

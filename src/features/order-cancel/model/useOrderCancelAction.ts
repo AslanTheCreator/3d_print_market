@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { orderApi, orderQueryKeys, useCancelOrder } from "@/entities/order";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { hashKey, useQueryClient } from "@tanstack/react-query";
+import { getOrderStatusMeta, hasTermsVersion, orderApi, orderQueryKeys, useCancelOrder } from "@/entities/order";
 import type { ListOrdersDto, OrderCancel, OrderStatus } from "@/entities/order";
 import { usePrivateScope } from "@/shared/lib/query";
 import { ApiError } from "@/shared/lib/errorHandler";
@@ -15,6 +15,7 @@ interface UseOrderCancelActionOptions {
 interface OrderCancelActionResult {
   cancelOrder: (params: OrderCancel, onOperationSuccess?: () => void) => Promise<void>;
   isPending: boolean;
+  reviewBlocked: boolean;
   isAccepted: boolean;
   draft: { reason: string; comment: string };
   setDraft: (draft: Partial<CancelActionState["draft"]>) => void;
@@ -25,6 +26,7 @@ interface OrderCancelActionResult {
 }
 
 interface CancelActionState {
+  versionAtStart?: number;
   busy: boolean;
   accepted: boolean;
   recovery: "none" | "rejected" | "unknown";
@@ -51,14 +53,21 @@ export const useOrderCancelAction = ({
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   // Общий guard и ввод живут до завершения приватного scope, а не до unmount формы.
-  const actionKey = scope.key(["orderCancel", order.orderId]);
-  const { data: state } = useQuery({
-    queryKey: actionKey, queryFn: () => initialState, initialData: initialState,
-    enabled: false, staleTime: Infinity, gcTime: Infinity,
+  const actionKey = scope.key(orderQueryKeys.cancelAttempt(order.orderId));
+  const actionHash = hashKey(actionKey);
+  const reviewKey = scope.key(orderQueryKeys.reviewAttempt(order.orderId));
+  const reviewHash = hashKey(reviewKey);
+  const subscribe = (notify: () => void) => queryClient.getQueryCache().subscribe(event => {
+    if (event.query.queryHash === actionHash || event.query.queryHash === reviewHash) notify();
   });
   const getState = () => queryClient.getQueryData<CancelActionState>(actionKey) ?? initialState;
+  const reviewBlocked = () => !!queryClient.getQueryData<{ blocked: boolean }>(reviewKey)?.blocked;
+  const state = useSyncExternalStore(subscribe, getState, getState);
+  const blocked = useSyncExternalStore(subscribe, reviewBlocked, reviewBlocked);
   const update = (patch: Partial<CancelActionState>) => {
-    if (scope.isCurrent()) queryClient.setQueryData<CancelActionState>(actionKey, previous => ({ ...(previous ?? initialState), ...patch }));
+    if (!scope.isCurrent()) return;
+    queryClient.getQueryCache().build(queryClient, { queryKey: actionKey, gcTime: Infinity });
+    queryClient.setQueryData<CancelActionState>(actionKey, previous => ({ ...(previous ?? initialState), ...patch }));
   };
   const queryKey = scope.key(userRole === "seller" ? orderQueryKeys.sellerOrders() : orderQueryKeys.customerOrders());
   const isCurrent = () => mounted.current && scope.isCurrent() && currentOrder.current.orderId === order.orderId;
@@ -81,10 +90,16 @@ export const useOrderCancelAction = ({
         queryFn: ({ signal }) => userRole === "seller" ? orderApi.getSellerOrders(signal) : orderApi.getCustomerOrders(signal),
       });
       if (!scope.isCurrent()) return;
-      const status = orders.find(item => item.orderId === order.orderId)?.actualStatus;
+      const row = orders.find(item => item.orderId === order.orderId);
+      const version = getState().versionAtStart;
+      const readVersion = row?.termsVersion;
+      if (version !== undefined && (!hasTermsVersion(readVersion) || readVersion < version)) {
+        throw new Error("Устаревшая версия заказа");
+      }
+      const status = row?.actualStatus;
       if (status === "CANCELLED") { complete(onOperationSuccess); return; }
-      if (status && status !== "BOOKED") {
-        update({ recoveryMessage: "Статус заказа изменился. Прямая отмена недоступна." });
+      if (status && getOrderStatusMeta(status) && status !== "BOOKED") {
+        update({ recovery: getState().recovery === "rejected" ? "none" : "unknown", recoveryMessage: "Статус заказа изменился. Прямая отмена недоступна." });
       } else if (status === "BOOKED" && getState().recovery === "rejected") {
         update({ recovery: "none", recoveryMessage: "Отмена отклонена. Заказ перечитан; можно повторить попытку." });
       } else {
@@ -105,6 +120,7 @@ export const useOrderCancelAction = ({
   const cancelOrder = async (params: OrderCancel, onOperationSuccess?: () => void) => {
     const current = getState();
     if (current.busy || current.accepted || current.recovery !== "none" || !isCurrent()) return;
+    if (reviewBlocked()) return;
     const cached = queryClient.getQueryData<ListOrdersDto[]>(queryKey)?.find(item => item.orderId === order.orderId);
     if (queryClient.getQueryState(queryKey)?.status === "error") {
       update({ recoveryMessage: "Сначала обновите список заказов. Отмена по устаревшим данным недоступна." });
@@ -114,7 +130,8 @@ export const useOrderCancelAction = ({
       update({ recoveryMessage: "Прямая отмена доступна только для забронированного заказа." });
       return;
     }
-    update({ busy: true, recoveryMessage: "" });
+    const version = cached?.termsVersion;
+    update({ busy: true, versionAtStart: hasTermsVersion(version) ? version : undefined, recoveryMessage: "" });
     try {
       await mutation.mutateAsync({ orderId: order.orderId, ...params });
       if (scope.isCurrent()) complete(onOperationSuccess);
@@ -133,12 +150,13 @@ export const useOrderCancelAction = ({
   return {
     cancelOrder,
     isPending: state.busy,
+    reviewBlocked: blocked,
     isAccepted: state.accepted,
     draft: state.draft,
     setDraft: draft => update({ draft: { ...getState().draft, ...draft } }),
     resetDraft: () => {
       const current = getState();
-      if (!current.busy && current.recovery === "none") update({ draft: initialState.draft });
+      if (current !== initialState && !current.busy && current.recovery === "none") update({ draft: initialState.draft });
     },
     requiresCheck: state.recovery !== "none",
     recoveryMessage: state.recoveryMessage,

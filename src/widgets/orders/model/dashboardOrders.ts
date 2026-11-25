@@ -153,7 +153,7 @@ export const getOrdersStatCounts = (
   ).length,
   sellerConfirm: orders.filter((order) =>
     ORDER_NEW_STATUSES.includes(order.actualStatus) ||
-    order.actualStatus === "AWAITING_PREPAYMENT_APPROVAL",
+    order.actualStatus === "AWAITING_PREPAYMENT_APPROVAL" || order.actualStatus === "AWAITING_PAYMENT_APPROVAL",
   ).length,
   sellerShipping: orders.filter((order) =>
     ORDER_ASSEMBLING_STATUSES.includes(order.actualStatus),

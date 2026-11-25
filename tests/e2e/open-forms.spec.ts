@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { reviewFixture } from "./helpers/sellerPaymentReview";
 import { setupAdmin } from "./helpers/admin";
 import { fulfillJson, orderFixture, png, setupMobileAccount } from "./helpers/mobileAccount";
 
@@ -33,52 +34,38 @@ async function tryPendingClose(page: Page, dialog: Locator, closeName: string) {
 }
 
 test("seller prepayment confirmation survives close attempts and remount during one POST", async ({ page, baseURL }) => {
-  const state = await setupMobileAccount(page, baseURL);
-  const order = orderFixture(11, "AWAITING_PREPAYMENT_APPROVAL", 1);
-  state.sellerOrders = [order];
+  const { fixture, dialog, approve, checkbox } = await reviewFixture(page, baseURL, true);
   const gate = deferred();
-  let posts = 0;
-  await page.route("**/order/11/AWAITING_PAYMENT?*", async route => {
-    if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
-    posts++;
-    if (posts === 1) {
-      await gate.promise;
-      return fulfillJson(route, { code: "ORDER_STATUS_CONFLICT", message: "Подтверждение отклонено" }, 409);
-    }
-    order.actualStatus = "AWAITING_PAYMENT";
-    return fulfillJson(route, 11);
-  });
-  await page.goto("/dashboard/sales");
-  const open = page.getByRole("button", { name: "Подтвердить предоплату", exact: true }).first();
-  await open.click();
-  const dialog = page.getByRole("dialog");
-  const confirm = dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true });
-  await confirm.evaluate(button => { (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click(); });
+  fixture.gate = gate.promise;
+  fixture.responseStatus = 400;
+  fixture.responseBody = { code: "ORDER_PAYMENT_INVALID", message: "Платёж отклонён" };
+  await checkbox.check();
+  await approve.evaluate(button => { (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click(); });
+  const open = page.getByRole("button", { name: "Подтвердить предоплату", exact: true }).last();
   try {
-    await expect.poll(() => posts).toBe(1);
-    await tryPendingClose(page, dialog, "Отмена");
-    await expect(dialog.getByRole("button", { name: /Закрыть окно/ })).toBeDisabled();
-    state.sellerOrders = [orderFixture(12, "AWAITING_PREPAYMENT_APPROVAL", 2)];
+    await expect.poll(() => fixture.posts.length).toBe(1);
+    await tryPendingClose(page, dialog, "Закрыть");
+    fixture.account.sellerOrders = [{ ...fixture.order, orderId: 12 }];
     await reconnect(page);
     await expect(dialog).toBeHidden();
     await open.click();
-    await expect(confirm).toBeEnabled();
-    await dialog.getByRole("button", { name: "Отмена" }).click();
-    await expect(dialog).toBeHidden();
-    state.sellerOrders = [order];
+    const next = page.getByRole("dialog", { name: "Проверка платежа по заказу №12" });
+    await next.getByRole("checkbox").check();
+    await expect(next.getByRole("button", { name: "Подтвердить оплату" })).toBeEnabled();
+    await next.getByRole("button", { name: "Закрыть", exact: true }).click();
+    fixture.account.sellerOrders = [fixture.order];
     await reconnect(page);
-    await expect(page.getByRole("button", { name: "Подробнее о заказе №11", exact: true }).first()).toBeVisible();
-    await open.click();
-    await expect(dialog.getByRole("button", { name: "Подтверждение...", exact: true })).toBeDisabled();
-    expect(posts).toBe(1);
+    await page.getByRole("button", { name: "Проверить результат", exact: true }).last().click();
+    await expect(approve).toBeDisabled();
+    expect(fixture.posts).toHaveLength(1);
   } finally { gate.resolve(); }
-  await expect(confirm).toBeEnabled();
-  await dialog.getByRole("button", { name: "Отмена" }).click();
-  await expect(dialog).toBeHidden();
+  await expect(dialog.getByText("Платёж отклонён")).toBeVisible();
+  await dialog.getByRole("button", { name: "Закрыть", exact: true }).click();
   await open.click();
-  await confirm.click();
-  await expect(dialog).toBeHidden();
-  expect(posts).toBe(2);
+  await checkbox.check();
+  await approve.click();
+  await expect.poll(() => fixture.posts.length).toBe(2);
+  expect(fixture.legacy).toBe(0);
 });
 
 for (const status of [503, 200]) test(`remounted buyer form hides payment instructions during pending and handles late HTTP ${status}`, async ({ page, baseURL }) => {

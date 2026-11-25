@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { authClient } from "@/shared/api";
-import { adminOrderStatuses, getOrderPaymentActions, orderPaymentApi, orderTermsApi,
+import { orderApi, adminOrderApi, adminOrderStatuses, getOrderPaymentActions, orderPaymentApi, orderTermsApi,
   type ApprovePaymentRequest, type PaymentContext, type ReturnPaymentRequest } from "@/entities/order";
 import { decodeOrderTermsEvents, deliveryEvents } from "@/entities/order/lib/orderTermsHistory";
 import { orderCalculation } from "./helpers/orderCalculation";
@@ -280,4 +280,22 @@ test("повреждённые события и движок без исход�
       { incomplete: true, id: undefined, imageId: undefined, expectedVersion: undefined },
     ]);
   } finally { JSON.parse = parse; }
+});
+
+test("order list adapters preserve rows and require the original integer version", async () => {
+  const adapter = authClient.defaults.adapter;
+  const parse = JSON.parse;
+  const tokens = ["0", "1", "1.0000000000000000001", "1.5", '"1"', "-1", "9007199254740992", "null"];
+  const raw = "[" + [...tokens.map((token, i) => `{"orderId":${i},"termsVersion":${token}}`), '{"orderId":8}'].join(",") + "]";
+  authClient.defaults.adapter = async config => ({ data: raw, config, status: 200, statusText: "OK", headers: {} });
+  try {
+    for (const read of [() => orderApi.getSellerOrders(), () => orderApi.getCustomerOrders(),
+      () => adminOrderApi.list({ page: 0 }), () => adminOrderApi.list({ page: 0, agentId: 8 })]) {
+      const rows = await read();
+      expect(rows.map(row => row.orderId)).toEqual([0,1,2,3,4,5,6,7,8]);
+      expect(rows.map(row => row.termsVersion)).toEqual([0,1,undefined,undefined,undefined,undefined,undefined,null,undefined]);
+    }
+    JSON.parse = (text, reviver) => parse(text, reviver && function(key, value) { return reviver.call(this, key, value); });
+    expect((await orderApi.getSellerOrders())[1].termsVersion).toBeUndefined();
+  } finally { JSON.parse = parse; authClient.defaults.adapter = adapter; }
 });

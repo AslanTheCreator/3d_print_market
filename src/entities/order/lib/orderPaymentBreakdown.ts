@@ -67,6 +67,8 @@ export function getOrderPaymentBreakdown({ calculation, termsVersion }: Terms) {
           (remaining !== null && paid !== null && paid + remaining > total)) {
         message = "Сумма оплаты превышает итог заказа. Обновите расчёт.";
         amounts.remainingAmount = null;
+      } else if (paid !== null && remaining !== null && paid + remaining !== total) {
+        message = "Несогласованные суммы оплаты. Обновите расчёт.";
       }
     }
   }

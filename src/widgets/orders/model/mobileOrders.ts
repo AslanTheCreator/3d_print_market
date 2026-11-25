@@ -41,7 +41,7 @@ export const filterMobileOrders = (
   if (filter === "confirmation") {
     return orders.filter((order) => {
       const flags = getSellerOrderActionFlags(order.actualStatus);
-      return flags.canConfirmOrder || flags.canConfirmPreOrder;
+      return flags.canConfirmOrder || flags.canConfirmPreOrder || order.actualStatus === "AWAITING_PAYMENT_APPROVAL";
     });
   }
   return filterOrdersByStatus(orders, filter, role);

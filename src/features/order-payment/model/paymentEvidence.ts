@@ -26,18 +26,22 @@ export function paymentEvidence(order: ControlOrder, events: OrderTermsEvent[], 
   if (newer.slice(0, start).some((event, index) => event.incomplete || !event.actor ||
       event.expectedVersion !== version - start + index)) return false;
 
+  return paymentSequence(order, newer.slice(start), stage, version, actor);
+}
+
+export function paymentSequence(order: ControlOrder, events: OrderTermsEvent[], stage: PaymentStage, version: number,
+  buyer: number, pending?: number): Outcome | false {
   let nextVersion = version;
-  let pending: number | undefined;
   let outcome: Outcome = "pending";
   let completed = false;
-  for (const event of newer.slice(start)) {
+  for (const event of events) {
     if (completed || event.incomplete || !event.actor || event.expectedVersion !== nextVersion) return false;
     if (event.kind === "DELIVERY_CHANGED") {
       if (pending !== undefined) return false;
     } else {
       if (!event.imageId) return false;
       if (event.kind === "PAYMENT_SUBMITTED") {
-        if (pending !== undefined || event.actor !== actor) return false;
+        if (pending !== undefined || event.actor !== buyer) return false;
         pending = event.imageId;
       } else {
         if (pending !== event.imageId) return false;
@@ -75,4 +79,26 @@ export function latestReturn(events: OrderTermsEvent[] | undefined, order: Contr
   if (returned?.kind !== "PAYMENT_RETURNED" || submission?.kind !== "PAYMENT_SUBMITTED" ||
       submission.expectedVersion === undefined || !submission.imageId) return;
   if (paymentEvidence(order, events, stage, submission.expectedVersion, submission.imageId, actor, submission.id! - 1) === "returned") return returned;
+}
+
+// Проверяем только непрерывную известную цепочку. Старый заказ может начинаться без истории.
+export function reviewHistory(order: ControlOrder, events: OrderTermsEvent[] | undefined, buyer: number) {
+  const version = order.termsVersion;
+  const stage = order.actualStatus === "AWAITING_PREPAYMENT_APPROVAL" ? "prepayment" : "full";
+  if (!events || !hasTermsVersion(version) || lastEventId(events) === undefined) return { state: "invalid" } as const;
+  const sorted = [...events].sort((a, b) => a.id! - b.id!);
+  const latest = sorted.at(-1);
+  if (!latest && version === 0) return { state: "legacy" } as const;
+  if (sorted.some(event => event.incomplete || !event.actor || event.expectedVersion === undefined)) return { state: "invalid" } as const;
+  if (!latest || latest.expectedVersion! < version - 1) return { state: "behind" } as const;
+  if (sorted.some(event => event.expectedVersion! >= version)) return { state: "ahead" } as const;
+  const first = sorted[0];
+  const pending = first.kind === "PAYMENT_RETURNED" || first.kind === "PAYMENT_APPROVED" ? first.imageId : undefined;
+  const matches = (initial: PaymentStage) => paymentSequence(order, sorted, initial, first.expectedVersion!, buyer, pending);
+  if (latest.kind !== "PAYMENT_SUBMITTED" || !(matches(stage) || (stage === "full" && matches("prepayment")))) {
+    return { state: "conflict" } as const;
+  }
+  const previous = sorted.slice(0, -1).filter(event => event.kind !== "DELIVERY_CHANGED").at(-1);
+  return { state: "current", submission: latest.expectedVersion,
+    previous: previous?.kind === "PAYMENT_RETURNED" ? previous : undefined } as const;
 }

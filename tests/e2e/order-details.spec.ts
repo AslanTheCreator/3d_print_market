@@ -62,7 +62,8 @@ for (const role of ["purchase", "sales"] as const) {
       await expect(card.getByText(label, { exact: true })).toBeVisible();
       await expect(card.locator('[aria-current="step"]')).toHaveText("Проверка оплаты");
       await expect(card.getByText("Сборка", { exact: true })).not.toHaveAttribute("aria-current", "step");
-      await expect(card.getByRole("button")).toHaveCount(1);
+      await expect(card.getByRole("button")).toHaveCount(role === "sales" ? 2 : 1);
+      if (role === "sales") await expect(card.getByRole("button", { name: "Проверить оплату" })).toBeDisabled();
     }
     await detailButton(401).click();
     const dialog = page.getByRole("dialog", { name: "Детали заказа №401" });
@@ -595,6 +596,7 @@ test.describe("order details", () => {
       histories: [],
       availability: "PREORDER",
     });
+    prepaymentApproval.product.sellerId = 1;
     let confirmationRequests = 0;
 
     await mockDashboardApi(page, {
@@ -636,9 +638,10 @@ test.describe("order details", () => {
       .click();
 
     dialog = page.getByRole("dialog", {
-      name: "Подтвердить предоплату",
+      name: "Проверка платежа по заказу №502",
     });
-    await expect(dialog).toContainText("Состояние оплаты обновится после решения продавца");
+    await expect(dialog).toContainText("Сверьте поступление с согласованной суммой предоплаты");
+    await expect(dialog.getByRole("button", { name: "Подтвердить оплату" })).toBeDisabled();
   });
 
   test("validates tracking and preserves shipping input after an error", async ({

@@ -1,3 +1,4 @@
+import { orderListResponse } from "./orderTextResponse";
 import {
   OrderCreateModel,
   OrderGetDataModel,
@@ -22,14 +23,6 @@ export const orderApi = {
   confirmOrderBySeller: async (orderId: number, comment: string = "") => {
     const { data } = await authClient.post<number>(
       `${API_URL}/${orderId}/AWAITING_PREPAYMENT?comment=${encodeURIComponent(comment)}`,
-    );
-    return data;
-  },
-
-  // Подтверждение предзаказа продавцом
-  confirmPreOrderBySeller: async (orderId: number, comment: string = "") => {
-    const { data } = await authClient.post<number>(
-      `${API_URL}/${orderId}/AWAITING_PAYMENT?comment=${encodeURIComponent(comment)}`,
     );
     return data;
   },
@@ -90,7 +83,7 @@ export const orderApi = {
 
   // Получение заказов продавца
   getSellerOrders: async (signal?: AbortSignal) => {
-    const { data } = await authClient.get<ListOrdersDto[]>(`${API_URL}/seller`, { signal });
+    const { data } = await authClient.get<ListOrdersDto[]>(`${API_URL}/seller`, { ...orderListResponse, signal });
     return data;
   },
 
@@ -98,7 +91,7 @@ export const orderApi = {
   getCustomerOrders: async (signal?: AbortSignal) => {
     const { data } = await authClient.get<ListOrdersDto[]>(
       `${API_URL}/customer`,
-      { signal },
+      { ...orderListResponse, signal },
     );
     return data;
   },

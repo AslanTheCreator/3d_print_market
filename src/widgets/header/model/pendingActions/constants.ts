@@ -12,6 +12,7 @@ export const CUSTOMER_ACTION_STATUSES = CUSTOMER_ORDER_ACTION_STATUSES;
 export type PendingActionType =
   | "seller_confirm"
   | "seller_confirm_prepayment"
+  | "seller_review_payment"
   | "seller_ship"
   | "customer_prepay"
   | "customer_pay"
@@ -53,6 +54,12 @@ export const SELLER_STATUS_ACTION_MAP: Record<
   AWAITING_PREPAYMENT_APPROVAL: {
     type: "seller_confirm_prepayment",
     label: "Подтвердить предоплату",
+    iconKey: "payment",
+    color: "#2196f3",
+  },
+  AWAITING_PAYMENT_APPROVAL: {
+    type: "seller_review_payment",
+    label: "Проверить оплату",
     iconKey: "payment",
     color: "#2196f3",
   },

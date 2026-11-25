@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Stack, Box, Typography } from "@mui/material";
+import { Button, Stack, Box } from "@mui/material";
 import { CheckCircle, LocalShipping, Cancel } from "@mui/icons-material";
-import { ListOrdersModel, getOrderPaymentBreakdown, getSellerOrderActionFlags } from "@/entities/order";
+import { ListOrdersModel, getSellerOrderActionFlags } from "@/entities/order";
 import {
   ConfirmationDialog,
   useOrderConfirmationAction,
-  useOrderPreOrderConfirmationAction,
 } from "@/features/order-confirmation";
+import { SellerPaymentReview } from "@/features/order-payment";
 import { CancelOrderDialog } from "./CancelOrderDialog";
 import ShippingDialog from "./ShippingDialog";
 
@@ -25,12 +25,10 @@ export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) =>
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   const confirmationAction = useOrderConfirmationAction();
-  const preOrderConfirmationAction = useOrderPreOrderConfirmationAction();
   const isPreorder = order.product.availability === "PREORDER";
-  const { canConfirmOrder, canConfirmPreOrder, canShipOrder, canCancel } =
+  const { canConfirmOrder, canShipOrder, canCancel } =
     getSellerOrderActionFlags(order.actualStatus);
 
-  const paymentBlock = canConfirmPreOrder ? getOrderPaymentBreakdown(order).prepaymentBlock : null;
   const primaryAction = canConfirmOrder
     ? (
         <Button
@@ -49,43 +47,27 @@ export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) =>
               : "Подтвердить заказ"}
         </Button>
       )
-    : canConfirmPreOrder
+    : canShipOrder
       ? (
           <Button
             variant="contained"
-            color="primary"
-            startIcon={<CheckCircle />}
-            onClick={preOrderConfirmationAction.open}
-            disabled={!actionsAvailable || !!paymentBlock || preOrderConfirmationAction.mutation.isPending}
+            color="secondary"
+            startIcon={<LocalShipping />}
+            disabled={!actionsAvailable}
+            onClick={() => setShippingDialogOpen(true)}
             size="small"
             fullWidth={true}
           >
-            {preOrderConfirmationAction.mutation.isPending
-              ? "Подтверждение..."
-              : "Подтвердить предоплату"}
+            Отправить товар
           </Button>
         )
-      : canShipOrder
-        ? (
-            <Button
-              variant="contained"
-              color="secondary"
-              startIcon={<LocalShipping />}
-              disabled={!actionsAvailable}
-              onClick={() => setShippingDialogOpen(true)}
-              size="small"
-              fullWidth={true}
-            >
-              Отправить товар
-            </Button>
-          )
-        : null;
+      : null;
 
   return (
     <>
       <Stack spacing={0.75}>
         {primaryAction}
-        {paymentBlock && <Typography variant="caption">{paymentBlock}</Typography>}
+        <SellerPaymentReview order={order} available={actionsAvailable} />
 
         {(secondaryAction || canCancel) && (
           <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap" }}>
@@ -112,19 +94,7 @@ export const SellerActions = ({ order, secondaryAction }: SellerActionsProps) =>
         open={confirmationAction.isOpen}
         onClose={confirmationAction.close}
         order={order}
-        confirmationType="order"
         confirmationMutation={confirmationAction.mutation}
-      />
-
-      <ConfirmationDialog
-        actionsAvailable={actionsAvailable}
-        onRetry={retry}
-        retryPending={retryPending}
-        open={preOrderConfirmationAction.isOpen}
-        onClose={preOrderConfirmationAction.close}
-        order={order}
-        confirmationType="preorder"
-        confirmationMutation={preOrderConfirmationAction.mutation}
       />
 
       <ShippingDialog

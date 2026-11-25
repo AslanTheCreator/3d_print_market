@@ -14,3 +14,4 @@ export {
   useImagesQuery,
   useOrderImagesQuery,
 } from "./model/useImageQueries";
+export { toOrderImageDataUrl } from "./lib/orderImageDataUrl";

@@ -82,7 +82,7 @@ test("ADMIN без sellerId не открывает историю или ред
 for (const paid of ["1000.00", null, "0.00"]) {
   test(`прямой submit неизвестной доставки при confirmedPaidAmount=${paid}`, async ({ page, baseURL }) => {
     const order = deliveryFixture();
-    Object.assign(order.calculation!, { confirmedPaidAmount: paid, remainingAmount: paid === null ? null : "3500.00" });
+    Object.assign(order.calculation!, { confirmedPaidAmount: paid, remainingAmount: paid === "0.00" ? "4500.00" : paid === null ? null : "3500.00" });
     await openSeller(page, baseURL, order);
     const costs: Array<string | null> = [];
     await page.route("**/order/43/delivery", route => {
@@ -110,7 +110,7 @@ for (const paid of ["1000.00", null, "0.00"]) {
 
 test("подтверждённая оплата изменилась во время проверки продавца", async ({ page, baseURL }) => {
   const order = deliveryFixture();
-  order.calculation!.confirmedPaidAmount = "0.00";
+  Object.assign(order.calculation!, { confirmedPaidAmount: "0.00", remainingAmount: "4500.00" });
   await openSeller(page, baseURL, order);
   await page.getByLabel("Стоимость уточняется").check();
   let puts = 0;
@@ -125,7 +125,7 @@ test("подтверждённая оплата изменилась во вре
   await page.route("**/order/43/delivery", route => { puts++; return fulfillJson(route, 43); });
   await page.getByRole("button", { name: "Сохранить условия" }).click();
   await started.wait;
-  order.calculation!.confirmedPaidAmount = "1000.00";
+  Object.assign(order.calculation!, { confirmedPaidAmount: "1000.00", remainingAmount: "3500.00" });
   cases.release();
   await expect(page.getByText(/Условия изменились. Черновик сохранён/)).toBeVisible();
   expect(puts).toBe(0);

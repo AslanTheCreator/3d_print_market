@@ -1333,6 +1333,7 @@ for (const refreshOk of [true, false]) {
       expect(tracker.statusImageIds).toEqual([77]);
     } else {
       await expect.poll(async () => (await context.cookies()).some(c => c.name === "access_token")).toBe(false);
+      await expect(page).toHaveURL(/\/auth\/login/);
       await authenticate(context, baseURL);
       await page.goto("/dashboard/purchase");
       const next = await openPaymentDialog(page, action);

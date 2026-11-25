@@ -1,3 +1,4 @@
+import { getOrderPaymentBreakdown } from "../lib/orderPaymentBreakdown";
 import type { QueryClient } from "@tanstack/react-query";
 import type { PrivateScope } from "@/shared/lib/query";
 import { orderApi } from "../api/orderApi";
@@ -6,7 +7,7 @@ import { orderCasesApi } from "../api/orderCasesApi";
 import { hasAdminOrderCaseAccess } from "./adminOrderCaseQueries";
 import { orderQueryKeys } from "./queryKeys";
 import { adminOrderKeys } from "./adminQueries";
-import type { AdminOrderFilter } from "./admin";
+import type { AdminOrderDto, AdminOrderFilter } from "./admin";
 import type { ListOrdersDto } from "./types";
 import { hasAgentId, hasTermsVersion, type DeliveryTermsContext, type TermsOrder } from "./orderTerms";
 import type { OrderCaseDetail, OrderCaseSummary } from "./orderCase";
@@ -39,6 +40,8 @@ export function casesAllowDelivery(cases: OrderCaseDetail[] | undefined, orderId
 }
 
 // Прерываем чтение, начатое до подтверждения операции: его ответ не является контрольным.
+export function readDeliveryOrder(client: QueryClient, scope: PrivateScope, orderId: number): Promise<ListOrdersDto | null>;
+export function readDeliveryOrder(client: QueryClient, scope: PrivateScope, orderId: number, admin?: { agentId: number; filter: AdminOrderFilter }): Promise<ListOrdersDto | AdminOrderDto | null>;
 export async function readDeliveryOrder(client: QueryClient, scope: PrivateScope, orderId: number, admin?: { agentId: number; filter: AdminOrderFilter }) {
   const requireScope = () => {
     if (!scope.isCurrent() || (admin && (!hasAgentId(admin.agentId) || !hasAdminOrderCaseAccess(client, scope.id)))) throw new Error("Доступ к заказу изменился");
@@ -79,7 +82,29 @@ function changedVersionKey(scope: PrivateScope, orderId: number) {
   return scope.key(["deliveryChangedVersion", orderId]);
 }
 
-export function hasCurrentDeliveryVersion(client: QueryClient, scope: PrivateScope, order: Pick<TermsOrder, "orderId" | "termsVersion">) {
+type ReviewedOrder = Pick<ListOrdersDto, "orderId" | "termsVersion" | "actualStatus" | "paymentProofImageId" | "calculation">;
+type ReviewedCalculation = Pick<ReviewedOrder, "actualStatus" | "paymentProofImageId"> & { version: number; calculation: string };
+
+export function rememberReviewedCalculation(client: QueryClient, scope: PrivateScope, order: ReviewedOrder) {
+  if (!scope.isCurrent() || !hasTermsVersion(order.termsVersion)) return;
+  const key = scope.key(["reviewedOrderCalculation", order.orderId]);
+  client.getQueryCache().build(client, { queryKey: key, gcTime: Infinity });
+  client.setQueryData<ReviewedCalculation>(key, {
+    version: order.termsVersion, calculation: getOrderPaymentBreakdown(order).fingerprint,
+    actualStatus: order.actualStatus, paymentProofImageId: order.paymentProofImageId,
+  });
+}
+
+export function hasCurrentDeliveryVersion(client: QueryClient, scope: PrivateScope, order: ReviewedOrder) {
+  const reviewed = client.getQueryData<ReviewedCalculation>(scope.key(["reviewedOrderCalculation", order.orderId]));
+  if (reviewed) {
+    if (!hasTermsVersion(order.termsVersion) || order.termsVersion < reviewed.version) return false;
+    if (order.termsVersion === reviewed.version) {
+      if (getOrderPaymentBreakdown(order).fingerprint !== reviewed.calculation) return false;
+      if (order.actualStatus.startsWith("AWAITING_") && (order.actualStatus !== reviewed.actualStatus ||
+          order.paymentProofImageId !== reviewed.paymentProofImageId)) return false;
+    }
+  }
   const outdated = client.getQueryData<number>(changedVersionKey(scope, order.orderId));
   return outdated === undefined || (hasTermsVersion(order.termsVersion) && order.termsVersion > outdated);
 }

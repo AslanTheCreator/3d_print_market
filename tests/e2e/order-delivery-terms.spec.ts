@@ -216,7 +216,7 @@ test("обращение, появившееся после открытия ф�
 for (const status of ["AWAITING_PAYMENT","AWAITING_PREPAYMENT"]) test(status + ": неизвестная стоимость отправляется как null только без подтверждённых денег", async ({page, baseURL}) => {
   const order = deliveryFixture();
   order.actualStatus = status;
-  if (status === "AWAITING_PREPAYMENT") order.calculation!.confirmedPaidAmount = "0.00";
+  if (status === "AWAITING_PREPAYMENT") Object.assign(order.calculation!, { confirmedPaidAmount: "0.00", remainingAmount: "4500.00" });
   await openSeller(page, baseURL, order);
   let puts = 0;
   await page.route("**/order/43/delivery", route => {

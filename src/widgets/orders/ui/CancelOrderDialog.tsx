@@ -88,7 +88,7 @@ export const CancelOrderDialog = ({
     } finally { lock.current = false; }
   };
 
-  const canCancel = actionsAvailable && order.actualStatus === "BOOKED" && !cancelOrderAction.isAccepted && !cancelOrderAction.requiresCheck && reason.trim().length >= 3 && !cancelOrderAction.isPending;
+  const canCancel = actionsAvailable && !cancelOrderAction.reviewBlocked && order.actualStatus === "BOOKED" && !cancelOrderAction.isAccepted && !cancelOrderAction.requiresCheck && reason.trim().length >= 3 && !cancelOrderAction.isPending;
 
   const handleCheckResult = () => {
     const generation = lifecycle.generation;
@@ -98,6 +98,10 @@ export const CancelOrderDialog = ({
   };
 
   return (
+    <>
+      {!open && order.actualStatus !== "BOOKED" && cancelOrderAction.requiresCheck && (
+        <Button disabled={cancelOrderAction.isPending} onClick={handleCheckResult}>Проверить результат отмены</Button>
+      )}
     <Dialog
       open={open}
       TransitionProps={{ onExited: lifecycle.onExited }}
@@ -219,6 +223,7 @@ export const CancelOrderDialog = ({
         </Button>
       </DialogActions>
     </Dialog>
+    </>
   );
 };
 

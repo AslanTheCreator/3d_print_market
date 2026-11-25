@@ -1,10 +1,11 @@
+import { orderListResponse } from "./orderTextResponse";
 import { authClient } from "@/shared/api";
 import type { AdminOrderAction, AdminOrderDto, AdminOrderFilter } from "../model/admin";
 export const adminOrderApi = {
   async list(filter: AdminOrderFilter, signal?: AbortSignal) {
     const url = filter.agentId ? `/admin/actions/agents/${filter.agentId}/orders` : "/admin/actions/agent-orders";
     return (await authClient.get<AdminOrderDto[]>(url, {
-      params: { page: filter.page, size: 50, status: filter.status }, signal,
+      ...orderListResponse, params: { page: filter.page, size: 50, status: filter.status }, signal,
     })).data;
   },
   async act(agentId: number, orderId: number, action: AdminOrderAction, params: { comment?: string; deliveryUrl?: string }) {

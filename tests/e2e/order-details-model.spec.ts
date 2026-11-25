@@ -70,7 +70,7 @@ test.describe("order details model", () => {
     expect(getOrderProgressSteps(true).map(item => item.key)).toEqual(["BOOKED", "AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL", "AWAITING_PAYMENT", "AWAITING_PAYMENT_APPROVAL", "ASSEMBLING", "ON_THE_WAY", "COMPLETED"]);
   });
 
-  test("full payment review stays active without enabling actions for any role", () => {
+  test("full payment review requires seller attention and keeps existing admin actions", () => {
     const status = "AWAITING_PAYMENT_APPROVAL";
     const statuses = [
       "BOOKED", "AWAITING_PREPAYMENT", "AWAITING_PREPAYMENT_APPROVAL",
@@ -101,9 +101,9 @@ test.describe("order details model", () => {
     }
 
     expect(getOrdersStatCounts(orders, "customer")).toEqual({
-      active: 7, attention: 3, completed: 1, sellerConfirm: 2, sellerShipping: 1, customerShipping: 1,
+      active: 7, attention: 3, completed: 1, sellerConfirm: 3, sellerShipping: 1, customerShipping: 1,
     });
-    expect(getOrdersStatCounts(orders, "seller")).toEqual(getOrdersStatCounts(orders, "customer"));
+    expect(getOrdersStatCounts(orders, "seller")).toEqual({ ...getOrdersStatCounts(orders, "customer"), attention: 4 });
     expect(filterMobileOrders(orders, "active", "customer").map(item => item.actualStatus)).toEqual(active);
     expect(filterOrdersByStatus(orders, "paymentApproval", "seller").map(item => item.actualStatus)).toEqual([status]);
     expect(filterOrdersByStatus(orders, "processing", "customer").map(item => item.actualStatus))
@@ -114,7 +114,7 @@ test.describe("order details model", () => {
     for (const hasPrepayment of [false, true]) {
       expect(shouldShowOrderProgress(status, hasPrepayment)).toBe(true);
       expect(getOrderProgressSteps(hasPrepayment).find(step => step.key === status))
-        .toEqual({ key: status, label: "Проверка оплаты" });
+        .toEqual({ key: status, label: "Проверка оплаты", sellerAction: true });
     }
   });
   test("mobile priority keeps action first, then active, then completed without mutating input", () => {
