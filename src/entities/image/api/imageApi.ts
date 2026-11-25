@@ -7,10 +7,23 @@ const requireNonOrderTag = (tag: ImageTag) => {
   if (tag === "ORDER") throw new Error("ORDER images require an order-bound upload and cannot be deleted");
 };
 
-const uploadImage = async (file: File, params: URLSearchParams, signal?: AbortSignal): Promise<number[]> => {
+const uploadImage = async (file: File, params: URLSearchParams, signal?: AbortSignal, receipt = false): Promise<number[]> => {
   const formData = new FormData();
   formData.append("files", file);
-  const { data } = await authClient.post<number[]>(`${API_URL}?${params}`, formData, { signal });
+  const { data } = await authClient.post<number[]>(`${API_URL}?${params}`, formData, {
+    signal,
+    ...(receipt && {
+      replayAfterRefresh: false,
+      responseType: "text",
+      transformResponse: (raw: unknown, _headers: unknown, status?: number) => {
+        if (typeof raw === "string" && status !== undefined && status >= 400) {
+          try { return JSON.parse(raw) as unknown; } catch { return raw; }
+        }
+        const digits = typeof raw === "string" && /^[ \r\n\t]*\[[ \r\n\t]*([1-9]\d*)[ \r\n\t]*\][ \r\n\t]*$/.exec(raw);
+        return digits ? [Number(digits[1])] : [];
+      },
+    }),
+  });
   if (!Array.isArray(data) || data.length === 0 ||
     !data.every((id: unknown) => typeof id === "number" && Number.isSafeInteger(id) && id > 0)) {
     throw new Error("Invalid image upload response");
@@ -75,9 +88,9 @@ export const imageApi = {
     if (!Array.isArray(data)) throw new Error("Invalid order images response");
     return data;
   },
-  async saveOrderImage(file: File, orderId: number, signal?: AbortSignal): Promise<number[]> {
+  async saveOrderImage(file: File, orderId: number, signal?: AbortSignal, receipt = false): Promise<number[]> {
     if (!Number.isSafeInteger(orderId) || orderId <= 0) throw new Error("Invalid order ID");
-    return uploadImage(file, new URLSearchParams({ tag: "ORDER", entityId: String(orderId) }), signal);
+    return uploadImage(file, new URLSearchParams({ tag: "ORDER", entityId: String(orderId) }), signal, receipt);
   },
   async getImages(
     imageIds: number | number[] | null,

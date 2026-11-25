@@ -85,48 +85,6 @@ export const useConfirmPreOrderBySeller = () => {
   });
 };
 
-// Хук для подтверждения предоплаты покупателем
-export const useConfirmPrepaymentByCustomer = () => {
-  const queryClient = useQueryClient();
-  const scope = usePrivateScope();
-
-  return usePrivateMutation({
-    networkMode: "always",
-    mutationFn: ({
-      orderId,
-      imageId,
-      comment = "",
-    }: {
-      orderId: number;
-      imageId: number;
-      comment?: string;
-    }) => orderApi.confirmPrepaymentByCustomer(orderId, imageId, comment),
-    onSettled: () => invalidateOrdersLists(queryClient, scope),
-    onError: logMutationError("Ошибка подтверждения предоплаты:"),
-  });
-};
-
-// Хук для подтверждения оплаты покупателем
-export const useConfirmPaymentByCustomer = () => {
-  const queryClient = useQueryClient();
-  const scope = usePrivateScope();
-
-  return usePrivateMutation({
-    networkMode: "always",
-    mutationFn: ({
-      orderId,
-      imageId,
-      comment = "",
-    }: {
-      orderId: number;
-      imageId: number;
-      comment?: string;
-    }) => orderApi.confirmPaymentByCustomer(orderId, imageId, comment),
-    onSettled: () => invalidateOrdersLists(queryClient, scope),
-    onError: logMutationError("Ошибка подтверждения оплаты:"),
-  });
-};
-
 // Хук для подтверждения получения заказа покупателем
 export const useConfirmReceiptByCustomer = () => {
   const queryClient = useQueryClient();

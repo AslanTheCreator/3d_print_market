@@ -7,6 +7,8 @@ import {
   type ListOrdersModel,
 } from "@/entities/order";
 
+import { decodeOrderTermsEvents } from "@/entities/order/lib/orderTermsHistory";
+import { lastEventId, latestReturn, paymentEvidence, sameProofCycle } from "@/features/order-payment/model/paymentEvidence";
 import { orderCalculation } from "./helpers/orderCalculation";
 
 const scenarios = [
@@ -107,4 +109,66 @@ test("server balances are compared at the declared scale without rounding", () =
   expect(partial.amounts.totalAmount).toBe("4500.00");
   expect(partial.amounts.remainingAmount).toBe("3500.00");
   expect(partial.paymentBlock).toBeNull();
+});
+
+test("неопределённый POST требует новой однозначной цепочки именно этого чека", () => {
+  const pending = { actualStatus: "AWAITING_PAYMENT_APPROVAL", termsVersion: 1, paymentProofImageId: 44 } as const;
+  const submission = { id: 12, actor_id: 7, kind: "PAYMENT_SUBMITTED", payload: '{"expectedVersion":0,"imageId":44}' };
+  const review = { id: 13, actor_id: 89, kind: "PAYMENT_RETURNED", payload: '{"request":{"expectedVersion":1,"reason":"Нечёткое фото"},"imageId":44,"confirmedPaidAmount":"0.00"}' };
+  const decode = (rows: unknown[]) => decodeOrderTermsEvents(JSON.stringify(rows));
+  const check = (rows: unknown[], baseline?: number) => paymentEvidence(pending, decode(rows), "full", 0, 44, 7, baseline);
+  expect(lastEventId(undefined)).toBeUndefined();
+  expect(lastEventId([])).toBe(0);
+  expect(check([submission])).toBe(false);
+  expect(check([submission], 12)).toBe(false);
+  expect(check([submission], 11)).toBe("pending");
+  for (const invalid of [{ actor_id: 8 }, { id: 0 }, { payload: '{"expectedVersion":0,"imageId":44.0000000000000000001}' },
+    { payload: '{"expectedVersion":1,"imageId":44}' }]) expect(check([{ ...submission, ...invalid }], 11)).toBe(false);
+  expect(check([submission, { ...submission, id: 13 }], 11)).toBe(false);
+  expect(check([submission, submission], 11)).toBe(false);
+  const returned = { ...pending, termsVersion: 2, actualStatus: "AWAITING_PAYMENT" } as const;
+  expect(paymentEvidence(returned, decode([review, submission]), "full", 0, 44, 7, 11)).toBe("returned");
+  expect(paymentEvidence(returned, decode([submission, review]), "prepayment", 0, 44, 7, 11)).toBe(false);
+  expect(latestReturn(decode([review, submission]), returned, "full", 7)?.reason).toBe("Нечёткое фото");
+  expect(latestReturn(decode([{ ...review, payload: "{}" }]), returned, "full", 7)).toBeUndefined();
+});
+
+test("сверка всех переходов от исходного чека до независимо прочитанной версии заказа", () => {
+  const event = (id: number, kind: string, version: number, imageId: number) => ({
+    id, kind, actor_id: kind === "PAYMENT_SUBMITTED" ? 7 : 15,
+    payload: JSON.stringify(kind === "DELIVERY_CHANGED"
+      ? { before: { deliveryAmount: null }, after: { expectedVersion: version, deliveryAmount: "1.00" } }
+      : kind === "PAYMENT_SUBMITTED" ? { expectedVersion: version, imageId }
+      : { request: { expectedVersion: version, reason: "Возврат " + imageId }, imageId, confirmedPaidAmount: "0.00" }),
+  });
+  const rows = [
+    event(10, "PAYMENT_SUBMITTED", 0, 77), event(16, "PAYMENT_RETURNED", 1, 77),
+    event(17, "PAYMENT_SUBMITTED", 2, 88), event(21, "PAYMENT_RETURNED", 3, 88),
+    event(26, "DELIVERY_CHANGED", 4, 0), event(27, "PAYMENT_SUBMITTED", 5, 99),
+    event(29, "PAYMENT_APPROVED", 6, 99), event(33, "PAYMENT_SUBMITTED", 7, 100),
+    event(38, "PAYMENT_RETURNED", 8, 100),
+  ];
+  const decode = (events: unknown[]) => decodeOrderTermsEvents(JSON.stringify(events));
+  const ready = { termsVersion: 4, actualStatus: "AWAITING_PREPAYMENT" } as const;
+  const full = { termsVersion: 9, actualStatus: "AWAITING_PAYMENT" } as const;
+  expect(paymentEvidence(ready, decode(rows.slice(0, 4)), "prepayment", 0, 77, 7, 0)).toBe("returned");
+  expect(latestReturn(decode(rows.slice(0, 4)), ready, "prepayment", 7)?.reason).toBe("Возврат 88");
+  expect(latestReturn(decode(rows.slice(0, 4)), full, "full", 7)).toBeUndefined();
+  expect(paymentEvidence(full, decode(rows), "prepayment", 0, 77, 7, 0)).toBe("returned");
+  expect(latestReturn(decode(rows), full, "full", 7)?.reason).toBe("Возврат 100");
+  expect(paymentEvidence(full, decode(rows), "prepayment", 5, 99, 7, 26)).toBe("approved");
+  // Перед POST список уже вернул версию 5, а история ещё не содержала изменения доставки на версии 4.
+  expect(paymentEvidence(full, decode(rows), "prepayment", 5, 99, 7, 21)).toBe("approved");
+  const conflicting = [...rows, event(30, "PAYMENT_SUBMITTED", 5, 99)];
+  expect(paymentEvidence(full, decode(conflicting), "prepayment", 5, 99, 7, 21)).toBe(false);
+  for (const invalid of [rows.slice(0, -1), rows.filter(row => row.id !== 26),
+    [...rows, rows[0]], rows.map(row => row.id === 26 ? { ...row, payload: "{}" } : row),
+    rows.map(row => row.id === 21 ? event(21, "PAYMENT_RETURNED", 3, 77) : row)]) {
+    expect(paymentEvidence(full, decode(invalid), "prepayment", 0, 77, 7, 0)).toBe(false);
+  }
+  for (const termsVersion of [2.5, "2", null, undefined, -1, Number.MAX_SAFE_INTEGER + 1]) {
+    expect(paymentEvidence({ ...ready, termsVersion: termsVersion as number }, decode(rows.slice(0, 2)), "prepayment", 0, 77, 7, 0)).toBe(false);
+  }
+  expect(sameProofCycle(decode(rows.slice(0, 4)), 0, 4)).toBe(false);
+  expect(sameProofCycle(decode([event(10, "DELIVERY_CHANGED", 0, 0), event(12, "DELIVERY_CHANGED", 1, 0)]), 0, 2)).toBe(true);
 });

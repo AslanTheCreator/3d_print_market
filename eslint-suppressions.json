@@ -116,11 +116,8 @@
     }
   },
   "src/features/order-payment/ui/PaymentDialog.tsx": {
-    "react-hooks/refs": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
-      "count": 2
+      "count": 1
     }
   },
   "src/shared/lib/hooks/useFormInitializer.ts": {

@@ -71,7 +71,7 @@ for (const change of ["order", "status", "logout", "version", "amount"] as const
   let uploads = 0, completed = false;
   const statusWrites: string[] = [], deletes: string[] = [];
   page.on("request", request => {
-    if (request.method() === "POST" && /\/order\/\d+\/ASSEMBLING/.test(request.url())) statusWrites.push(request.url());
+    if (request.method() === "POST" && /\/order\/\d+\/(?:ASSEMBLING|AWAITING_PREPAYMENT_APPROVAL|payments\/(?:prepayment|full))/.test(request.url())) statusWrites.push(request.url());
     if (request.method() === "DELETE" && request.url().includes("/images")) deletes.push(request.url());
   });
   await page.route("**/images?tag=ORDER&entityId=31", async route => {

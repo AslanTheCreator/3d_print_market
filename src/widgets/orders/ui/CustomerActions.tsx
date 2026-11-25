@@ -23,7 +23,6 @@ import {
 import {
   PaymentDialog,
   useOrderPaymentAction,
-  useOrderPrepaymentAction,
 } from "@/features/order-payment";
 import { useOrderReceiptAction } from "@/features/order-receipt";
 import { transformToApiError } from "@/shared/lib/errorHandler";
@@ -46,7 +45,7 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
   const review = useLeaveReview({ order, open: reviewDialogOpen, onClose: () => setReviewDialogOpen(false) });
 
   const paymentAction = useOrderPaymentAction();
-  const prepaymentAction = useOrderPrepaymentAction();
+  const prepaymentAction = useOrderPaymentAction();
   const receiptAction = useOrderReceiptAction();
   const receiptErrorMessage = receiptAction.mutation.error
     ? transformToApiError(receiptAction.mutation.error).message
@@ -183,7 +182,6 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
         onClose={paymentAction.close}
         order={order}
         paymentType="payment"
-        paymentMutation={paymentAction.mutation}
       />
 
       <PaymentDialog
@@ -194,7 +192,6 @@ export const CustomerActions = ({ order, secondaryAction }: CustomerActionsProps
         onClose={prepaymentAction.close}
         order={order}
         paymentType="prepayment"
-        paymentMutation={prepaymentAction.mutation}
       />
 
       <Dialog

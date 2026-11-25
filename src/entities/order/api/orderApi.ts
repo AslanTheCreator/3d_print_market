@@ -34,18 +34,6 @@ export const orderApi = {
     return data;
   },
 
-  // Подтверждение предоплаты покупателем
-  confirmPrepaymentByCustomer: async (
-    orderId: number,
-    imageId: number,
-    comment: string = "",
-  ) => {
-    const { data } = await authClient.post<number>(
-      `${API_URL}/${orderId}/AWAITING_PREPAYMENT_APPROVAL?imageId=${imageId}&comment=${encodeURIComponent(comment)}`,
-    );
-    return data;
-  },
-
   // Подтверждение оплаты покупателем
   confirmPaymentByCustomer: async (
     orderId: number,

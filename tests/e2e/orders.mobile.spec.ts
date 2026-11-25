@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { expectNoOverflow, longProductName, orderFixture, setupMobileAccount } from "./helpers/mobileAccount";
+import { expectNoOverflow, fulfillJson, png, longProductName, orderFixture, setupMobileAccount } from "./helpers/mobileAccount";
 
 test.setTimeout(90_000);
 const widths = [320, 393, 599, 600, 768, 899, 900];
@@ -175,4 +175,39 @@ test("mobile preserves the decimal part of a large JPY total", async ({ page, ba
   await expect(card.getByText("9 007 199 254 740 993,01 ¥", { exact: true })).toBeVisible();
   await card.getByRole("button", { name: "Подробнее о заказе №17" }).click();
   await expect(page.getByRole("dialog").getByText("Осталось оплатить: Остаток пока неизвестен")).toBeVisible();
+});
+
+for (const stage of ["prepayment", "full"] as const) test("мобильное предъявление чека: " + stage, async ({ page, baseURL }) => {
+  const state = await setupMobileAccount(page, baseURL);
+  const prepayment = stage === "prepayment";
+  const order = orderFixture(76, prepayment ? "AWAITING_PREPAYMENT" : "AWAITING_PAYMENT", 1);
+  state.customerOrders = [order];
+  let accounts = 0;
+  await page.route("**/accounts/participant/10", route => {
+    if (route.request().method() === "GET") accounts++;
+    return fulfillJson(route, [{ id: 1, participantId: 10, username: "Получатель", entityValue: "TEST", transferMoney: "BANK_CARD" }]);
+  });
+  const posts: string[] = [];
+  page.on("request", request => {
+    if (request.method() === "POST" && /\/(images|order)[?/]/.test(request.url())) posts.push(new URL(request.url()).pathname);
+  });
+  await page.route("**/order/76/payments/" + stage, route => {
+    if (route.request().method() === "POST") {
+      expect(route.request().postDataJSON()).toEqual({ imageId: 77, expectedVersion: 0 });
+      Object.assign(order, { actualStatus: prepayment ? "AWAITING_PREPAYMENT_APPROVAL" : "AWAITING_PAYMENT_APPROVAL", termsVersion: 1 });
+    }
+    return fulfillJson(route, 76);
+  });
+  await page.goto("/dashboard/purchase");
+  const name = prepayment ? "Подтвердить предоплату" : "Подтвердить оплату";
+  await page.getByRole("button", { name, exact: true }).tap();
+  const dialog = page.getByRole("dialog");
+  await dialog.locator('input[type="file"]').setInputFiles({ name: "proof.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+  await expectNoOverflow(page);
+  await dialog.getByRole("button", { name, exact: true }).tap();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole("button", { name, exact: true })).toHaveCount(0);
+  await expect(page.getByRole("alert").filter({ hasText: "Чек передан на проверку" }).first()).toBeVisible();
+  expect(accounts).toBe(prepayment ? 0 : 1);
+  expect(posts).toEqual(["/images", "/order/76/payments/" + stage]);
 });

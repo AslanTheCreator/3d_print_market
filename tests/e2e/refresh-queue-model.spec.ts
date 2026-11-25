@@ -32,7 +32,7 @@ const fixture = () => {
     vm.runInNewContext(ts.transpileModule(readFileSync(file, "utf8"), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
     }).outputText, {
-      module, exports: module.exports, process, console, AbortController,
+      module, exports: module.exports, process, console, AbortController, FormData, URLSearchParams,
       window: {},
       fetch: async () => ({ ok: true, json: async () => ({ apiUrl: "https://fixture.invalid" }) }),
       setTimeout: (callback: () => unknown, delay: number) => {
@@ -165,6 +165,16 @@ test("денежные POST F05 завершаются исходным 401 по
   expect(f.tokens.accessToken).toBe("fresh");
   expect(f.sent).toHaveLength(6);
   expect(new Set(f.sent.map(config => config.url)).size).toBe(6);
+});
+
+test("upload одного чека переживает refresh без повторного POST", async () => {
+  const f = fixture();
+  const { imageApi } = f.load<typeof import("@/entities/image/api/imageApi")>("src/entities/image/api/imageApi.ts", { "@/shared/api": f });
+  const result = Promise.allSettled([imageApi.saveOrderImage(new File(["receipt"], "receipt.png"), 42, new AbortController().signal, true)]);
+  await expect.poll(() => f.refreshes.length).toBe(1);
+  f.refreshes[0].resolve("fresh");
+  expect(await result).toMatchObject([{ status: "rejected", reason: { statusCode: 401, code: "TOKEN_INVALID_OR_EXPIRED" } }]);
+  expect(f.sent.map(request => [request.method, request.url])).toEqual([["post", "/images?tag=ORDER&entityId=42"]]);
 });
 
 test("timer, initialization and concurrent 401 share one refresh and preserve account scope", async () => {

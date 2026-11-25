@@ -147,7 +147,7 @@ test("обновление расчёта во время upload блокиру�
     await upload.wait;
     return fulfillJson(route, [77]);
   });
-  await page.route("**/order/43/ASSEMBLING*", route => { if (route.request().method() === "POST") posts++; return fulfillJson(route, 43); });
+  await page.route("**/order/43/payments/full", route => { if (route.request().method() === "POST") posts++; return fulfillJson(route, 43); });
   await page.goto("/dashboard/purchase");
   await page.getByRole("button", { name: "Подтвердить оплату", exact: true }).first().click();
   const dialog = page.getByRole("dialog", { name: "Подтверждение оплаты" });
@@ -186,7 +186,7 @@ for (const version of [1, 2]) test(`ADMIN → Покупки: защита оп�
   await page.route("**/participant", route => fulfillJson(route, { id: 1, role: "ADMIN", status: "ACTIVE", login: "administrator", fullName: "Администратор", mail: "admin@example.test", addresses: [], accounts: [], transfers: [], socialNetworks: [] }));
   await page.route("**/giveaways/active", route => fulfillJson(route, {}, 404));
   await page.route("**/accounts/participant/2", route => fulfillJson(route, [{ id: 44, participantId: 2, username: "Fixture", entityValue: "TEST", transferMoney: "BANK_CARD" }]));
-  await page.route("**/order/201/ASSEMBLING*", route => { if (route.request().method() === "POST") posts++; return fulfillJson(route, 201); });
+  await page.route("**/order/201/payments/full", route => { if (route.request().method() === "POST") posts++; return fulfillJson(route, 201); });
   await page.route("**/admin/actions/agents/2/orders/201/delivery", route => {
     if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
     puts++;

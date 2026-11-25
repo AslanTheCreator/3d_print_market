@@ -4,7 +4,9 @@ import { renderToString } from "react-dom/server";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createPrivateScope, PrivateScopeContext } from "@/shared/lib/query";
 import { useAuthStore } from "@/entities/session/model/authStore";
-import { useCustomerPaymentAttempt } from "@/features/order-payment/model/useCustomerPaymentAttempt";
+import { customerPaymentState, protectedAttempt, type Attempt } from "@/features/order-payment/model/customerPaymentState";
+
+const pending = (): Attempt => ({ token: Symbol(), phase: "posting", busy: true, version: 0, terms: "fixture", imageId: 77, message: "" });
 import { bindPrivateDataLifecycle } from "@/app/providers/privateDataLifecycle";
 import { useRemoveFromCart, useUpdateCartQuantity } from "@/entities/cart/model/useCartMutations";
 import { cartApi } from "@/entities/cart/api/cartApi";
@@ -52,10 +54,9 @@ test("all private namespaces are removed on logout, expiry and direct account sw
       expect(scope.isCurrent()).toBe(true);
       expect(draftsCleared).toBe(0);
       const late = deferred<string>();
-      const attempt = captureHook(client, scope, () => useCustomerPaymentAttempt(
-        { orderId: 42, actualStatus: "AWAITING_PAYMENT", histories: [] }, "payment", true,
-      ));
-      expect(attempt.begin(77)).toBe(true);
+      const attempt = customerPaymentState(client, scope, 42, 1, "full");
+      attempt.confirmVersion(3);
+      expect(attempt.begin(pending())).toBe(true);
       let signal!: AbortSignal;
       const request = client.fetchQuery({ queryKey: scope.key(["late"]), queryFn: context => {
         signal = context.signal;
@@ -81,20 +82,28 @@ test("viewing 100 orders retains only attempts that actually need protection", (
   const scope = createPrivateScope(1, () => true);
   try {
     for (let orderId = 1; orderId <= 100; orderId++) {
-      const order = { orderId, actualStatus: "AWAITING_PAYMENT" as const, histories: [] };
-      for (const kind of ["payment", "prepayment"] as const) {
-        captureHook(client, scope, () => useCustomerPaymentAttempt(order, kind, true));
+      for (const kind of ["full", "prepayment"] as const) {
+        const store = customerPaymentState(client, scope, orderId, 1, kind);
+        const off = store.subscribe(() => {});
+        expect(store.read()).toBeUndefined();
+        expect(store.minimumVersion()).toBeUndefined();
+        off();
       }
     }
     expect(client.getQueryCache().getAll()).toHaveLength(0);
-    const order = { orderId: 42, actualStatus: "AWAITING_PAYMENT" as const, histories: [] };
-    const hook = () => useCustomerPaymentAttempt(order, "payment", true);
-    const attempt = captureHook(client, scope, hook);
-    expect(attempt.begin(77)).toBe(true);
+    const store = customerPaymentState(client, scope, 42, 1, "full");
+    const a = pending();
+    expect(store.begin(a)).toBe(true);
     expect(client.getQueryCache().getAll().map(query => query.gcTime)).toEqual([Infinity]);
-    expect(attempt.finish(77, { response: undefined })).toBe(false);
-    expect(captureHook(client, scope, hook).phase).toBe("unknown");
-    expect(captureHook(client, scope, hook).begin(78)).toBe(false);
+    store.update({ ...a, phase: "unknown", busy: false });
+    expect(store.read()?.phase).toBe("unknown");
+    expect(store.begin(pending())).toBe(false);
+    store.confirmVersion(0);
+    expect(store.minimumVersion()).toBe(0);
+    store.confirmVersion(2);
+    for (const old of [1, -1, 2.5, Number.MAX_SAFE_INTEGER + 1]) store.confirmVersion(old);
+    expect(customerPaymentState(client, scope, 42, 1, "prepayment").minimumVersion()).toBe(2);
+    expect(customerPaymentState(client, scope, 43, 1, "full").minimumVersion()).toBeUndefined();
   } finally { client.clear(); }
 });
 
@@ -102,25 +111,23 @@ test("late payment response cannot recreate the previous session or unlock the n
   const client = new QueryClient();
   const previous = createPrivateScope(1, () => true);
   const current = createPrivateScope(2, () => true);
-  const order = { orderId: 42, actualStatus: "AWAITING_PAYMENT" as const, histories: [] };
-  const payment = () => useCustomerPaymentAttempt(order, "payment", true);
+  const a = pending(), b = pending();
   try {
-    const original = captureHook(client, previous, payment);
-    expect(original.begin(77)).toBe(true);
-    expect(captureHook(client, previous, payment).begin(88)).toBe(false);
-    const prepayment = captureHook(client, previous, () => useCustomerPaymentAttempt(order, "prepayment", true));
-    expect(prepayment.blocked()).toBe(false);
-
+    const original = customerPaymentState(client, previous, 42, 1, "full");
+    expect(original.begin(a)).toBe(true);
+    expect(original.begin(pending())).toBe(false);
+    expect(customerPaymentState(client, previous, 42, 1, "prepayment").begin(pending())).toBe(false);
     previous.dispose();
     client.removeQueries({ queryKey: previous.key([]) });
-    const next = captureHook(client, current, payment);
-    expect(next.begin(77)).toBe(true);
-    original.finish(77, { response: 42 });
-    original.finish(77, { error: new Error("delayed response") });
+    const next = customerPaymentState(client, current, 42, 2, "full");
+    expect(next.begin(b)).toBe(true);
+    original.update({ ...a, phase: "accepted" });
+    original.update({ ...a, phase: "unknown" });
     expect(client.getQueryCache().findAll({ queryKey: previous.key([]) })).toHaveLength(0);
-    expect(next.blocked()).toBe(true);
-    expect(next.finish(77, { response: 42 })).toBe(true);
-    expect(next.blocked()).toBe(false);
+    expect(protectedAttempt(next.read())).toBe(true);
+    next.update({ ...b, phase: "verified", busy: false });
+    expect(protectedAttempt(next.read())).toBe(false);
+    next.discard();
     expect(client.getQueryCache().getAll()).toHaveLength(0);
   } finally { client.clear(); }
 });

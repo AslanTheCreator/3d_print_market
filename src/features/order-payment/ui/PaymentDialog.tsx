@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import {
   Alert,
   Dialog,
@@ -8,7 +8,6 @@ import {
   DialogActions,
   Button,
   Typography,
-  TextField,
   Box,
   Stack,
   IconButton,
@@ -18,21 +17,18 @@ import {
 } from "@mui/material";
 import { Close, CloudUpload, Payment, CheckCircle } from "@mui/icons-material";
 import {
-  OrderCalculationSummary,
+  OrderCalculationSummary, OrderDeliverySnapshot, hasTermsVersion,
   getOrderPaymentBreakdown,
-  usePaymentTermsCheck,
   type ListOrdersModel,
 } from "@/entities/order";
 import { useSellerAccounts } from "@/entities/account";
 import { usePrivateScope } from "@/shared/lib/query";
-import { imageApi } from "@/entities/image";
+import { paymentTerms } from "../model/paymentEvidence";
 import {
   createImagePreview,
   revokeImagePreview,
   validateImage,
 } from "@/shared/lib";
-import { serializeApiError, transformToApiError } from "@/shared/lib/errorHandler";
-import type { UseMutationResult } from "@tanstack/react-query";
 import { SellerPaymentDetails } from "./SellerPaymentDetails";
 import { useCustomerPaymentAttempt } from "../model/useCustomerPaymentAttempt";
 import { DisputePaymentDialog, type DisputePaymentDialogProps } from "./DisputePaymentDialog";
@@ -43,12 +39,6 @@ import { DisputePaymentDialog, type DisputePaymentDialogProps } from "./DisputeP
 
 export type PaymentType = "payment" | "prepayment" | "dispute";
 
-interface PaymentMutationParams {
-  orderId: number;
-  imageId: number;
-  comment?: string;
-}
-
 interface PaymentDialogProps {
   open: boolean;
   actionsAvailable?: boolean;
@@ -57,12 +47,6 @@ interface PaymentDialogProps {
   onClose: () => void;
   order: ListOrdersModel;
   paymentType: Exclude<PaymentType, "dispute">;
-  paymentMutation: UseMutationResult<
-    number,
-    unknown,
-    PaymentMutationParams,
-    unknown
-  >;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -97,23 +81,26 @@ const NormalPaymentDialog = ({
   onClose,
   order,
   paymentType,
-  paymentMutation,
 }: PaymentDialogProps) => {
-  const [comment, setComment] = useState("");
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageId, setImageId] = useState<number | null>(null);
+  const [seenTerms, setSeenTerms] = useState("");
+  const [selection, setSelection] = useState<{ file: File; version: number; preview: string } | null>(null);
+  const imagePreview = selection?.preview;
   const [imageError, setImageError] = useState<string | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const termsMatch = usePaymentTermsCheck("customer");
   const scope = usePrivateScope();
-  const lock = useRef(false);
   const revision = useRef(0);
-  const uploadController = useRef<AbortController | null>(null);
-  const latest = useRef({ order, open, actionsAvailable, selectedAccountId: null as number | null, accountsReady: false });
-  const attempt = useCustomerPaymentAttempt(order, paymentType, actionsAvailable);
-  const unresolved = attempt.phase === "unknown";
-  const sharedPending = attempt.phase === "pending";
+  const attempt = useCustomerPaymentAttempt(order, paymentType === "payment" ? "full" : "prepayment", open, actionsAvailable);
+  const state = attempt.state;
+  const sharedPending = !!state?.busy;
+  const unresolved = state?.phase === "unknown" || state?.phase === "accepted" || !!state?.needsRead;
+  const isUploadingImage = state?.phase === "uploading";
+  const returnedVersion = attempt.returned?.expectedVersion;
+  const expiredFile = !!selection && returnedVersion !== undefined && selection.version <= returnedVersion;
+  const expiredDraft = !!state?.imageId && !!attempt.returned && (state.imageId === attempt.returned.imageId ||
+    (returnedVersion !== undefined && state.proofVersion !== undefined && state.proofVersion <= returnedVersion));
+  const selectedImage = expiredFile ? null : selection?.file ?? null;
+  const imageId = expiredDraft ? undefined : state?.imageId;
+  const fingerprint = paymentTerms(order);
+  const changed = seenTerms !== fingerprint;
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
     null,
   );
@@ -121,16 +108,14 @@ const NormalPaymentDialog = ({
   const config = paymentConfig[paymentType];
   const paymentBreakdown = getOrderPaymentBreakdown(order);
   const paymentBlock = paymentType === "prepayment" ? paymentBreakdown.prepaymentBlock : paymentBreakdown.paymentBlock;
-  const mutationApiError = paymentMutation.error
-    ? transformToApiError(paymentMutation.error)
-    : null;
   const expectedOrderStatus =
     paymentType === "prepayment"
       ? "AWAITING_PREPAYMENT"
       : "AWAITING_PAYMENT";
   const isExpectedOrderStatus = order.actualStatus === expectedOrderStatus;
-  const showPaymentInstructions = actionsAvailable && isExpectedOrderStatus && !paymentBlock && !unresolved && !sharedPending;
-  const fileInputId = `payment-proof-upload-${paymentType}-${order.orderId}`;
+  const showPaymentInstructions = actionsAvailable && isExpectedOrderStatus && !paymentBlock && !unresolved && !sharedPending && attempt.canSubmit;
+  const formId = useId();
+  const fileInputId = formId + "-proof";
 
   // ──────────────────────────────────────────────────────────────────────────
   // Загрузка всех счетов продавца
@@ -143,7 +128,7 @@ const NormalPaymentDialog = ({
     isError: isAccountsError,
     isFetching: isAccountsFetching,
     refetch: refetchSellerAccounts,
-  } = useSellerAccounts(open && showPaymentInstructions ? order.userInfo.id : undefined);
+  } = useSellerAccounts(open && paymentType === "payment" && isExpectedOrderStatus && !paymentBlock && !unresolved ? order.userInfo.id : undefined);
 
   useEffect(() => {
     if (!open || !sellerAccounts) return;
@@ -174,128 +159,71 @@ const NormalPaymentDialog = ({
   // ──────────────────────────────────────────────────────────────────────────
 
   const resetImageState = () => {
-    setSelectedImage(null);
-    setImagePreview(null);
-    setImageId(null);
+    setSelection(null);
+    setImageError(null);
+    attempt.discard();
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file || paymentBlock || lock.current || paymentMutation.isPending || imageId || !scope.isCurrent() || attempt.blocked()) return;
+    if (!isExpectedOrderStatus || !hasTermsVersion(order.termsVersion) || attempt.staleVersion || !file || imageId || paymentBlock || sharedPending || unresolved || attempt.otherBlocked || !scope.isCurrent()) return;
     const validation = validateImage(file);
     if (!validation.isValid) {
       setImageError(validation.error ?? "Invalid image");
       return;
     }
     setImageError(null);
-    setSelectedImage(file);
-    setImagePreview(createImagePreview(file));
+    attempt.discard();
+    setSelection({ file, version: order.termsVersion, preview: createImagePreview(file) });
   };
 
   // ──────────────────────────────────────────────────────────────────────────
   // Подтверждение оплаты
   // ──────────────────────────────────────────────────────────────────────────
 
-  const handleConfirmPayment = async () => {
-    if (lock.current || !canConfirmPayment || attempt.blocked() || !scope.isCurrent() || !open) return;
-    lock.current = true;
+  const accountsArePending = isAccountsLoading || isAccountsFetching;
+  const accountsReady = paymentType === "prepayment" || (!!selectedAccountId && !accountsArePending && !isAccountsError &&
+    !!sellerAccounts?.some(account => account.id === selectedAccountId));
+  const canConfirmPayment = (!!imageId || !!selectedImage) && accountsReady && attempt.canSubmit && !changed &&
+    !sharedPending && !unresolved && !attempt.otherBlocked;
+  const latest = useRef(false);
+  useLayoutEffect(() => { latest.current = open && actionsAvailable && accountsReady && isExpectedOrderStatus && !changed; },
+    [open, actionsAvailable, accountsReady, isExpectedOrderStatus, changed]);
+  const handleConfirmPayment = () => {
+    if (!canConfirmPayment || !open) return;
     const generation = revision.current;
-    const orderId = order.orderId;
-    const isCurrent = () => scope.isCurrent() && generation === revision.current && latest.current.open && latest.current.order.orderId === orderId;
-    const submittedComment = comment.trim();
-    let submittedProofId: number | null = null;
-    try {
-      if (!termsMatch(order)) {
-        setImageError("Обновите заказ и проверьте расчёт.");
-        return;
-      }
-      let proofId = imageId;
-      if (!proofId && selectedImage) {
-        const controller = new AbortController();
-        uploadController.current = controller;
-        setIsUploadingImage(true);
-        setImageError(null);
-        const [uploadedId] = await imageApi.saveOrderImage(selectedImage, orderId, controller.signal);
-        if (!isCurrent()) return;
-        proofId = uploadedId;
-        setImageId(proofId);
-        setIsUploadingImage(false);
-      }
-      if (!isCurrent() || !proofId) return;
-      const current = latest.current;
-      if (!current.actionsAvailable || current.order.actualStatus !== expectedOrderStatus || !current.accountsReady || !current.selectedAccountId) return;
-      if (!termsMatch(order) || getOrderPaymentBreakdown(current.order).fingerprint !== paymentBreakdown.fingerprint) {
-        setImageError("Условия заказа изменились. Проверьте новый расчёт и подтвердите действие ещё раз.");
-        return;
-      }
-      if (!attempt.begin(proofId)) return;
-      submittedProofId = proofId;
-      const response = await paymentMutation.mutateAsync({ orderId, imageId: proofId, comment: submittedComment });
-      const accepted = attempt.finish(proofId, { response });
-      if (accepted && isCurrent()) handleClose({ keepUploadedImage: true });
-    } catch (error) {
-      if (submittedProofId !== null) attempt.finish(submittedProofId, { error });
-      if (!isCurrent()) return;
-      if (submittedProofId === null) {
-        console.error("Ошибка при загрузке изображения:", serializeApiError(error));
-        setImageError("Не удалось загрузить изображение на сервер");
-      }
-    } finally {
-      if (generation === revision.current) {
-        lock.current = false;
-        uploadController.current = null;
-        setIsUploadingImage(false);
-      }
-    }
+    void attempt.submit(selectedImage, imageId, imageId ? state?.proofVersion : selection?.version, () => latest.current && revision.current === generation);
   };
-
-  const handleClose = ({ keepUploadedImage = false }: { keepUploadedImage?: boolean } = {}) => {
-    if (!keepUploadedImage && (lock.current || paymentMutation.isPending || isUploadingImage)) return;
+  const handleClose = () => {
+    if (sharedPending) return;
     revision.current++;
-    lock.current = false;
-    setComment("");
-    resetImageState();
-    setImageError(null);
-    setIsUploadingImage(false);
-    setSelectedAccountId(null);
-    paymentMutation.reset();
     onClose();
   };
-
-  const hasSelectedAccount =
-    !!selectedAccountId &&
-    !!sellerAccounts?.some((account) => account.id === selectedAccountId);
-  const accountsArePending = isAccountsLoading || isAccountsFetching;
-  const canConfirmPayment =
-    (!!imageId || !!selectedImage) &&
-    hasSelectedAccount &&
-    !accountsArePending &&
-    !isAccountsError &&
-    showPaymentInstructions &&
-    !sharedPending &&
-    !paymentMutation.isPending &&
-    !isUploadingImage;
-  latest.current = { order, open, actionsAvailable, selectedAccountId, accountsReady: hasSelectedAccount && !accountsArePending && !isAccountsError };
-
+  const openingTerms = useRef(fingerprint);
+  useLayoutEffect(() => { openingTerms.current = imageId && state ? state.terms : fingerprint; }, [imageId, state, fingerprint]);
+  useLayoutEffect(() => {
+    const sessionRevision = revision;
+    sessionRevision.current++;
+    setSeenTerms(openingTerms.current);
+    setSelection(null); setImageError(null); setSelectedAccountId(null);
+    return () => { sessionRevision.current++; };
+  }, [open, order.orderId, paymentType, scope.signal, attempt.actor]);
+  const verified = state?.phase === "verified";
+  if (selection && (expiredFile || verified)) setSelection(null);
+  const discard = attempt.discard;
   useEffect(() => {
-    const currentRevision = revision;
-    currentRevision.current++;
-    lock.current = false;
-    setSelectedImage(null); setImagePreview(null); setImageId(null); setImageError(null);
-    setIsUploadingImage(false); setComment("");
-    const controller = uploadController.current;
-    controller?.abort();
-    return () => { currentRevision.current++; uploadController.current?.abort(); };
-  }, [open, order.orderId, paymentType, scope.signal]);
-
-  const mutationErrorMessage = attempt.verified ? null : mutationApiError?.message;
-  const receiptConfirmation = attempt.verified && (
-    <Alert severity="success">Заказ №{order.orderId}. Получение отправленного чека подтверждено данными заказа.</Alert>
+    if (expiredDraft && !sharedPending && !unresolved) discard(state?.token);
+  }, [discard, expiredDraft, sharedPending, unresolved, state?.token]);
+  useEffect(() => {
+    if (state?.phase === "verified" && open && !isExpectedOrderStatus) onClose();
+  }, [state?.phase, open, isExpectedOrderStatus, onClose]);
+  const receiptConfirmation = verified && state.verifiedVersion === order.termsVersion && (
+    <Alert severity="success">Заказ №{order.orderId}. {state.message}</Alert>
   );
   const recovery = unresolved && (
-    <Alert severity="warning" action={onRetry && <Button disabled={retryPending} onClick={onRetry}>Проверить результат</Button>}>
-      Заказ №{order.orderId}. Результат отправки чека неизвестен. Повторная отправка заблокирована. Проверьте состояние заказа.
+    <Alert severity="warning" action={<Button disabled={sharedPending} onClick={attempt.recheck}>Проверить результат</Button>}>
+      Заказ №{order.orderId}. <span>{state?.message}</span> {state?.needsRead && "Требуется контрольная проверка заказа и истории."}
     </Alert>
   );
 
@@ -325,6 +253,7 @@ const NormalPaymentDialog = ({
           <IconButton
             onClick={() => void handleClose()}
             size="small"
+            disabled={sharedPending}
             aria-label={`Закрыть окно «${config.title}»`}
           >
             <Close />
@@ -333,6 +262,10 @@ const NormalPaymentDialog = ({
       </DialogTitle>
 
       <DialogContent>
+        <form id={formId} onSubmit={event => { event.preventDefault(); handleConfirmPayment(); }}>
+        {attempt.staleVersion && <Alert severity="warning" action={<Button disabled={retryPending} onClick={() => { onRetry?.(); attempt.refreshHistory(); }}>Обновить заказ</Button>}>Получена устаревшая версия заказа. Предъявление чека заблокировано.</Alert>}
+        {attempt.hasOpenCase && <Alert severity="warning">По заказу открыто обращение. Предъявление чека недоступно.</Alert>}
+        {attempt.otherBlocked && <Alert severity="warning">Проверьте результат предыдущего предъявления чека по этому заказу.</Alert>}
         {sharedPending && <Alert severity="info">Чек уже отправляется</Alert>}
         {recovery}
         {receiptConfirmation}
@@ -347,11 +280,11 @@ const NormalPaymentDialog = ({
           <Typography variant="body2" color="text.secondary" gutterBottom>
             {order.product.name}
           </Typography>
-          <OrderCalculationSummary order={order} />
-          {showPaymentInstructions && paymentType === "prepayment" && <Typography>Приложите чек согласованной предоплаты. Если сумма ещё не согласована, уточните её у продавца до перевода.</Typography>}
+          {order.calculation && <OrderCalculationSummary order={order} />}
+          {showPaymentInstructions && paymentType === "prepayment" && <Typography>Приложите чек согласованной предоплаты. Сумма совершённого перевода должна быть согласована с продавцом.</Typography>}
         </Paper>
 
-        {showPaymentInstructions && (<>
+        {showPaymentInstructions && paymentType === "payment" && (<>
           <Typography
             variant="caption"
             color="text.secondary"
@@ -372,9 +305,9 @@ const NormalPaymentDialog = ({
             }}
           />
         </>)}
-        {mutationErrorMessage && (
+        {!unresolved && !(changed && state?.phase === "draft") && state?.message && state.phase !== "verified" && (
           <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2 }}>
-            {mutationErrorMessage}
+            {state.message}
           </Alert>
         )}
 
@@ -385,6 +318,12 @@ const NormalPaymentDialog = ({
           </Alert>
         )}
 
+        {attempt.returned && <Alert severity="info">Причина возврата чека: {attempt.returned.reason}</Alert>}
+        {changed && isExpectedOrderStatus && <Alert severity="warning" action={<Button disabled={sharedPending || unresolved}
+          onClick={() => setSeenTerms(fingerprint)}>Чек соответствует новым условиям</Button>}>
+          Условия заказа изменились. Проверьте новый расчёт и соответствие выбранного чека.
+          <OrderDeliverySnapshot order={order} />
+        </Alert>}
         {/* Загрузка чека */}
         <Box hidden={sharedPending || unresolved} sx={{ mb: 3 }}>
           <Typography variant="subtitle2" gutterBottom>
@@ -398,9 +337,7 @@ const NormalPaymentDialog = ({
             type="file"
             onChange={handleImageUpload}
             disabled={
-              !!paymentBlock || !!imageId || isUploadingImage ||
-              paymentMutation.isPending ||
-              sharedPending || unresolved
+              !isExpectedOrderStatus || attempt.staleVersion || !!imageId || !!paymentBlock || sharedPending || unresolved
             }
           />
 
@@ -427,10 +364,10 @@ const NormalPaymentDialog = ({
                     Загрузка изображения...
                   </Typography>
                 </Stack>
-              ) : imagePreview ? (
+              ) : imagePreview || imageId ? (
                 <Box>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  {imagePreview && <img
                     src={imagePreview}
                     alt={`Подтверждение ${
                       paymentType === "payment" ? "оплаты" : "предоплаты"
@@ -441,7 +378,7 @@ const NormalPaymentDialog = ({
                       borderRadius: 8,
                       marginBottom: 8,
                     }}
-                  />
+                  />}
                   <Typography variant="body2" color="success.main">
                     <CheckCircle sx={{ fontSize: 16, mr: 0.5 }} />
                     {imageId ? "Изображение загружено" : "Файл выбран"}
@@ -462,8 +399,14 @@ const NormalPaymentDialog = ({
           </label>
 
           <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-            <Button disabled={!!imageId || isUploadingImage || paymentMutation.isPending || sharedPending || unresolved} onClick={() => document.getElementById(fileInputId)?.click()}>Выбрать файл</Button>
-            {selectedImage && !imageId && <Button disabled={isUploadingImage || paymentMutation.isPending} onClick={() => { resetImageState(); setImageError(null); }}>Удалить выбранный файл</Button>}
+            {imageId ? (
+              <Button disabled={sharedPending || unresolved} onClick={resetImageState}>Выбрать другой чек</Button>
+            ) : (
+              <>
+                <Button disabled={!isExpectedOrderStatus || attempt.staleVersion || sharedPending || unresolved} onClick={() => document.getElementById(fileInputId)?.click()}>Выбрать файл</Button>
+                {selectedImage && <Button disabled={sharedPending} onClick={resetImageState}>Удалить выбранный файл</Button>}
+              </>
+            )}
           </Stack>
 
           {imageError && (
@@ -473,39 +416,24 @@ const NormalPaymentDialog = ({
           )}
         </Box>
 
-        {/* Комментарий */}
-        <TextField
-          fullWidth
-          multiline
-          rows={2}
-          label="Комментарий (необязательно)"
-          placeholder={`Добавьте комментарий к ${
-            paymentType === "payment" ? "оплате" : "предоплате"
-          }...`}
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          sx={{ mb: 1 }}
-          disabled={isUploadingImage || paymentMutation.isPending || sharedPending || unresolved}
-        />
+        </form>
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button
           onClick={() => void handleClose()}
-          disabled={
-            paymentMutation.isPending ||
-            isUploadingImage
-          }
+          disabled={sharedPending}
         >
           Отмена
         </Button>
         <Button
-          onClick={handleConfirmPayment}
+          type="submit"
+          form={formId}
           variant="contained"
           disabled={!canConfirmPayment}
-          startIcon={paymentMutation.isPending ? null : <Payment />}
+          startIcon={sharedPending ? null : <Payment />}
         >
-          {paymentMutation.isPending
+          {sharedPending
             ? config.buttonLoadingText
             : config.buttonText}
         </Button>

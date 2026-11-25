@@ -49,6 +49,7 @@ function decodeEvent(item: unknown) {
     return {
       ...metadata, kind,
       before: previous, after: next,
+      expectedVersion: hasTermsVersion(after.expectedVersion) ? after.expectedVersion : undefined,
       incomplete: previous.amount === undefined || next.amount === undefined,
       reason: typeof after.reason === "string" ? after.reason : undefined,
     } as const;

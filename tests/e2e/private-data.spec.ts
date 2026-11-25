@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
-import { setupMobileAccount, png } from "./helpers/mobileAccount";
+import { setupMobileAccount, orderFixture, png } from "./helpers/mobileAccount";
 
 test.setTimeout(90_000);
 const draftKey = "create-product-form-draft";
@@ -108,4 +108,50 @@ test("automatic expiry clears draft before document redirect and B login", async
   await loginB(page);
   await page.goto("/dashboard/products/new");
   await expect(page.getByRole("textbox", { name: "Название товара" })).toHaveValue("");
+});
+
+for (const pending of ["upload", "payment"]) test("смена аккаунта во время " + pending + " не переносит чек или попытку", async ({ page, baseURL }) => {
+  const session = await setup(page, baseURL);
+  const order = orderFixture(75, "AWAITING_PREPAYMENT", 1);
+  await page.route("**/order/customer", route => reply(route, [order]));
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const uploads: number[] = [], posts: number[] = [];
+  await page.route("**/images?tag=ORDER&entityId=75", async route => {
+    if (route.request().method() === "POST") {
+      uploads.push(session.owner);
+      if (pending === "upload") await gate;
+    }
+    await reply(route, [75]).catch(() => {});
+  });
+  await page.route("**/order/75/payments/prepayment", async route => {
+    if (route.request().method() === "POST") {
+      posts.push(session.owner);
+      if (pending === "payment") await gate;
+    }
+    await reply(route, 75).catch(() => {});
+  });
+  await page.goto("/dashboard/purchase");
+  const open = page.getByRole("button", { name: "Подтвердить предоплату", exact: true }).first();
+  await open.click();
+  const dialog = page.getByRole("dialog");
+  const submit = dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true });
+  await upload(page);
+  await submit.click();
+  try {
+    await expect.poll(() => pending === "upload" ? uploads.length : posts.length).toBe(1);
+    await page.getByRole("button", { name: "Выход", exact: true, includeHidden: true }).evaluate(button => (button as HTMLButtonElement).click());
+    await expect(page).toHaveURL(/\/auth\/login/);
+    await loginB(page);
+    await page.locator('a[href="/dashboard"]').first().click();
+    await expect(page.getByText("account-2", { exact: true }).first()).toBeVisible();
+    await page.locator('a[href="/dashboard/purchase"]').first().click();
+    await open.click();
+    await expect(submit).toBeDisabled();
+  } finally { release(); }
+  await expect(dialog.getByText(/Изображение загружено|Чек передан|Файл выбран|Результат отправки чека/)).toHaveCount(0);
+  await upload(page);
+  await expect(submit).toBeEnabled();
+  expect(uploads).toEqual([1]);
+  expect(posts).toEqual(pending === "payment" ? [1] : []);
 });

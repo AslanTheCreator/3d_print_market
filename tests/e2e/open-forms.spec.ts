@@ -15,6 +15,15 @@ async function reconnect(page: Page) {
     window.dispatchEvent(new Event("online"));
   });
 }
+function countBuyerUploads(page: Page) {
+  let uploads = 0;
+  page.on("request", request => {
+    const url = new URL(request.url());
+    if (request.method() === "POST" && url.pathname === "/images" && url.searchParams.get("tag") === "ORDER") uploads++;
+  });
+  return () => uploads;
+}
+
 async function tryPendingClose(page: Page, dialog: Locator, closeName: string) {
   await expect(dialog.getByRole("button", { name: closeName })).toBeDisabled();
   await page.keyboard.press("Escape");
@@ -75,17 +84,19 @@ test("seller prepayment confirmation survives close attempts and remount during 
 for (const status of [503, 200]) test(`remounted buyer form hides payment instructions during pending and handles late HTTP ${status}`, async ({ page, baseURL }) => {
   const state = await setupMobileAccount(page, baseURL);
   const order = orderFixture(41, "AWAITING_PAYMENT", 1);
+  const uploads = countBuyerUploads(page);
   state.customerOrders = [order];
   await page.route("**/accounts/participant/10", route => fulfillJson(route, [
     { id: 1, participantId: 10, username: "Получатель", entityValue: "TEST", transferMoney: "BANK_CARD" },
   ]));
   const gate = deferred();
   let posts = 0;
-  await page.route("**/order/41/ASSEMBLING?*", async route => {
+  await page.route("**/order/41/payments/full", async route => {
     if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
     posts++; await gate.promise;
     if (status === 200) {
       order.actualStatus = "AWAITING_PAYMENT_APPROVAL";
+      order.termsVersion = 1;
       return fulfillJson(route, order.orderId);
     }
     return fulfillJson(route, { code: "UPSTREAM_ERROR", message: "Нет ответа", status: 409 }, 503);
@@ -110,20 +121,20 @@ for (const status of [503, 200]) test(`remounted buyer form hides payment instru
     await expect(dialog.getByText(/Выберите реквизиты продавца/)).toBeHidden();
     await expect(dialog.getByText(/Нажмите, чтобы загрузить/)).toBeHidden();
     await expect(dialog.getByRole("button", { name: "Выбрать файл" })).toHaveCount(0);
-    await expect(dialog.getByRole("button", { name: "Подтвердить оплату", exact: true })).toBeDisabled();
+    await expect(dialog.getByRole("button", { name: "Подтверждение...", exact: true })).toBeDisabled();
   } finally { gate.resolve(); }
   if (status === 200) {
     await expect(page.getByTestId("desktop-orders").getByText("Ожидает подтверждения полной оплаты", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Чек уже отправляется", { exact: true })).toHaveCount(0);
     await expect(page.getByText(/Результат отправки чека неизвестен/)).toHaveCount(0);
-    expect(posts).toBe(1);
+    expect([uploads(), posts]).toEqual([1, 1]);
     return;
   }
   await expect(dialog.getByText(/Результат отправки чека неизвестен/)).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Подтвердить оплату", exact: true })).toBeDisabled();
   await dialog.getByRole("button", { name: "Проверить результат" }).click();
   await expect(dialog.getByText(/Результат отправки чека неизвестен/)).toBeVisible();
-  expect(posts).toBe(1);
+  expect([uploads(), posts]).toEqual([1, 1]);
 });
 
 for (const width of [393, 1280]) {
@@ -132,16 +143,18 @@ for (const width of [393, 1280]) {
     const state = await setupMobileAccount(page, baseURL);
     state.customerOrders = [orderFixture(1, "AWAITING_PAYMENT", 1)];
     await page.route("**/accounts/participant/10", route => fulfillJson(route, [{ id: 1, participantId: 10, username: "Получатель", entityValue: "TEST", transferMoney: "BANK_CARD", comment: "" }]));
-    const writes: string[] = [];
-    await page.route("**/order/1/ASSEMBLING?*", route => {
-      if (route.request().method() !== "OPTIONS") writes.push(route.request().url());
+    const writes: unknown[] = [];
+    const uploads = countBuyerUploads(page);
+    await page.route("**/order/1/payments/full", route => {
+      if (route.request().method() === "POST") {
+        writes.push(route.request().postDataJSON());
+        Object.assign(state.customerOrders[0], { actualStatus: "AWAITING_PAYMENT_APPROVAL", termsVersion: 1, paymentProofImageId: 77 });
+      }
       return fulfillJson(route, 1);
     });
     await page.goto("/dashboard/purchase");
     await page.getByRole("button", { name: "Подтвердить оплату", exact: true }).first().click();
     const dialog = page.getByRole("dialog");
-    const comment = dialog.getByLabel("Комментарий (необязательно)");
-    await comment.fill("Сохранённый комментарий");
     await dialog.locator('input[type="file"]').setInputFiles({ name: "proof.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
     const confirm = dialog.getByRole("button", { name: "Подтвердить оплату", exact: true });
     await expect(confirm).toBeEnabled();
@@ -153,7 +166,6 @@ for (const width of [393, 1280]) {
     state.ordersStatus = 403;
     await reconnect(page);
     await expect(dialog.getByText(/Подтверждение недоступно до успешной загрузки/)).toBeVisible();
-    await expect(comment).toHaveValue("Сохранённый комментарий");
     await expect(dialog.getByText("Файл выбран", { exact: true })).toBeVisible();
     await expect(confirm).toBeDisabled();
     await expect(account).toHaveCount(0);
@@ -167,33 +179,31 @@ for (const width of [393, 1280]) {
     await expect(account).toBeVisible();
     await expect(copy).toBeVisible();
     await expect(instructions).toBeVisible();
-    await expect(comment).toHaveValue("Сохранённый комментарий");
     await expect(dialog.getByText("Файл выбран", { exact: true })).toBeVisible();
     await confirm.click();
     await expect(dialog).toBeHidden();
-    expect(writes).toHaveLength(1);
-    const url = new URL(writes[0]);
-    expect(url.searchParams.get("imageId")).toBe("77");
-    expect(url.searchParams.get("comment")).toBe("Сохранённый комментарий");
+    expect(writes).toEqual([{ expectedVersion: 0, imageId: 77 }]);
+    expect(uploads()).toBe(1);
   });
 }
 
-for (const status of [200, 409]) test(`pending payment settles after failed background read: HTTP ${status}`, async ({ page, baseURL }) => {
+for (const status of [200, 400]) test(`pending payment settles after failed background read: HTTP ${status}`, async ({ page, baseURL }) => {
   const state = await setupMobileAccount(page, baseURL);
   state.customerOrders = [orderFixture(1, "AWAITING_PAYMENT", 1)];
   await page.route("**/accounts/participant/10", route => fulfillJson(route, [{ id: 1, participantId: 10, username: "Получатель", entityValue: "TEST", transferMoney: "BANK_CARD", comment: "" }]));
   const gate = deferred();
   let writes = 0;
-  await page.route("**/order/1/ASSEMBLING?*", async route => {
+  const uploads = countBuyerUploads(page);
+  await page.route("**/order/1/payments/full", async route => {
     if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
     writes++;
     await gate.promise;
-    return fulfillJson(route, status === 200 ? 1 : { code: "ORDER_STATUS_CONFLICT", message: "Отказ оплаты" }, status);
+    if (status === 200) Object.assign(state.customerOrders[0], { actualStatus: "AWAITING_PAYMENT_APPROVAL", termsVersion: 1 });
+    return fulfillJson(route, status === 200 ? 1 : { code: "ORDER_PAYMENT_INVALID", message: "Отказ оплаты" }, status);
   });
   await page.goto("/dashboard/purchase");
   await page.getByRole("button", { name: "Подтвердить оплату", exact: true }).first().click();
   const dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Комментарий (необязательно)").fill("Pending draft");
   await dialog.locator('input[type="file"]').setInputFiles({ name: "proof.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
   await expect(dialog.getByRole("button", { name: "Подтвердить оплату", exact: true })).toBeEnabled();
   await dialog.getByRole("button", { name: "Подтвердить оплату", exact: true }).click();
@@ -203,18 +213,22 @@ for (const status of [200, 409]) test(`pending payment settles after failed back
     await reconnect(page);
     await expect(dialog.getByText(/Подтверждение недоступно до успешной загрузки/)).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Подтверждение...", exact: true })).toBeDisabled();
-    await expect(dialog.getByLabel("Комментарий (необязательно)")).toHaveValue("Pending draft");
+    expect(writes).toBe(1);
   } finally { gate.resolve(); }
-  if (status === 200) await expect(dialog).toBeHidden();
-  else {
+  if (status === 200) {
+    await expect(dialog.getByText("Чек передан на проверку", { exact: true })).toBeVisible();
+    state.ordersStatus = 200;
+    await dialog.getByRole("button", { name: "Проверить результат" }).click();
+    await expect(dialog).toBeHidden();
+  } else {
     await expect(dialog.getByText("Отказ оплаты", { exact: true })).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Подтвердить оплату", exact: true })).toBeDisabled();
     state.ordersStatus = 200;
-    await dialog.getByRole("button", { name: "Повторить загрузку", exact: true }).click();
+    await dialog.getByRole("button", { name: "Проверить результат" }).click();
     await expect(dialog.getByRole("button", { name: "Подтвердить оплату", exact: true })).toBeEnabled();
-    await expect(dialog.getByLabel("Комментарий (необязательно)")).toHaveValue("Pending draft");
+    await expect(dialog.getByText("Изображение загружено", { exact: true })).toBeVisible();
   }
-  expect(writes).toBe(1);
+  expect([uploads(), writes]).toEqual([1, 1]);
 });
 
 for (const malformed of [false, true]) test(`dirty admin form retains its baseline after ${malformed ? "invalid relations" : "refetch failure"}`, async ({ page, baseURL }) => {
@@ -554,7 +568,7 @@ test("obsolete terms response refreshes the displayed balance without replaying 
     if (route.request().method() === "POST") uploads++;
     return fulfillJson(route, [77]);
   });
-  await page.route("**/order/1/ASSEMBLING?*", route => {
+  await page.route("**/order/1/payments/full", route => {
     if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
     writes++;
     order.termsVersion = 1;
@@ -569,6 +583,10 @@ test("obsolete terms response refreshes the displayed balance without replaying 
   await dialog.getByRole("button", { name: "Подтвердить оплату", exact: true }).click();
   await expect(dialog.getByText("Осталось оплатить: 3 800,00 ₽")).toBeVisible();
   await expect(dialog.getByText("Условия изменились", { exact: true })).toBeVisible();
+  const submit = dialog.getByRole("button", { name: "Подтвердить оплату", exact: true });
+  await expect(submit).toBeDisabled();
+  await dialog.getByRole("button", { name: "Чек соответствует новым условиям" }).click();
+  await expect(submit).toBeEnabled();
   expect({ uploads, writes }).toEqual({ uploads: 1, writes: 1 });
 });
 

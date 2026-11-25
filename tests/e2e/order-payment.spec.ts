@@ -27,7 +27,8 @@ const paymentProofFile = {
 type PaymentStatus = "AWAITING_PREPAYMENT" | "AWAITING_PAYMENT";
 
 interface PaymentApiOptions {
-  orders: unknown[];
+  orders: ReturnType<typeof createPreorder>[];
+  events?: object[];
   accounts: unknown[];
   accountsStatus?: number;
   uploadImageId: number;
@@ -46,6 +47,16 @@ interface PaymentApiTracker {
   statusHasAccountId: boolean[];
   statusImageIds: number[];
 }
+
+const oldPaymentRoutes = new WeakMap<Page, string[]>();
+test.beforeEach(({ page }) => {
+  const writes: string[] = [];
+  oldPaymentRoutes.set(page, writes);
+  page.on("request", request => {
+    if (request.method() === "POST" && /\/order\/\d+\/(?:ASSEMBLING|AWAITING_PREPAYMENT_APPROVAL)(?:\?|$)/.test(request.url())) writes.push(request.url());
+  });
+});
+test.afterEach(({ page }) => { expect(oldPaymentRoutes.get(page)).toEqual([]); });
 
 const authenticate = async (
   context: BrowserContext,
@@ -181,6 +192,7 @@ const mockPaymentApi = async (
   page: Page,
   {
     orders,
+    events = [],
     accounts,
     accountsStatus = 200,
     uploadImageId,
@@ -230,6 +242,7 @@ const mockPaymentApi = async (
 
     await fulfillJson(route, orders);
   });
+  await page.route("**/terms-history", route => fulfillJson(route, events));
   await page.route("**/order/seller", (route) => fulfillJson(route, []));
   await page.route("**/images/metadata?ids=*", (route) =>
     fulfillJson(route, []),
@@ -281,7 +294,7 @@ const mockPaymentApi = async (
   });
 
   await page.route(
-    /\/order\/\d+\/(?:AWAITING_PREPAYMENT_APPROVAL|ASSEMBLING)(?:\?.*)?$/,
+    /\/order\/\d+\/payments\/(?:prepayment|full)(?:\?.*)?$/,
     async (route) => {
       if (route.request().method() === "OPTIONS") {
         await fulfillJson(route, {});
@@ -289,10 +302,14 @@ const mockPaymentApi = async (
       }
 
       const url = new URL(route.request().url());
+      const body = route.request().postDataJSON();
+      const row = orders.find(o => o.orderId === Number(url.pathname.split("/")[2]))!;
+      expect(body).toEqual({ expectedVersion: row.termsVersion, imageId: uploadImageId });
+      expect(url.search).toBe("");
       tracker.statusComments.push(url.searchParams.get("comment") ?? "");
       tracker.statusHasAccountId.push(url.searchParams.has("accountId"));
       tracker.statusImageIds.push(
-        Number(url.searchParams.get("imageId") ?? Number.NaN),
+        body.imageId,
       );
 
       if (mutationFailure === "network") {
@@ -308,11 +325,11 @@ const mockPaymentApi = async (
         await fulfillJson(
           route,
           {
-            code: "ORDER_STATUS_CONFLICT",
+            code: mutationFailure === "http-409" ? "ORDER_TERMS_STALE" : "ORDER_PAYMENT_INVALID",
             message: "Статус заказа изменился, повторите попытку",
-            status: 409,
+            status: mutationFailure === "http-409" ? 409 : 400,
           },
-          409,
+          mutationFailure === "http-409" ? 409 : 400,
         );
         return;
       }
@@ -321,7 +338,10 @@ const mockPaymentApi = async (
         await route.fulfill({ status: 200, headers: corsHeaders, contentType: "application/json", body: successBody });
         return;
       }
-      await fulfillJson(route, Number(url.pathname.split("/")[2]));
+      Object.assign(row, { actualStatus: url.pathname.endsWith("prepayment") ? "AWAITING_PREPAYMENT_APPROVAL" : "AWAITING_PAYMENT_APPROVAL",
+        termsVersion: row.termsVersion + 1, paymentProofImageId: body.imageId });
+      events.push({ kind: "PAYMENT_SUBMITTED", actor_id: 1, id: events.length + 1, payload: JSON.stringify(body) });
+      await fulfillJson(route, row.orderId);
     },
   );
 
@@ -365,18 +385,25 @@ test.describe("order payment flow", () => {
     });
     await page.goto("/dashboard/purchase");
     const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
-    for (const response of [[], [null], [0], [-1], ["9551"], [1.5]]) {
-      await page.route("**/images?tag=ORDER&entityId=551", route => fulfillJson(route, response));
+    let uploads = 0;
+    const badResponses = [null, "[]", "[null]", "[0]", "[-1]", '["9551"]', "[1.5]", "[9551,9552]", "[9551.0000000000000001]", "[9007199254740993]"];
+    for (const [index, response] of badResponses.entries()) {
+      await page.route("**/images?tag=ORDER&entityId=551", route => {
+        if (route.request().method() !== "POST") return fulfillJson(route, null);
+        uploads++;
+        return response === null ? route.abort("failed") : route.fulfill({ status: 200, headers: corsHeaders, contentType: "application/json", body: response });
+      });
       await dialog.locator('input[type="file"]').setInputFiles(paymentProofFile);
       await dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true }).click();
       await expect(dialog.getByText("Не удалось загрузить изображение на сервер", { exact: true })).toBeVisible();
       await expect(dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true })).toBeEnabled();
-      expect(tracker.statusImageIds).toEqual([]);
+      expect([uploads, tracker.statusImageIds.length]).toEqual([index + 1, 0]);
     }
-    await page.route("**/images?tag=ORDER&entityId=551", route => fulfillJson(route, [9551]));
+    await page.unroute("**/images?tag=ORDER&entityId=551");
     await uploadPaymentProof(dialog);
     await dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true }).click();
     await expect.poll(() => tracker.statusImageIds).toEqual([9551]);
+    expect(tracker.uploads).toHaveLength(1);
   });
 
   test("shows quantity-aware amounts and local preview without upload or DELETE on close", async ({
@@ -428,7 +455,8 @@ test.describe("order payment flow", () => {
     await expect(prepaymentDialog.getByText(/^Товары:/)).toContainText(/37\s500,00\s*₽/);
     await expect(
       prepaymentDialog.getByText("TEST-ACCOUNT-501", { exact: true }),
-    ).toBeVisible();
+    ).toBeHidden();
+    expect(tracker.accountsRequestCount).toBe(0);
 
     await uploadPaymentProof(prepaymentDialog);
     await expect(
@@ -487,7 +515,7 @@ test.describe("order payment flow", () => {
 
       const order = createPreorder({
         orderId: scenario.orderId,
-        status: "AWAITING_PREPAYMENT",
+        status: "AWAITING_PAYMENT",
         sellerId: scenario.orderId + 1_000,
       });
       const tracker = await mockPaymentApi(page, {
@@ -502,7 +530,7 @@ test.describe("order payment flow", () => {
       });
       const dialog = await openPaymentDialog(
         page,
-        "Подтвердить предоплату",
+        "Подтвердить оплату",
       );
       await uploadPaymentProof(dialog);
 
@@ -510,7 +538,7 @@ test.describe("order payment flow", () => {
         timeout: 15_000,
       });
       const confirmButton = dialog.getByRole("button", {
-        name: "Подтвердить предоплату",
+        name: "Подтвердить оплату",
         exact: true,
       });
       await expect(confirmButton).toBeDisabled();
@@ -549,7 +577,7 @@ test.describe("order payment flow", () => {
       orders: [
         createPreorder({
           orderId: 521,
-          status: "AWAITING_PREPAYMENT",
+          status: "AWAITING_PAYMENT",
           sellerId,
         }),
       ],
@@ -576,12 +604,12 @@ test.describe("order payment flow", () => {
     });
     const dialog = await openPaymentDialog(
       page,
-      "Подтвердить предоплату",
+      "Подтвердить оплату",
     );
     await uploadPaymentProof(dialog);
 
     const confirmButton = dialog.getByRole("button", {
-      name: "Подтвердить предоплату",
+      name: "Подтвердить оплату",
       exact: true,
     });
     await expect(confirmButton).toBeDisabled();
@@ -656,6 +684,7 @@ test.describe("order payment flow", () => {
       .click();
     await expect(dialog).toBeHidden();
     await expect.poll(() => tracker.deletedImageIds).toEqual([]);
+    expect([tracker.uploads.length, tracker.statusImageIds.length]).toEqual([1, 1]);
   });
 
   test("keeps proof and mutation pending until reconciliation after a network error", async ({
@@ -669,6 +698,7 @@ test.describe("order payment flow", () => {
     const customerOrdersRefetchGate = new Promise<void>((resolve) => {
       releaseCustomerOrdersRefetch = resolve;
     });
+    const events: object[] = [];
     const sellerId = 97;
     const order = createPreorder({ orderId: 529, status: "AWAITING_PREPAYMENT", sellerId });
     const tracker = await mockPaymentApi(page, {
@@ -686,7 +716,7 @@ test.describe("order payment flow", () => {
       ],
       uploadImageId: 9_299,
       mutationFailure: "network",
-      customerOrdersRefetchGate,
+      customerOrdersRefetchGate, events,
     });
 
     await page.goto("/dashboard/purchase", {
@@ -726,9 +756,7 @@ test.describe("order payment flow", () => {
       releaseCustomerOrdersRefetch();
     }
 
-    await expect(
-      dialog.getByText("Нет соединения с сервером", { exact: true }),
-    ).toBeVisible();
+    await expect(dialog.getByText(/Результат отправки чека неизвестен/)).toBeVisible();
     const confirm = dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true });
     const check = dialog.getByRole("button", { name: "Проверить результат" });
     await expect(confirm).toBeDisabled();
@@ -755,9 +783,10 @@ test.describe("order payment flow", () => {
     await expect(dialog).toBeHidden();
     const unknown = page.getByRole("alert").filter({ hasText: "Заказ №529. Результат отправки чека неизвестен" });
     await expect(unknown).toBeVisible();
-    Object.assign(order, { paymentProofImageId: 9299 });
+    events.push({ id: 1, actor_id: 1, kind: "PAYMENT_SUBMITTED", payload: '{"expectedVersion":0,"imageId":9299}' });
+    Object.assign(order, { termsVersion: 1, paymentProofImageId: 9299 });
     await unknown.getByRole("button", { name: "Проверить результат" }).click();
-    await expect(page.getByRole("alert").filter({ hasText: "Заказ №529. Получение отправленного чека подтверждено данными заказа." })).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: "Заказ №529. Чек передан на проверку" })).toBeVisible();
     await expect(unknown).toHaveCount(0);
     expect(tracker.statusImageIds).toEqual([9299]);
     expect(tracker.uploads).toHaveLength(1);
@@ -768,10 +797,11 @@ test.describe("order payment flow", () => {
     await authenticate(context, baseURL);
     const order = createPreorder({ orderId: 545, status: "AWAITING_PREPAYMENT", sellerId: 97 });
     const review = { status: "AWAITING_PREPAYMENT_APPROVAL", comment: "", changedAt: "21.07.2026 14:00:00" };
+    const events: object[] = [];
     order.histories.push(review, { status: "AWAITING_PREPAYMENT", comment: "", changedAt: "21.07.2026 15:00:00" });
     const tracker = await mockPaymentApi(page, {
       orders: [order], accounts: [createAccount({ id: 900, participantId: 97, username: "Получатель", entityValue: "TEST-545" })],
-      uploadImageId: 9545, mutationFailure: "network",
+      uploadImageId: 9545, mutationFailure: "network", events,
     });
     await page.goto("/dashboard/purchase");
     const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
@@ -800,9 +830,11 @@ test.describe("order payment flow", () => {
     Object.assign(order, { paymentProofImageId: 888 });
     await check();
     await expect(unknown.first()).toBeVisible();
-    Object.assign(order, { paymentProofImageId: 9545 });
+    events.push({ id: 1, actor_id: 1, kind: "PAYMENT_SUBMITTED", payload: '{"expectedVersion":0,"imageId":9545}' },
+      { id: 2, actor_id: 97, kind: "PAYMENT_APPROVED", payload: '{"request":{"expectedVersion":1},"imageId":9545,"confirmedPaidAmount":"7500.00"}' });
+    Object.assign(order, { termsVersion: 2, paymentProofImageId: 9545 });
     await check();
-    await expect(list.getByRole("alert").filter({ hasText: /Получение отправленного чека подтверждено/ }).first()).toBeVisible();
+    await expect(list.getByRole("alert").filter({ hasText: /Платёж подтверждён по истории заказа/ }).first()).toBeVisible();
     await expect(unknown).toHaveCount(0);
     expect(tracker.statusImageIds).toEqual([9545]);
     expect(tracker.uploads).toHaveLength(1);
@@ -877,9 +909,7 @@ test.describe("order payment flow", () => {
     );
     await uploadPaymentProof(dialog);
 
-    const comment = "Тестовый комментарий для повторной попытки";
-    const commentInput = dialog.getByLabel("Комментарий (необязательно)");
-    await commentInput.fill(comment);
+    await expect(dialog.getByLabel("Комментарий (необязательно)")).toHaveCount(0);
 
     const confirmButton = dialog.getByRole("button", {
       name: "Подтвердить предоплату",
@@ -893,12 +923,14 @@ test.describe("order payment flow", () => {
       }),
     ).toBeVisible();
     await expect(dialog).toBeVisible();
-    await expect(commentInput).toHaveValue(comment);
+
     expect(tracker.uploads).toHaveLength(1);
     expect(tracker.uploads[0].entityId).toBe("531");
     expect(tracker.uploads[0].authorization).toMatch(/^Bearer /);
     expect(tracker.uploads[0].body).toContain('name="files"');
     await expect(dialog.locator('input[type="file"]')).toBeDisabled();
+    await expect(dialog.getByRole("button", { name: "Удалить выбранный файл" })).toHaveCount(0);
+    await expect(dialog.getByRole("button", { name: "Выбрать другой чек" })).toBeEnabled();
 
     await expect(
       dialog.getByText("Изображение загружено", { exact: true }),
@@ -909,7 +941,7 @@ test.describe("order payment flow", () => {
     await expect(dialog).toBeHidden();
 
     expect(tracker.statusImageIds).toEqual([9_301, 9_301]);
-    expect(tracker.statusComments).toEqual([comment, comment]);
+    expect(tracker.statusComments).toEqual(["", ""]);
     expect(tracker.statusHasAccountId).toEqual([false, false]);
     expect(tracker.deletedImageIds).toEqual([]);
   });
@@ -918,9 +950,9 @@ test.describe("order payment flow", () => {
 
 for (const width of [393, 1280]) {
   for (const scenario of [
-    { status: "AWAITING_PREPAYMENT", prepaymentAmount: 1_200, action: "Подтвердить предоплату", endpoint: "AWAITING_PREPAYMENT_APPROVAL" },
-    { status: "AWAITING_PAYMENT", prepaymentAmount: 1_200, action: "Подтвердить оплату", endpoint: "ASSEMBLING" },
-    { status: "AWAITING_PAYMENT", prepaymentAmount: 0, action: "Подтвердить оплату", endpoint: "ASSEMBLING" },
+    { status: "AWAITING_PREPAYMENT", prepaymentAmount: 1_200, action: "Подтвердить предоплату", endpoint: "payments/prepayment" },
+    { status: "AWAITING_PAYMENT", prepaymentAmount: 1_200, action: "Подтвердить оплату", endpoint: "payments/full" },
+    { status: "AWAITING_PAYMENT", prepaymentAmount: 0, action: "Подтвердить оплату", endpoint: "payments/full" },
   ] as const) {
     test('external payment uses server totals: ' + scenario.status + ', prepayment ' + scenario.prepaymentAmount + ', width ' + width, async ({ context, page, baseURL }) => {
       await page.setViewportSize({ width, height: 900 });
@@ -977,5 +1009,396 @@ for (const role of ["purchase", "sales"] as const) {
     await detail.getByRole("button", { name: "Закрыть детали заказа" }).click();
     await expect(action).toBeDisabled();
     expect(writes).toEqual([]);
+  });
+}
+
+for (const point of ["before upload", "after upload"] as const) {
+  test("изменение версии " + point + " требует повторного согласия", async ({ context, page, baseURL }) => {
+    await authenticate(context, baseURL);
+    const order = createPreorder({ orderId: 616, status: "AWAITING_PREPAYMENT", sellerId: 99 });
+    await page.setViewportSize({ width: point === "before upload" ? 393 : 1280, height: 900 });
+    Object.assign(order, { deliveryCarrier: "OZON", deliveryAddress: "Старый ПВЗ" });
+    const tracker = await mockPaymentApi(page, { orders: [order], accounts: [], uploadImageId: 7616 });
+    await page.goto("/dashboard/purchase");
+    const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
+    await uploadPaymentProof(dialog);
+    const changeDelivery = () => Object.assign(order, { termsVersion: 1, deliveryCarrier: "YANDEX", deliveryAddress: "Новый ПВЗ на Полевой" });
+    if (point === "before upload") changeDelivery();
+    else {
+      await page.route("**/images?tag=ORDER&entityId=616", async route => {
+        if (route.request().method() === "POST") changeDelivery();
+        await route.fallback();
+      });
+    }
+    const submit = dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true });
+    await submit.click();
+    const acknowledge = dialog.getByRole("button", { name: "Чек соответствует новым условиям" });
+    await expect(acknowledge).toBeEnabled();
+    const change = dialog.getByRole("alert").filter({ hasText: "Чек соответствует новым условиям" });
+    await expect(change.getByText("Служба доставки: Яндекс")).toBeVisible();
+    await expect(change.getByText("Новый ПВЗ на Полевой")).toBeVisible();
+    await expect(submit).toBeDisabled();
+    expect([tracker.uploads.length, tracker.statusImageIds.length]).toEqual([point === "before upload" ? 0 : 1, 0]);
+    await acknowledge.click();
+    await expect(submit).toBeEnabled();
+    await submit.click();
+    await expect(dialog).toBeHidden();
+    expect([tracker.uploads.length, tracker.statusImageIds.length]).toEqual([1, 1]);
+  });
+}
+
+test("Enter и requestSubmit одновременно с click резервируют один upload и один POST; HTTP 408 разрешает только GET", async ({ context, page, baseURL }) => {
+  await authenticate(context, baseURL);
+  const order = createPreorder({ orderId: 618, status: "AWAITING_PREPAYMENT", sellerId: 99 });
+  const tracker = await mockPaymentApi(page, { orders: [order], accounts: [], uploadImageId: 7618 });
+  let posts = 0;
+  await page.route("**/order/618/payments/prepayment", route => {
+    if (route.request().method() === "POST") posts++;
+    return fulfillJson(route, { code: "INVALID_REQUEST" }, 408);
+  });
+  await page.goto("/dashboard/purchase");
+  const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
+  await uploadPaymentProof(dialog);
+  const submit = dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true });
+  await submit.focus();
+  await submit.evaluate(el => {
+    const button = el as HTMLButtonElement;
+    const form = button.form!;
+    form.addEventListener("submit", () => {
+      button.click();
+      form.requestSubmit();
+      form.requestSubmit();
+    }, { once: true });
+  });
+  await page.keyboard.press("Enter");
+  await expect(dialog.getByText(/Результат отправки чека неизвестен/)).toBeVisible();
+  const check = dialog.getByRole("button", { name: "Проверить результат" });
+  await check.click();
+  await expect(check).toBeEnabled();
+  expect([tracker.uploads.length, posts]).toEqual([1, 1]);
+});
+
+test("после потери ответа возврат до контрольного GET показывает причину и очищает выбор", async ({ context, page, baseURL }) => {
+  await authenticate(context, baseURL);
+  const order = createPreorder({ orderId: 619, status: "AWAITING_PREPAYMENT", sellerId: 99 });
+  const events: object[] = [];
+  const tracker = await mockPaymentApi(page, { orders: [order], accounts: [], uploadImageId: 7619, mutationFailure: "network", events });
+  await page.goto("/dashboard/purchase");
+  const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
+  await uploadPaymentProof(dialog);
+  const submit = dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true });
+  await submit.click();
+  const check = dialog.getByRole("button", { name: "Проверить результат" });
+  await expect(check).toBeEnabled();
+  events.push({ id: 4, actor_id: 1, kind: "PAYMENT_SUBMITTED", payload: '{"expectedVersion":0,"imageId":7619}' },
+    { id: 5, actor_id: 99, kind: "PAYMENT_RETURNED", payload: '{"request":{"expectedVersion":1,"reason":"Чек нечитаем"},"imageId":7619,"confirmedPaidAmount":"0.00"}' });
+  order.termsVersion = 2;
+  await check.click();
+  await expect(dialog.getByText("Причина возврата чека: Чек нечитаем")).toBeVisible();
+  await expect(check).toHaveCount(0);
+  await expect(dialog.getByText(/Изображение загружено|Файл выбран/)).toHaveCount(0);
+  await expect(submit).toBeDisabled();
+  await uploadPaymentProof(dialog);
+  await dialog.getByRole("button", { name: "Чек соответствует новым условиям" }).click();
+  await expect(submit).toBeEnabled();
+  expect([tracker.uploads.length, tracker.statusImageIds.length]).toEqual([1, 1]);
+});
+
+test("недоступная исходная история не позволяет приписать найденный позже чек этой попытке", async ({ context, page, baseURL }) => {
+  await authenticate(context, baseURL);
+  const order = createPreorder({ orderId: 620, status: "AWAITING_PREPAYMENT", sellerId: 99 });
+  const events: object[] = [];
+  const tracker = await mockPaymentApi(page, { orders: [order], accounts: [], uploadImageId: 7620, mutationFailure: "network", events });
+  let unavailable = true;
+  await page.route("**/order/620/terms-history", route => unavailable ? fulfillJson(route, {}, 503) : route.fallback());
+  await page.goto("/dashboard/purchase");
+  const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
+  await uploadPaymentProof(dialog);
+  await dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "Проверить результат" })).toBeEnabled();
+  unavailable = false;
+  events.push({ id: 1, actor_id: 1, kind: "PAYMENT_SUBMITTED", payload: '{"expectedVersion":0,"imageId":7620}' });
+  Object.assign(order, { termsVersion: 1, actualStatus: "AWAITING_PREPAYMENT_APPROVAL", paymentProofImageId: 7620 });
+  await dialog.getByRole("button", { name: "Проверить результат" }).click();
+  await expect(dialog).toBeHidden();
+  const alert = page.getByRole("alert").filter({ hasText: /Заказ №620.*Результат отправки чека неизвестен/ });
+  await expect(alert.first().getByRole("button", { name: "Проверить результат" })).toBeEnabled();
+  expect([tracker.uploads.length, tracker.statusImageIds.length]).toEqual([1, 1]);
+});
+
+test("принятый чек и ошибочный контрольный GET истории: поздний старый ответ не снимает защиту", async ({ context, page, baseURL }) => {
+  await authenticate(context, baseURL);
+  const order = createPreorder({ orderId: 621, status: "AWAITING_PREPAYMENT", sellerId: 99 });
+  const tracker = await mockPaymentApi(page, { orders: [order], accounts: [], uploadImageId: 7621 });
+  let reads = 0, disrupted = true, release!: () => void;
+  const first = new Promise<void>(resolve => { release = resolve; });
+  await page.route("**/order/621/terms-history", async route => {
+    if (route.request().method() !== "GET") return fulfillJson(route, null);
+    if (++reads === 1) {
+      await first;
+      await fulfillJson(route, []).catch(() => {});
+      return;
+    }
+    if (disrupted && tracker.statusImageIds.length) return fulfillJson(route, { message: "История недоступна" }, 503);
+    await route.fallback();
+  });
+  await page.goto("/dashboard/purchase");
+  const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
+  try {
+    await expect.poll(() => reads).toBe(1);
+    await uploadPaymentProof(dialog);
+    await dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true }).click();
+    await expect.poll(() => reads).toBeGreaterThanOrEqual(3);
+  } finally { release(); }
+  const recovery = page.getByRole("alert").filter({ hasText: "Требуется контрольная проверка заказа и истории." }).first();
+  await expect(recovery).toBeVisible();
+  await expect(recovery.getByText("Чек передан на проверку")).toBeVisible();
+  disrupted = false;
+  await recovery.getByRole("button", { name: "Проверить результат" }).click();
+  await expect(recovery).toHaveCount(0);
+  await expect(page.getByRole("alert").filter({ hasText: "Чек передан на проверку" }).first()).toBeVisible();
+  expect([tracker.uploads.length, tracker.statusImageIds.length]).toEqual([1, 1]);
+});
+
+test("ORDER_CASE_ALREADY_OPEN перечитывает адресные обращения и сохраняет чек до разрешения", async ({ context, page, baseURL }) => {
+  await authenticate(context, baseURL);
+  const order = createPreorder({ orderId: 622, status: "AWAITING_PREPAYMENT", sellerId: 99 });
+  const tracker = await mockPaymentApi(page, { orders: [order], accounts: [], uploadImageId: 7622 });
+  let posts = 0, open = true, caseReads = 0;
+  await page.route("**/order/622/payments/prepayment", route => {
+    if (route.request().method() === "POST") posts++;
+    return fulfillJson(route, { code: "ORDER_CASE_ALREADY_OPEN", message: "Открыто обращение" }, 409);
+  });
+  await page.route("**/order/622/cases", route => {
+    if (route.request().method() === "GET") caseReads++;
+    return fulfillJson(route, [{ orderCase: { orderId: 622, state: open ? "OPEN" : "RESOLVED" } }]);
+  });
+  await page.goto("/dashboard/purchase");
+  const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
+  await uploadPaymentProof(dialog);
+  const submit = dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true });
+  await submit.click();
+  await expect(dialog.getByText("Открыто обращение", { exact: true })).toBeVisible();
+  await expect.poll(() => caseReads).toBeGreaterThan(0);
+  await expect(submit).toBeDisabled();
+  open = false;
+  await dialog.getByRole("button", { name: "Проверить результат" }).click();
+  await expect(submit).toBeEnabled();
+  await expect(dialog.getByText("Изображение загружено")).toBeVisible();
+  expect([tracker.uploads.length, posts]).toEqual([1, 1]);
+});
+
+for (const [status, code] of [[400, "BAD_REQUEST"], [400, "INVALID_REQUEST"], [403, "ACCESS_DENIED"], [404, "ORDER_NOT_FOUND"],
+  [404, "IMAGE_NOT_FOUND"], [409, "ORDER_LEGACY_RECONCILIATION_REQUIRED"]] as const) {
+  test("подтверждённый отказ " + code + " обновляет заказ без повтора", async ({ context, page, baseURL }) => {
+    await authenticate(context, baseURL);
+    const order = createPreorder({ orderId: 623, status: "AWAITING_PREPAYMENT", sellerId: 99 });
+    const tracker = await mockPaymentApi(page, { orders: [order], accounts: [], uploadImageId: 7623 });
+    let posts = 0, readsAtPost = 0;
+    await page.route("**/order/623/payments/prepayment", route => {
+      if (route.request().method() === "POST") { posts++; readsAtPost = tracker.customerOrdersRequestCount; }
+      return fulfillJson(route, { code, message: "Причина отказа " + code }, status);
+    });
+    await page.goto("/dashboard/purchase");
+    const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
+    await uploadPaymentProof(dialog);
+    await dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true }).click();
+    await expect(dialog.getByText("Причина отказа " + code, { exact: true })).toBeVisible();
+    await expect.poll(() => tracker.customerOrdersRequestCount).toBeGreaterThan(readsAtPost);
+    await expect(dialog.getByRole("button", { name: "Проверить результат" })).toHaveCount(0);
+    await expect(dialog.getByText("Изображение загружено", { exact: true })).toHaveCount(code === "IMAGE_NOT_FOUND" ? 0 : 1);
+    expect([tracker.uploads.length, posts]).toEqual([1, 1]);
+  });
+}
+
+async function refreshPurchase(page: Page) {
+  await page.clock.setFixedTime(new Date(await page.evaluate(() => Date.now()) + 180_000));
+  await Promise.all([
+    page.waitForResponse(r => r.request().method() === "GET" && new URL(r.url()).pathname === "/order/customer"),
+    page.evaluate(() => {
+      window.dispatchEvent(new Event("offline"));
+      window.dispatchEvent(new Event("online"));
+    }),
+  ]);
+}
+
+const reviewReturn = (id: number, expectedVersion: number, imageId: number) => ({
+  id, actor_id: 99, kind: "PAYMENT_RETURNED",
+  payload: JSON.stringify({ request: { expectedVersion, reason: "Возврат " + imageId }, imageId, confirmedPaidAmount: "0.00" }),
+});
+
+test("после версии 1 устаревший GET не допускает upload и POST; версия 2 открывает следующий цикл", async ({ page, context, baseURL }) => {
+  await authenticate(context, baseURL);
+  const order = createPreorder({ orderId: 631, status: "AWAITING_PREPAYMENT", sellerId: 99 });
+  const events: object[] = [];
+  const tracker = await mockPaymentApi(page, { orders: [order], events, accounts: [], uploadImageId: 77 });
+  const action = "Подтвердить предоплату";
+  await page.goto("/dashboard/purchase");
+  const first = await openPaymentDialog(page, action);
+  await uploadPaymentProof(first);
+  await first.getByRole("button", { name: action, exact: true }).click();
+  const verified = page.getByRole("alert").filter({ hasText: "Заказ №631. Чек передан на проверку",
+    hasNot: page.getByRole("button", { name: "Проверить результат" }) });
+  await expect(verified.first()).toBeVisible();
+  await expect(first).toBeHidden();
+  Object.assign(order, { actualStatus: "AWAITING_PREPAYMENT", termsVersion: 0 });
+  await refreshPurchase(page);
+  const again = await openPaymentDialog(page, action);
+  await expect(again.getByText(/Получена устаревшая версия заказа/)).toBeVisible();
+  await expect(again.locator('input[type="file"]')).toBeDisabled();
+  await again.locator("form").evaluate(f => (f as HTMLFormElement).requestSubmit());
+  expect([tracker.uploads.length, tracker.statusImageIds.length]).toEqual([1, 1]);
+  order.termsVersion = 2;
+  events.push(reviewReturn(2, 1, 77));
+  await again.getByRole("button", { name: "Обновить заказ" }).click();
+  await expect(again.getByText("Причина возврата чека: Возврат 77")).toBeVisible();
+  await again.getByRole("button", { name: "Чек соответствует новым условиям" }).click();
+  await uploadPaymentProof(again);
+  let uploads = 0;
+  const posts: unknown[] = [];
+  await page.route("**/images?tag=ORDER&entityId=631", route => {
+    if (route.request().method() === "POST") uploads++;
+    return fulfillJson(route, [78]);
+  });
+  await page.route("**/order/631/payments/prepayment", route => {
+    if (route.request().method() === "POST") posts.push(route.request().postDataJSON());
+    return fulfillJson(route, { code: "BAD_REQUEST", message: "Ручное предъявление" }, 400);
+  });
+  await again.getByRole("button", { name: action, exact: true }).click();
+  await expect(again.getByText("Ручное предъявление")).toBeVisible();
+  expect(uploads).toBe(1);
+  expect(posts).toEqual([{ expectedVersion: 2, imageId: 78 }]);
+});
+
+test("возврат другого чека очищает файл и ID черновика только после актуальной истории", async ({ page, context, baseURL }) => {
+  await authenticate(context, baseURL);
+  const order = createPreorder({ orderId: 632, status: "AWAITING_PREPAYMENT", sellerId: 99 });
+  const events: object[] = [];
+  const tracker = await mockPaymentApi(page, { orders: [order], events, accounts: [], uploadImageId: 77, failFirstMutation: true });
+  await page.goto("/dashboard/purchase");
+  const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
+  const submit = dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true });
+  await uploadPaymentProof(dialog);
+  await submit.click();
+  await expect(submit).toBeEnabled();
+  await expect(dialog.getByText("Изображение загружено")).toBeVisible();
+  order.termsVersion = 2;
+  await refreshPurchase(page);
+  await dialog.getByRole("button", { name: "Чек соответствует новым условиям" }).click();
+  await submit.click();
+  await expect(dialog.getByText(/История не подтверждает актуальность чека/)).toBeVisible();
+  events.push({ id: 20, actor_id: 1, kind: "PAYMENT_SUBMITTED", payload: '{"expectedVersion":0,"imageId":88}' }, reviewReturn(29, 1, 88));
+  await refreshPurchase(page);
+  await expect(dialog.getByText("Причина возврата чека: Возврат 88")).toBeVisible();
+  await expect(dialog.getByText(/Изображение загружено|Файл выбран/)).toHaveCount(0);
+  await expect(submit).toBeDisabled();
+  expect([tracker.uploads.length, tracker.statusImageIds]).toEqual([1, [77]]);
+});
+
+for (const refreshOk of [true, false]) {
+  test("401 TOKEN_INVALID_OR_EXPIRED после " + (refreshOk ? "успешного" : "неуспешного") + " refresh", async ({ page, context, baseURL }) => {
+    await authenticate(context, baseURL);
+    await context.addCookies([{ name: "refresh_token", value: "fixture-refresh", url: baseURL! },
+      { name: "token_created_at", value: String(Date.now()), url: baseURL! }]);
+    const order = createPreorder({ orderId: 633, status: "AWAITING_PREPAYMENT", sellerId: 99 });
+    const tracker = await mockPaymentApi(page, { orders: [order], accounts: [], uploadImageId: 77 });
+    let posts = 0, refreshes = 0, failedRead = true;
+    await page.route("**/auth/refresh", route => {
+      if (route.request().method() !== "OPTIONS") refreshes++;
+      return route.fulfill({ status: route.request().method() === "OPTIONS" ? 204 : refreshOk ? 200 : 401,
+        headers: { ...corsHeaders, "Access-Control-Allow-Headers": "*" }, contentType: "application/json",
+        body: route.request().method() === "OPTIONS" ? "" : JSON.stringify(refreshOk ? "renewed" : { message: "Сессия истекла" }) });
+    });
+    await page.route("**/order/633/payments/prepayment", route => {
+      if (route.request().method() === "POST") posts++;
+      return fulfillJson(route, { code: "TOKEN_INVALID_OR_EXPIRED", message: "Истёк токен" }, 401);
+    });
+    await page.route("**/order/633/terms-history", route => posts && failedRead ? fulfillJson(route, {}, 503) : route.fallback());
+    await page.goto("/dashboard/purchase");
+    const action = "Подтвердить предоплату";
+    const dialog = await openPaymentDialog(page, action);
+    await uploadPaymentProof(dialog);
+    await dialog.getByRole("button", { name: action, exact: true }).click();
+    await expect.poll(() => refreshes).toBe(1);
+    if (refreshOk) {
+      const recheck = dialog.getByRole("button", { name: "Проверить результат" });
+      await expect(recheck).toBeEnabled();
+      failedRead = false;
+      await recheck.click();
+      await expect(dialog.getByRole("button", { name: action, exact: true })).toBeEnabled();
+      expect(posts).toBe(1);
+      await page.unroute("**/order/633/payments/prepayment");
+      await dialog.getByRole("button", { name: action, exact: true }).click();
+      await expect(dialog).toBeHidden();
+      expect(tracker.statusImageIds).toEqual([77]);
+    } else {
+      await expect.poll(async () => (await context.cookies()).some(c => c.name === "access_token")).toBe(false);
+      await authenticate(context, baseURL);
+      await page.goto("/dashboard/purchase");
+      const next = await openPaymentDialog(page, action);
+      await expect(next.getByRole("button", { name: action, exact: true })).toBeDisabled();
+      await expect(next.getByText(/Изображение загружено|Проверить результат/)).toHaveCount(0);
+    }
+    expect([tracker.uploads.length, posts, refreshes]).toEqual([1, 1, 1]);
+  });
+}
+
+for (const [status, code] of [[400, "UNKNOWN"], [409, "BAD_REQUEST"]] as const) {
+  test("неподтверждённый отказ " + status + " " + code + " оставляет только GET", async ({ page, context, baseURL }) => {
+    await authenticate(context, baseURL);
+    const order = createPreorder({ orderId: 634, status: "AWAITING_PREPAYMENT", sellerId: 99 });
+    const tracker = await mockPaymentApi(page, { orders: [order], accounts: [], uploadImageId: 77 });
+    let posts = 0;
+    await page.route("**/order/634/payments/prepayment", route => {
+      if (route.request().method() === "POST") posts++;
+      return fulfillJson(route, { code, message: "Отказ" }, status);
+    });
+    await page.goto("/dashboard/purchase");
+    const dialog = await openPaymentDialog(page, "Подтвердить предоплату");
+    await uploadPaymentProof(dialog);
+    await dialog.getByRole("button", { name: "Подтвердить предоплату", exact: true }).click();
+    const check = dialog.getByRole("button", { name: "Проверить результат" });
+    await check.click();
+    await expect(check).toBeEnabled();
+    await expect(dialog.getByText(/Результат отправки чека неизвестен/)).toBeVisible();
+    expect([tracker.uploads.length, posts]).toEqual([1, 1]);
+  });
+}
+
+for (const accepted of [true, false]) {
+  test("контрольный заказ с повреждённой версией сохраняет резерв после " + (accepted ? "HTTP 200" : "потери ответа"), async ({ page, context, baseURL }) => {
+    await authenticate(context, baseURL);
+    const order = createPreorder({ orderId: 635, status: "AWAITING_PREPAYMENT", sellerId: 99 });
+    const events: object[] = [];
+    const tracker = await mockPaymentApi(page, { orders: [order], events, accounts: [], uploadImageId: 77 });
+    let posts = 0;
+    await page.route("**/order/635/payments/prepayment", route => {
+      if (route.request().method() !== "POST") return fulfillJson(route, {});
+      posts++;
+      Object.assign(order, { termsVersion: "2", actualStatus: "AWAITING_PREPAYMENT_APPROVAL", paymentProofImageId: 77 });
+      events.push({ id: 10, kind: "PAYMENT_SUBMITTED", actor_id: 1, payload: '{"expectedVersion":0,"imageId":77}' });
+      return accepted ? fulfillJson(route, 635) : route.abort("failed");
+    });
+    const action = "Подтвердить предоплату";
+    await page.goto("/dashboard/purchase");
+    const dialog = await openPaymentDialog(page, action);
+    await uploadPaymentProof(dialog);
+    await dialog.getByRole("button", { name: action, exact: true }).click();
+    const check = page.getByRole("button", { name: "Проверить результат" }).first();
+    await expect(check).toBeEnabled();
+    for (const invalid of [2.5, null, undefined, -1, Number.MAX_SAFE_INTEGER + 1]) {
+      Object.assign(order, { termsVersion: invalid });
+      await Promise.all([page.waitForResponse(r => r.request().method() === "GET" && new URL(r.url()).pathname === "/order/customer"), check.click()]);
+      await expect(check).toBeEnabled();
+    }
+    Object.assign(order, { termsVersion: 4, actualStatus: "AWAITING_PREPAYMENT" });
+    await check.click();
+    await expect(check).toBeEnabled();
+    events.push(reviewReturn(11, 1, 77),
+      { id: 19, kind: "PAYMENT_SUBMITTED", actor_id: 1, payload: '{"expectedVersion":2,"imageId":88}' }, reviewReturn(20, 3, 88));
+    await check.click();
+    await expect(check).toHaveCount(0);
+    await expect(page.getByRole("alert").filter({ hasText: "Чек возвращён по истории заказа" }).first()).toBeVisible();
+    expect([posts, tracker.uploads.length]).toEqual([1, 1]);
   });
 }
