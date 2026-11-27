@@ -39,6 +39,18 @@ export function casesAllowDelivery(cases: OrderCaseDetail[] | undefined, orderId
   return Array.isArray(cases) && cases.every(detail => detail?.orderCase?.orderId === orderId && detail.orderCase.state === "RESOLVED");
 }
 
+// GET одного заказа в административном API v1.39 отсутствует.
+export async function readAdminOrderPage(client: QueryClient, session: number | null, agentId: number, orderId: number,
+  filter: AdminOrderFilter, current: () => boolean) {
+  const queryKey = adminOrderKeys.list(session, filter);
+  await client.cancelQueries({ queryKey, exact: true });
+  if (!current()) throw new Error("Доступ к заказу изменился");
+  const rows = await client.fetchQuery({ queryKey, staleTime: 0, retry: false, networkMode: "always",
+    queryFn: ({ signal }) => adminOrderApi.list(filter, signal) });
+  if (!current()) throw new Error("Доступ к заказу изменился");
+  return rows.find(row => row.orderId === orderId && row.sellerId === agentId);
+}
+
 // Прерываем чтение, начатое до подтверждения операции: его ответ не является контрольным.
 export function readDeliveryOrder(client: QueryClient, scope: PrivateScope, orderId: number): Promise<ListOrdersDto | null>;
 export function readDeliveryOrder(client: QueryClient, scope: PrivateScope, orderId: number, admin?: { agentId: number; filter: AdminOrderFilter }): Promise<ListOrdersDto | AdminOrderDto | null>;
@@ -48,13 +60,8 @@ export async function readDeliveryOrder(client: QueryClient, scope: PrivateScope
   };
   requireScope();
   if (admin) {
-    const key = adminOrderKeys.list(scope.id, admin.filter);
-    await client.cancelQueries({ queryKey: key, exact: true });
-    requireScope();
-    const rows = await client.fetchQuery({ queryKey: key, staleTime: 0, retry: false, networkMode: "always",
-      queryFn: ({ signal }) => adminOrderApi.list(admin.filter, signal) });
-    requireScope();
-    const row = rows.find(item => item.sellerId === admin.agentId && item.orderId === orderId)
+    const row = await readAdminOrderPage(client, scope.id, admin.agentId, orderId, admin.filter,
+      () => scope.isCurrent() && hasAdminOrderCaseAccess(client, scope.id))
       ?? await client.fetchQuery({ queryKey: adminOrderKeys.located(scope.id, admin.agentId, orderId), staleTime: 0,
         retry: false, networkMode: "always", queryFn: ({ signal }) => adminOrderApi.find(admin.agentId, orderId, signal) });
     requireScope();
@@ -78,16 +85,16 @@ export async function readDeliveryCases(client: QueryClient, scope: PrivateScope
 }
 
 // Запоминаем только версии, устаревание которых уже подтвердил сервер в этой сессии.
-function changedVersionKey(scope: PrivateScope, orderId: number) {
-  return scope.key(["deliveryChangedVersion", orderId]);
+function changedVersionKey(scope: PrivateScope, orderId: number, agentId?: number) {
+  return scope.key(["deliveryChangedVersion", ...(agentId === undefined ? [] : [agentId]), orderId]);
 }
 
-type ReviewedOrder = Pick<ListOrdersDto, "orderId" | "termsVersion" | "actualStatus" | "paymentProofImageId" | "calculation">;
+type ReviewedOrder = Pick<ListOrdersDto, "orderId" | "termsVersion" | "actualStatus" | "paymentProofImageId" | "calculation"> & { sellerId?: number; product: { sellerId: number } };
 type ReviewedCalculation = Pick<ReviewedOrder, "actualStatus" | "paymentProofImageId"> & { version: number; calculation: string };
 
 export function rememberReviewedCalculation(client: QueryClient, scope: PrivateScope, order: ReviewedOrder) {
   if (!scope.isCurrent() || !hasTermsVersion(order.termsVersion)) return;
-  const key = scope.key(["reviewedOrderCalculation", order.orderId]);
+  const key = scope.key(["reviewedOrderCalculation", order.sellerId ?? order.product.sellerId, order.orderId]);
   client.getQueryCache().build(client, { queryKey: key, gcTime: Infinity });
   client.setQueryData<ReviewedCalculation>(key, {
     version: order.termsVersion, calculation: getOrderPaymentBreakdown(order).fingerprint,
@@ -96,7 +103,7 @@ export function rememberReviewedCalculation(client: QueryClient, scope: PrivateS
 }
 
 export function hasCurrentDeliveryVersion(client: QueryClient, scope: PrivateScope, order: ReviewedOrder) {
-  const reviewed = client.getQueryData<ReviewedCalculation>(scope.key(["reviewedOrderCalculation", order.orderId]));
+  const reviewed = client.getQueryData<ReviewedCalculation>(scope.key(["reviewedOrderCalculation", order.sellerId ?? order.product.sellerId, order.orderId]));
   if (reviewed) {
     if (!hasTermsVersion(order.termsVersion) || order.termsVersion < reviewed.version) return false;
     if (order.termsVersion === reviewed.version) {
@@ -106,13 +113,15 @@ export function hasCurrentDeliveryVersion(client: QueryClient, scope: PrivateSco
     }
   }
   const outdated = client.getQueryData<number>(changedVersionKey(scope, order.orderId));
-  return outdated === undefined || (hasTermsVersion(order.termsVersion) && order.termsVersion > outdated);
+  const agentVersion = client.getQueryData<number>(changedVersionKey(scope, order.orderId, order.sellerId ?? order.product.sellerId));
+  const floor = Math.max(outdated ?? -1, agentVersion ?? -1);
+  return floor < 0 || (hasTermsVersion(order.termsVersion) && order.termsVersion > floor);
 }
 
 export async function invalidateDeliveryReads(client: QueryClient, scope: PrivateScope, orderId: number, context: DeliveryTermsContext, outdatedVersion?: number) {
   if (!scope.isCurrent()) return;
   if (outdatedVersion !== undefined) {
-    const key = changedVersionKey(scope, orderId);
+    const key = changedVersionKey(scope, orderId, context.role === "admin" ? context.agentId : undefined);
     // Нижняя граница версий нужна до конца сессии, в том числе при позднем GET из другой выдачи.
     client.getQueryCache().build(client, { queryKey: key, gcTime: Infinity });
     client.setQueryData<number>(key, previous => Math.max(previous ?? outdatedVersion, outdatedVersion));
@@ -122,17 +131,33 @@ export async function invalidateDeliveryReads(client: QueryClient, scope: Privat
     await client.cancelQueries(exact);
     if (scope.isCurrent()) await client.invalidateQueries(exact);
   };
+  const affected = (order: ListOrdersDto) => order.orderId === orderId &&
+    (context.role !== "admin" || order.product.sellerId === context.agentId);
   const refreshParticipantList = async (queryKey: readonly unknown[]) => {
     const exact = { queryKey, exact: true };
     await client.cancelQueries(exact);
     if (!scope.isCurrent()) return;
     // Сохраняем остальные строки и открытые диалоги. Для изменённого заказа нужен новый расчёт.
-    if (client.getQueryData<ListOrdersDto[]>(queryKey)?.some(order => order.orderId === orderId && order.calculation)) {
+    if (client.getQueryData<ListOrdersDto[]>(queryKey)?.some(order => affected(order) && order.calculation)) {
       client.setQueryData<ListOrdersDto[]>(queryKey, rows => rows?.map(order =>
-        order.orderId === orderId ? { ...order, calculation: null } : order));
+        affected(order) ? { ...order, calculation: null } : order));
     }
     await client.invalidateQueries(exact);
   };
+  async function refreshAdminLists() {
+    const queryKey = adminOrderKeys.all(scope.id);
+    if (context.role !== "admin") return;
+    const related = (query: { queryKey: readonly unknown[] }) => {
+      const filter = query.queryKey[3] as AdminOrderFilter | "located" | undefined;
+      if (filter === "located") return query.queryKey[4] === context.agentId && query.queryKey[5] === orderId;
+      return !!filter && (filter.agentId === undefined || filter.agentId === context.agentId);
+    };
+    await client.invalidateQueries({ queryKey, predicate: related, refetchType: "none" });
+    if (!scope.isCurrent() || !hasAdminOrderCaseAccess(client, scope.id)) return;
+    const lists = { queryKey, type: "active" as const, predicate: (query: { queryKey: readonly unknown[] }) => related(query) && typeof query.queryKey[3] === "object" };
+    await client.cancelQueries(lists);
+    if (scope.isCurrent() && hasAdminOrderCaseAccess(client, scope.id)) await client.refetchQueries(lists);
+  }
   const reads = [
     refreshHistory(scope.key(orderQueryKeys.termsHistory(orderId))),
     refreshParticipantList(scope.key(orderQueryKeys.customerOrders())),
@@ -141,7 +166,7 @@ export async function invalidateDeliveryReads(client: QueryClient, scope: Privat
     reads.push(
       refreshHistory(adminOrderKeys.history(scope.id, context.agentId, orderId)),
       refreshParticipantList(scope.key(orderQueryKeys.sellerOrders())),
-      client.invalidateQueries({ queryKey: adminOrderKeys.all(scope.id), refetchType: "none" }),
+      refreshAdminLists(),
     );
   }
   await Promise.all(reads);

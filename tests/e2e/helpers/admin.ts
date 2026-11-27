@@ -10,7 +10,7 @@ export const adminProductFixture = (id = 101, participantId = 2) => ({
 });
 export const adminOrderFixture = (id = 201, status = "BOOKED", prepayment = 2000) => ({
   ...orderFixture(id, status, 1), sellerId: 2, sellerLogin: "bot-two", prepaymentAmount: prepayment, totalPrice: 6000,
-  images: [] as number[],
+  images: [] as number[], paymentProofImageId: null as number | null,
   product: { ...orderFixture(id, status, 1).product, name: "Фигурка для заказа", sellerId: 2, sellerLogin: "bot-two", availability: "EXTERNAL_PRODUCT", price: 4000, count: 2 },
 });
 export const adminCaseFixture = (id = 301, kind: OrderCaseKind = "DISPUTE", previousOrderStatus: OrderStatus = "AWAITING_PAYMENT", orderId = 201): OrderCaseDetail => orderCaseDetailFixture({
@@ -20,6 +20,8 @@ export const adminCaseFixture = (id = 301, kind: OrderCaseKind = "DISPUTE", prev
 export async function setupAdmin(page: Page, baseURL: string | undefined, role = "ADMIN") {
   if (!baseURL) throw new Error("baseURL required");
   const state = {
+    reviewHistory: {} as Record<number, { id: number; actor_id: number; kind: string; payload: string }[]>,
+    reviewHistoryStatus: 200, reviewGate: Promise.resolve(), reviewResponse: undefined as unknown,
     role, profileStatus: 200, agentsStatus: 200, productStatus: 200, relationsStatus: 200, saveStatus: 200, restoreStatus: 200,
     actionStatus: 200, actionAbort: false, applyBeforeAbort: false, proofStatus: 200, accountsStatus: 404, failAccountsReadAfterWrite: false, recordAbort: false,
     products: [adminProductFixture()], orders: [adminOrderFixture()],
@@ -88,13 +90,21 @@ export async function setupAdmin(page: Page, baseURL: string | undefined, role =
       return fulfillJson(route, state.relationsStatus === 200 ? { ...product, categories: state.categories.map((id) => ({ id, name: `Категория ${id}`, childs: [] })), imageIds: state.imageIds } : { message: "Связи недоступны" }, state.relationsStatus);
     }
     if (path === "/admin/actions/agents") return fulfillJson(route, state.agents, state.agentsStatus);
+    const history = path.match(/^\/admin\/actions\/agents\/\d+\/orders\/(\d+)\/terms-history$/);
+    if (history && method === "GET") return fulfillJson(route, state.reviewHistory[Number(history[1])] ?? [], state.reviewHistoryStatus);
     if (method !== "GET" && path.startsWith("/admin/")) {
       const body = route.request().postData() ? route.request().postDataJSON() as Record<string, unknown> : null;
       state.writes.push({ path, method, body, search: url.search });
+      const review = path.match(/^\/admin\/actions\/agents\/(\d+)\/orders\/(\d+)\/payments\/review\/(approve|return)$/);
+      if (review) {
+        await state.reviewGate;
+        if (state.actionAbort) return route.abort("connectionreset");
+        return fulfillJson(route, state.reviewResponse ?? Number(review[2]), state.actionStatus);
+      }
       if (/\/orders\/\d+\//.test(path)) {
         const id = Number(path.split("/").at(-2)); const action = path.split("/").pop();
         const order = state.orders.find((item) => item.orderId === id);
-        if (order && (state.actionStatus === 200 || state.applyBeforeAbort)) order.actualStatus = action === "CONFIRM" ? (order.prepaymentAmount ? "AWAITING_PREPAYMENT" : "AWAITING_PAYMENT") : action === "CONFIRM_PREPAYMENT" ? "AWAITING_PAYMENT" : action === "SHIP" ? "ON_THE_WAY" : "CANCELLED";
+        if (order && (state.actionStatus === 200 || state.applyBeforeAbort)) order.actualStatus = action === "CONFIRM" ? (order.prepaymentAmount ? "AWAITING_PREPAYMENT" : "AWAITING_PAYMENT") : action === "SHIP" ? "ON_THE_WAY" : "CANCELLED";
         if (state.actionAbort) return route.abort("connectionfailed");
         if (state.failOrderReadAfterAction) state.orderReadStatus = 500;
         return fulfillJson(route, state.actionStatus === 200 ? id : { code: "ACTION_REJECTED", message: "Действие отклонено" }, state.actionStatus);

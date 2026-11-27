@@ -11,6 +11,8 @@ export interface PaymentReviewDialogProps {
   order: Pick<ListOrdersDto, "orderId" | "paymentProofImageId" | "actualStatus" | "termsVersion" | "calculation" |
     "deliveryCarrier" | "deliveryAddress" | "transfer" | "userInfo" | "totalPrice" | "prepaymentAmount"> &
     { product: Pick<ListOrdersDto["product"], "sellerId" | "currency"> };
+  unavailable?: boolean;
+  agentId?: number;
   proof: { id?: number | null; src?: string; fetching: boolean; retry: () => void };
   actions: readonly ("submit" | ReviewDecision["action"])[];
   historyState: string;
@@ -47,8 +49,10 @@ export function PaymentReviewDialog(props: PaymentReviewDialogProps) {
   return <Dialog open onClose={busy ? undefined : onClose} fullWidth maxWidth="sm" sx={{ "& .MuiButton-root": { minHeight: 44 } }}>
     <DialogTitle>Проверка платежа по заказу №{order.orderId}</DialogTitle>
     <DialogContent><Stack spacing={2}>
+      {props.agentId !== undefined && <Typography>Агент #{props.agentId}</Typography>}
       {message && <Alert severity={blocked ? "warning" : "info"}>{message}</Alert>}
-      {reviewing && <>
+      {reviewing && props.unavailable && <Alert severity="warning">Обновите данные заказа в выбранном списке агента.</Alert>}
+      {reviewing && !props.unavailable && <>
         <Typography variant="h6">{prepayment ? "Предоплата" : "Полная оплата"}</Typography>
         {prepayment && <Typography>Сверьте поступление с согласованной суммой предоплаты.</Typography>}
         {order.calculation ? <OrderCalculationSummary order={order} /> : <Alert severity="warning">Актуальный расчёт не получен</Alert>}

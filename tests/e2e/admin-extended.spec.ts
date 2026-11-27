@@ -182,7 +182,6 @@ test("B4: access verification failure during pre-submit GET prevents CANCEL POST
 
 for (const scenario of [
   { status: "BOOKED", action: "CONFIRM", label: "Подтвердить заказ" },
-  { status: "AWAITING_PREPAYMENT_APPROVAL", action: "CONFIRM_PREPAYMENT", label: "Подтвердить предоплату" },
   { status: "ASSEMBLING", action: "SHIP", label: "Отправить" },
   { status: "BOOKED", action: "CANCEL", label: "Отменить заказ" },
 ]) test(`admin order ${scenario.action} uses correct endpoint`, async ({ page, baseURL }) => {

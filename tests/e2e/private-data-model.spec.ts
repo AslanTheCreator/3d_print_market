@@ -42,7 +42,7 @@ test("all private namespaces are removed on logout, expiry and direct account sw
     let draftsCleared = 0;
     const unbind = bindPrivateDataLifecycle(client, scope, () => useCartQuantityStore.getState().clearQuantities(), () => { draftsCleared++; });
     try {
-      for (const key of ["users", "cart", "favorites", "orders", "orderImages", "orderCancel", "orderCaseCreate", "disputePayment", "adminOrderCancel", "addresses", "accounts", "transfers", "social-networks", "products"]) {
+      for (const key of ["users", "cart", "favorites", "orders", "orderImages", "orderCancel", "orderCaseCreate", "disputePayment", "adminOrderCancel", "adminPaymentReview", "addresses", "accounts", "transfers", "social-networks", "products"]) {
         client.setQueryData(scope.key([key]), { owner: "A" });
       }
       client.setQueryData(["admin", 1, "access"], { owner: "A" });
@@ -54,7 +54,7 @@ test("all private namespaces are removed on logout, expiry and direct account sw
       expect(scope.isCurrent()).toBe(true);
       expect(draftsCleared).toBe(0);
       const late = deferred<string>();
-      const attempt = customerPaymentState(client, scope, 42, 1, "full");
+      const attempt = customerPaymentState(client, scope, 42, 10, 1, "full");
       attempt.confirmVersion(3);
       expect(attempt.begin(pending())).toBe(true);
       let signal!: AbortSignal;
@@ -83,7 +83,7 @@ test("viewing 100 orders retains only attempts that actually need protection", (
   try {
     for (let orderId = 1; orderId <= 100; orderId++) {
       for (const kind of ["full", "prepayment"] as const) {
-        const store = customerPaymentState(client, scope, orderId, 1, kind);
+        const store = customerPaymentState(client, scope, orderId, 10, 1, kind);
         const off = store.subscribe(() => {});
         expect(store.read()).toBeUndefined();
         expect(store.minimumVersion()).toBeUndefined();
@@ -91,7 +91,7 @@ test("viewing 100 orders retains only attempts that actually need protection", (
       }
     }
     expect(client.getQueryCache().getAll()).toHaveLength(0);
-    const store = customerPaymentState(client, scope, 42, 1, "full");
+    const store = customerPaymentState(client, scope, 42, 10, 1, "full");
     const a = pending();
     expect(store.begin(a)).toBe(true);
     expect(client.getQueryCache().getAll().map(query => query.gcTime)).toEqual([Infinity]);
@@ -102,8 +102,9 @@ test("viewing 100 orders retains only attempts that actually need protection", (
     expect(store.minimumVersion()).toBe(0);
     store.confirmVersion(2);
     for (const old of [1, -1, 2.5, Number.MAX_SAFE_INTEGER + 1]) store.confirmVersion(old);
-    expect(customerPaymentState(client, scope, 42, 1, "prepayment").minimumVersion()).toBe(2);
-    expect(customerPaymentState(client, scope, 43, 1, "full").minimumVersion()).toBeUndefined();
+    expect(customerPaymentState(client, scope, 42, 10, 1, "prepayment").minimumVersion()).toBe(2);
+    expect(customerPaymentState(client, scope, 43, 10, 1, "full").minimumVersion()).toBeUndefined();
+    expect(customerPaymentState(client, scope, 42, 11, 1, "full").minimumVersion()).toBeUndefined();
   } finally { client.clear(); }
 });
 
@@ -113,13 +114,13 @@ test("late payment response cannot recreate the previous session or unlock the n
   const current = createPrivateScope(2, () => true);
   const a = pending(), b = pending();
   try {
-    const original = customerPaymentState(client, previous, 42, 1, "full");
+    const original = customerPaymentState(client, previous, 42, 10, 1, "full");
     expect(original.begin(a)).toBe(true);
     expect(original.begin(pending())).toBe(false);
-    expect(customerPaymentState(client, previous, 42, 1, "prepayment").begin(pending())).toBe(false);
+    expect(customerPaymentState(client, previous, 42, 10, 1, "prepayment").begin(pending())).toBe(false);
     previous.dispose();
     client.removeQueries({ queryKey: previous.key([]) });
-    const next = customerPaymentState(client, current, 42, 2, "full");
+    const next = customerPaymentState(client, current, 42, 10, 2, "full");
     expect(next.begin(b)).toBe(true);
     original.update({ ...a, phase: "accepted" });
     original.update({ ...a, phase: "unknown" });

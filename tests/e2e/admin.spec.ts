@@ -235,21 +235,26 @@ test("non-bot product has no write controls", async ({ page, baseURL }) => {
 test("agent prepayment review displays updated terms before another submit", async ({ page, baseURL }) => {
   const state = await setupAdmin(page, baseURL);
   const order = adminOrderFixture(202, "AWAITING_PREPAYMENT_APPROVAL", 1000);
+  order.paymentProofImageId = 77;
   state.orders = [order];
   await page.goto("/admin/orders?status=AWAITING_PREPAYMENT_APPROVAL");
   await page.getByRole("button", { name: "Открыть заказ #202" }).click();
-  const drawer = page.getByRole("dialog", { name: "Детали заказа", exact: true });
-  await drawer.getByRole("button", { name: "Подтвердить предоплату" }).click();
-  const form = page.getByRole("dialog", { name: "Подтвердить предоплату", exact: true });
+  await page.getByRole("button", { name: "Подтвердить предоплату" }).click();
+  const form = page.getByRole("dialog", { name: "Проверка платежа по заказу №202" });
   await expect(form.getByText("Итого с доставкой: 4 500,00 ₽")).toBeVisible();
+  await form.getByRole("checkbox").check();
   order.termsVersion = 1;
+  state.reviewHistory[202] = [{ id: 8, actor_id: 10, kind: "PAYMENT_SUBMITTED", payload: '{"expectedVersion":0,"imageId":77}' }];
   Object.assign(order.calculation!, { deliveryAmount: "800.00", totalAmount: "4800.00", remainingAmount: "3800.00" });
-  await form.getByRole("button", { name: "Подтвердить предоплату" }).click();
+  const approve = form.getByRole("button", { name: "Подтвердить оплату" });
+  await approve.click();
   await expect(form.getByText("Итого с доставкой: 4 800,00 ₽")).toBeVisible();
   expect(state.writes).toHaveLength(0);
-  await form.getByRole("button", { name: "Подтвердить предоплату" }).click();
-  await expect(form).toBeHidden();
-  expect(state.writes.map(write => write.path)).toEqual(["/admin/actions/agents/2/orders/202/CONFIRM_PREPAYMENT"]);
+  await form.getByRole("button", { name: "Проверить новые условия" }).click();
+  await form.getByRole("checkbox").check();
+  await approve.click();
+  await expect.poll(() => state.writes).toEqual([{ path: "/admin/actions/agents/2/orders/202/payments/review/approve",
+    method: "POST", body: { expectedVersion: 1 }, search: "" }]);
 });
 
 test("agent order detail follows its filtered list when delivery changes", async ({ page, baseURL }) => {
@@ -269,44 +274,42 @@ test("agent order detail follows its filtered list when delivery changes", async
   expect(state.writes).toHaveLength(0);
 });
 
-test("admin draft survives a background status change and stays with its order and agent", async ({ page, baseURL }) => {
+test("admin return reason is cleared on a new payment cycle, order or agent", async ({ page, baseURL }) => {
   const state = await setupAdmin(page, baseURL);
   const order = adminOrderFixture(201, "AWAITING_PREPAYMENT_APPROVAL");
   const next = { ...adminOrderFixture(202, "AWAITING_PREPAYMENT_APPROVAL"), sellerId: 3, sellerLogin: "bot-three" };
+  order.paymentProofImageId = next.paymentProofImageId = 77;
   state.orders = [order, next];
   await page.goto("/admin/orders?status=all");
   await page.getByRole("button", { name: "Открыть заказ #201" }).click();
   const drawer = page.getByRole("dialog", { name: "Детали заказа", exact: true });
   const label = "Подтвердить предоплату";
   await drawer.getByRole("button", { name: label }).click();
-  const form = page.getByRole("dialog", { name: label, exact: true });
-  await form.getByLabel("Комментарий").fill("Черновик по заказу 201");
+  const form = page.getByRole("dialog", { name: /Проверка платежа по заказу/ });
+  await form.getByLabel("Причина возврата").fill("Черновик по заказу 201");
   order.actualStatus = "AWAITING_PAYMENT";
   order.termsVersion = 1;
   Object.assign(order.calculation!, { deliveryAmount: "800.00", totalAmount: "4800.00", remainingAmount: "3800.00" });
   await page.clock.setFixedTime(new Date(await page.evaluate(() => Date.now()) + 180_000));
   await page.evaluate(() => { window.dispatchEvent(new Event("offline")); window.dispatchEvent(new Event("online")); });
-  await expect(form.getByText(/Выбранное действие больше недоступно/)).toBeVisible();
-  await expect(form.getByText("Осталось оплатить: 3 800,00 ₽")).toBeVisible();
-  await expect(form.getByLabel("Комментарий")).toHaveValue("Черновик по заказу 201");
-  await expect(form.getByRole("button", { name: label })).toBeDisabled();
-  await form.locator("form").evaluate(element => (element as HTMLFormElement).requestSubmit());
-  page.once("dialog", dialog => dialog.accept());
+  await expect(form.getByText("Статус заказа изменился.")).toBeVisible();
+  await expect(form.getByLabel("Причина возврата")).toHaveCount(0);
+  await expect(form.getByRole("button", { name: "Подтвердить оплату" })).toHaveCount(0);
   await form.getByRole("button", { name: "Закрыть" }).click();
   await drawer.getByRole("button", { name: "Закрыть", exact: true }).click();
   await page.getByRole("combobox", { name: "Бот" }).click();
   await page.getByRole("option", { name: "bot-three" }).click();
   await page.getByRole("button", { name: "Открыть заказ #202" }).click();
   await drawer.getByRole("button", { name: label }).click();
-  await expect(form.getByLabel("Комментарий")).toHaveValue("");
-  await expect(form.getByRole("button", { name: label })).toBeEnabled();
-  await form.getByLabel("Комментарий").fill("Черновик бота 3");
+  await expect(form.getByLabel("Причина возврата")).toHaveValue("");
+  await expect(form.getByRole("button", { name: "Вернуть на повторную оплату" })).toBeDisabled();
+  await form.getByLabel("Причина возврата").fill("Черновик бота 3");
   await page.evaluate(() => window.history.pushState(null, "", "/admin/orders?status=all&agent=2"));
   await expect(drawer).toBeHidden();
   order.actualStatus = "AWAITING_PREPAYMENT_APPROVAL";
   await page.getByRole("button", { name: "Обновить", exact: true }).click();
   await page.getByRole("button", { name: "Открыть заказ #201" }).click();
   await drawer.getByRole("button", { name: label }).click();
-  await expect(form.getByLabel("Комментарий")).toHaveValue("");
+  await expect(form.getByLabel("Причина возврата")).toHaveValue("");
   expect(state.writes).toEqual([]);
 });

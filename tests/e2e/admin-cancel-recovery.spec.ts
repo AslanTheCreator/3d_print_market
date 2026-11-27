@@ -149,8 +149,8 @@ test("CANCEL recovery is isolated from another order and restored on returning",
 
 for (const scenario of [
   { status: "ASSEMBLING", action: "SHIP", label: "Отправить", result: "ON_THE_WAY" },
-  { status: "AWAITING_PREPAYMENT_APPROVAL", action: "CONFIRM_PREPAYMENT", label: "Подтвердить предоплату", result: "AWAITING_PAYMENT" },
-]) for (const reopen of [false, true]) test(`lost CANCEL + GET ${scenario.status} allows ${scenario.action}, reopen=${reopen}, retaining CANCEL guard`, async ({ page, baseURL }) => {
+  { status: "AWAITING_PREPAYMENT_APPROVAL", action: "review", label: "Подтвердить предоплату", result: "AWAITING_PAYMENT" },
+]) for (const reopen of [false, true]) test(`lost CANCEL + GET ${scenario.status} ${scenario.action === "review" ? "blocks review" : "allows SHIP"}, reopen=${reopen}, retaining CANCEL guard`, async ({ page, baseURL }) => {
   const state = await setupAdmin(page, baseURL);
   await page.route("**/admin/actions/agents/2/orders/201/CANCEL*", async route => {
     if (route.request().method() === "OPTIONS") return fulfillJson(route, null);
@@ -174,18 +174,24 @@ for (const scenario of [
     await expect(details.getByText(/результат отмены не подтверждён/)).toBeVisible();
   }
   const action = details.getByRole("button", { name: scenario.label, exact: true });
-  await expect(action).toBeEnabled(); await action.click();
-  const dialog = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: scenario.label, exact: true }) });
-  await expect(dialog.getByText(/Действие выполнено|Операция могла выполниться/)).toHaveCount(0);
-  await dialog.getByLabel("Комментарий", { exact: true }).fill("Комментарий другого действия");
-  if (scenario.action === "SHIP") await dialog.getByLabel("Ссылка доставки", { exact: true }).fill("https://example.com/track/201");
-  await dialog.getByRole("button", { name: scenario.label, exact: true }).click();
-  await expect(dialog).toBeHidden();
-  expect(state.orders[0].actualStatus).toBe(scenario.result);
-  expect(state.writes.map(item => item.path)).toEqual(["/admin/actions/agents/2/orders/201/CANCEL", `/admin/actions/agents/2/orders/201/${scenario.action}`]);
-  expect([...new URLSearchParams(state.writes[1].search)]).toEqual([
-    ["comment", "Комментарий другого действия"], ...(scenario.action === "SHIP" ? [["deliveryUrl", "https://example.com/track/201"]] : []),
-  ]);
+  if (scenario.action === "review") {
+    await expect(action).toBeDisabled();
+    await action.dispatchEvent("click");
+    expect(state.writes.map(item => item.path)).toEqual(["/admin/actions/agents/2/orders/201/CANCEL"]);
+  } else {
+    await expect(action).toBeEnabled(); await action.click();
+    const dialog = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: scenario.label, exact: true }) });
+    await expect(dialog.getByText(/Действие выполнено|Операция могла выполниться/)).toHaveCount(0);
+    await dialog.getByLabel("Комментарий", { exact: true }).fill("Комментарий другого действия");
+    if (scenario.action === "SHIP") await dialog.getByLabel("Ссылка доставки", { exact: true }).fill("https://example.com/track/201");
+    await dialog.getByRole("button", { name: scenario.label, exact: true }).click();
+    await expect(dialog).toBeHidden();
+    expect(state.orders[0].actualStatus).toBe(scenario.result);
+    expect(state.writes.map(item => item.path)).toEqual(["/admin/actions/agents/2/orders/201/CANCEL", `/admin/actions/agents/2/orders/201/${scenario.action}`]);
+    expect([...new URLSearchParams(state.writes[1].search)]).toEqual([
+      ["comment", "Комментарий другого действия"], ...(scenario.action === "SHIP" ? [["deliveryUrl", "https://example.com/track/201"]] : []),
+    ]);
+  }
   // Даже следующий GET BOOKED и новый экземпляр формы не снимают CANCEL guard.
   await details.getByRole("button", { name: "Закрыть", exact: true }).click();
   state.orders[0].actualStatus = "BOOKED";
@@ -196,7 +202,7 @@ for (const scenario of [
   await restored.getByRole("button", { name: "Проверить результат", exact: true }).click();
   await expect(restored.getByText(/Изменение статуса не подтверждено/)).toBeVisible();
   await restored.locator("form").evaluate(form => form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
-  expect(state.writes).toHaveLength(2);
+  expect(state.writes).toHaveLength(scenario.action === "review" ? 1 : 2);
 });
 
 for (const scenario of [
@@ -223,7 +229,9 @@ for (const scenario of [
     await expect(other).toBeDisabled(); await other.dispatchEvent("click");
     expect(posts).toBe(1); expect(state.writes).toEqual([]);
   } finally { release(); }
-  await expect(page.getByRole("button", { name: scenario.label, exact: true })).toBeEnabled();
+  const next = page.getByRole("button", { name: scenario.label, exact: true });
+  if (scenario.status === "ASSEMBLING") await expect(next).toBeEnabled();
+  else await expect(next).toBeDisabled();
   expect(posts).toBe(1);
 });
 

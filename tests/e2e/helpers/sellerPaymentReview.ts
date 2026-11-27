@@ -1,12 +1,12 @@
 import { expect, type Page } from "@playwright/test";
 import { fulfillJson, orderFixture, png, setupMobileAccount } from "./mobileAccount";
 
-export async function reviewFixture(page: Page, baseURL: string | undefined, prepayment = false, prepare?: () => Promise<void>) {
+export async function reviewFixture(page: Page, baseURL: string | undefined, prepayment = false, prepare?: () => Promise<void>, partialPrepayment = false) {
   const account = await setupMobileAccount(page, baseURL);
   const order = { ...orderFixture(51, prepayment ? "AWAITING_PREPAYMENT_APPROVAL" : "AWAITING_PAYMENT_APPROVAL", 1),
     paymentProofImageId: 700, prepaymentAmount: prepayment ? 1000 : 0 };
   order.product.sellerId = 1;
-  if (prepayment) order.calculation = { ...order.calculation!, confirmedPaidAmount: "0.00", remainingAmount: "4500.00" };
+  if (prepayment && !partialPrepayment) order.calculation = { ...order.calculation!, confirmedPaidAmount: "0.00", remainingAmount: "4500.00" };
   account.sellerOrders = [order];
   const fixture = { account, order, history: [] as { id: number; kind: string; actor_id: number; payload: string }[],
     posts: [] as { action: string; body: Record<string, unknown> }[], legacy: 0, historyReads: 0, proofIds: [] as string[],

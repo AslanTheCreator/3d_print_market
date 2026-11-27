@@ -35,6 +35,13 @@ export function useDeliveryTermsEditor({ order, context, available }: EditorProp
   const cachedCase = () => admin ? knownOpenAdminCase(client, scope.id, admin.agentId, orderId) : undefined;
   const knownCaseId = useSyncExternalStore(cache.subscribe.bind(cache), cachedCase, () => undefined);
   const listKey = admin ? adminOrderKeys.list(scope.id, admin.filter) : scope.key(orderQueryKeys.sellerOrders());
+  const sellerId = agentId ?? client.getQueryData<{ orderId: number; product: { sellerId: number } }[]>(listKey)?.find(row => row.orderId === orderId)?.product.sellerId;
+  const reviewBlocked = () => {
+    const seller = client.getQueryData<{ blocked: boolean; agentId: number }>(scope.key(orderQueryKeys.reviewAttempt(orderId)));
+    return hasAgentId(sellerId) && (!!client.getQueryData<{ blocked: boolean }>(scope.key(orderQueryKeys.adminReviewAttempt(sellerId, orderId)))?.blocked ||
+      !!(seller?.blocked && seller.agentId === sellerId));
+  };
+  const pendingReview = useSyncExternalStore(cache.subscribe.bind(cache), reviewBlocked, () => false);
   const matchesDisplayed = (baseline: TermsOrder) => {
     const list = client.getQueryState<(TermsOrder & Partial<Pick<AdminOrderDto, "sellerId">>)[]>(listKey);
     const cached = list?.data?.find(row => row.orderId === orderId && (!admin || row.sellerId === agentId));
@@ -93,7 +100,7 @@ export function useDeliveryTermsEditor({ order, context, available }: EditorProp
   };
   const submit = async (baseline: TermsOrder, body: DeliveryTermsRequest) => {
     const previous = read();
-    if (!available || !current() || previous?.busy || (previous && previous.phase !== "idle")) return;
+    if (reviewBlocked() || !available || !current() || previous?.busy || (previous && previous.phase !== "idle")) return;
     const attempt: Attempt = { phase: "pending", version: body.expectedVersion, message: "", busy: true };
     write(attempt);
     let dispatched = false;
@@ -109,6 +116,7 @@ export function useDeliveryTermsEditor({ order, context, available }: EditorProp
       if (!allowsDeliveryCost(fresh, body.deliveryAmount === null)) throw new Error("Укажите стоимость доставки с учётом подтверждённой оплаты");
       if (!matchesDisplayed(baseline)) throw new Error("Обновите условия заказа");
       if (admin ? cachedCase() : !casesAllowDelivery(client.getQueryData<OrderCaseDetail[]>(casesKey), orderId)) throw new Error(openCase);
+      if (reviewBlocked()) throw new Error("Проверка платежа ещё не завершена");
       dispatched = true;
       await orderTermsApi.update(context, orderId, body, scope.signal);
     } catch (error) {
@@ -134,5 +142,5 @@ export function useDeliveryTermsEditor({ order, context, available }: EditorProp
     write(accepted);
     return await reconcile(accepted) && mounted.current && current();
   };
-  return { state, check, submit, knownCaseId };
+  return { state, check, submit, knownCaseId, pendingReview };
 }

@@ -1,5 +1,5 @@
 import { getOrderPaymentBreakdown, type ListOrdersModel, type OrderTermsEvent, type PaymentStage } from "@/entities/order";
-import { lastEventId, paymentSequence, paymentTerms } from "./paymentEvidence";
+import { lastEventId, paymentSequence, paymentTerms, reviewAmountsAgree } from "./paymentEvidence";
 
 export interface ReviewDecision {
   action: "approve" | "return";
@@ -9,6 +9,8 @@ export interface ReviewDecision {
   actor: number;
   buyer: number;
   paidBefore: string | null;
+  currency: string | null | undefined;
+  scale: number | undefined;
   reason: string;
 }
 
@@ -31,14 +33,14 @@ export function reviewEvidence(order: Pick<ListOrdersModel, "calculation" | "act
   if (!event || event.kind !== (decision.action === "approve" ? "PAYMENT_APPROVED" : "PAYMENT_RETURNED") ||
       event.actor !== decision.actor || event.imageId !== decision.imageId ||
       (event.kind === "PAYMENT_RETURNED" && event.reason !== decision.reason)) return false;
-  if (event.kind === "PAYMENT_RETURNED" && !sameAmount(event.confirmedPaidAmount, decision.paidBefore)) return false;
   if (newer.slice(0, start).some((item, index) => item.incomplete || !item.actor ||
       item.expectedVersion !== decision.version - start + index)) return false;
   const tail = newer.slice(start);
-  const lastReview = tail.filter(item => item.kind === "PAYMENT_APPROVED" || item.kind === "PAYMENT_RETURNED").at(-1);
+  if (!order.calculation || decision.currency !== order.calculation.currency || decision.scale !== order.calculation.scale) return false;
+  if (!reviewAmountsAgree(order.calculation, tail, decision.paidBefore)) return false;
   // Следующие покупательские предъявления проверяет paymentSequence. У каждого решения должен быть автор.
   const calc = getOrderPaymentBreakdown(order);
-  if (calc.prepaymentBlock || !sameAmount(order.calculation?.confirmedPaidAmount, lastReview?.confirmedPaidAmount)) return false;
+  if (calc.prepaymentBlock) return false;
   const { totalAmount, remainingAmount, confirmedPaidAmount } = calc.amounts;
   if (totalAmount !== null && (remainingAmount === null || confirmedPaidAmount === null)) return false;
   if (["ASSEMBLING", "ON_THE_WAY", "COMPLETED"].includes(order.actualStatus) &&

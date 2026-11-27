@@ -6,6 +6,7 @@ export const orderQueryKeys = {
   orderData: (productId: number) =>
     [...orderQueryKeys.all, "data", productId] as const,
   sellerOrders: () => [...orderQueryKeys.all, "seller"] as const,
+  adminReviewAttempt: (agentId: number, orderId: number) => ["adminPaymentReview", agentId, orderId] as const,
   reviewAttempt: (orderId: number) => ["sellerPaymentReview", orderId] as const,
   cancelAttempt: (orderId: number) => ["orderCancel", orderId] as const,
   sellerConfirmation: (kind: "order") => ["sellerConfirmation", kind] as const,

@@ -4,7 +4,7 @@ import { decodeOrderTermsEvents } from "@/entities/order/lib/orderTermsHistory";
 import { reviewEvidence, type ReviewDecision } from "@/features/order-payment/model/reviewEvidence";
 import { orderCalculation } from "./helpers/orderCalculation";
 
-const decision: ReviewDecision = { stage: "prepayment", actor: 1, buyer: 2, paidBefore: "0", action: "return", reason: "Чек A", version: 7, imageId: 70 };
+const decision: ReviewDecision = { stage: "prepayment", actor: 1, buyer: 2, paidBefore: "0", currency: "RUB", scale: 2, action: "return", reason: "Чек A", version: 7, imageId: 70 };
 function review(id: number, version: number, imageId: number, approve = false) {
   return { id, kind: approve ? "PAYMENT_APPROVED" : "PAYMENT_RETURNED", actor_id: 1, payload: JSON.stringify({
     imageId, confirmedPaidAmount: approve ? "1000" : "0", request: { expectedVersion: version, reason: "Чек A" } }) };
@@ -42,7 +42,7 @@ test("requires exact event identity, stage, version and matching financial data"
 });
 
 test("current submission agrees with the buyer, status, version and previous return", () => {
-  const current = { ...row, termsVersion: 9, paymentProofImageId: 71 };
+  const current = { ...row, calculation: orderCalculation({ confirmedPaidAmount: "0", remainingAmount: "4500" }), termsVersion: 9, paymentProofImageId: 71 };
   expect(reviewHistory(current, decode(cycle.slice(0, 2)), 2).previous?.imageId).toBe(70);
   expect(reviewHistory(row, decode(cycle), 2).previous).toBeUndefined();
   expect(reviewHistory(row, decode(cycle), 2).state).toBe("current");
@@ -66,3 +66,27 @@ for (const actualStatus of ["ASSEMBLING", "ON_THE_WAY", "COMPLETED"] as const) {
     }
   });
 }
+
+test("reconciliation checks each financial transition even when a later approval settles the full balance", () => {
+  const job: ReviewDecision = { ...decision, paidBefore: "1000", action: "approve" };
+  const order = { ...row, actualStatus: "ASSEMBLING" as const, termsVersion: 10,
+    calculation: orderCalculation({ confirmedPaidAmount: "4500", remainingAmount: "0" }) };
+  const events = decode([review(82, 7, 70, true), submit(88, 8, 71), review(91, 9, 71, true)]);
+  const full = { ...events[2], confirmedPaidAmount: "4500" };
+  for (const [amount, valid] of [["500", false], ["1000", true], ["1500", true], ["1000.001", false], [null, false]] as const) {
+    const first = { ...events[0], confirmedPaidAmount: amount };
+    expect(reviewEvidence(order, [first, events[1], full], job, 80)).toBe(valid);
+  }
+  expect(reviewEvidence(order, [events[0], events[1], full], { ...job, paidBefore: null }, 80)).toBe(false);
+});
+
+test("delivery between return and resubmission preserves the last exact paid amount", () => {
+  const delivery = { id: 85, actor_id: 1, kind: "DELIVERY_CHANGED", payload: JSON.stringify({
+    before: { deliveryAmount: "500" }, after: { deliveryAmount: "500", expectedVersion: 8 } }) };
+  for (const [paid, state] of [["500", "conflict"], ["1500", "conflict"], ["1000.000", "current"], ["1000.001", "conflict"]] as const) {
+    const returned = { ...review(82, 7, 70), payload: JSON.stringify({
+      imageId: 70, confirmedPaidAmount: paid, request: { expectedVersion: 7, reason: "Чек A" } }) };
+    const events = decode([returned, delivery, submit(91, 9, 71)]);
+    expect(reviewHistory({ ...row, termsVersion: 10, paymentProofImageId: 71 }, events, 2).state).toBe(state);
+  }
+});

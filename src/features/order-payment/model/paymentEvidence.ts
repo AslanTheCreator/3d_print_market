@@ -1,4 +1,4 @@
-import { hasTermsVersion, getOrderPaymentBreakdown, type ListOrdersModel, type OrderTermsEvent, type PaymentStage } from "@/entities/order";
+import { orderMoneyUnits, hasTermsVersion, getOrderPaymentBreakdown, type ListOrdersModel, type OrderTermsEvent, type PaymentStage } from "@/entities/order";
 
 type Terms = Pick<ListOrdersModel, "actualStatus" | "calculation" | "termsVersion" | "deliveryAddress" | "deliveryCarrier"> & {
   product: { sellerId: number }; userInfo: { id: number };
@@ -81,8 +81,22 @@ export function latestReturn(events: OrderTermsEvent[] | undefined, order: Contr
   if (paymentEvidence(order, events, stage, submission.expectedVersion, submission.imageId, actor, submission.id! - 1) === "returned") return returned;
 }
 
+// Предъявление чека и изменение доставки сохраняют подтверждённую оплату.
+export function reviewAmountsAgree(calculation: ListOrdersModel["calculation"], events: OrderTermsEvent[], paidBefore?: string | null) {
+  let previous = orderMoneyUnits(paidBefore, calculation);
+  if (paidBefore !== undefined && previous === null) return false;
+  for (const event of events) {
+    if (event.kind !== "PAYMENT_APPROVED" && event.kind !== "PAYMENT_RETURNED") continue;
+    const paid = orderMoneyUnits(event.confirmedPaidAmount, calculation);
+    if (paid === null || (previous !== null &&
+        (event.kind === "PAYMENT_RETURNED" ? paid !== previous : paid < previous))) return false;
+    previous = paid;
+  }
+  return previous === null || previous === orderMoneyUnits(calculation?.confirmedPaidAmount, calculation);
+}
+
 // Проверяем только непрерывную известную цепочку. Старый заказ может начинаться без истории.
-export function reviewHistory(order: ControlOrder, events: OrderTermsEvent[] | undefined, buyer: number) {
+export function reviewHistory(order: ControlOrder & Pick<ListOrdersModel, "calculation">, events: OrderTermsEvent[] | undefined, buyer: number) {
   const version = order.termsVersion;
   const stage = order.actualStatus === "AWAITING_PREPAYMENT_APPROVAL" ? "prepayment" : "full";
   if (!events || !hasTermsVersion(version) || lastEventId(events) === undefined) return { state: "invalid" } as const;
@@ -95,7 +109,7 @@ export function reviewHistory(order: ControlOrder, events: OrderTermsEvent[] | u
   const first = sorted[0];
   const pending = first.kind === "PAYMENT_RETURNED" || first.kind === "PAYMENT_APPROVED" ? first.imageId : undefined;
   const matches = (initial: PaymentStage) => paymentSequence(order, sorted, initial, first.expectedVersion!, buyer, pending);
-  if (latest.kind !== "PAYMENT_SUBMITTED" || !(matches(stage) || (stage === "full" && matches("prepayment")))) {
+  if (!reviewAmountsAgree(order.calculation, sorted) || latest.kind !== "PAYMENT_SUBMITTED" || !(matches(stage) || (stage === "full" && matches("prepayment")))) {
     return { state: "conflict" } as const;
   }
   const previous = sorted.slice(0, -1).filter(event => event.kind !== "DELIVERY_CHANGED").at(-1);

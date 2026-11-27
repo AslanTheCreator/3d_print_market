@@ -7,7 +7,7 @@ import { ApiError } from "@/shared/lib/errorHandler";
 import { useNotification } from "@/shared/ui/notification";
 
 interface UseOrderCancelActionOptions {
-  order: { orderId: number; actualStatus: OrderStatus };
+  order: { orderId: number; actualStatus: OrderStatus; product: { sellerId: number } };
   userRole: "seller" | "customer";
   onSuccess?: () => void;
 }
@@ -56,12 +56,14 @@ export const useOrderCancelAction = ({
   const actionKey = scope.key(orderQueryKeys.cancelAttempt(order.orderId));
   const actionHash = hashKey(actionKey);
   const reviewKey = scope.key(orderQueryKeys.reviewAttempt(order.orderId));
-  const reviewHash = hashKey(reviewKey);
+  const adminReviewKey = scope.key(orderQueryKeys.adminReviewAttempt(order.product.sellerId, order.orderId));
+  const hashes = [actionHash, hashKey(reviewKey), hashKey(adminReviewKey)];
   const subscribe = (notify: () => void) => queryClient.getQueryCache().subscribe(event => {
-    if (event.query.queryHash === actionHash || event.query.queryHash === reviewHash) notify();
+    if (hashes.includes(event.query.queryHash)) notify();
   });
   const getState = () => queryClient.getQueryData<CancelActionState>(actionKey) ?? initialState;
-  const reviewBlocked = () => !!queryClient.getQueryData<{ blocked: boolean }>(reviewKey)?.blocked;
+  const reviewBlocked = () => !!queryClient.getQueryData<{ blocked: boolean }>(reviewKey)?.blocked ||
+    !!queryClient.getQueryData<{ blocked: boolean }>(adminReviewKey)?.blocked;
   const state = useSyncExternalStore(subscribe, getState, getState);
   const blocked = useSyncExternalStore(subscribe, reviewBlocked, reviewBlocked);
   const update = (patch: Partial<CancelActionState>) => {

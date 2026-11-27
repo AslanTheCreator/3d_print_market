@@ -13,6 +13,7 @@ import {
   OrderStatusChip,
   type AdminOrderDto,
 } from "@/entities/order";
+import { AdminPaymentReview } from "@/features/order-payment";
 import { AdminOrderActions } from "@/features/admin-order-action";
 import { DeliveryTermsEditor } from "@/features/order-delivery-terms";
 import { formatDateTime } from "@/shared/lib";
@@ -29,6 +30,8 @@ export function AdminOrderDetail({
   order,
   productImage,
   filter,
+  reviewAgentValid,
+  onReviewing,
   onEditing,
   session,
   locked,
@@ -43,6 +46,8 @@ export function AdminOrderDetail({
   order: AdminOrderDto;
   productImage?: ImageMetadata;
   filter: AdminOrderFilter;
+  reviewAgentValid: boolean;
+  onReviewing: (open: boolean) => void;
   onEditing: (editing: boolean) => void;
   session: number | null;
   locked: boolean;
@@ -79,11 +84,12 @@ export function AdminOrderDetail({
       <Typography>
         Бот: {order.sellerLogin} (#{order.sellerId})
       </Typography>
+      {reviewAgentValid ? <AdminPaymentReview order={order} session={session} filter={filter} onOpen={onReviewing} onDismiss={() => { if (!inCurrentList) close(); }}
+        available={!locked && !readError && inCurrentList} /> : <Typography role="status">Обновите выбор агента для проверки платежа.</Typography>}
       <AdminOrderActions
         order={order}
         session={session}
         changed={changed}
-        readError={readError}
         inCurrentList={inCurrentList}
         lockPanel={lockPanel}
       />

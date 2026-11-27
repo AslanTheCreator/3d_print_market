@@ -338,7 +338,7 @@ for (const networkError of ["timedout", "connectionreset"] as const) {
 
 for (const [status, code, rejected] of [
   [400, "ORDER_PAYMENT_INVALID", true], [403, "ACCESS_DENIED", true], [404, "ORDER_NOT_FOUND", true],
-  [409, "ORDER_LEGACY_RECONCILIATION_REQUIRED", true], [409, "ORDER_CASE_ALREADY_OPEN", true],
+  [409, "ORDER_LEGACY_RECONCILIATION_REQUIRED", true], [409, "ORDER_CASE_ALREADY_OPEN", true], [404, "PARTICIPANT_NOT_FOUND", false],
   [400, "BAD_REQUEST", false], [409, "ORDER_PAYMENT_INVALID", false], [403, "UNKNOWN", false],
 ] as const) {
   test(`review denial ${status} ${code} requires an exact server contract`, async ({ page, baseURL }) => {

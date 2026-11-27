@@ -20,6 +20,17 @@ function decimal(value: unknown, scale: number): string | null {
   return integer.replace(/^0+(?=\d)/, "") + (digits ? "." + digits : "");
 }
 
+function validMoneyFormat(calculation: NonNullable<Terms["calculation"]>) {
+  return calculation.known === true && !!calculation.currency && currencies.has(calculation.currency) &&
+    Number.isInteger(calculation.scale) && calculation.scale >= 0 && calculation.scale <= 20;
+}
+
+export function orderMoneyUnits(value: unknown, calculation: Terms["calculation"]) {
+  if (!calculation || !validMoneyFormat(calculation)) return null;
+  const amount = decimal(value, calculation.scale);
+  return amount === null ? null : BigInt(amount.replace(".", ""));
+}
+
 // Признак предусмотренной предоплаты нужен для этапов, а не для вычисления суммы.
 export function hasOrderPrepayment(order: Pick<ListOrdersDto, "prepaymentAmount">) {
   return (order.prepaymentAmount ?? 0) > 0;
@@ -32,11 +43,7 @@ export function getOrderPaymentBreakdown({ calculation, termsVersion }: Terms) {
   let formatter: Intl.NumberFormat | undefined;
   if (calculation == null) message = "Актуальный расчёт не получен";
   else if (calculation.known === false) message = "Для оплаты нужна сверка администратором";
-  else if (
-    calculation.known !== true ||
-    !calculation.currency || !currencies.has(calculation.currency) ||
-    !Number.isInteger(calculation.scale) || calculation.scale < 0 || calculation.scale > 20
-  ) {
+  else if (!calculation.currency || !validMoneyFormat(calculation)) {
     message = "Некорректный формат расчёта";
   } else {
     formatter = new Intl.NumberFormat("ru-RU", {

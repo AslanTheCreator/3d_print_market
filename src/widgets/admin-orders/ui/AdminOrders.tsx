@@ -18,7 +18,7 @@ import {
   type AdminOrderDto,
   type OrderStatus,
 } from "@/entities/order";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
   Button,
@@ -52,7 +52,8 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
     ? (statusParam as OrderStatus)
     : undefined;
   const page = parseNonNegativeSafeInteger(params.get("page")) ?? 0;
-  const selectedAgent = parsePositiveSafeInteger(agentId ?? params.get("agent")) ?? undefined;
+  const agentParam = agentId ?? params.get("agent");
+  const selectedAgent = parsePositiveSafeInteger(agentParam) ?? undefined;
   const query = useAdminOrders(sessionKey, {
     agentId: selectedAgent,
     status,
@@ -60,6 +61,7 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
   });
   const [selection, setSelection] = useState<{ order: AdminOrderDto; session: number | null } | null>(null);
   const [locked, setLocked] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const [editingDelivery, setEditingDelivery] = useState(false);
   const anchor = selection?.session === sessionKey && (selectedAgent === undefined || selection.order.sellerId === selectedAgent)
     ? selection.order : null;
@@ -72,7 +74,11 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
   });
   const locatedOrder = editingDelivery && located.isSuccess && located.data?.sellerId === anchor?.sellerId ? located.data : null;
   // Пока операция открыта, сохраняем её форму, даже если заказ выпал из выдачи.
-  const selected = currentOrder ?? locatedOrder ?? (locked || editingDelivery ? anchor : null);
+  const reviewPage = useQuery<AdminOrderDto[]>({ queryKey: adminOrderKeys.list(sessionKey, { agentId: anchor?.sellerId, page: 0 }),
+    queryFn: skipToken, enabled: false });
+  const reviewedOrder = reviewing && reviewPage.isSuccess && anchor
+    ? reviewPage.data.find(row => row.sellerId === anchor.sellerId && row.orderId === anchor.orderId) : undefined;
+  const selected = currentOrder ?? reviewedOrder ?? locatedOrder ?? (locked || editingDelivery || reviewing ? anchor : null);
   const setSelected = (order: AdminOrderDto | null) => {
     setEditingDelivery(false);
     setSelection(order && { order, session: sessionKey });
@@ -319,6 +325,8 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
           <AdminOrderDetail
             key={`${sessionKey}-${selected.sellerId}-${selected.orderId}`}
             filter={{ agentId: selectedAgent, status, page }}
+            reviewAgentValid={agentParam === null || selectedAgent !== undefined}
+            onReviewing={setReviewing}
             onEditing={setEditingDelivery}
             order={selected}
             productImage={imageQuery.data?.find(image => image.id === selected.product.imageId)}
@@ -326,7 +334,7 @@ export function AdminOrders({ agentId }: { agentId?: number }) {
             locked={locked}
             readError={query.isError}
             inCurrentList={!!currentOrder}
-            locatedForDelivery={!!locatedOrder}
+            locatedForDelivery={!!locatedOrder || !!reviewedOrder}
             refresh={() => void query.refetch()}
             lockPanel={lockPanel}
             changed={changed}

@@ -492,7 +492,7 @@ logout/login и поздние ответы старого scope. `private-data-
 на свежем `npm run build` через `npm run start:standalone`; API-записи подменены.
 
 `admin-extended.spec.ts` проверяет CANCEL только в BOOKED и запрет остальных статусов,
-точные admin URL/query, CONFIRM/CONFIRM_PREPAYMENT/SHIP, отказ 403/409/500,
+точные admin URL/query, CONFIRM/SHIP, отказ 403/409/500,
 потерю ответа без повторного POST и отсутствие действий для CANCELLED/обычного
 пользователя, смену статуса/владельца при открытой форме, отказ контрольного GET,
 logout и ошибку проверки доступа ADMIN во время GET до POST.
@@ -510,7 +510,7 @@ USER не отправляет даже программный вызов, об�
 восстанавливает удалённое состояние. Namespace adminOrderCancel входит также
 в logout/expiry/switch/refresh проверки `private-data-model.spec.ts`.
 Регрессии сохранённого CANCEL проверяют потерю ответа с GET ASSEMBLING и
-AWAITING_PREPAYMENT_APPROVAL: SHIP/CONFIRM_PREPAYMENT выполняются с точным payload,
+AWAITING_PREPAYMENT_APPROVAL: SHIP выполняется с точным payload, а проверка платежа блокируется,
 включая закрытие и повторное открытие деталей. CANCEL guard и комментарий при этом
 сохраняются даже после последующего GET BOOKED; произвольный статус не считается
 успехом CANCEL. Проверяются CONFIRM после неизвестного CANCEL, запрет конкурирующих
@@ -1850,3 +1850,7 @@ mutations и hooks с управляемыми promises: logout/expiry/A → B, 
 В браузерных сценариях API подменяется.
 
 Регрессии F05-C в seller-payment-review и seller-review-evidence-model независимо меняют чек, историю, баланс и статус. Проверки версии используют сырой JSON списка заказов, включая дробь, округляемую JavaScript.
+
+В `payment-review-finance.spec.ts` обе роли проходят проверку расхождения суммы до POST и контрольные GET при уменьшении подтверждённой предоплаты. Модельные сценарии охватывают промежуточные решения и совпадающие номера заказов разных агентов.
+
+Регрессии F05-D в `admin-payment-review.spec.ts` и мобильном сценарии проверяют административные URL, тела и количество POST. Фикстура позволяет независимо менять серверный заказ, расчёт, изображение, автора и историю, задерживать ответ и имитировать потерю связи. В `admin-payment-review-cache-model.spec.ts` наблюдатели считают контрольные GET для общей страницы, агента и участника и проверяют изоляцию чужих ключей.

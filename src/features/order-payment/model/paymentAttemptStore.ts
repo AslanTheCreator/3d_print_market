@@ -2,9 +2,9 @@ import { hashKey, type QueryClient, type QueryKey } from "@tanstack/react-query"
 import type { PrivateScope } from "@/shared/lib/query";
 
 export function paymentAttemptStore<T extends { token: symbol }>(client: QueryClient, scope: PrivateScope,
-  orderId: number, key: QueryKey, related: QueryKey[], protectedAttempt: (attempt?: T) => boolean, otherBusy: () => boolean) {
+  orderId: number, agentId: number, key: QueryKey, related: QueryKey[], protectedAttempt: (attempt?: T) => boolean, otherBusy: () => boolean) {
   // Обе стадии сверяются с последней фактически прочитанной версией, как при защите F03.
-  const versionKey = scope.key(["customerPaymentVersion", orderId]);
+  const versionKey = scope.key(["customerPaymentVersion", agentId, orderId]);
   const minimumVersion = () => client.getQueryData<number>(versionKey);
   const cache = client.getQueryCache();
   const hashes = [hashKey(key), ...related.map(hashKey), hashKey(versionKey)];

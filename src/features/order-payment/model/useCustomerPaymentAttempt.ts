@@ -34,7 +34,8 @@ export function useCustomerPaymentAttempt(order: ListOrdersModel, stage: Payment
   const termsMatch = usePaymentTermsCheck("customer");
   const profileKey = scope.key(userKeys.profile());
   const current = () => scope.isCurrent() && !!actor && client.getQueryData<UserProfileModel>(profileKey)?.id === actor;
-  const store = useMemo(() => customerPaymentState(client, scope, orderId, actor, stage), [client, scope, orderId, actor, stage]);
+  const agentId = order.product.sellerId;
+  const store = useMemo(() => customerPaymentState(client, scope, orderId, agentId, actor, stage), [client, scope, orderId, agentId, actor, stage]);
   const { read, update: write, otherBusy } = store;
   const state = useSyncExternalStore(store.subscribe, read, read);
   const otherBlocked = useSyncExternalStore(store.subscribe, otherBusy, otherBusy);

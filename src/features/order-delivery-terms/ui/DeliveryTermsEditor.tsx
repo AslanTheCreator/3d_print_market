@@ -13,7 +13,7 @@ interface Fields { carrier: DeliveryCarrier | ""; address: string; amount: strin
 
 export function DeliveryTermsEditor(props: EditorProps & { onEditing?: (editing: boolean) => void }) {
   const { order, available, onEditing } = props;
-  const { state, check, submit, knownCaseId } = useDeliveryTermsEditor(props);
+  const { state, check, submit, knownCaseId, pendingReview } = useDeliveryTermsEditor(props);
   const [baseline, setBaseline] = useState<TermsOrder | null>(null);
   const { register, reset, control, handleSubmit, formState: { errors } } = useForm<Fields>({
     defaultValues: { carrier: "", address: "", amount: "", unknown: false, reason: "" },
@@ -24,7 +24,7 @@ export function DeliveryTermsEditor(props: EditorProps & { onEditing?: (editing:
   const blocked = deliveryBlock(order);
   const locked = !!state && (state.busy || state.phase !== "idle");
   const canStart = available && !blocked && !knownCaseId && !locked;
-  const canSave = (unknownCost: boolean) => canStart && !stale && allowsDeliveryCost(order, unknownCost);
+  const canSave = (unknownCost: boolean) => canStart && !pendingReview && !stale && allowsDeliveryCost(order, unknownCost);
   function start() {
     setBaseline(order);
     onEditing?.(true);
@@ -41,6 +41,7 @@ export function DeliveryTermsEditor(props: EditorProps & { onEditing?: (editing:
   });
   return <Stack spacing={1} sx={{ "& .MuiButton-root": { minHeight: 44 } }}>
     <Typography variant="caption">Версия условий: {hasTermsVersion(order.termsVersion) ? order.termsVersion : "не получена"}</Typography>
+    {pendingReview && <Alert severity="info">Проверка платежа ещё не завершена. После сверки можно сохранить условия доставки.</Alert>}
     {knownCaseId && <Typography>По заказу открыто обращение #{knownCaseId}</Typography>}
     {blocked && <Typography variant="body2">{blocked}</Typography>}
     {state?.message && <Alert severity={state.phase === "idle" && state.message === "Условия доставки обновлены" ? "success" : "info"}>{state.message}</Alert>}

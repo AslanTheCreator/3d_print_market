@@ -6,7 +6,7 @@ export { orderPaymentApi } from "./api/orderPaymentApi";
 export { getOrderPaymentActions } from "./model/orderPayment";
 export type { PaymentContext, PaymentStage, SubmitPaymentRequest, ApprovePaymentRequest, ReturnPaymentRequest } from "./model/orderPayment";
 export type { OrderTermsEvent } from "./lib/orderTermsHistory";
-export { knownOpenAdminCase, casesAllowDelivery, readDeliveryOrder, readDeliveryCases, rememberReviewedCalculation, invalidateDeliveryReads } from "./model/orderTermsQueries";
+export { knownOpenAdminCase, hasCurrentDeliveryVersion, casesAllowDelivery, readAdminOrderPage, readDeliveryOrder, readDeliveryCases, rememberReviewedCalculation, invalidateDeliveryReads } from "./model/orderTermsQueries";
 export { OrderDeliveryTermsHistory } from "./ui/OrderDeliveryTermsHistory";
 export { editableDeliveryStatus, hasAgentId, hasTermsVersion, normalizeDeliveryAmount } from "./model/orderTerms";
 export type { DeliveryTermsContext, DeliveryTermsRequest, TermsOrder } from "./model/orderTerms";
@@ -44,7 +44,7 @@ export { OrderCalculationSummary } from "./ui/OrderCalculationSummary";
 export { OrderDeliverySnapshot } from "./ui/OrderDeliverySnapshot";
 export { deliveryCarrierLabels, deliveryAddressMaxLength, getDeliveryFieldErrors, getOrderDeliveryAddress } from "./lib/orderDelivery";
 export type { DeliveryCarrier, OrderCreateModel } from "./model/types";
-export { getOrderPaymentBreakdown, hasOrderPrepayment } from "./lib/orderPaymentBreakdown";
+export { getOrderPaymentBreakdown, orderMoneyUnits, hasOrderPrepayment } from "./lib/orderPaymentBreakdown";
 export { getOrderReviewState } from "./lib/orderReviewState";
 export type { OrderPaymentBreakdown } from "./lib/orderPaymentBreakdown";
 export {

@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { adminOrderApi, getAdminOrderActionFlags, type AdminOrderDto } from "@/entities/order";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { adminOrderApi, orderQueryKeys, getAdminOrderActionFlags, type AdminOrderDto } from "@/entities/order";
 import type { UserProfileModel } from "@/entities/user";
 import { ApiError } from "@/shared/lib/errorHandler";
 import { usePrivateScope } from "@/shared/lib/query";
@@ -31,13 +31,20 @@ export function useAdminCancelAction({ order, session, changed }: {
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   // Как у пользовательской отмены, guard принадлежит scope, а не экземпляру формы.
   const key = scope.key(["adminOrderCancel", order.sellerId, order.orderId]);
-  const { data: state } = useQuery({
-    queryKey: key, queryFn: () => initialState, initialData: initialState,
-    enabled: false, staleTime: Infinity, gcTime: Infinity,
-  });
+  const reviewKey = scope.key(orderQueryKeys.adminReviewAttempt(order.sellerId, order.orderId));
+  const sellerReviewKey = scope.key(orderQueryKeys.reviewAttempt(order.orderId));
+  const reviewBlocked = () => {
+    const seller = client.getQueryData<{ blocked: boolean; agentId: number }>(sellerReviewKey);
+    return !!client.getQueryData<{ blocked: boolean }>(reviewKey)?.blocked || !!(seller?.blocked && seller.agentId === order.sellerId);
+  };
+  const cache = client.getQueryCache();
+  const blocked = useSyncExternalStore(cache.subscribe.bind(cache), reviewBlocked, reviewBlocked);
   const getState = () => client.getQueryData<CancelState>(key) ?? initialState;
+  const state = useSyncExternalStore(cache.subscribe.bind(cache), getState, getState);
   const update = (patch: Partial<CancelState>) => {
-    if (scope.isCurrent()) client.setQueryData<CancelState>(key, previous => ({ ...(previous ?? initialState), ...patch }));
+    if (!scope.isCurrent()) return;
+    cache.build(client, { queryKey: key, gcTime: Infinity });
+    client.setQueryData<CancelState>(key, previous => ({ ...(previous ?? initialState), ...patch }));
   };
   const isCurrent = () => mounted.current && scope.isCurrent() &&
     currentOrder.current.orderId === order.orderId && currentOrder.current.sellerId === order.sellerId;
@@ -73,7 +80,7 @@ export function useAdminCancelAction({ order, session, changed }: {
 
   const submit = async (comment: string) => {
     const current = getState();
-    if (current.busy || current.unknown || current.accepted || !isCurrent() || !hasAccess()) return false;
+    if (reviewBlocked() || current.busy || current.unknown || current.accepted || !isCurrent() || !hasAccess()) return false;
     if (!getAdminOrderActionFlags(currentOrder.current.actualStatus).canCancel) {
       update({ error: new Error("Статус заказа изменился. Действие недоступно.") });
       return false;
@@ -84,7 +91,7 @@ export function useAdminCancelAction({ order, session, changed }: {
     try {
       const fresh = await adminOrderApi.find(order.sellerId, order.orderId, scope.signal);
       if (!isCurrent()) return false;
-      if (!hasAccess()) {
+      if (reviewBlocked() || !hasAccess()) {
         update({ error: new Error("Доступ администратора не подтверждён. Повторите проверку доступа.") });
         return false;
       }
@@ -114,7 +121,7 @@ export function useAdminCancelAction({ order, session, changed }: {
 
   const checkResult = async () => {
     const current = getState();
-    if (current.busy || (!current.unknown && !current.accepted) || !isCurrent() || !hasAccess()) return false;
+    if (reviewBlocked() || current.busy || (!current.unknown && !current.accepted) || !isCurrent() || !hasAccess()) return false;
     update({ busy: true, error: undefined });
     try { return current.accepted ? await refresh() : await readResult(); }
     catch (error) { update({ error }); return false; }
@@ -123,6 +130,6 @@ export function useAdminCancelAction({ order, session, changed }: {
 
   // Читаем общий guard при отправке: render другого экземпляра мог ещё не обновиться.
   // Сохранённый unknown/accepted относится только к CANCEL; busy защищает от конкурирующего запроса.
-  const canStartOtherAction = () => !getState().busy && isCurrent() && hasAccess();
-  return { ...state, submit, checkResult, canStartOtherAction };
+  const canStartOtherAction = () => !reviewBlocked() && !getState().busy && isCurrent() && hasAccess();
+  return { ...state, reviewBlocked: blocked, submit, checkResult, canStartOtherAction };
 }
